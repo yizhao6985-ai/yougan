@@ -1,0 +1,9 @@
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
+
+/** LangGraph SDK 走 API 中间层代理 */
+export const LANGGRAPH_API_URL =
+  import.meta.env.VITE_LANGGRAPH_API_URL ?? `${API_BASE_URL}/langgraph`;
+
+export const AUTH_TOKEN_KEY = "yougan:token";
+export const ACTIVE_WORK_KEY = "yougan:activeWorkId";

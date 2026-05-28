@@ -1,0 +1,180 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String                @id @default(cuid())
+  email                String                @unique
+  passwordHash         String
+  name                 String?
+  bio                  String?
+  avatarUrl            String?
+  coverUrl             String?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  works                Work[]
+  workGroups           WorkGroup[]
+  platformIntegrations PlatformIntegration[]
+  publications         Publication[]
+  passwordResetTokens  PasswordResetToken[]
+  emailChangeTokens    EmailChangeToken[]
+  subscription         UserSubscription?
+  billingOrders        BillingOrder[]
+}
+
+model EmailChangeToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  newEmail  String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+model UserSubscription {
+  id                 String    @id @default(cuid())
+  userId             String    @unique
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// free | pro
+  planId             String    @default("free")
+  /// active | canceled | expired
+  status             String    @default("active")
+  /// monthly | yearly，免费版为 null
+  billingCycle       String?
+  currentPeriodStart DateTime  @default(now())
+  currentPeriodEnd   DateTime?
+  aiUsageThisPeriod  Int       @default(0)
+  cancelAtPeriodEnd  Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([planId, status])
+}
+
+model BillingOrder {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId       String
+  billingCycle String
+  amountCents  Int
+  currency     String    @default("CNY")
+  /// pending | paid | failed | refunded
+  status       String    @default("pending")
+  description  String
+  paidAt       DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+model PlatformIntegration {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform       String
+  accountName    String?
+  accountId      String?
+  accessToken    String?
+  refreshToken   String?
+  tokenExpiresAt DateTime?
+  scopes         Json      @default("[]")
+  status         String    @default("connected")
+  metadata       Json      @default("{}")
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([userId, platform])
+  @@index([userId, updatedAt(sort: Desc)])
+}
+
+model WorkGroup {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  works     Work[]
+
+  @@index([userId, updatedAt(sort: Desc)])
+}
+
+model Work {
+  id            String         @id @default(cuid())
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  groupId       String?
+  group         WorkGroup?     @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  title         String
+  /// 创作模式：inspiration=灵感 | outline=大纲 | creation=创作
+  mode          String         @default("inspiration")
+  threadId      String?
+  profile       Json           @default("{}")
+  /// 大纲模式 JSON（创作大纲）
+  outline       Json           @default("{}")
+  /// 灵感模式 JSON（已确认需求 / 灵感总结）
+  inspiration   Json           @default("{}")
+  /// 创作模式 JSON（按大纲生成的最终实现）
+  creation      Json?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  publications  Publication[]
+
+  @@index([userId, updatedAt(sort: Desc)])
+  @@index([userId, groupId, updatedAt(sort: Desc)])
+}
+
+model Publication {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workId      String?
+  work        Work?     @relation(fields: [workId], references: [id], onDelete: SetNull)
+  slug        String    @unique
+  title       String
+  excerpt     String?
+  body        String
+  coverUrl    String?
+  platform    String?
+  contentFormat String?
+  topicCategory String?
+  contentTopic  String?
+  contentType   String?
+  mediaType     String?
+  hashtags    Json      @default("[]")
+  images      Json      @default("[]")
+  status      String    @default("draft")
+  viewCount   Int       @default(0)
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId, status, updatedAt(sort: Desc)])
+  @@index([status, publishedAt(sort: Desc)])
+  @@index([status, platform, publishedAt(sort: Desc)])
+  @@index([status, contentFormat, publishedAt(sort: Desc)])
+  @@index([status, topicCategory, publishedAt(sort: Desc)])
+  @@index([status, mediaType, publishedAt(sort: Desc)])
+}

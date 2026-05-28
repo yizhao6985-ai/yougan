@@ -1,0 +1,25 @@
+{
+  "name": "yougan",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:web": "turbo run dev --filter=@yougan/web",
+    "dev:api": "turbo run dev --filter=@yougan/api",
+    "dev:agent": "turbo run dev --filter=@yougan/agent",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "check-types": "turbo run check-types",
+    "db:push": "turbo run db:push --filter=@yougan/api",
+    "db:generate": "turbo run db:generate --filter=@yougan/api",
+    "openapi:generate": "turbo run openapi:generate --filter=@yougan/api",
+    "generate:api": "turbo run generate:api --filter=@yougan/web"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.4"
+  },
+  "packageManager": "pnpm@10.30.3",
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  }
+}

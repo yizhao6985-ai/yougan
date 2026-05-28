@@ -1,0 +1,49 @@
+services:
+  postgres-api:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: yougan
+      POSTGRES_PASSWORD: yougan
+      POSTGRES_DB: yougan_api
+    ports:
+      - "5432:5432"
+    volumes:
+      - yougan_pg_api:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yougan -d yougan_api"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  postgres-agent:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: yougan
+      POSTGRES_PASSWORD: yougan
+      POSTGRES_DB: yougan_agent
+    ports:
+      - "5433:5432"
+    volumes:
+      - yougan_pg_agent:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yougan -d yougan_agent"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - yougan_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  yougan_pg_api:
+  yougan_pg_agent:
+  yougan_redis:

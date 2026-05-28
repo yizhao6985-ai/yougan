@@ -1,0 +1,65 @@
+/**
+ * 更新作品 profile（平台/主题/风格等）。
+ * 灵感模式禁止直接写 profile，应通过 confirm_requirement 沉淀需求。
+ */
+import { tool } from "@langchain/core/tools";
+import { z } from "zod";
+
+import { normalizePlatform } from "../schemas.js";
+import { parseMode } from "../state.js";
+import { getState, toolCommand, updateProfile } from "./common.js";
+
+const profileSchema = z.object({
+  platform: z.string().nullable().optional(),
+  content_topic: z.string().nullable().optional(),
+  content_type: z.string().nullable().optional(),
+  content_points: z.array(z.string()).nullable().optional(),
+  style: z.string().nullable().optional(),
+  tone: z.string().nullable().optional(),
+  persona: z.string().nullable().optional(),
+  style_constraints: z.array(z.string()).nullable().optional(),
+  audience: z.string().nullable().optional(),
+  goals: z.array(z.string()).nullable().optional(),
+  notes: z.string().nullable().optional(),
+});
+
+export const updateWorkProfile = tool(
+  async (input, config) => {
+    if (parseMode(getState()) === "inspiration") {
+      return toolCommand(
+        config,
+        "灵感模式不直接更新特征。请通过提问帮用户确认需求，用 confirm_requirement 记录。",
+      );
+    }
+
+    const updates: Record<string, unknown> = {};
+    if (input.platform != null) updates.platform = normalizePlatform(input.platform);
+    if (input.content_topic != null) updates.content_topic = input.content_topic;
+    if (input.content_type != null) updates.content_type = input.content_type;
+    if (input.content_points != null) updates.content_points = input.content_points;
+    if (input.style != null) updates.style = input.style;
+    if (input.tone != null) updates.tone = input.tone;
+    if (input.persona != null) updates.persona = input.persona;
+    if (input.style_constraints != null)
+      updates.style_constraints = input.style_constraints;
+    if (input.audience != null) updates.audience = input.audience;
+    if (input.goals != null) updates.goals = input.goals;
+    if (input.notes != null) updates.notes = input.notes;
+
+    if (!Object.keys(updates).length) {
+      return toolCommand(config, "未提供需要更新的字段。");
+    }
+
+    const profile = updateProfile(getState(), updates);
+    return toolCommand(
+      config,
+      `已更新作品特征：${Object.keys(updates).join("、")}`,
+      { profile },
+    );
+  },
+  {
+    name: "update_work_profile",
+    description: "更新作品创作特征。传入需要新增或修改的字段即可，未传字段保持不变。",
+    schema: profileSchema,
+  },
+);

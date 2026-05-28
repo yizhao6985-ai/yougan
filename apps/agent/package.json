@@ -1,0 +1,26 @@
+{
+  "name": "@yougan/agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "langgraphjs dev --port 2024 --no-browser",
+    "build": "tsc --noEmit",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@langchain/anthropic": "^0.3.18",
+    "@langchain/core": "^0.3.72",
+    "@langchain/langgraph": "^0.4.9",
+    "@langchain/langgraph-checkpoint-postgres": "^0.1.2",
+    "dotenv": "^16.6.1",
+    "langchain": "^0.3.30",
+    "nanoid": "^5.1.11",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@langchain/langgraph-cli": "^0.0.64",
+    "@types/node": "^20.19.0",
+    "typescript": "^5.8.3"
+  }
+}
