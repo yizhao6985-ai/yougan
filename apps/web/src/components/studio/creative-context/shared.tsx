@@ -9,6 +9,13 @@ export const creativeContextPanelClassNames = {
   asideHint: scene.studioPanelHeaderHint,
   scrollArea:
     "min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 py-5 [scrollbar-gutter:stable]",
+  tabShell: "flex h-full min-h-0 flex-col",
+  tabList:
+    "flex shrink-0 gap-1 overflow-x-auto border-b border-border/80 bg-card/70 px-3 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+  tabTrigger:
+    "shrink-0 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition hover:bg-muted/80 hover:text-foreground",
+  tabTriggerActive: "bg-muted text-foreground shadow-sm",
+  tabPanel: "min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 py-5 [scrollbar-gutter:stable]",
   sections: "space-y-7 pb-1",
 } as const;
 
@@ -29,26 +36,41 @@ export function CreativeContextSection({
   action,
   children,
   className,
+  compact = false,
 }: {
   title: string;
   hint?: string;
   action?: ReactNode;
   children: ReactNode;
   className?: string;
+  compact?: boolean;
 }) {
   return (
     <section className={cn("space-y-3.5", className)}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <h3 className="text-sm font-medium text-foreground">{title}</h3>
+      {!compact ? (
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <h3 className="text-sm font-medium text-foreground">{title}</h3>
+            {hint ? (
+              <p className="mt-1.5 text-pretty text-xs leading-5 text-muted-foreground">
+                {hint}
+              </p>
+            ) : null}
+          </div>
+          {action ? <div className="shrink-0 pt-0.5">{action}</div> : null}
+        </div>
+      ) : (
+        <div className="flex items-start justify-between gap-3">
           {hint ? (
-            <p className="mt-1.5 text-pretty text-xs leading-5 text-muted-foreground">
+            <p className="min-w-0 flex-1 text-pretty text-xs leading-5 text-muted-foreground">
               {hint}
             </p>
-          ) : null}
+          ) : (
+            <span className="sr-only">{title}</span>
+          )}
+          {action ? <div className="shrink-0">{action}</div> : null}
         </div>
-        {action ? <div className="shrink-0 pt-0.5">{action}</div> : null}
-      </div>
+      )}
       <div className="space-y-3 break-words">{children}</div>
     </section>
   );
@@ -75,7 +97,7 @@ export function CreativeContextSubheading({
 
 export function CreativeContextEmpty({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-[4.5rem] rounded-xl border border-dashed border-border bg-muted/50 px-4 py-4 text-pretty text-xs leading-6 text-muted-foreground">
+    <div className="min-h-[4.5rem] rounded-lg border border-dashed border-border bg-muted/50 px-4 py-4 text-pretty text-xs leading-6 text-muted-foreground">
       {children}
     </div>
   );

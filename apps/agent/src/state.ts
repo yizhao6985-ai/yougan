@@ -53,11 +53,6 @@ export const AgentState = Annotation.Root({
     reducer: (_prev, next) => next ?? EMPTY_WORK_PROFILE,
     default: () => EMPTY_WORK_PROFILE,
   }),
-  /** 大纲模式 JSON，对应 Work.outline */
-  outline: Annotation<WorkOutline>({
-    reducer: (_prev, next) => next ?? EMPTY_WORK_OUTLINE,
-    default: () => EMPTY_WORK_OUTLINE,
-  }),
   /** 灵感模式 JSON，对应 Work.inspiration */
   inspiration: Annotation<WorkInspiration>({
     /**
@@ -70,16 +65,16 @@ export const AgentState = Annotation.Root({
     },
     default: () => EMPTY_WORK_INSPIRATION,
   }),
-  /** 灵感模式结构化选项，不入库 */
+  /** 大纲模式 JSON，对应 Work.outline */
+  outline: Annotation<WorkOutline>({
+    reducer: (_prev, next) => next ?? EMPTY_WORK_OUTLINE,
+    default: () => EMPTY_WORK_OUTLINE,
+  }),
+  /** 灵感模式可点击选项，由 present_inspiration_choices 写入，不入库 */
   inspirationChoices: Annotation<InspirationChoices | null>({
     /** undefined 表示本回合未更新，保留上一轮选项 */
     reducer: (_prev, next) => (next === undefined ? _prev : next),
     default: () => null,
-  }),
-  /** createReactAgent responseFormat 写入；apply 后清空，不入库 */
-  structuredResponse: Annotation<unknown>({
-    reducer: (_prev, next) => (next === undefined ? _prev : next),
-    default: () => undefined,
   }),
   /** 创作模式产出，对应 Work.creation */
   creation: Annotation<GeneratedContent | null>({
@@ -97,33 +92,3 @@ export const AgentState = Annotation.Root({
 });
 
 export type AgentStateType = typeof AgentState.State;
-
-/** 安全读取 state 字段的辅助函数，避免各处重复 ?? EMPTY_* */
-export function parseProfile(state: AgentStateType): WorkProfile {
-  return state.profile ?? EMPTY_WORK_PROFILE;
-}
-
-export function parseOutline(state: AgentStateType): WorkOutline {
-  return state.outline ?? EMPTY_WORK_OUTLINE;
-}
-
-/** @deprecated 使用 parseOutline */
-export function parsePlan(state: AgentStateType): WorkOutline {
-  return parseOutline(state);
-}
-
-export function parseInspiration(state: AgentStateType): WorkInspiration {
-  return state.inspiration ?? EMPTY_WORK_INSPIRATION;
-}
-
-export function parseMode(state: AgentStateType): ChatMode {
-  return state.mode ?? "inspiration";
-}
-
-export function parseModelTemperature(state: AgentStateType): number {
-  const value = state.modelTemperature;
-  if (value == null || Number.isNaN(value)) {
-    return env.minimaxTemperature;
-  }
-  return Math.min(1, Math.max(0.1, Math.round(value * 10) / 10));
-}

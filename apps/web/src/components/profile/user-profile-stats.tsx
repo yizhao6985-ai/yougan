@@ -22,7 +22,7 @@ export function UserProfileStatsPanel({
   return (
     <section
       className={cn(
-        "grid gap-4 rounded-2xl border border-border/80 bg-card p-5 shadow-sm shadow-border/20 sm:grid-cols-3 sm:p-6",
+        "grid gap-4 rounded-lg border border-border/80 bg-card p-5 shadow-sm shadow-border/20 sm:grid-cols-3 sm:p-6",
         className,
       )}
     >

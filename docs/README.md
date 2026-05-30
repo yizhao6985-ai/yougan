@@ -14,6 +14,7 @@
 | [功能目录](./business/feature-catalog.md) | 功能清单与实现状态 |
 | [创作方法论](./business/creation-methodology.md) | 灵感·大纲·创作三步模型 |
 | [内容与社区](./business/content-ecosystem.md) | 发现灵感、发布、主页 |
+| [内容分类体系](./business/content-taxonomy.md) | 两层 taxonomy、推断与发布确认 |
 | [商业化与定价](./business/monetization.md) | 套餐、计费、单位经济 |
 | [平台集成](./business/platform-integrations.md) | 多平台 OAuth 与分发 |
 | [竞争与替代](./business/competitive-positioning.md) | 定位、SWOT |

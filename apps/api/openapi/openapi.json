@@ -38,6 +38,16 @@
             "type": "string",
             "nullable": true
           },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri"
+          },
+          "coverUrl": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri"
+          },
           "createdAt": {
             "type": "string"
           }
@@ -47,6 +57,8 @@
           "email",
           "name",
           "bio",
+          "avatarUrl",
+          "coverUrl",
           "createdAt"
         ]
       },
@@ -85,6 +97,16 @@
           "bio": {
             "type": "string",
             "maxLength": 160
+          },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri"
+          },
+          "coverUrl": {
+            "type": "string",
+            "nullable": true,
+            "format": "uri"
           },
           "currentPassword": {
             "type": "string"
@@ -214,6 +236,14 @@
             "type": "string",
             "nullable": true
           },
+          "content_format": {
+            "type": "string",
+            "nullable": true
+          },
+          "media_modality": {
+            "type": "string",
+            "nullable": true
+          },
           "content_points": {
             "type": "array",
             "items": {
@@ -232,17 +262,17 @@
             "type": "string",
             "nullable": true
           },
-          "style_constraints": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
           "audience": {
             "type": "string",
             "nullable": true
           },
           "goals": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "style_constraints": {
             "type": "array",
             "items": {
               "type": "string"
@@ -1732,10 +1762,10 @@
         }
       }
     },
-    "/api/billing/plans": {
+    "/api/subscription/plans": {
       "get": {
         "tags": [
-          "Billing"
+          "Subscription"
         ],
         "responses": {
           "200": {
@@ -1762,10 +1792,10 @@
         }
       }
     },
-    "/api/billing/subscription": {
+    "/api/subscription": {
       "get": {
         "tags": [
-          "Billing"
+          "Subscription"
         ],
         "security": [
           {
@@ -1774,7 +1804,71 @@
         ],
         "responses": {
           "200": {
-            "description": "Current subscription",
+            "description": "Current membership / subscription",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "subscription": {
+                      "$ref": "#/components/schemas/SubscriptionSummary"
+                    }
+                  },
+                  "required": [
+                    "subscription"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/subscription/cancel": {
+      "post": {
+        "tags": [
+          "Subscription"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Subscription set to cancel at period end",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "subscription": {
+                      "$ref": "#/components/schemas/SubscriptionSummary"
+                    }
+                  },
+                  "required": [
+                    "subscription"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/subscription/resume": {
+      "post": {
+        "tags": [
+          "Subscription"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Subscription renewal resumed",
             "content": {
               "application/json": {
                 "schema": {
@@ -1874,7 +1968,7 @@
         }
       }
     },
-    "/api/billing/subscription/cancel": {
+    "/api/billing/orders/{orderId}/refund": {
       "post": {
         "tags": [
           "Billing"
@@ -1884,46 +1978,27 @@
             "bearerAuth": []
           }
         ],
-        "responses": {
-          "200": {
-            "description": "Subscription set to cancel at period end",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "subscription": {
-                      "$ref": "#/components/schemas/SubscriptionSummary"
-                    }
-                  },
-                  "required": [
-                    "subscription"
-                  ]
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/billing/subscription/resume": {
-      "post": {
-        "tags": [
-          "Billing"
-        ],
-        "security": [
+        "parameters": [
           {
-            "bearerAuth": []
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "orderId",
+            "in": "path"
           }
         ],
         "responses": {
           "200": {
-            "description": "Subscription renewal resumed",
+            "description": "Order refunded and membership adjusted",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
+                    "order": {
+                      "nullable": true
+                    },
                     "subscription": {
                       "$ref": "#/components/schemas/SubscriptionSummary"
                     }

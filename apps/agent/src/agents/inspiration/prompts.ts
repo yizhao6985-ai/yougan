@@ -1,8 +1,5 @@
 /**
- * 灵感模式提示词。
- *
- * buildInspirationActionPrompt  — 工具轮（MiniMax）：何时调哪个 tool
- * buildInspirationStructuredPrompt — responseFormat 轮业务规则（不含 JSON 格式说明）
+ * 灵感模式提示词（工具轮 + 用户可见对话）。
  */
 import type { WorkInspiration, WorkOutline, WorkProfile } from "../../schemas.js";
 import {
@@ -17,9 +14,11 @@ function getInspirationActionPrompt(
   outline: WorkOutline,
   inspiration: WorkInspiration,
 ): string {
-  return `当前模式：灵感模式（工具轮）
+  return `当前模式：灵感模式
 
-你的职责是判断本轮是否需要调用工具，而不是生成完整对话或选项。
+你的职责：
+1. 与用户对话，推进灵感探索（平台、主题、受众、风格等）。
+2. 判断是否需要调用工具（记录灵感、确认规格、展示选项等）。
 
 工具使用规则：
 1. 是否写入创作脉络由你判断，通过 confirm_requirement 显式记录；用户每条消息不会自动入库。
@@ -34,9 +33,17 @@ function getInspirationActionPrompt(
 4. 用户要求修改某条灵感 → update_requirement（需 requirement_id）
 5. 用户要求删除某条灵感 → delete_requirement
 6. 用户要求清空全部灵感 → clear_inspirations
-7. 用户要求切换模式 → switch_mode
-8. 禁止调用 add_pending_change、update_work_profile、generate_content、complete_execution
-9. 不要向用户列举选项；选项由后续结构化输出生成
+7. 用户已明确体裁或媒介（如笔记/长文/小说/播客/短视频/图文/音频）→ confirm_content_spec
+8. 用户要求切换模式 → switch_mode
+9. 禁止调用 add_pending_change、update_work_profile、generate_content、complete_execution
+10. 需要展示可点击单选选项时 → present_inspiration_choices（show_choices=true，2-6 条完整句子）；开放式追问、总结、引导切换大纲、告别等 → present_inspiration_choices（show_choices=false）
+11. 不要在对话正文里写 A/B/C/D 或编号选项列表；选项只通过 present_inspiration_choices 提供
+
+对话规则：
+1. 回复简洁中文，每次 1-2 个问题或一段总结。
+2. 灵感探索接近尾声、用户表示「没有了/就这些」、或引导切换大纲时，不要展示选项（show_choices=false）。
+3. 禁止替用户做决定或直接给出完整方案。
+4. 是否写入「已确认灵感」由 confirm_requirement 决定；不要假设用户刚发送的内容已自动入库。
 
 已确认需求（含 id，修改/删除时使用）：
 ${inspiration.confirmed_requirements.length
@@ -50,7 +57,7 @@ ${profileSummary(profile)}
 ${outlineSummary(outline)}`;
 }
 
-/** 灵感模式工具轮系统提示词 */
+/** 灵感模式系统提示词 */
 export function buildInspirationActionPrompt(state: {
   profile?: WorkProfile;
   outline?: WorkOutline;
@@ -59,43 +66,7 @@ export function buildInspirationActionPrompt(state: {
   const profile = state.profile ?? {};
   const outline = state.outline ?? { pending_changes: [], executed_changes: [] };
   const inspiration = state.inspiration ?? { confirmed_requirements: [] };
-  return `${composeSystemPrompt(
+  return composeSystemPrompt(
     getInspirationActionPrompt(profile, outline, inspiration),
-  )}
-
-补充说明：
-- 你当前处于工具判断轮，只负责决定是否需要调用工具。
-- 不要在回复里向用户列举 A/B/C 选项；选项会由结构化输出单独生成。
-- 若需要调用工具，直接调用；若不需要，回复尽量简短（如「好的」），不要展开长篇对话。`;
-}
-
-/** 灵感模式结构化输出轮系统提示词 */
-export function buildInspirationStructuredPrompt(state: {
-  profile?: WorkProfile;
-  inspiration?: WorkInspiration;
-}): string {
-  const profile = state.profile ?? {};
-  const inspiration = state.inspiration ?? { confirmed_requirements: [] };
-  const confirmedBlock = inspiration.confirmed_requirements.length
-    ? inspiration.confirmed_requirements.map((r) => `- ${r.description}`).join("\n")
-    : "（尚无）";
-
-  return `你是 Yougan 灵感模式助手。请生成本轮给用户看的对话，并根据场景决定是否展示可点击选项。
-
-规则：
-1. 对话正文（message）：简洁中文，每次 1-2 个问题或一段总结；不要在正文里写 A/B/C/D 或编号选项列表。
-2. 是否展示选项（show_choices）：
-   - true：用户可以用 2-6 个互斥选项直接回答（平台、受众、风格、是否确认某条理解等）。
-   - false：开放式追问、欢迎语、总结已确认需求、询问是否还有补充、引导切换大纲模式、告别等场景。
-3. show_choices=true 时，必须在 choices.options 提供 2-6 个完整句子（用户点击后直接发送）。
-4. show_choices=false 时，不要提供 choices。
-5. 灵感探索接近尾声、用户表示「没有了/就这些」、或正在引导切换大纲模式时，必须 show_choices=false。
-6. 禁止替用户做决定或直接给出完整方案。
-7. 是否写入「已确认灵感」由工具轮 confirm_requirement 决定；结构化输出轮不要假设用户刚发送的内容已自动入库。
-
-已确认灵感：
-${confirmedBlock}
-
-${inspirationSummary(inspiration)}
-${profileSummary(profile)}`;
+  );
 }

@@ -3,7 +3,7 @@ import { SparklesIcon } from "lucide-react";
 
 import { AuthorAvatar } from "@/components/content/author-avatar";
 import { authorDisplayName } from "@/lib/publication-utils";
-import { formatLabel, topicCategoryLabel } from "@/lib/discover-taxonomy";
+import { formatLabel, mediaTypeLabel, topicCategoryLabel } from "@/lib/discover-taxonomy";
 import { formatPublishedAt, platformLabel } from "@/lib/platform-labels";
 import type { Publication } from "@/lib/publication-types";
 
@@ -43,7 +43,7 @@ export function FeaturedPublicationCard({
   return (
     <Link
       to={`/content/${publication.slug}`}
-      className="group block overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-accent/55 via-card to-secondary/35 shadow-sm shadow-primary/10 transition hover:border-primary/25 hover:shadow-md"
+      className="group block overflow-hidden rounded-lg border border-primary/20 bg-gradient-to-br from-accent/55 via-card to-secondary/35 shadow-sm shadow-primary/10 transition hover:border-primary/25 hover:shadow-md"
     >
       {cover ? (
         <div className="relative aspect-[16/9] overflow-hidden">
@@ -53,7 +53,7 @@ export function FeaturedPublicationCard({
             className="size-full object-cover transition duration-300 group-hover:scale-[1.02]"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-foreground/50 via-transparent to-transparent" />
-          <span className="absolute left-4 top-4 inline-flex items-center gap-1 rounded-full bg-card/95 px-2.5 py-1 text-xs font-medium text-primary shadow-sm">
+          <span className="absolute left-4 top-4 inline-flex items-center gap-1 rounded-md bg-card/95 px-2.5 py-1 text-xs font-medium text-primary shadow-sm">
             <SparklesIcon className="size-3.5" />
             精选
           </span>
@@ -62,7 +62,7 @@ export function FeaturedPublicationCard({
 
       <div className="space-y-3 p-5 sm:p-6">
         {!cover ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-primary">
+          <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2.5 py-1 text-xs font-medium text-primary">
             <SparklesIcon className="size-3.5" />
             精选
           </span>
@@ -96,13 +96,18 @@ export function FeaturedPublicationCard({
 
         <div className="flex flex-wrap gap-1.5">
           {formatLabel(publication.contentFormat) ? (
-            <span className="rounded-full bg-card/90 px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/80">
+            <span className="rounded-md bg-card/90 px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/80">
               {formatLabel(publication.contentFormat)}
             </span>
           ) : null}
           {topicCategoryLabel(publication.topicCategory) ? (
-            <span className="rounded-full bg-card/90 px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/80">
+            <span className="rounded-md bg-card/90 px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/80">
               {topicCategoryLabel(publication.topicCategory)}
+            </span>
+          ) : null}
+          {mediaTypeLabel(publication.mediaType) ? (
+            <span className="rounded-md bg-card/90 px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/80">
+              {mediaTypeLabel(publication.mediaType)}
             </span>
           ) : null}
         </div>

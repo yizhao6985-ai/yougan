@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 
+import { routeParam } from "../lib/route-params.js";
 import type { AuthedRequest } from "../middleware/auth.js";
 import { requireAuth } from "../middleware/auth.js";
 import {
@@ -16,6 +17,7 @@ import {
   getPublicationBySlug,
   listPublicationFeed,
   listUserPublications,
+  previewPublicationMetadata,
   recordPublicationView,
   updatePublicationStatus,
 } from "../services/publications.js";
@@ -33,6 +35,13 @@ const FeedQuerySchema = z.object({
   topicCategory: z.enum(topicIds as [string, ...string[]]).optional(),
   mediaType: z.enum(mediaIds as [string, ...string[]]).optional(),
   limit: z.coerce.number().int().min(1).max(60).optional(),
+});
+
+const MetadataOverridesSchema = z.object({
+  platform: z.enum(platformIds as [string, ...string[]]).optional(),
+  contentFormat: z.enum(formatIds as [string, ...string[]]).optional(),
+  topicCategory: z.enum(topicIds as [string, ...string[]]).optional(),
+  mediaType: z.enum(mediaIds as [string, ...string[]]).optional(),
 });
 
 publicationsRouter.get("/feed", async (req, res) => {
@@ -63,11 +72,44 @@ publicationsRouter.get("/mine", requireAuth, async (req: AuthedRequest, res) => 
   res.json({ publications });
 });
 
+publicationsRouter.get(
+  "/preview-metadata",
+  requireAuth,
+  async (req: AuthedRequest, res) => {
+    const parsed = z
+      .object({ workId: z.string() })
+      .safeParse(req.query);
+    if (!parsed.success) {
+      res.status(400).json({ error: "Invalid request" });
+      return;
+    }
+
+    try {
+      const preview = await previewPublicationMetadata(
+        req.userId!,
+        parsed.data.workId,
+      );
+      if (!preview) {
+        res.status(404).json({ error: "Work not found" });
+        return;
+      }
+      res.json(preview);
+    } catch (error) {
+      if (error instanceof Error && error.message === "WORK_OUTPUT_EMPTY") {
+        res.status(400).json({ error: "作品还没有可发布的成稿内容" });
+        return;
+      }
+      res.status(500).json({ error: "Preview failed" });
+    }
+  },
+);
+
 publicationsRouter.post("/", requireAuth, async (req: AuthedRequest, res) => {
   const body = z
     .object({
       workId: z.string(),
       publish: z.boolean().optional(),
+      metadata: MetadataOverridesSchema.optional(),
     })
     .safeParse(req.body);
   if (!body.success) {
@@ -105,7 +147,7 @@ publicationsRouter.patch(
 
     const publication = await updatePublicationStatus(
       req.userId!,
-      req.params.publicationId,
+      routeParam(req.params.publicationId, "publicationId"),
       body.data.status,
     );
     if (!publication) {
@@ -120,7 +162,10 @@ publicationsRouter.delete(
   "/:publicationId",
   requireAuth,
   async (req: AuthedRequest, res) => {
-    const ok = await deletePublication(req.userId!, req.params.publicationId);
+    const ok = await deletePublication(
+      req.userId!,
+      routeParam(req.params.publicationId, "publicationId"),
+    );
     if (!ok) {
       res.status(404).json({ error: "Publication not found" });
       return;

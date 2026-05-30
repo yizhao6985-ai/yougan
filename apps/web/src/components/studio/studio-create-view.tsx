@@ -1,12 +1,8 @@
-import { ContentPreview } from "@/components/content-preview";
-import { ContentSettingsPanel } from "@/components/content-settings-panel";
-import { PlanPanel } from "@/components/plan-panel";
-import { ReferencePanel } from "@/components/reference-panel";
 import { creativeContextPanelClassNames } from "@/components/studio/creative-context/shared";
+import { CreativeContextDrawer } from "@/components/studio/creative-context-drawer";
+import { CreativeContextPanelContent } from "@/components/studio/creative-context-panel-content";
 import { YouganChat } from "@/components/studio/yougan-chat";
-import {
-  useYouganStreamContext,
-} from "@/components/studio/yougan-stream-provider";
+import { useYouganStreamContext } from "@/components/studio/yougan-stream-provider";
 import { WorksSidebar } from "@/components/studio/works-sidebar";
 import { mergeInspirationState } from "@/lib/inspiration-merge";
 import { CREATIVE_CONTEXT_PANEL, STUDIO } from "@/lib/site-copy";
@@ -27,21 +23,58 @@ export function StudioCreateView() {
   );
   const creation = activeWork?.creation ?? stream.values?.creation;
 
+  const panelContent = (
+    <CreativeContextPanelContent
+      activeWork={activeWork}
+      profile={profile}
+      outline={outline}
+      inspiration={inspiration}
+      creation={creation}
+      onUpdateRequirement={
+        activeWork
+          ? (requirementId, description) =>
+              updateInspirationRequirement(
+                activeWork.id,
+                requirementId,
+                description,
+              )
+          : undefined
+      }
+      onDeleteRequirement={
+        activeWork
+          ? (requirementId) =>
+              deleteInspirationRequirement(activeWork.id, requirementId)
+          : undefined
+      }
+      onClearInspirations={
+        activeWork ? () => clearWorkInspirations(activeWork.id) : undefined
+      }
+    />
+  );
+
   return (
-    <div className="grid h-full min-h-0 flex-1 overflow-hidden lg:grid-cols-[220px_minmax(0,1.15fr)_minmax(320px,0.85fr)]">
+    <div className="grid h-full min-h-0 flex-1 overflow-hidden lg:grid-cols-[280px_minmax(0,1fr)_auto]">
       <aside className="hidden min-h-0 flex-col border-r border-border/80 bg-card/80 lg:flex">
-        <div className="border-b border-border/80 px-4 py-3">
-          <p className="text-sm font-medium text-foreground">{STUDIO.worksTitle}</p>
-          <p className="text-xs text-muted-foreground">{STUDIO.worksHint}</p>
+        <div className={creativeContextPanelClassNames.asideHeader}>
+          <p className={creativeContextPanelClassNames.asideTitle}>
+            {STUDIO.worksTitle}
+          </p>
+          <p className={creativeContextPanelClassNames.asideHint}>
+            {STUDIO.worksHint}
+          </p>
         </div>
         <WorksSidebar />
       </aside>
 
-      <div className="flex min-h-0 flex-col overflow-hidden bg-gradient-to-b from-accent/35 to-background">
+      <div className="flex min-h-0 min-w-0 flex-col overflow-hidden bg-gradient-to-b from-accent/35 to-background">
         <YouganChat />
       </div>
 
-      <aside className="flex min-h-0 flex-col border-l border-border/80 bg-card/95">
+      <CreativeContextDrawer className="hidden min-h-0 overflow-visible lg:flex">
+        {panelContent}
+      </CreativeContextDrawer>
+
+      <aside className="flex max-h-[min(42vh,400px)] min-h-0 flex-col border-t border-border/80 bg-card/95 lg:hidden">
         <div className={creativeContextPanelClassNames.asideHeader}>
           <p className={creativeContextPanelClassNames.asideTitle}>
             {CREATIVE_CONTEXT_PANEL.title}
@@ -50,38 +83,8 @@ export function StudioCreateView() {
             {CREATIVE_CONTEXT_PANEL.hint}
           </p>
         </div>
-        <div className={creativeContextPanelClassNames.scrollArea}>
-          <div className={creativeContextPanelClassNames.sections}>
-            <ContentSettingsPanel
-              inspiration={inspiration}
-              profile={profile}
-              editable={activeWork?.mode === "inspiration"}
-              onUpdateRequirement={
-                activeWork
-                  ? (requirementId, description) =>
-                      updateInspirationRequirement(
-                        activeWork.id,
-                        requirementId,
-                        description,
-                      )
-                  : undefined
-              }
-              onDeleteRequirement={
-                activeWork
-                  ? (requirementId) =>
-                      deleteInspirationRequirement(activeWork.id, requirementId)
-                  : undefined
-              }
-              onClearInspirations={
-                activeWork
-                  ? () => clearWorkInspirations(activeWork.id)
-                  : undefined
-              }
-            />
-            <PlanPanel outline={outline} />
-            <ContentPreview workId={activeWork?.id} creation={creation} />
-            <ReferencePanel references={profile?.references} />
-          </div>
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          {panelContent}
         </div>
       </aside>
     </div>

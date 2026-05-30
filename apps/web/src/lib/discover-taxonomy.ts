@@ -2,7 +2,12 @@ export const DISCOVER_FORMATS = [
   { id: "note", label: "图文笔记" },
   { id: "short_post", label: "短帖动态" },
   { id: "article", label: "长文深度" },
+  { id: "blog", label: "博客专栏" },
+  { id: "novel", label: "小说故事" },
   { id: "video_script", label: "视频脚本" },
+  { id: "short_video", label: "短视频" },
+  { id: "podcast", label: "播客" },
+  { id: "music", label: "音乐音频" },
 ] as const;
 
 export const DISCOVER_TOPIC_CATEGORIES = [
@@ -17,8 +22,11 @@ export const DISCOVER_TOPIC_CATEGORIES = [
 ] as const;
 
 export const DISCOVER_MEDIA_TYPES = [
-  { id: "image", label: "含配图" },
   { id: "text", label: "纯文字" },
+  { id: "image", label: "图文" },
+  { id: "audio", label: "音频" },
+  { id: "video", label: "视频" },
+  { id: "mixed", label: "混合" },
 ] as const;
 
 export const DISCOVER_PLATFORMS = [
@@ -29,6 +37,39 @@ export const DISCOVER_PLATFORMS = [
   { id: "douyin", label: "抖音" },
   { id: "kuaishou", label: "快手" },
   { id: "bilibili", label: "哔哩哔哩" },
+] as const;
+
+export const DISCOVER_INTENT_ENTRIES = [
+  {
+    id: "story",
+    label: "读故事",
+    description: "小说、叙事与人物",
+    filters: { topicCategory: "story" },
+  },
+  {
+    id: "knowledge",
+    label: "看干货",
+    description: "教程、方法与科普",
+    filters: { topicCategory: "knowledge" },
+  },
+  {
+    id: "notes",
+    label: "刷笔记",
+    description: "种草、生活与日常",
+    filters: { contentFormat: "note" },
+  },
+  {
+    id: "audio",
+    label: "听内容",
+    description: "播客、音乐与音频",
+    filters: { mediaType: "audio" },
+  },
+  {
+    id: "video",
+    label: "看视频",
+    description: "短视频与口播",
+    filters: { mediaType: "video" },
+  },
 ] as const;
 
 export type DiscoverFilters = {
@@ -51,6 +92,30 @@ export type DiscoverFacets = {
   mediaType: DiscoverFacetOption[];
 };
 
+export type PublicationMetadataOverrides = {
+  platform?: string;
+  contentFormat?: string;
+  topicCategory?: string;
+  mediaType?: string;
+};
+
+export type PublicationMetadataPreview = {
+  metadata: {
+    platform: string;
+    contentFormat: string;
+    topicCategory: string;
+    mediaType: string;
+    contentTopic: string | null;
+    contentType: string | null;
+  };
+  labels: {
+    platform: string | null;
+    contentFormat: string | null;
+    topicCategory: string | null;
+    mediaType: string | null;
+  };
+};
+
 export const EMPTY_DISCOVER_FILTERS: DiscoverFilters = {};
 
 export function formatLabel(id: string | null | undefined) {
@@ -66,6 +131,11 @@ export function topicCategoryLabel(id: string | null | undefined) {
 export function mediaTypeLabel(id: string | null | undefined) {
   if (!id) return null;
   return DISCOVER_MEDIA_TYPES.find((item) => item.id === id)?.label ?? id;
+}
+
+export function platformTaxonomyLabel(id: string | null | undefined) {
+  if (!id) return null;
+  return DISCOVER_PLATFORMS.find((item) => item.id === id)?.label ?? id;
 }
 
 export function parseDiscoverFilters(
@@ -122,4 +192,11 @@ export function clearDiscoverFilterKey(
   const next = { ...filters };
   delete next[key];
   return next;
+}
+
+export function mergeDiscoverFilters(
+  base: DiscoverFilters,
+  patch: DiscoverFilters,
+): DiscoverFilters {
+  return { ...base, ...patch };
 }

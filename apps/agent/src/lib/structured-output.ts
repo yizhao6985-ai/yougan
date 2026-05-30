@@ -53,9 +53,7 @@ export async function invokeStructuredOutput<T extends Record<string, unknown>>(
 }
 
 /** 流式结构化输出：返回 LangChain Runnable 的 stream（增量 chunk，末块为完整解析结果）。 */
-export async function streamStructuredOutput<
-  T extends Record<string, unknown>,
->(
+export async function streamStructuredOutput<T extends Record<string, unknown>>(
   llm: BaseChatModel,
   schema: z.ZodType<T>,
   input: BaseLanguageModelInput,
@@ -77,7 +75,11 @@ export async function streamStructuredOutputWithRaw<
   input: BaseLanguageModelInput,
   options?: StructuredOutputOptions,
 ) {
-  const structured = createStructuredOutputRunnableWithRaw(llm, schema, options);
+  const structured = createStructuredOutputRunnableWithRaw(
+    llm,
+    schema,
+    options,
+  );
   return structured.stream(input) as Promise<
     AsyncIterable<StructuredOutputRawChunk<T>>
   >;

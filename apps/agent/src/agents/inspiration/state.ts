@@ -1,8 +1,7 @@
+export { AgentState, type AgentStateType } from "../../state.js";
 export {
-  AgentState,
-  type AgentStateType,
   parseInspiration,
   parseMode,
   parseModelTemperature,
   parseProfile,
-} from "../../state.js";
+} from "../../lib/parse-agent-state.js";

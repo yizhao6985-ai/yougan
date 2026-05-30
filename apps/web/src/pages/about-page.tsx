@@ -45,9 +45,9 @@ export function AboutPage() {
           {ABOUT_PAGE.subtitle}
         </p>
 
-        <section className="mt-14 rounded-2xl border border-border/80 bg-card/90 p-8 shadow-sm shadow-border/20 sm:p-10">
+        <section className="mt-14 rounded-lg border border-border/80 bg-card/90 p-8 shadow-sm shadow-border/20 sm:p-10">
           <div className="flex items-start gap-4">
-            <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-2xl bg-accent text-primary">
+            <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-lg bg-accent text-primary">
               <Building2Icon className="size-6" aria-hidden />
             </span>
             <div>
@@ -74,7 +74,7 @@ export function AboutPage() {
               return (
                 <article
                   key={title}
-                  className="rounded-2xl border border-border/80 bg-card/90 p-6 shadow-sm shadow-border/20"
+                  className="rounded-lg border border-border/80 bg-card/90 p-6 shadow-sm shadow-border/20"
                 >
                   <Icon className="size-5 text-primary" aria-hidden />
                   <h3 className="mt-3 font-medium text-foreground">{title}</h3>
@@ -87,7 +87,7 @@ export function AboutPage() {
           </div>
         </section>
 
-        <section className="mt-16 rounded-2xl border border-primary/15 bg-accent/40 p-8 sm:p-10">
+        <section className="mt-16 rounded-lg border border-primary/15 bg-accent/40 p-8 sm:p-10">
           <h2 className="text-2xl font-semibold text-foreground">
             {ABOUT_PAGE.productTitle}
           </h2>

@@ -3,12 +3,18 @@
  * 避免在 prompts.ts 里重复拼接字段逻辑。
  */
 import type { WorkInspiration, WorkOutline, WorkProfile } from "../schemas.js";
+import { contentSpecSummary as buildContentSpecSummary } from "../lib/content-spec.js";
+
+export function contentSpecSummary(profile: WorkProfile): string {
+  return buildContentSpecSummary(profile);
+}
 
 export function profileSummary(profile: WorkProfile): string {
   const parts: string[] = [];
   if (profile.platform) parts.push(`平台：${profile.platform}`);
   if (profile.content_topic) parts.push(`主题：${profile.content_topic}`);
   if (profile.content_type) parts.push(`类型：${profile.content_type}`);
+  parts.push(contentSpecSummary(profile));
   if (profile.content_points?.length)
     parts.push(`要点：${profile.content_points.join(", ")}`);
   if (profile.style) parts.push(`风格：${profile.style}`);

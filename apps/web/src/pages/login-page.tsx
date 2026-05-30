@@ -217,7 +217,7 @@ export function LoginPage() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="h-11 w-full rounded-xl px-4 text-base shadow-sm shadow-primary/15"
+                  className="h-11 w-full rounded-lg px-4 text-base shadow-sm shadow-primary/15"
                 >
                   {loading
                     ? "处理中..."

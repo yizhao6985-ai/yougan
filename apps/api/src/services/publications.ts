@@ -2,12 +2,15 @@ import { nanoid } from "nanoid";
 import type { Prisma } from "@prisma/client";
 
 import {
+  applyMetadataOverrides,
   buildFacetOptions,
+  buildMetadataLabels,
   buildPublicationMetadata,
   DISCOVER_FORMATS,
   DISCOVER_MEDIA_TYPES,
   DISCOVER_PLATFORMS,
   DISCOVER_TOPIC_CATEGORIES,
+  type PublicationMetadataOverrides,
 } from "../lib/discover-taxonomy.js";
 import {
   cacheGetJson,
@@ -92,7 +95,7 @@ function toPublicationDTO(publication: PublicationRow): PublicationDTO {
           id: publication.user.id,
           name: publication.user.name,
           email: publication.user.email,
-          bio: publication.user.bio,
+          bio: publication.user.bio ?? null,
           avatarUrl: publication.user.avatarUrl ?? null,
         }
       : undefined,
@@ -112,6 +115,8 @@ type ProfileLike = {
   platform?: string | null;
   content_topic?: string | null;
   content_type?: string | null;
+  content_format?: string | null;
+  media_modality?: string | null;
 };
 
 export type PublicationFeedQuery = {
@@ -198,12 +203,12 @@ async function buildFacets(query: PublicationFeedQuery) {
   ]);
 
   const toCountMap = (
-    rows: Array<{ _count: { _all: number } } & Record<string, string | null>>,
+    rows: Array<{ _count: { _all: number } } & Record<string, unknown>>,
     key: string,
   ) =>
     Object.fromEntries(
       rows
-        .filter((row) => row[key])
+        .filter((row) => typeof row[key] === "string" && row[key])
         .map((row) => [row[key] as string, row._count._all]),
     );
 
@@ -356,8 +361,9 @@ function metadataFromWork(
   work: { profile: unknown },
   output: OutputLike,
   coverUrl: string | null,
+  overrides?: PublicationMetadataOverrides,
 ) {
-  return buildPublicationMetadata({
+  const inferred = buildPublicationMetadata({
     profile: work.profile as ProfileLike,
     output,
     coverUrl,
@@ -365,11 +371,37 @@ function metadataFromWork(
     images: output.images,
     platform: output.platform,
   });
+  return applyMetadataOverrides(inferred, overrides);
+}
+
+export async function previewPublicationMetadata(
+  userId: string,
+  workId: string,
+) {
+  const work = await getWork(userId, workId);
+  if (!work) return null;
+
+  const creation = work.creation as OutputLike | null;
+  if (!creation?.body?.trim()) {
+    throw new Error("WORK_OUTPUT_EMPTY");
+  }
+
+  const coverUrl = creation.images?.[0]?.url ?? null;
+  const metadata = metadataFromWork(work, creation, coverUrl);
+
+  return {
+    metadata,
+    labels: buildMetadataLabels(metadata),
+  };
 }
 
 export async function createPublicationFromWork(
   userId: string,
-  input: { workId: string; publish?: boolean },
+  input: {
+    workId: string;
+    publish?: boolean;
+    metadata?: PublicationMetadataOverrides;
+  },
 ) {
   const work = await getWork(userId, input.workId);
   if (!work) return null;
@@ -387,7 +419,7 @@ export async function createPublicationFromWork(
   const excerpt = creation.hook?.trim() || creation.body.slice(0, 120);
   const coverUrl = creation.images?.[0]?.url ?? null;
   const now = input.publish ? new Date() : null;
-  const metadata = metadataFromWork(work, creation, coverUrl);
+  const metadata = metadataFromWork(work, creation, coverUrl, input.metadata);
 
   if (existing) {
     const row = await prisma.publication.update({

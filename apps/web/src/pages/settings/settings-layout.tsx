@@ -100,7 +100,7 @@ function SettingsNavLink({ item }: { item: SettingsNavItem }) {
       to={item.to}
       className={({ isActive }) =>
         cn(
-          "inline-flex min-w-[11rem] shrink-0 flex-col rounded-2xl border px-4 py-3 transition lg:min-w-0",
+          "inline-flex min-w-[11rem] shrink-0 flex-col rounded-lg border px-4 py-3 transition lg:min-w-0",
           isActive
             ? "border-primary/20 bg-card shadow-sm shadow-border/20"
             : "border-transparent bg-card/50 hover:border-border/80 hover:bg-card",
@@ -149,7 +149,7 @@ export function SettingsLayout() {
                       />
                     ) : null}
                     <div className="flex shrink-0 gap-2 lg:shrink lg:flex-col lg:gap-1.5">
-                      <p className="flex shrink-0 items-center self-center rounded-full bg-muted/70 px-2.5 py-1 text-[10px] font-medium text-muted-foreground lg:hidden">
+                      <p className="flex shrink-0 items-center self-center rounded-md bg-muted/70 px-2.5 py-1 text-[10px] font-medium text-muted-foreground lg:hidden">
                         {group.label}
                       </p>
                       <p className="hidden px-1 pb-0.5 text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground lg:block">

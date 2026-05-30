@@ -12,33 +12,26 @@ import {
   MessageActions,
   MessageContent,
 } from "@/components/ai-elements/message";
-import {
-  PromptInput,
-  PromptInputBody,
-  PromptInputFooter,
-  PromptInputSubmit,
-  PromptInputTextarea,
-  PromptInputTools,
-} from "@/components/ai-elements/prompt-input";
 import { AIResponse } from "@/components/studio/ai-response";
+import {
+  ChatStreamBlock,
+  chatStreamBlock,
+} from "@/components/studio/chat-stream-block";
+import { ComposerAttachmentsProvider } from "@/components/studio/composer-attachments-context";
 import { ChatToolActivity } from "@/components/studio/chat-tool-activity";
 import { InspirationChoiceOptions } from "@/components/studio/inspiration-generative-ui";
 import { useInspirationChoices } from "@/hooks/use-inspiration-choices";
-import {
-  ChatModeSwitcher,
-  useChatModeShortcuts,
-} from "@/components/studio/chat-mode-switcher";
-import { ModelTemperatureControl } from "@/components/studio/model-temperature-control";
-import { UploadReferenceButton } from "@/components/studio/upload-reference-button";
+import { useChatModeShortcuts } from "@/components/studio/chat-mode-switcher";
+import { StudioChatComposer } from "@/components/studio/studio-chat-composer";
 import { InspirationRecommendations } from "@/components/studio/inspiration-recommendations";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
 import { useYouganStreamContext } from "@/components/studio/yougan-stream-provider";
 import { useWorkInspirationRecommendationsQuery } from "@/hooks/queries/inspiration-recommendations";
 import { useWorkItemNameDialog } from "@/hooks/use-work-item-name-dialog";
-import { modeShortcutLabel } from "@/lib/chat-mode-config";
 import { buildRenderItems } from "@/lib/message-utils";
 import { scene } from "@/lib/scene-styles";
+import { cn } from "@/lib/utils";
 import { CHAT_COPY, STUDIO } from "@/lib/site-copy";
 import type { ChatMode } from "@/lib/types";
 
@@ -50,8 +43,6 @@ export function YouganChat() {
     activeWork,
     setWorkMode,
     resolvedValues,
-    modelTemperatureLevel,
-    setModelTemperatureLevel,
   } = useYouganStreamContext();
   const { dialog: workNameDialog, openCreateWork } = useWorkItemNameDialog();
   const [input, setInput] = useState("");
@@ -113,11 +104,16 @@ export function YouganChat() {
     items.length > 0 &&
     items[items.length - 1]?.kind === "human";
 
-  const handleSubmit = useCallback(
-    async (message: { text: string }) => {
-      if (!message.text.trim() || stream.isLoading || !canChat) return;
-      setInput("");
-      await sendMessage(message.text);
+  const handleSend = useCallback(
+    async ({
+      text,
+      imageUrls,
+    }: {
+      text: string;
+      imageUrls: string[];
+    }) => {
+      if (stream.isLoading || !canChat) return;
+      await sendMessage(text, imageUrls);
     },
     [canChat, sendMessage, stream.isLoading],
   );
@@ -147,7 +143,7 @@ export function YouganChat() {
           <button
             type="button"
             onClick={() => openCreateWork()}
-            className="rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition hover:bg-primary/90"
+            className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition hover:bg-primary/90"
           >
             {STUDIO.newWork}
           </button>
@@ -184,9 +180,9 @@ export function YouganChat() {
         <p className={scene.studioPanelHeaderHint}>{statusHint}</p>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-hidden">
+      <div className="relative min-h-0 flex-1 overflow-hidden">
       {items.length === 0 ? (
-        <div className="flex h-full flex-col items-center justify-center gap-6 overflow-y-auto px-4 py-8">
+        <div className={cn("flex h-full flex-col items-center justify-center gap-6 overflow-y-auto px-4 py-8", scene.conversationPadBottom)}>
           <div className="text-center">
             <p className="text-lg font-medium text-foreground">
               {mode === "inspiration"
@@ -212,7 +208,7 @@ export function YouganChat() {
                 {[0, 1, 2].map((index) => (
                   <div
                     key={index}
-                    className="inline-flex rounded-full border border-border bg-background px-4 py-2"
+                    className="inline-flex rounded-md border border-border bg-background px-4 py-2"
                   >
                     <Shimmer className="text-sm">
                       {CHAT_COPY.generatingInspirations}
@@ -251,12 +247,12 @@ export function YouganChat() {
         </div>
       ) : (
         <Conversation className="h-full min-h-0">
-          <ConversationContent className="mx-auto w-full max-w-3xl gap-6 px-4 py-4">
+          <ConversationContent className={cn("mx-auto w-full max-w-3xl gap-6 px-4 py-4", scene.conversationPadBottom)}>
             {items.map((item, index) => {
               if (item.kind === "human") {
                 return (
                   <Message key={item.id} from="user">
-                    <MessageContent className="whitespace-pre-wrap break-words">
+                    <MessageContent className="whitespace-pre-wrap break-words bg-card text-foreground ring-1 ring-border/80">
                       {item.content}
                     </MessageContent>
                   </Message>
@@ -265,9 +261,18 @@ export function YouganChat() {
 
               if (item.kind === "system") {
                 return (
-                  <Message key={item.id} from="assistant">
-                    <MessageContent className="rounded-xl border border-dashed border-border/80 bg-muted/40 px-3 py-2 text-xs leading-6 text-muted-foreground whitespace-pre-wrap break-words">
-                      {item.content}
+                  <Message key={item.id} from="assistant" className="max-w-full">
+                    <MessageContent className="w-full max-w-full p-0">
+                      <ChatStreamBlock tone="muted">
+                        <p
+                          className={cn(
+                            chatStreamBlock.muted,
+                            "whitespace-pre-wrap break-words",
+                          )}
+                        >
+                          {item.content}
+                        </p>
+                      </ChatStreamBlock>
                     </MessageContent>
                   </Message>
                 );
@@ -331,54 +336,35 @@ export function YouganChat() {
             })}
 
             {showShimmer && (
-              <Message from="assistant">
-                <MessageContent>
-                  <Shimmer>{CHAT_COPY.thinking}</Shimmer>
+              <Message from="assistant" className="max-w-full">
+                <MessageContent className="w-full max-w-full p-0">
+                  <ChatStreamBlock>
+                    <Shimmer className={chatStreamBlock.muted}>
+                      {CHAT_COPY.thinking}
+                    </Shimmer>
+                  </ChatStreamBlock>
                 </MessageContent>
               </Message>
             )}
           </ConversationContent>
-          <ConversationScrollButton />
+          <ConversationScrollButton className={scene.conversationScrollButton} />
         </Conversation>
       )}
-      </div>
 
       <div className={scene.composer}>
-        <PromptInput
-          className="mx-auto max-w-3xl"
-          onSubmit={(message) => void handleSubmit(message)}
-        >
-          <PromptInputBody>
-            <PromptInputTextarea
-              placeholder={CHAT_COPY.placeholders[mode]}
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
+        <div className="pointer-events-auto mx-auto w-full max-w-3xl">
+          <ComposerAttachmentsProvider>
+            <StudioChatComposer
+              mode={mode}
+              onModeChange={handleModeSwitch}
+              input={input}
+              onInputChange={setInput}
+              onSend={handleSend}
+              chatStatus={chatStatus}
             />
-          </PromptInputBody>
-          <PromptInputFooter>
-            <PromptInputTools className="flex-wrap gap-2">
-              <UploadReferenceButton />
-              <ModelTemperatureControl
-                level={modelTemperatureLevel}
-                onChange={setModelTemperatureLevel}
-                disabled={stream.isLoading}
-              />
-              <ChatModeSwitcher
-                mode={mode}
-                onChange={handleModeSwitch}
-                disabled={stream.isLoading}
-              />
-            </PromptInputTools>
-            <PromptInputSubmit disabled={!input.trim()} status={chatStatus} />
-          </PromptInputFooter>
-        </PromptInput>
-        <p className="mx-auto mt-2 max-w-3xl text-center text-[11px] text-muted-foreground/70">
-          {CHAT_COPY.modeShortcutsFooter({
-            inspiration: modeShortcutLabel("inspiration"),
-            outline: modeShortcutLabel("outline"),
-            creation: modeShortcutLabel("creation"),
-          })}
-        </p>
+          </ComposerAttachmentsProvider>
+        </div>
+      </div>
       </div>
     </div>
   );

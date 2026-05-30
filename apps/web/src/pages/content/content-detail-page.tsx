@@ -47,7 +47,7 @@ export function ContentDetailPage() {
         {loading ? (
           <p className="text-sm text-muted-foreground">加载中…</p>
         ) : notFound || !publication ? (
-          <div className="rounded-2xl border border-dashed border-border bg-card/80 p-10 text-center">
+          <div className="rounded-lg border border-dashed border-border bg-card/80 p-10 text-center">
             <p className="text-sm text-muted-foreground">{DISCOVER_SECTION.notFound}</p>
             <Button type="button" className="mt-4" size="sm" asChild>
               <Link to="/content">{DISCOVER_SECTION.continueBrowse}</Link>
@@ -55,7 +55,7 @@ export function ContentDetailPage() {
           </div>
         ) : (
           <div className="space-y-8">
-            <div className="rounded-2xl border border-border/80 bg-card p-5 shadow-sm shadow-border/25 sm:p-8">
+            <div className="rounded-lg border border-border/80 bg-card p-5 shadow-sm shadow-border/25 sm:p-8">
               <PublicationArticle publication={publication} />
             </div>
 

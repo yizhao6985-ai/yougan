@@ -5,6 +5,7 @@ import {
   FeaturedPublicationCard,
   pickFeaturedPublications,
 } from "@/components/content/featured-publication-card";
+import { DiscoverIntentEntries } from "@/components/content/discover-intent-entries";
 import { DiscoverFiltersPanel } from "@/components/content/discover-filters-panel";
 import { PublicationFeedPost } from "@/components/content/publication-feed-post";
 import { SiteHeader } from "@/components/site-header";
@@ -71,7 +72,11 @@ export function ContentFeedPage() {
         </div>
 
         {!isLoading && !isError ? (
-          <div className="mb-6">
+          <div className="mb-6 space-y-5">
+            <DiscoverIntentEntries
+              filters={filters}
+              onChange={handleFiltersChange}
+            />
             <DiscoverFiltersPanel
               filters={filters}
               facets={facets}
@@ -86,7 +91,7 @@ export function ContentFeedPage() {
         ) : isError ? (
           <p className="text-sm text-red-600">{DISCOVER_SECTION.loadError}</p>
         ) : publications.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border bg-card/80 p-10 text-center">
+          <div className="rounded-lg border border-dashed border-border bg-card/80 p-10 text-center">
             <p className="text-sm text-muted-foreground">
               {hasActiveFilters
                 ? DISCOVER_SECTION.emptyFiltered

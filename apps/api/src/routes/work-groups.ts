@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 
+import { routeParam } from "../lib/route-params.js";
 import type { AuthedRequest } from "../middleware/auth.js";
 import { requireAuth } from "../middleware/auth.js";
 import {
@@ -31,7 +32,10 @@ workGroupsRouter.post("/", async (req: AuthedRequest, res) => {
 });
 
 workGroupsRouter.get("/:groupId", async (req: AuthedRequest, res) => {
-  const group = await getWorkGroup(req.userId!, req.params.groupId);
+  const group = await getWorkGroup(
+    req.userId!,
+    routeParam(req.params.groupId, "groupId"),
+  );
   if (!group) {
     res.status(404).json({ error: "Group not found" });
     return;
@@ -45,7 +49,11 @@ workGroupsRouter.patch("/:groupId", async (req: AuthedRequest, res) => {
     res.status(400).json({ error: "Invalid request" });
     return;
   }
-  const group = await updateWorkGroup(req.userId!, req.params.groupId, body.data);
+  const group = await updateWorkGroup(
+    req.userId!,
+    routeParam(req.params.groupId, "groupId"),
+    body.data,
+  );
   if (!group) {
     res.status(404).json({ error: "Group not found" });
     return;
@@ -54,7 +62,10 @@ workGroupsRouter.patch("/:groupId", async (req: AuthedRequest, res) => {
 });
 
 workGroupsRouter.delete("/:groupId", async (req: AuthedRequest, res) => {
-  const ok = await deleteWorkGroup(req.userId!, req.params.groupId);
+  const ok = await deleteWorkGroup(
+    req.userId!,
+    routeParam(req.params.groupId, "groupId"),
+  );
   if (!ok) {
     res.status(404).json({ error: "Group not found" });
     return;

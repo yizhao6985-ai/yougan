@@ -24,7 +24,7 @@ pnpm install
 pnpm dev:web
 ```
 
-需同时启动 API（`pnpm dev:api`）与 Agent（`pnpm dev:agent`）才能使用 Studio 对话。
+需同时启动 API（`pnpm dev:api`）、Agent（`pnpm dev:agent`）才能使用 Studio 对话。
 
 ## 脚本
 

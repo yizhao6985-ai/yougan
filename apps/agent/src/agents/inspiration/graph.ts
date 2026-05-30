@@ -1,21 +1,23 @@
 /**
- * 灵感模式子图：createReactAgent（tools + responseFormat）→ 映射结构化结果。
+ * 灵感模式子图：ReAct Agent（工具 + 对话）。
  *
- *   START → agent（MiniMax 工具轮 → responseFormat 结构化轮）
- *        → apply_output（structuredResponse → message + inspirationChoices）
+ *   START → prepare（清空当轮选项）
+ *        → agent
  *        → END
  */
 import { END, START, StateGraph } from "@langchain/langgraph";
 import type { LangGraphRunnableConfig } from "@langchain/langgraph";
 
 import { getInspirationAgent } from "../../llm/agent-factory.js";
-import { AgentState, parseModelTemperature, type AgentStateType } from "./state.js";
-import { applyInspirationStructuredOutput } from "./turn.js";
+import { parseModelTemperature } from "../../lib/parse-agent-state.js";
+import { syncReferenceImagesFromLatestMessage } from "../../lib/sync-reference-images.js";
+import { AgentState, type AgentStateType } from "../../state.js";
 
-function applyInspirationOutput(
+async function prepareInspirationTurn(
   state: AgentStateType,
-): Partial<AgentStateType> {
-  return applyInspirationStructuredOutput(state);
+): Promise<Partial<AgentStateType>> {
+  const refPatch = await syncReferenceImagesFromLatestMessage(state);
+  return { inspirationChoices: null, ...refPatch };
 }
 
 async function runInspirationAgent(
@@ -27,10 +29,10 @@ async function runInspirationAgent(
 }
 
 const inspirationWorkflow = new StateGraph(AgentState)
+  .addNode("prepare", prepareInspirationTurn)
   .addNode("agent", runInspirationAgent)
-  .addNode("apply_output", applyInspirationOutput)
-  .addEdge(START, "agent")
-  .addEdge("agent", "apply_output")
-  .addEdge("apply_output", END);
+  .addEdge(START, "prepare")
+  .addEdge("prepare", "agent")
+  .addEdge("agent", END);
 
 export const inspirationGraph = inspirationWorkflow.compile();

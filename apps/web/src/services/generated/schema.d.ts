@@ -853,7 +853,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/billing/plans": {
+    "/api/subscription/plans": {
         parameters: {
             query?: never;
             header?: never;
@@ -890,7 +890,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/billing/subscription": {
+    "/api/subscription": {
         parameters: {
             query?: never;
             header?: never;
@@ -906,7 +906,7 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Current subscription */
+                /** @description Current membership / subscription */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -921,6 +921,80 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/subscription/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Subscription set to cancel at period end */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            subscription: components["schemas"]["SubscriptionSummary"];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/subscription/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Subscription renewal resumed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            subscription: components["schemas"]["SubscriptionSummary"];
+                        };
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -1006,7 +1080,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/billing/subscription/cancel": {
+    "/api/billing/orders/{orderId}/refund": {
         parameters: {
             query?: never;
             header?: never;
@@ -1019,55 +1093,21 @@ export interface paths {
             parameters: {
                 query?: never;
                 header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Subscription set to cancel at period end */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            subscription: components["schemas"]["SubscriptionSummary"];
-                        };
-                    };
+                path: {
+                    orderId: string;
                 };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/billing/subscription/resume": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
                 cookie?: never;
             };
             requestBody?: never;
             responses: {
-                /** @description Subscription renewal resumed */
+                /** @description Order refunded and membership adjusted */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
                         "application/json": {
+                            order?: unknown;
                             subscription: components["schemas"]["SubscriptionSummary"];
                         };
                     };
@@ -1090,6 +1130,10 @@ export interface components {
             email: string;
             name: string | null;
             bio: string | null;
+            /** Format: uri */
+            avatarUrl: string | null;
+            /** Format: uri */
+            coverUrl: string | null;
             createdAt: string;
         };
         AuthToken: {
@@ -1102,6 +1146,10 @@ export interface components {
         UpdateProfile: {
             name?: string;
             bio?: string;
+            /** Format: uri */
+            avatarUrl?: string | null;
+            /** Format: uri */
+            coverUrl?: string | null;
             currentPassword?: string;
             newPassword?: string;
         };
@@ -1134,13 +1182,15 @@ export interface components {
             platform?: string | null;
             content_topic?: string | null;
             content_type?: string | null;
+            content_format?: string | null;
+            media_modality?: string | null;
             content_points?: string[];
             style?: string | null;
             tone?: string | null;
             persona?: string | null;
-            style_constraints?: string[];
             audience?: string | null;
             goals?: string[];
+            style_constraints?: string[];
             notes?: string | null;
             references?: {
                 [key: string]: unknown;

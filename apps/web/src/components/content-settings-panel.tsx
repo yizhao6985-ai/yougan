@@ -11,6 +11,10 @@ import {
   formatContextTime,
 } from "@/components/studio/creative-context/shared";
 import { CONTENT_SETTINGS_PANEL } from "@/lib/site-copy";
+import {
+  formatLabel,
+  mediaTypeLabel,
+} from "@/lib/discover-taxonomy";
 import type { WorkInspiration, WorkProfile } from "@/lib/types";
 
 const PROFILE_FIELDS: Array<{
@@ -20,7 +24,19 @@ const PROFILE_FIELDS: Array<{
 }> = [
   { key: "platform", label: "平台" },
   { key: "content_topic", label: "主题" },
-  { key: "content_type", label: "类型" },
+  { key: "content_type", label: "类型描述" },
+  {
+    key: "content_format",
+    label: "体裁",
+    format: (value) =>
+      typeof value === "string" ? formatLabel(value) : null,
+  },
+  {
+    key: "media_modality",
+    label: "媒介形式",
+    format: (value) =>
+      typeof value === "string" ? mediaTypeLabel(value) : null,
+  },
   {
     key: "content_points",
     label: "要点",
@@ -150,6 +166,7 @@ export function ContentSettingsPanel({
   inspiration,
   profile,
   editable = false,
+  compact = false,
   onUpdateRequirement,
   onDeleteRequirement,
   onClearInspirations,
@@ -157,6 +174,7 @@ export function ContentSettingsPanel({
   inspiration?: WorkInspiration;
   profile?: WorkProfile;
   editable?: boolean;
+  compact?: boolean;
   onUpdateRequirement?: (requirementId: string, description: string) => void;
   onDeleteRequirement?: (requirementId: string) => void;
   onClearInspirations?: () => void;
@@ -172,6 +190,7 @@ export function ContentSettingsPanel({
     <CreativeContextSection
       title={CONTENT_SETTINGS_PANEL.title}
       hint={CONTENT_SETTINGS_PANEL.hint}
+      compact={compact}
       action={
         editable && confirmed.length > 0 ? (
           <button

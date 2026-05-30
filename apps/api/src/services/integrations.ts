@@ -9,6 +9,8 @@ import {
   invalidateIntegrationsCache,
 } from "../lib/cache.js";
 import type { PublishPlatformId } from "../lib/publish-platforms.js";
+import type { Prisma } from "@prisma/client";
+
 import { prisma } from "../db.js";
 import type { PlatformIntegrationDTO } from "../schemas.js";
 
@@ -99,7 +101,7 @@ export async function upsertIntegration(
       tokenExpiresAt: data.tokenExpiresAt ?? null,
       scopes: data.scopes ?? [],
       status: data.status ?? "connected",
-      metadata: data.metadata ?? {},
+      metadata: (data.metadata ?? {}) as Prisma.InputJsonValue,
     },
     update: {
       accountName: data.accountName ?? null,
@@ -109,7 +111,7 @@ export async function upsertIntegration(
       tokenExpiresAt: data.tokenExpiresAt ?? null,
       scopes: data.scopes ?? [],
       status: data.status ?? "connected",
-      metadata: data.metadata ?? {},
+      metadata: (data.metadata ?? {}) as Prisma.InputJsonValue,
     },
   });
   await invalidateIntegrationsCache(userId);

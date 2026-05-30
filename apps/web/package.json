@@ -12,7 +12,7 @@
     "generate:api": "openapi-typescript ../api/openapi/openapi.json -o src/services/generated/schema.d.ts"
   },
   "dependencies": {
-    "@langchain/langgraph-sdk": "^1.9.6",
+    "@langchain/langgraph-sdk": "^1.9.10",
     "@radix-ui/react-collapsible": "^1.1.12",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",

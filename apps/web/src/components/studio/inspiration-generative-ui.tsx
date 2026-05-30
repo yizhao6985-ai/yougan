@@ -1,6 +1,10 @@
 import { useCallback, useState } from "react";
 
 import {
+  ChatStreamBlock,
+  chatStreamBlock,
+} from "@/components/studio/chat-stream-block";
+import {
   DEFAULT_INSPIRATION_UI_HINT,
   type InspirationChoice,
   optionLetter,
@@ -45,42 +49,41 @@ export function InspirationChoiceOptions({
   const isLocked = disabled || loading || Boolean(pendingDescription);
 
   return (
-    <div className={cn("mt-3 space-y-1.5", className)}>
-      {options.map((option, index) => {
-        const letter = option.letter ?? optionLetter(index);
-        const isPending = pendingDescription === option.description;
+    <ChatStreamBlock className={cn("mt-3", className)}>
+      <div className="space-y-2">
+        {options.map((option, index) => {
+          const letter = option.letter ?? optionLetter(index);
+          const isPending = pendingDescription === option.description;
 
-        return (
-          <button
-            key={`${letter}-${option.description}`}
-            type="button"
-            disabled={isLocked && !isPending}
-            onClick={() => handleSelect(option)}
-            className={cn(
-              "flex w-full items-start gap-3 rounded-xl border px-3 py-2.5 text-left transition",
-              isPending
-                ? "border-primary/40 bg-primary/10"
-                : "border-border/70 bg-background hover:border-primary/25 hover:bg-accent/50",
-              "disabled:cursor-not-allowed disabled:opacity-55",
-            )}
-          >
-            <span
+          return (
+            <button
+              key={`${letter}-${option.description}`}
+              type="button"
+              disabled={isLocked && !isPending}
+              onClick={() => handleSelect(option)}
               className={cn(
-                "mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md text-xs font-semibold",
-                isPending
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground",
+                chatStreamBlock.inset,
+                chatStreamBlock.insetInteractive,
+                "flex w-full items-start gap-3",
+                isPending && "border-primary/40 bg-primary/10",
               )}
             >
-              {letter}
-            </span>
-            <span className="text-sm leading-6 text-foreground">
-              {option.description}
-            </span>
-          </button>
-        );
-      })}
-      <p className="pt-1 text-xs leading-5 text-muted-foreground">{hint}</p>
-    </div>
+              <span
+                className={cn(
+                  "mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md text-xs font-semibold",
+                  isPending
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-muted-foreground",
+                )}
+              >
+                {letter}
+              </span>
+              <span className={chatStreamBlock.body}>{option.description}</span>
+            </button>
+          );
+        })}
+      </div>
+      <p className={chatStreamBlock.caption}>{hint}</p>
+    </ChatStreamBlock>
   );
 }

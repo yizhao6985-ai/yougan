@@ -17,7 +17,7 @@ export function DownloadQr({ value, size = 200, label }: DownloadQrProps) {
   if (!value) {
     return (
       <div
-        className="flex items-center justify-center rounded-xl border border-dashed border-border bg-muted text-sm text-muted-foreground/70"
+        className="flex items-center justify-center rounded-lg border border-dashed border-border bg-muted text-sm text-muted-foreground/70"
         style={{ width: size, height: size }}
         aria-hidden
       >
@@ -27,7 +27,7 @@ export function DownloadQr({ value, size = 200, label }: DownloadQrProps) {
   }
 
   return (
-    <div className="rounded-xl border border-border/80 bg-card p-3 shadow-sm shadow-border/25">
+    <div className="rounded-lg border border-border/80 bg-card p-3 shadow-sm shadow-border/25">
       <img
         src={buildQrImageUrl(value, size)}
         width={size}

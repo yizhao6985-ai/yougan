@@ -5,6 +5,7 @@ import { AuthorAvatar } from "@/components/content/author-avatar";
 import { Button } from "@/components/ui/button";
 import { authorDisplayName } from "@/lib/publication-utils";
 import { PROFILE_SECTION } from "@/lib/site-copy";
+import { scene } from "@/lib/scene-styles";
 import { cn } from "@/lib/utils";
 
 export type ProfileHeroData = {
@@ -37,7 +38,7 @@ export function UserProfileHero({
   const displayName = authorDisplayName(author);
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm shadow-border/25">
+    <section className="overflow-hidden rounded-lg border border-border/80 bg-card shadow-sm shadow-border/25">
       <div
         className={cn(
           "relative h-36 sm:h-44",
@@ -63,6 +64,7 @@ export function UserProfileHero({
               author={author}
               size="lg"
               className={cn(
+                scene.profileHeroAvatar,
                 "-mt-12 size-24 border-4 border-white text-3xl shadow-md sm:-mt-14 sm:size-28 sm:text-4xl",
               )}
             />
@@ -74,7 +76,7 @@ export function UserProfileHero({
 
               {profile.publicationCount > 0 ? (
                 <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-foreground/90">
+                  <span className="rounded-md bg-secondary px-3 py-1 text-xs font-medium text-foreground/90">
                     {PROFILE_SECTION.publicationCount(profile.publicationCount)}
                   </span>
                 </div>

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useStream } from "@langchain/langgraph-sdk/react";
 
+import { buildHumanMessageContent } from "@/lib/build-human-message-content";
 import { normalizeInspirationChoices } from "@/lib/inspiration-ui-spec";
 import { YOUGAN_ASSISTANT_ID, getYouganThreadState } from "@/lib/yougan-chat-api";
 import { LANGGRAPH_API_URL } from "@/lib/env";
@@ -103,15 +104,17 @@ export function useYouganStream({
   }, [stream.values, threadChoices]);
 
   const sendMessage = useCallback(
-    async (text: string) => {
-      const trimmed = text.trim();
-      if (!trimmed || !work) return;
+    async (text: string, imageUrls: string[] = []) => {
+      const content = buildHumanMessageContent(text, imageUrls);
+      const hasText =
+        typeof content === "string" ? Boolean(content.trim()) : content.length > 0;
+      if (!hasText || !work) return;
 
       setThreadChoices(null);
 
       await stream.submit(
         {
-          messages: [{ type: "human" as const, content: trimmed }],
+          messages: [{ type: "human" as const, content }],
           mode: work.mode,
           workId: work.id,
           profile: work.profile,

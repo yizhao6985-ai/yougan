@@ -13,13 +13,15 @@ export const WorkProfileSchema = z
     platform: z.string().nullable().optional(),
     content_topic: z.string().nullable().optional(),
     content_type: z.string().nullable().optional(),
+    content_format: z.string().nullable().optional(),
+    media_modality: z.string().nullable().optional(),
     content_points: z.array(z.string()).optional(),
     style: z.string().nullable().optional(),
     tone: z.string().nullable().optional(),
     persona: z.string().nullable().optional(),
-    style_constraints: z.array(z.string()).optional(),
     audience: z.string().nullable().optional(),
     goals: z.array(z.string()).optional(),
+    style_constraints: z.array(z.string()).optional(),
     notes: z.string().nullable().optional(),
     references: z.array(z.record(z.unknown())).optional(),
   })
@@ -47,9 +49,6 @@ export const WorkOutlineSchema = z
     outline_ready: z.boolean().optional(),
   })
   .openapi("WorkOutline");
-
-/** @deprecated 使用 WorkOutlineSchema */
-export const WorkPlanSchema = WorkOutlineSchema;
 
 export const WorkInspirationSchema = z
   .object({
@@ -110,6 +109,10 @@ export const InspirationRecommendationSchema = z
     suggestion: z.string(),
   })
   .openapi("InspirationRecommendation");
+
+export type InspirationRecommendation = z.infer<
+  typeof InspirationRecommendationSchema
+>;
 
 export const WorkInspirationRecommendationsSchema = z
   .object({
@@ -246,6 +249,7 @@ export const PublicationAuthorSchema = z.object({
   name: z.string().nullable(),
   email: z.string().email(),
   bio: z.string().nullable(),
+  avatarUrl: z.string().nullable().optional(),
 });
 
 export const PublicationSchema = z

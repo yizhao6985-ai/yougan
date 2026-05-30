@@ -126,13 +126,13 @@ export function PlatformIntegrationsPanel() {
               {oauthStatus.platforms.map((item) => (
                 <li
                   key={item.id}
-                  className="rounded-xl border border-border/70 px-4 py-3"
+                  className="rounded-lg border border-border/70 px-4 py-3"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-medium">{item.label}</span>
                     <span
                       className={cn(
-                        "rounded-full px-2 py-0.5 text-[11px] font-medium",
+                        "rounded-md px-2 py-0.5 text-[11px] font-medium",
                         item.configured
                           ? "bg-emerald-100 text-emerald-700"
                           : "bg-amber-100 text-amber-800",
@@ -184,7 +184,7 @@ export function PlatformIntegrationsPanel() {
                       </p>
                       <span
                         className={cn(
-                          "rounded-full px-2 py-0.5 text-[11px] font-medium",
+                          "rounded-md px-2 py-0.5 text-[11px] font-medium",
                           connected
                             ? "bg-emerald-100 text-emerald-700"
                             : "bg-secondary text-muted-foreground",

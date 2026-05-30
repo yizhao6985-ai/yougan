@@ -28,7 +28,7 @@ export function ProfilePublicationCard({
   return (
     <Link
       to={`/content/${publication.slug}`}
-      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm shadow-border/20 transition hover:border-primary/20 hover:shadow-md"
+      className="group flex h-full flex-col overflow-hidden rounded-lg border border-border/80 bg-card shadow-sm shadow-border/20 transition hover:border-primary/20 hover:shadow-md"
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-secondary/40">
         {cover ? (
@@ -82,7 +82,7 @@ export function ProfilePublicationCard({
             {badges.map((badge) => (
               <span
                 key={badge}
-                className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
+                className="rounded-md bg-secondary px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
               >
                 {badge}
               </span>

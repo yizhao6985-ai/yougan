@@ -10,12 +10,22 @@ import {
 import { PLAN_PANEL } from "@/lib/site-copy";
 import type { WorkOutline } from "@/lib/types";
 
-export function PlanPanel({ outline }: { outline?: WorkOutline }) {
+export function PlanPanel({
+  outline,
+  compact = false,
+}: {
+  outline?: WorkOutline;
+  compact?: boolean;
+}) {
   const pending = outline?.pending_changes ?? [];
   const executed = outline?.executed_changes ?? [];
 
   return (
-    <CreativeContextSection title={PLAN_PANEL.title} hint={PLAN_PANEL.hint}>
+    <CreativeContextSection
+      title={PLAN_PANEL.title}
+      hint={PLAN_PANEL.hint}
+      compact={compact}
+    >
       {outline?.outline_ready && outline.outline_summary ? (
         <CreativeContextInset className="border-emerald-200/80 bg-emerald-50/60 text-foreground/90 dark:border-emerald-800/60 dark:bg-emerald-950/40">
           {outline.outline_summary}

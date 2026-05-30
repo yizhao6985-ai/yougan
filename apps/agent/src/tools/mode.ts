@@ -5,7 +5,7 @@ import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
 import type { ChatMode } from "../schemas.js";
-import { parseMode } from "../state.js";
+import { parseMode } from "../lib/parse-agent-state.js";
 import { getState, toolCommand } from "./common.js";
 
 const MODE_LABELS: Record<ChatMode, string> = {

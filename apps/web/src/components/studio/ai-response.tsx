@@ -5,6 +5,10 @@ import {
   ReasoningTrigger,
 } from "@/components/ai-elements/reasoning";
 import { Shimmer } from "@/components/ai-elements/shimmer";
+import {
+  ChatStreamBlock,
+  chatStreamBlock,
+} from "@/components/studio/chat-stream-block";
 import { CHAT_COPY } from "@/lib/site-copy";
 import { cn } from "@/lib/utils";
 
@@ -27,25 +31,57 @@ export function AIResponse({
   }
 
   return (
-    <div
-      className={cn(
-        "rounded-2xl border border-border/80 bg-card px-4 py-3 shadow-sm",
-        "text-sm leading-7 text-foreground/90",
-        "[&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
-      )}
-    >
+    <ChatStreamBlock>
       {hasReasoning ? (
-        <Reasoning className="mb-3" isStreaming={isStreaming && !hasContent}>
-          <ReasoningTrigger />
-          <ReasoningContent>{reasoning}</ReasoningContent>
+        <Reasoning
+          className={cn("not-prose", hasContent && chatStreamBlock.divider)}
+          isStreaming={isStreaming && !hasContent}
+        >
+          <ReasoningTrigger
+            className={cn(
+              chatStreamBlock.header,
+              "w-full text-muted-foreground hover:text-foreground",
+            )}
+            getThinkingMessage={(streaming, duration) => {
+              if (streaming || duration === 0) {
+                return (
+                  <Shimmer className={chatStreamBlock.muted} duration={1}>
+                    {CHAT_COPY.reasoning.streaming}
+                  </Shimmer>
+                );
+              }
+              if (duration === undefined) {
+                return (
+                  <span className={chatStreamBlock.muted}>
+                    {CHAT_COPY.reasoning.doneBrief}
+                  </span>
+                );
+              }
+              return (
+                <span className={chatStreamBlock.muted}>
+                  {CHAT_COPY.reasoning.doneSeconds(duration)}
+                </span>
+              );
+            }}
+          />
+          <ReasoningContent
+            className={cn("mt-2", chatStreamBlock.muted, "data-[state=open]:mt-2")}
+          >
+            {reasoning ?? ""}
+          </ReasoningContent>
         </Reasoning>
       ) : null}
 
       {hasContent ? (
-        <MessageResponse isAnimating={isStreaming}>{content}</MessageResponse>
+        <MessageResponse
+          className={chatStreamBlock.body}
+          isAnimating={isStreaming}
+        >
+          {content}
+        </MessageResponse>
       ) : isStreaming ? (
-        <Shimmer className="text-muted-foreground">{CHAT_COPY.thinking}</Shimmer>
+        <Shimmer className={chatStreamBlock.muted}>{CHAT_COPY.thinking}</Shimmer>
       ) : null}
-    </div>
+    </ChatStreamBlock>
   );
 }

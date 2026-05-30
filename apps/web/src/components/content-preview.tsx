@@ -10,16 +10,22 @@ import type { GeneratedContent } from "@/lib/types";
 export function ContentPreview({
   workId,
   creation,
+  compact = false,
 }: {
   workId?: string;
   creation?: GeneratedContent | null;
+  compact?: boolean;
 }) {
   return (
-    <CreativeContextSection title={PREVIEW_PANEL.title} hint={PREVIEW_PANEL.hint}>
+    <CreativeContextSection
+      title={PREVIEW_PANEL.title}
+      hint={PREVIEW_PANEL.hint}
+      compact={compact}
+    >
       {!creation?.body ? (
         <CreativeContextEmpty>{PREVIEW_PANEL.empty}</CreativeContextEmpty>
       ) : (
-        <div className="space-y-4 rounded-xl border border-border/80 bg-background/80 p-4">
+        <div className="space-y-4 rounded-lg border border-border/80 bg-background/80 p-4">
           <div>
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
               {creation.platform}
@@ -36,7 +42,7 @@ export function ContentPreview({
               {creation.hashtags.map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-full bg-accent px-2 py-1 text-xs text-primary"
+                  className="rounded-md bg-accent px-2 py-1 text-xs text-primary"
                 >
                   #{tag.replace(/^#/, "")}
                 </span>

@@ -16,6 +16,23 @@ type MessageWithBlocks = Message & {
   contentBlocks?: ContentBlockLike[];
 };
 
+function countImageParts(content: MessageContent): number {
+  if (!Array.isArray(content)) return 0;
+  return content.filter((part) => {
+    if (!part || typeof part !== "object") return false;
+    return (part as { type?: string }).type === "image_url";
+  }).length;
+}
+
+export function humanMessageDisplayText(content: MessageContent): string {
+  const text = messageContentToText(content);
+  const imageCount = countImageParts(content);
+  if (imageCount === 0) return text;
+  const label =
+    imageCount === 1 ? "[1 张参考图]" : `[${imageCount} 张参考图]`;
+  return text ? `${label} ${text}` : label;
+}
+
 export function messageContentToText(content: MessageContent): string {
   return extractAIMessageBlocks({ type: "ai", content } as Message).text;
 }
@@ -221,7 +238,7 @@ export function buildRenderItems(
     const message = messages[index];
 
     if (message.type === "human") {
-      const content = messageContentToText(message.content);
+      const content = humanMessageDisplayText(message.content);
       if (content) {
         items.push({
           id: message.id ?? `human-${index}`,

@@ -6,11 +6,13 @@ import { z } from "zod";
 
 import { findRequirementIndex } from "../../lib/inspiration-merge.js";
 import {
+  DEFAULT_INSPIRATION_CHOICES_HINT,
   EMPTY_WORK_INSPIRATION,
   newConfirmedRequirement,
 } from "../../schemas.js";
 import { parseInspiration, parseMode } from "./state.js";
 import { switchMode } from "../../tools/mode.js";
+import { confirmContentSpec } from "../../tools/content-spec.js";
 import { REFERENCE_TOOLS } from "../../tools/references.js";
 import { getState, toolCommand } from "../../tools/common.js";
 
@@ -146,11 +148,83 @@ export const clearInspirations = tool(
   },
 );
 
+export const presentInspirationChoices = tool(
+  async ({ show_choices, hint, options }, config) => {
+    if (parseMode(getState()) !== "inspiration") {
+      return toolCommand(
+        config,
+        "present_inspiration_choices 仅在灵感模式可用。",
+      );
+    }
+
+    if (!show_choices) {
+      return toolCommand(config, "本轮不展示选项。", {
+        inspirationChoices: null,
+      });
+    }
+
+    const normalized = (options ?? [])
+      .map((option) => option.description.trim())
+      .filter(Boolean);
+    if (normalized.length < 2) {
+      return toolCommand(config, "选项不足（需 2-6 条），未展示选项。");
+    }
+
+    return toolCommand(config, `已展示 ${normalized.length} 个选项。`, {
+      inspirationChoices: {
+        hint: hint?.trim() || DEFAULT_INSPIRATION_CHOICES_HINT,
+        options: normalized.map((description) => ({ description })),
+      },
+    });
+  },
+  {
+    name: "present_inspiration_choices",
+    description:
+      "控制本轮是否向用户展示可点击单选选项。需要选项时 show_choices=true 并提供 2-6 条完整句子；否则 show_choices=false。每轮应调用一次。",
+    schema: z
+      .object({
+        show_choices: z
+          .boolean()
+          .describe(
+            "true：展示 2-6 个互斥可点击选项；false：不展示（开放式追问、总结、告别等）",
+          ),
+        hint: z
+          .string()
+          .optional()
+          .describe("选项区提示语；缺省使用前端默认文案"),
+        options: z
+          .array(
+            z.object({
+              description: z
+                .string()
+                .min(1)
+                .describe("用户点击后直接发送的完整句子"),
+            }),
+          )
+          .optional()
+          .describe("show_choices=true 时必填，2-6 条"),
+      })
+      .superRefine((value, ctx) => {
+        if (!value.show_choices) return;
+        const count = value.options?.length ?? 0;
+        if (count < 2 || count > 6) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "show_choices=true 时需要 2-6 个 options",
+            path: ["options"],
+          });
+        }
+      }),
+  },
+);
+
 export const INSPIRATION_TOOLS = [
   switchMode,
+  confirmContentSpec,
   confirmRequirement,
   updateRequirement,
   deleteRequirement,
   clearInspirations,
+  presentInspirationChoices,
   ...REFERENCE_TOOLS,
 ];

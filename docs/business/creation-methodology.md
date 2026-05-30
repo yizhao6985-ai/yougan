@@ -118,15 +118,54 @@
 
 贯穿三模式的结构化上下文：
 
-| 维度 | 示例 |
-|------|------|
-| platform | 小红书、公众号 |
-| content_topic / content_type | 选题与体裁 |
-| audience / tone / style | 受众与表达 |
-| persona / goals | 人设与目标 |
-| references[] | 参考素材（文本/图片/网页） |
+| 维度 | 字段 | 示例 |
+|------|------|------|
+| platform | 目标平台 | 小红书、公众号 |
+| content_topic / content_type | 选题与自然语言描述 | 护肤心得、种草笔记 |
+| **content_format** | **结构化体裁** | note、article、novel、video_script |
+| **media_modality** | **结构化媒介形式** | text、image、audio、video、mixed |
+| audience / tone / style | 受众与表达 | |
+| persona / goals | 人设与目标 | |
+| references[] | 参考素材 | text/image/web |
 
-API 在 LangGraph 代理层注入作品 JSON，Agent tools 可读写 profile。
+`content_format` 与 `media_modality` 与发现页 taxonomy 对齐，发布时优先作为分类来源。
+
+### 内容规格确认（confirm_content_spec）
+
+灵感/大纲模式中，当用户明确体裁或媒介（如「写小红书笔记」「做播客」）时，Agent 调用 `confirm_content_spec` 写入结构化字段；**不**在灵感模式使用 `update_work_profile` 写分类。
+
+创作模式进入时会自动执行 `resolveContentSpec`，补齐缺失的体裁/形式字段。
+
+---
+
+## Agent Graph 架构
+
+主图保持三模式路由（`apps/agent/src/graph.ts`）：
+
+```text
+START → routeByMode
+  ├─ inspiration → inspirationGraph → END
+  ├─ outline     → outlineGraph → clearInspirationChoices → END
+  └─ creation    → creationGraph → clearInspirationChoices → END
+```
+
+### 创作子图（creationGraph）
+
+创作模式内部采用 **解析 + 路由**，而非按体裁/形式拆成多个顶层 Agent：
+
+```text
+START → resolveContentSpec（补齐 content_format / media_modality）
+     → routeByModality
+          ├─ textCreation
+          ├─ imageCreation   （当前复用文字 pipeline，notes 含配图建议）
+          ├─ audioCreation   （当前复用文字 pipeline，口播稿）
+          └─ videoCreation   （当前复用文字 pipeline，脚本稿）
+     → END
+```
+
+- **体裁差异**：通过 prompt 与 `generate_content` 的写作约束体现（`format-prompts.ts`）
+- **形式差异**：通过 pipeline 节点预留；audio/video/image 独立生成能力上线后替换对应节点
+- 详见 [content-taxonomy.md](./content-taxonomy.md) 与 `apps/agent/src/lib/content-spec.ts`
 
 ---
 

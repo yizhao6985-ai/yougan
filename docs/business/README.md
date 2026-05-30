@@ -12,6 +12,7 @@
 | [功能目录](./feature-catalog.md) | 产品功能清单与实现状态 |
 | [创作方法论](./creation-methodology.md) | 核心流程 IP、三步创作模型 |
 | [内容与社区](./content-ecosystem.md) | 发现灵感、发布、主页与传播 |
+| [内容分类体系](./content-taxonomy.md) | 两层 taxonomy、推断逻辑、发布确认 |
 | [商业化与定价](./monetization.md) | 收入模式、套餐、计费规则 |
 | [平台集成](./platform-integrations.md) | 多平台发布、OAuth 商业价值 |
 | [竞争与替代](./competitive-positioning.md) | 竞品对比、替代方案 |

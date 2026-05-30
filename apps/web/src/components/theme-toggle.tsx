@@ -33,7 +33,7 @@ export function ThemeToggle() {
   return (
     <div
       className={cn(
-        "inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border border-border/80 bg-card/90 px-2.5 shadow-sm shadow-border/25 md:h-11 md:gap-2 md:px-3",
+        "inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg border border-border/80 bg-card/90 px-2.5 shadow-sm shadow-border/25 md:h-11 md:gap-2 md:px-3",
       )}
       title={THEME.darkMode}
     >

@@ -43,7 +43,7 @@ function WorkRow({
     return (
       <div
         className={cn(
-          "group flex items-center gap-2 rounded-xl border px-3 py-2.5",
+          "group flex items-center gap-2 rounded-lg border px-3 py-2.5",
           isActive
             ? "border-primary/20 bg-accent/80"
             : "border-border/80 bg-card",
@@ -90,7 +90,7 @@ function WorkRow({
         type="button"
         onClick={onSelect}
         className={cn(
-          "w-full rounded-xl px-3 py-2.5 pr-16 text-left text-sm transition",
+          "w-full rounded-lg px-3 py-2.5 pr-16 text-left text-sm transition",
           "hover:bg-accent",
           isActive && "bg-secondary/80 text-foreground",
         )}
@@ -198,7 +198,7 @@ export function WorksGroupTree({
       {groupedWorks.map(({ group, works: groupWorks }) => {
         const groupHeader =
           mode === "manage" ? (
-            <div className="flex items-center gap-2 rounded-xl border border-border/80 bg-muted/80 px-3 py-2">
+            <div className="flex items-center gap-2 rounded-lg border border-border/80 bg-muted/80 px-3 py-2">
               <FolderIcon className="size-4 shrink-0 text-muted-foreground" />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-foreground">

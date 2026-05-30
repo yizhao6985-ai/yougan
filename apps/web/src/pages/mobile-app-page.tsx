@@ -11,6 +11,7 @@ import { DownloadQr } from "@/components/download-qr";
 import { SiteHeader } from "@/components/site-header";
 import { getMobileDownloadLinks } from "@/lib/mobile-app";
 import { scene } from "@/lib/scene-styles";
+import { cn } from "@/lib/utils";
 import { MOBILE_PAGE } from "@/lib/site-copy";
 
 const FEATURE_ICONS = [SparklesIcon, ZapIcon, SmartphoneIcon] as const;
@@ -27,7 +28,7 @@ function DownloadCard({
   const storeLabel = platform === "iOS" ? "App Store" : "应用商店";
 
   return (
-    <article className="flex flex-col items-center rounded-2xl border border-border/80 bg-card/95 p-8 shadow-sm shadow-border/20 backdrop-blur">
+    <article className="flex flex-col items-center rounded-lg border border-border/80 bg-card/95 p-8 shadow-sm shadow-border/20 backdrop-blur">
       <p className="text-sm font-medium uppercase tracking-wider text-primary/90">
         {platform}
       </p>
@@ -93,7 +94,7 @@ export function MobileAppPage() {
             return (
               <article
                 key={title}
-                className="rounded-2xl border border-border/80 bg-card/90 p-6 shadow-sm shadow-border/20"
+                className="rounded-lg border border-border/80 bg-card/90 p-6 shadow-sm shadow-border/20"
               >
                 <Icon className="size-6 text-primary" aria-hidden />
                 <h2 className="mt-4 text-lg font-medium text-foreground">{title}</h2>
@@ -112,7 +113,7 @@ export function MobileAppPage() {
           </p>
 
           {!hasAny ? (
-            <div className="mx-auto mt-10 max-w-lg rounded-2xl border border-primary/20 bg-accent/60 px-6 py-8 text-center text-sm text-foreground/90">
+            <div className="mx-auto mt-10 max-w-lg rounded-lg border border-primary/20 bg-accent/60 px-6 py-8 text-center text-sm text-foreground/90">
               <p className="font-medium">{MOBILE_PAGE.downloadPendingTitle}</p>
               <p className="mt-2 leading-6 text-primary/80">
                 {MOBILE_PAGE.downloadPendingBody}
@@ -151,7 +152,7 @@ export function MobileAppPage() {
           </Link>
           <Link
             to="/features"
-            className="rounded-full border border-border bg-card/80 px-6 py-3 text-sm font-medium text-foreground/90 backdrop-blur transition hover:bg-card"
+            className="rounded-lg border border-border bg-card/80 px-6 py-3 text-sm font-medium text-foreground/90 backdrop-blur transition hover:bg-card"
           >
             {MOBILE_PAGE.ctaFeatures}
           </Link>

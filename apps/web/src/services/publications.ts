@@ -2,6 +2,8 @@ import { apiFetch } from "@/services/client";
 import type {
   DiscoverFacets,
   DiscoverFilters,
+  PublicationMetadataOverrides,
+  PublicationMetadataPreview,
 } from "@/lib/discover-taxonomy";
 import type { Publication, PublicationStatus } from "@/lib/publication-types";
 
@@ -37,10 +39,21 @@ export async function fetchMyPublications() {
   return apiFetch<{ publications: Publication[] }>("/api/publications/mine");
 }
 
-export async function publishWorkToPlatform(workId: string, publish = true) {
+export async function fetchPublicationMetadataPreview(workId: string) {
+  const params = new URLSearchParams({ workId });
+  return apiFetch<PublicationMetadataPreview>(
+    `/api/publications/preview-metadata?${params.toString()}`,
+  );
+}
+
+export async function publishWorkToPlatform(
+  workId: string,
+  publish = true,
+  metadata?: PublicationMetadataOverrides,
+) {
   return apiFetch<{ publication: Publication }>("/api/publications", {
     method: "POST",
-    body: JSON.stringify({ workId, publish }),
+    body: JSON.stringify({ workId, publish, metadata }),
   });
 }
 

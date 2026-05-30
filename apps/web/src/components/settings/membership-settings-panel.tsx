@@ -153,7 +153,7 @@ export function MembershipSettingsPanel() {
               ) : null}
             </div>
 
-            <div className="rounded-xl border border-border/70 bg-muted/30 p-4">
+            <div className="rounded-lg border border-border/70 bg-muted/30 p-4">
               <div className="flex items-center justify-between gap-3 text-sm">
                 <span className="font-medium text-foreground">
                   {MEMBERSHIP.usageTitle}
@@ -162,10 +162,10 @@ export function MembershipSettingsPanel() {
                   {subscription.aiUsageThisPeriod} / {subscription.aiQuotaThisPeriod}
                 </span>
               </div>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+              <div className="mt-3 h-2 overflow-hidden rounded-md bg-muted">
                 <div
                   className={cn(
-                    "h-full rounded-full transition-all",
+                    "h-full rounded-md transition-all",
                     usagePercent >= 100
                       ? "bg-destructive"
                       : usagePercent >= 80
@@ -193,7 +193,7 @@ export function MembershipSettingsPanel() {
 
       {!isPro ? (
         <SettingsPanelCard title={MEMBERSHIP.plansTitle}>
-          <div className="mb-4 inline-flex rounded-xl border border-border/80 bg-muted/40 p-1">
+          <div className="mb-4 inline-flex rounded-lg border border-border/80 bg-muted/40 p-1">
             {(["monthly", "yearly"] as const).map((cycle) => (
               <button
                 key={cycle}
@@ -229,7 +229,7 @@ export function MembershipSettingsPanel() {
                 <article
                   key={plan.id}
                   className={cn(
-                    "rounded-2xl border p-5",
+                    "rounded-lg border p-5",
                     plan.highlighted
                       ? "border-primary/30 bg-primary/5 shadow-sm"
                       : "border-border/80 bg-card",

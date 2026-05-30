@@ -5,6 +5,7 @@ import { z } from "zod";
 import { parseMode, parseOutline } from "./state.js";
 import { addPendingChange } from "../../tools/pending-change.js";
 import { switchMode } from "../../tools/mode.js";
+import { confirmContentSpec } from "../../tools/content-spec.js";
 import { updateWorkProfile } from "../../tools/profile.js";
 import { REFERENCE_TOOLS } from "../../tools/references.js";
 import { getState, toolCommand } from "../../tools/common.js";
@@ -77,6 +78,7 @@ export const completeOutline = tool(
 
 export const OUTLINE_TOOLS = [
   switchMode,
+  confirmContentSpec,
   syncOutlineFromInspirationTool,
   addPendingChange,
   completeOutline,

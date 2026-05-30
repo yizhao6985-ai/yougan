@@ -46,16 +46,16 @@ export function PublicationArticle({
             </p>
           ) : null}
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            <span className="rounded-full bg-accent px-2.5 py-1 text-xs font-medium text-primary">
+            <span className="rounded-md bg-accent px-2.5 py-1 text-xs font-medium text-primary">
               {platformLabel(publication.platform)}
             </span>
             {formatLabel(publication.contentFormat) ? (
-              <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-foreground/90">
+              <span className="rounded-md bg-secondary px-2.5 py-1 text-xs font-medium text-foreground/90">
                 {formatLabel(publication.contentFormat)}
               </span>
             ) : null}
             {topicCategoryLabel(publication.topicCategory) ? (
-              <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-foreground/90">
+              <span className="rounded-md bg-secondary px-2.5 py-1 text-xs font-medium text-foreground/90">
                 {topicCategoryLabel(publication.topicCategory)}
               </span>
             ) : null}
@@ -85,7 +85,7 @@ export function PublicationArticle({
         <img
           src={publication.coverUrl}
           alt=""
-          className="w-full rounded-2xl border border-border object-cover"
+          className="w-full rounded-lg border border-border object-cover"
         />
       ) : null}
 
@@ -101,7 +101,7 @@ export function PublicationArticle({
                 key={image.url}
                 src={image.url}
                 alt={`配图 ${index + 1}`}
-                className="w-full rounded-xl border border-border"
+                className="w-full rounded-lg border border-border"
               />
             ) : null,
           )}
@@ -113,7 +113,7 @@ export function PublicationArticle({
           {publication.hashtags.map((tag) => (
             <span
               key={tag}
-              className="rounded-full bg-accent px-2.5 py-1 text-xs text-primary"
+              className="rounded-md bg-accent px-2.5 py-1 text-xs text-primary"
             >
               #{tag.replace(/^#/, "")}
             </span>

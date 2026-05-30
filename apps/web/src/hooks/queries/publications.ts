@@ -5,13 +5,17 @@ import {
 } from "@tanstack/react-query";
 
 import { queryKeys } from "@/hooks/queries/keys";
-import type { DiscoverFilters } from "@/lib/discover-taxonomy";
+import type {
+  DiscoverFilters,
+  PublicationMetadataOverrides,
+} from "@/lib/discover-taxonomy";
 import type { Publication, PublicationStatus } from "@/lib/publication-types";
 import {
   deletePublication,
   fetchMyPublications,
   fetchPublicationBySlug,
   fetchPublicationFeed,
+  fetchPublicationMetadataPreview,
   publishWorkToPlatform,
   updatePublicationStatus,
 } from "@/services/publications";
@@ -52,12 +56,27 @@ function patchMyPublicationsCache(
   );
 }
 
+export function usePublicationMetadataPreviewQuery(workId: string, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.publications.previewMetadata(workId),
+    queryFn: () => fetchPublicationMetadataPreview(workId),
+    enabled: enabled && Boolean(workId),
+  });
+}
+
 export function usePublishWorkMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ workId, publish = true }: { workId: string; publish?: boolean }) =>
-      publishWorkToPlatform(workId, publish),
+    mutationFn: ({
+      workId,
+      publish = true,
+      metadata,
+    }: {
+      workId: string;
+      publish?: boolean;
+      metadata?: PublicationMetadataOverrides;
+    }) => publishWorkToPlatform(workId, publish, metadata),
     onSuccess: ({ publication }) => {
       patchMyPublicationsCache(queryClient, (publications) => {
         const existing = publications.find((item) => item.id === publication.id);

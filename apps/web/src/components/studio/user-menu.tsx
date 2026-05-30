@@ -15,6 +15,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -22,8 +23,44 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { AuthorAvatar } from "@/components/content/author-avatar";
 import { useLogoutMutation, useMeQuery } from "@/hooks/queries/auth";
-import { BILLING, MEMBERSHIP } from "@/lib/site-copy";
+import { BILLING, MEMBERSHIP, SETTINGS } from "@/lib/site-copy";
 import type { AuthUser } from "@/services/auth";
+
+type UserMenuItem = {
+  to: string;
+  label: string;
+  icon: typeof CircleUserRoundIcon;
+};
+
+const USER_MENU_GROUPS: Array<{ label: string; items: UserMenuItem[] }> = [
+  {
+    label: SETTINGS.navGroups.account,
+    items: [
+      { to: "/settings/profile", label: "个人信息", icon: UserRoundIcon },
+      { to: "/settings/account", label: "账户信息", icon: KeyRoundIcon },
+    ],
+  },
+  {
+    label: SETTINGS.navGroups.billing,
+    items: [
+      { to: "/settings/membership", label: MEMBERSHIP.navLabel, icon: CrownIcon },
+      { to: "/settings/billing", label: BILLING.navLabel, icon: ReceiptIcon },
+    ],
+  },
+  {
+    label: SETTINGS.navGroups.content,
+    items: [
+      { to: "/settings/works", label: "作品管理", icon: FolderKanbanIcon },
+      { to: "/settings/publications", label: "发布管理", icon: NewspaperIcon },
+    ],
+  },
+  {
+    label: SETTINGS.navGroups.connect,
+    items: [
+      { to: "/settings/integrations", label: "平台集成发布", icon: Share2Icon },
+    ],
+  },
+];
 
 function getDisplayName(user: AuthUser | null | undefined) {
   if (!user) return "用户";
@@ -59,7 +96,7 @@ export function UserMenu() {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="inline-flex h-11 min-w-[9.5rem] items-center gap-2 rounded-full border border-border/80 bg-card/90 py-1.5 pl-1.5 pr-3 text-sm text-foreground/90 shadow-sm shadow-border/25 outline-none transition hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/50"
+          className="inline-flex h-11 min-w-[9.5rem] items-center gap-2 rounded-lg border border-border/80 bg-card/90 py-1.5 pl-1.5 pr-3 text-sm text-foreground/90 shadow-sm shadow-border/25 outline-none transition hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/50"
         >
           <AuthorAvatar author={author} size="sm" className="size-8" />
           <span className="min-w-[4.5rem] max-w-[7.5rem] flex-1 truncate text-left font-medium">
@@ -79,54 +116,33 @@ export function UserMenu() {
           ) : null}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link to="/profile" className="cursor-pointer">
-            <CircleUserRoundIcon />
-            我的主页
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/settings/profile" className="cursor-pointer">
-            <UserRoundIcon />
-            个人信息
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/settings/account" className="cursor-pointer">
-            <KeyRoundIcon />
-            账户信息
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/settings/membership" className="cursor-pointer">
-            <CrownIcon />
-            {MEMBERSHIP.navLabel}
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/settings/billing" className="cursor-pointer">
-            <ReceiptIcon />
-            {BILLING.navLabel}
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/settings/works" className="cursor-pointer">
-            <FolderKanbanIcon />
-            作品管理
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/settings/publications" className="cursor-pointer">
-            <NewspaperIcon />
-            发布管理
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/settings/integrations" className="cursor-pointer">
-            <Share2Icon />
-            平台集成发布
-          </Link>
-        </DropdownMenuItem>
+        <DropdownMenuGroup>
+          <DropdownMenuItem asChild>
+            <Link to="/profile" className="cursor-pointer">
+              <CircleUserRoundIcon />
+              我的主页
+            </Link>
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+        {USER_MENU_GROUPS.map((group) => (
+          <DropdownMenuGroup key={group.label}>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="px-2 py-1 text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+              {group.label}
+            </DropdownMenuLabel>
+            {group.items.map((item) => {
+              const Icon = item.icon;
+              return (
+                <DropdownMenuItem key={item.to} asChild>
+                  <Link to={item.to} className="cursor-pointer">
+                    <Icon />
+                    {item.label}
+                  </Link>
+                </DropdownMenuItem>
+              );
+            })}
+          </DropdownMenuGroup>
+        ))}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="text-red-600 focus:text-red-600"

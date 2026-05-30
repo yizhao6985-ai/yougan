@@ -5,6 +5,7 @@ import { MarkdownContent } from "@/components/markdown-content";
 import { authorDisplayName } from "@/lib/publication-utils";
 import {
   formatLabel,
+  mediaTypeLabel,
   topicCategoryLabel,
 } from "@/lib/discover-taxonomy";
 import { formatPublishedAt, platformLabel } from "@/lib/platform-labels";
@@ -21,6 +22,7 @@ function DiscoverBadges({
   const badges = [
     formatLabel(publication.contentFormat),
     topicCategoryLabel(publication.topicCategory),
+    mediaTypeLabel(publication.mediaType),
     publication.contentTopic,
   ].filter(Boolean);
 
@@ -31,7 +33,7 @@ function DiscoverBadges({
       {badges.map((badge) => (
         <span
           key={badge}
-          className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
+          className="rounded-md bg-secondary px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
         >
           {badge}
         </span>
@@ -82,7 +84,7 @@ export function PublicationFeedPost({
     : null;
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm shadow-border/25">
+    <article className="overflow-hidden rounded-lg border border-border/80 bg-card shadow-sm shadow-border/25">
       {!hideAuthor ? (
         <div className="flex items-start gap-3 border-b border-border/60 px-4 py-3 sm:px-5">
           {publication.author?.id ? (
@@ -159,7 +161,7 @@ export function PublicationFeedPost({
             src={cover}
             alt=""
             className={cn(
-              "mt-4 w-full rounded-xl border border-border object-cover",
+              "mt-4 w-full rounded-lg border border-border object-cover",
               compact ? "max-h-48" : "max-h-80",
             )}
           />

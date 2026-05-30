@@ -6,20 +6,27 @@ import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
 import { normalizePlatform } from "../schemas.js";
-import { parseMode } from "../state.js";
+import {
+  isValidContentFormat,
+  isValidMediaModality,
+  resolveContentSpec,
+} from "../lib/content-spec.js";
+import { parseMode } from "../lib/parse-agent-state.js";
 import { getState, toolCommand, updateProfile } from "./common.js";
 
 const profileSchema = z.object({
   platform: z.string().nullable().optional(),
   content_topic: z.string().nullable().optional(),
   content_type: z.string().nullable().optional(),
+  content_format: z.string().nullable().optional(),
+  media_modality: z.string().nullable().optional(),
   content_points: z.array(z.string()).nullable().optional(),
   style: z.string().nullable().optional(),
   tone: z.string().nullable().optional(),
   persona: z.string().nullable().optional(),
-  style_constraints: z.array(z.string()).nullable().optional(),
   audience: z.string().nullable().optional(),
   goals: z.array(z.string()).nullable().optional(),
+  style_constraints: z.array(z.string()).nullable().optional(),
   notes: z.string().nullable().optional(),
 });
 
@@ -36,6 +43,18 @@ export const updateWorkProfile = tool(
     if (input.platform != null) updates.platform = normalizePlatform(input.platform);
     if (input.content_topic != null) updates.content_topic = input.content_topic;
     if (input.content_type != null) updates.content_type = input.content_type;
+    if (input.content_format != null) {
+      if (!isValidContentFormat(input.content_format)) {
+        return toolCommand(config, "无效的 content_format。");
+      }
+      updates.content_format = input.content_format;
+    }
+    if (input.media_modality != null) {
+      if (!isValidMediaModality(input.media_modality)) {
+        return toolCommand(config, "无效的 media_modality。");
+      }
+      updates.media_modality = input.media_modality;
+    }
     if (input.content_points != null) updates.content_points = input.content_points;
     if (input.style != null) updates.style = input.style;
     if (input.tone != null) updates.tone = input.tone;
@@ -50,7 +69,7 @@ export const updateWorkProfile = tool(
       return toolCommand(config, "未提供需要更新的字段。");
     }
 
-    const profile = updateProfile(getState(), updates);
+    const profile = resolveContentSpec(updateProfile(getState(), updates));
     return toolCommand(
       config,
       `已更新作品特征：${Object.keys(updates).join("、")}`,

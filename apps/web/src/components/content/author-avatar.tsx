@@ -21,7 +21,7 @@ export function AuthorAvatar({
         src={avatarUrl}
         alt=""
         className={cn(
-          "inline-flex shrink-0 rounded-full object-cover bg-secondary",
+          "inline-flex shrink-0 rounded-lg object-cover bg-secondary",
           size === "sm" && "size-8",
           size === "md" && "size-10",
           size === "lg" && "size-12",
@@ -34,7 +34,7 @@ export function AuthorAvatar({
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center justify-center rounded-full bg-secondary font-medium text-primary",
+        "inline-flex shrink-0 items-center justify-center rounded-lg bg-secondary font-medium text-primary",
         size === "sm" && "size-8 text-xs",
         size === "md" && "size-10 text-sm",
         size === "lg" && "size-12 text-base",

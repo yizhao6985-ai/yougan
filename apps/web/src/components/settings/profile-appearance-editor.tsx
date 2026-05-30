@@ -5,6 +5,7 @@ import { AuthorAvatar } from "@/components/content/author-avatar";
 import { Button } from "@/components/ui/button";
 import { authorDisplayName } from "@/lib/publication-utils";
 import { PROFILE_SECTION } from "@/lib/site-copy";
+import { scene } from "@/lib/scene-styles";
 import { uploadImage } from "@/services/upload";
 import { ApiError } from "@/services/client";
 import { cn } from "@/lib/utils";
@@ -63,7 +64,7 @@ export function ProfileAppearanceEditor({
         布局与公开个人主页一致。将鼠标移到封面或头像上即可更换。
       </p>
 
-      <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm shadow-border/20">
+      <div className="overflow-hidden rounded-lg border border-border/80 bg-card shadow-sm shadow-border/20">
         {/* 封面区 */}
         <div className="group relative">
           <div
@@ -128,17 +129,26 @@ export function ProfileAppearanceEditor({
             <AuthorAvatar
               author={author}
               size="lg"
-              className="size-24 border-4 border-white text-3xl shadow-md ring-1 ring-border/40 sm:size-28 sm:text-4xl"
+              className={cn(
+                scene.profileHeroAvatar,
+                "size-24 border-4 border-white text-3xl shadow-md ring-1 ring-border/40 sm:size-28 sm:text-4xl",
+              )}
             />
             {!avatarUrl ? (
-              <span className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-full bg-black/20 opacity-0 transition group-hover/avatar:opacity-100">
+              <span
+                className={cn(
+                  scene.profileHeroAvatar,
+                  "pointer-events-none absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 transition group-hover/avatar:opacity-100",
+                )}
+              >
                 <ImagePlusIcon className="size-8 text-white" />
               </span>
             ) : null}
 
             <div
               className={cn(
-                "absolute inset-0 flex items-center justify-center rounded-full bg-black/45 opacity-0 transition-opacity",
+                scene.profileHeroAvatar,
+                "absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition-opacity",
                 "group-hover/avatar:opacity-100 focus-within:opacity-100",
                 uploading === "avatar" && "opacity-100",
               )}
@@ -231,7 +241,7 @@ function MediaHintCard({
   onRemove?: () => void;
 }) {
   return (
-    <div className="rounded-xl border border-border/70 bg-muted/20 px-3 py-3">
+    <div className="rounded-lg border border-border/70 bg-muted/20 px-3 py-3">
       <p className="text-sm font-medium text-foreground/90">{label}</p>
       <p className="mt-1 text-xs leading-5 text-muted-foreground">{hint}</p>
       <div className="mt-3 flex flex-wrap gap-2 sm:hidden">

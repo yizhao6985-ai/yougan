@@ -9,7 +9,7 @@ import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
 import { newOutlineChange } from "../schemas.js";
-import { parseMode, parseOutline } from "../state.js";
+import { parseMode, parseOutline } from "../lib/parse-agent-state.js";
 import { getState, toolCommand } from "./common.js";
 
 /** 大纲 / 创作模式共用：写入待执行或大纲条目。 */

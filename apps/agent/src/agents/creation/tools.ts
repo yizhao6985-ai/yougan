@@ -10,6 +10,14 @@ import { z } from "zod";
 import { createChatModel } from "../../llm/minimax.js";
 import { env } from "../../env.js";
 import {
+  resolveContentSpec,
+  type ContentFormatId,
+  type MediaModalityId,
+} from "../../lib/content-spec.js";
+import {
+  buildFormatGenerationGuidance,
+} from "./format-prompts.js";
+import {
   consumeStructuredOutputStream,
   invokeStructuredOutput,
   streamStructuredOutput,
@@ -92,7 +100,7 @@ export const generateContent = tool(
     if (parseMode(state) !== "creation") {
       return toolCommand(config, "文案生成仅在创作模式可用。");
     }
-    const profile = parseProfile(state);
+    const profile = resolveContentSpec(parseProfile(state));
     const outline = parseOutline(state);
     if (!outline.pending_changes.length) {
       return toolCommand(
@@ -118,19 +126,29 @@ export const generateContent = tool(
       .map((c) => `- ${c.description}`)
       .join("\n");
 
+    const formatGuidance = buildFormatGenerationGuidance(
+      profile.content_format as ContentFormatId | null,
+      profile.media_modality as MediaModalityId | null,
+    );
+
     const prompt = `为 ${profile.platform} 生成发布文案。
 
 待执行变更（必须全部体现）：
 ${pending}
 
 主题：${profile.content_topic}
-类型：${profile.content_type ?? "未指定"}
+体裁：${profile.content_format ?? "未指定"}
+媒介形式：${profile.media_modality ?? "未指定"}
+类型描述：${profile.content_type ?? "未指定"}
 要点：${profile.content_points?.join(", ") || "无"}
 风格：${profile.style ?? "未指定"}；语气：${profile.tone ?? "未指定"}；人设：${profile.persona ?? "未指定"}
 受众：${profile.audience ?? "未指定"}
 目标：${profile.goals?.join(", ") || "无"}
 约束：${profile.style_constraints?.join(", ") || "无"}
 参考：${refSummaries || "无"}
+
+写作要求：
+${formatGuidance}
 
 请生成完整发布文案，包含 title、body、hashtags、hook、notes 字段。`;
 

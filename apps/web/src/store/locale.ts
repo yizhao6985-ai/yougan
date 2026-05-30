@@ -13,7 +13,7 @@ const localePreferenceBaseAtom = atom<LocaleId>(readStoredLocale());
 
 export const localePreferenceAtom = atom(
   (get) => get(localePreferenceBaseAtom),
-  (get, set, update: LocaleId) => {
+  (_get, set, update: LocaleId) => {
     writeStoredString(LOCALE_STORAGE_KEY, update);
     set(localePreferenceBaseAtom, update);
   },

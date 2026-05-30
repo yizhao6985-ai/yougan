@@ -41,7 +41,7 @@ function ModeSection({
         )}
       >
         <div className="flex shrink-0 flex-col items-start gap-4 lg:w-56">
-          <span className="inline-flex size-12 items-center justify-center rounded-2xl bg-accent text-primary">
+          <span className="inline-flex size-12 items-center justify-center rounded-lg bg-accent text-primary">
             <Icon className="size-6" aria-hidden />
           </span>
           <div>
@@ -134,7 +134,7 @@ export function FeaturesPage() {
           {SUPPORTED_PLATFORMS.map((platform) => (
             <span
               key={platform}
-              className="rounded-full border border-border/80 bg-card/90 px-4 py-1.5 text-sm text-foreground/90 shadow-sm"
+              className="rounded-md border border-border/80 bg-card/90 px-4 py-1.5 text-sm text-foreground/90 shadow-sm"
             >
               {platform}
             </span>
@@ -155,7 +155,7 @@ export function FeaturesPage() {
             {WORKFLOW_STEPS.map((item) => (
               <li
                 key={item.step}
-                className="relative rounded-2xl border border-border/80 bg-card/90 p-6 shadow-sm"
+                className="relative rounded-lg border border-border/80 bg-card/90 p-6 shadow-sm"
               >
                 <span className="font-mono text-xs font-medium text-primary">
                   {item.step}
@@ -176,7 +176,7 @@ export function FeaturesPage() {
           >
             {WORKFLOW_STEPS.map((item, i) => (
               <span key={item.step} className="inline-flex items-center gap-2">
-                <span className="rounded-full bg-secondary px-3 py-1 text-muted-foreground">
+                <span className="rounded-md bg-secondary px-3 py-1 text-muted-foreground">
                   {item.title}
                 </span>
                 {i < WORKFLOW_STEPS.length - 1 ? (
@@ -218,7 +218,7 @@ export function FeaturesPage() {
             {STUDIO_PANELS.map(({ icon: Icon, title, body }) => (
               <article
                 key={title}
-                className="rounded-2xl border border-border/80 bg-card/90 p-6 shadow-sm"
+                className="rounded-lg border border-border/80 bg-card/90 p-6 shadow-sm"
               >
                 <Icon className="size-5 text-primary" aria-hidden />
                 <h3 className="mt-3 font-medium text-foreground">{title}</h3>
@@ -232,7 +232,7 @@ export function FeaturesPage() {
           {EXTRA_CAPABILITIES.map(({ icon: Icon, title, body }) => (
             <article
               key={title}
-              className="rounded-2xl border border-border/80 bg-card/90 p-6 shadow-sm"
+              className="rounded-lg border border-border/80 bg-card/90 p-6 shadow-sm"
             >
               <Icon className="size-5 text-primary" aria-hidden />
               <h3 className="mt-3 font-medium text-foreground">{title}</h3>

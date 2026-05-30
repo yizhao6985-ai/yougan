@@ -2,7 +2,12 @@ export const DISCOVER_FORMATS = [
   { id: "note", label: "图文笔记" },
   { id: "short_post", label: "短帖动态" },
   { id: "article", label: "长文深度" },
+  { id: "blog", label: "博客专栏" },
+  { id: "novel", label: "小说故事" },
   { id: "video_script", label: "视频脚本" },
+  { id: "short_video", label: "短视频" },
+  { id: "podcast", label: "播客" },
+  { id: "music", label: "音乐音频" },
 ] as const;
 
 export const DISCOVER_TOPIC_CATEGORIES = [
@@ -17,8 +22,11 @@ export const DISCOVER_TOPIC_CATEGORIES = [
 ] as const;
 
 export const DISCOVER_MEDIA_TYPES = [
-  { id: "image", label: "含配图" },
   { id: "text", label: "纯文字" },
+  { id: "image", label: "图文" },
+  { id: "audio", label: "音频" },
+  { id: "video", label: "视频" },
+  { id: "mixed", label: "混合" },
 ] as const;
 
 export const DISCOVER_PLATFORMS = [
@@ -31,16 +39,58 @@ export const DISCOVER_PLATFORMS = [
   { id: "bilibili", label: "哔哩哔哩" },
 ] as const;
 
+export const DISCOVER_INTENT_ENTRIES = [
+  {
+    id: "story",
+    label: "读故事",
+    description: "小说、叙事与人物",
+    filters: { topicCategory: "story" },
+  },
+  {
+    id: "knowledge",
+    label: "看干货",
+    description: "教程、方法与科普",
+    filters: { topicCategory: "knowledge" },
+  },
+  {
+    id: "notes",
+    label: "刷笔记",
+    description: "种草、生活与日常",
+    filters: { contentFormat: "note" },
+  },
+  {
+    id: "audio",
+    label: "听内容",
+    description: "播客、音乐与音频",
+    filters: { mediaType: "audio" },
+  },
+  {
+    id: "video",
+    label: "看视频",
+    description: "短视频与口播",
+    filters: { mediaType: "video" },
+  },
+] as const;
+
 export type DiscoverFormatId = (typeof DISCOVER_FORMATS)[number]["id"];
 export type DiscoverTopicCategoryId =
   (typeof DISCOVER_TOPIC_CATEGORIES)[number]["id"];
 export type DiscoverMediaTypeId = (typeof DISCOVER_MEDIA_TYPES)[number]["id"];
 export type DiscoverPlatformId = (typeof DISCOVER_PLATFORMS)[number]["id"];
 
+export type PublicationMetadataOverrides = {
+  platform?: string;
+  contentFormat?: string;
+  topicCategory?: string;
+  mediaType?: string;
+};
+
 type ProfileLike = {
   platform?: string | null;
   content_topic?: string | null;
   content_type?: string | null;
+  content_format?: string | null;
+  media_modality?: string | null;
 };
 
 type OutputLike = {
@@ -57,6 +107,14 @@ const TOPIC_LABELS = Object.fromEntries(
   DISCOVER_TOPIC_CATEGORIES.map((item) => [item.id, item.label]),
 ) as Record<DiscoverTopicCategoryId, string>;
 
+const MEDIA_LABELS = Object.fromEntries(
+  DISCOVER_MEDIA_TYPES.map((item) => [item.id, item.label]),
+) as Record<DiscoverMediaTypeId, string>;
+
+const PLATFORM_LABELS = Object.fromEntries(
+  DISCOVER_PLATFORMS.map((item) => [item.id, item.label]),
+) as Record<DiscoverPlatformId, string>;
+
 export function formatLabel(id: string | null | undefined) {
   if (!id) return null;
   return FORMAT_LABELS[id as DiscoverFormatId] ?? id;
@@ -65,6 +123,16 @@ export function formatLabel(id: string | null | undefined) {
 export function topicCategoryLabel(id: string | null | undefined) {
   if (!id) return null;
   return TOPIC_LABELS[id as DiscoverTopicCategoryId] ?? id;
+}
+
+export function mediaTypeLabel(id: string | null | undefined) {
+  if (!id) return null;
+  return MEDIA_LABELS[id as DiscoverMediaTypeId] ?? id;
+}
+
+export function platformTaxonomyLabel(id: string | null | undefined) {
+  if (!id) return null;
+  return PLATFORM_LABELS[id as DiscoverPlatformId] ?? id;
 }
 
 export function normalizeTopicCategory(topic: string | null | undefined) {
@@ -92,10 +160,15 @@ function normalizeContentFormatFromType(contentType: string | null | undefined) 
   const value = contentType?.trim();
   if (!value) return null;
 
+  if (/小说|短篇|连载|言情|科幻小说/.test(value)) return "novel";
+  if (/博客|Blog|blog/.test(value)) return "blog";
   if (/笔记|种草|图文笔记/.test(value)) return "note";
   if (/短帖|动态|微博|快讯/.test(value)) return "short_post";
   if (/长文|文章|专栏|深度|公众号/.test(value)) return "article";
-  if (/脚本|口播|短视频|分镜|视频/.test(value)) return "video_script";
+  if (/播客|Podcast|podcast/.test(value)) return "podcast";
+  if (/音乐|BGM|歌曲|音频/.test(value)) return "music";
+  if (/短视频|Vlog|vlog/.test(value)) return "short_video";
+  if (/脚本|口播|分镜|视频/.test(value)) return "video_script";
 
   return null;
 }
@@ -121,7 +194,7 @@ export function inferContentFormat(input: {
       return "article";
     case "douyin":
     case "kuaishou":
-      return "video_script";
+      return "short_video";
     case "bilibili":
       return bodyLength > 900 ? "article" : "video_script";
     default:
@@ -135,11 +208,31 @@ export function inferContentFormat(input: {
 export function inferMediaType(input: {
   coverUrl?: string | null;
   images?: unknown;
+  contentType?: string | null;
+  body?: string | null;
 }) {
-  if (input.coverUrl) return "image";
-  if (Array.isArray(input.images) && input.images.length > 0) return "image";
+  const contentType = input.contentType?.trim() ?? "";
+  if (/音频|播客|音乐|BGM|歌曲|语音/.test(contentType)) return "audio";
+  if (/视频|口播|短视频|Vlog|vlog|分镜/.test(contentType)) return "video";
+
+  const hasImage =
+    Boolean(input.coverUrl) ||
+    (Array.isArray(input.images) && input.images.length > 0);
+  const bodyLength = input.body?.trim().length ?? 0;
+
+  if (hasImage && bodyLength > 100) return "mixed";
+  if (hasImage) return "image";
   return "text";
 }
+
+export type PublicationMetadata = {
+  platform: string;
+  contentFormat: string;
+  topicCategory: DiscoverTopicCategoryId;
+  contentTopic: string | null;
+  contentType: string | null;
+  mediaType: string;
+};
 
 export function buildPublicationMetadata(input: {
   profile?: ProfileLike | null;
@@ -148,7 +241,7 @@ export function buildPublicationMetadata(input: {
   body?: string | null;
   images?: unknown;
   platform?: string | null;
-}) {
+}): PublicationMetadata {
   const profile = input.profile ?? {};
   const output = input.output ?? {};
   const platform =
@@ -161,17 +254,27 @@ export function buildPublicationMetadata(input: {
     (Array.isArray(input.images) && input.images.length > 0) ||
     (Array.isArray(output.images) && output.images.length > 0);
 
-  const contentFormat = inferContentFormat({
-    platform,
-    contentType,
-    body,
-    hasImage,
-  });
+  const contentFormat =
+    profile.content_format &&
+    DISCOVER_FORMATS.some((item) => item.id === profile.content_format)
+      ? profile.content_format
+      : inferContentFormat({
+          platform,
+          contentType,
+          body,
+          hasImage,
+        });
   const topicCategory = normalizeTopicCategory(contentTopic);
-  const mediaType = inferMediaType({
-    coverUrl: input.coverUrl,
-    images: input.images ?? output.images,
-  });
+  const mediaType =
+    profile.media_modality &&
+    DISCOVER_MEDIA_TYPES.some((item) => item.id === profile.media_modality)
+      ? profile.media_modality
+      : inferMediaType({
+          coverUrl: input.coverUrl,
+          images: input.images ?? output.images,
+          contentType,
+          body,
+        });
 
   return {
     platform,
@@ -180,6 +283,51 @@ export function buildPublicationMetadata(input: {
     contentTopic,
     contentType,
     mediaType,
+  };
+}
+
+function isValidCatalogId<T extends { id: string }>(
+  catalog: readonly T[],
+  id: string | undefined,
+) {
+  return Boolean(id && catalog.some((item) => item.id === id));
+}
+
+export function applyMetadataOverrides(
+  metadata: PublicationMetadata,
+  overrides?: PublicationMetadataOverrides | null,
+): PublicationMetadata {
+  if (!overrides) return metadata;
+
+  return {
+    ...metadata,
+    platform: isValidCatalogId(DISCOVER_PLATFORMS, overrides.platform)
+      ? overrides.platform!
+      : metadata.platform,
+    contentFormat: isValidCatalogId(
+      DISCOVER_FORMATS,
+      overrides.contentFormat,
+    )
+      ? overrides.contentFormat!
+      : metadata.contentFormat,
+    topicCategory: isValidCatalogId(
+      DISCOVER_TOPIC_CATEGORIES,
+      overrides.topicCategory,
+    )
+      ? (overrides.topicCategory as DiscoverTopicCategoryId)
+      : metadata.topicCategory,
+    mediaType: isValidCatalogId(DISCOVER_MEDIA_TYPES, overrides.mediaType)
+      ? overrides.mediaType!
+      : metadata.mediaType,
+  };
+}
+
+export function buildMetadataLabels(metadata: PublicationMetadata) {
+  return {
+    platform: platformTaxonomyLabel(metadata.platform),
+    contentFormat: formatLabel(metadata.contentFormat),
+    topicCategory: topicCategoryLabel(metadata.topicCategory),
+    mediaType: mediaTypeLabel(metadata.mediaType),
   };
 }
 

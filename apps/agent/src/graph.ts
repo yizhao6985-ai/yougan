@@ -6,7 +6,7 @@
  *   START
  *     ├─ inspiration → inspirationAgent → END
  *     ├─ outline     → outlineAgent → clearInspirationChoices → END
- *     └─ creation    → creationAgent → clearInspirationChoices → END
+ *     └─ creation    → creationGraph（resolveSpec → routeByModality → pipeline）→ clearInspirationChoices → END
  *
  * mode 由前端 submit 或 switch_mode 工具写入；路由只在 START 发生一次，
  * 单次 run 内不会跨模式跳转子图（切换 mode 后下一条消息才进入新子图）。
@@ -14,15 +14,12 @@
 import { END, START, StateGraph } from "@langchain/langgraph";
 import type { LangGraphRunnableConfig } from "@langchain/langgraph";
 
-import { getCreationAgent } from "./llm/agent-factory.js";
 import { inspirationGraph } from "./agents/inspiration/graph.js";
 import { outlineGraph } from "./agents/outline/graph.js";
-import {
-  AgentState,
-  parseModelTemperature,
-  parseMode,
-  type AgentStateType,
-} from "./state.js";
+import { creationGraph } from "./agents/creation/graph.js";
+import { checkpointer } from "./lib/checkpointer.js";
+import { parseMode } from "./lib/parse-agent-state.js";
+import { AgentState, type AgentStateType } from "./state.js";
 
 /** 大纲/创作回合结束后清空结构化选项；inspirationChoices 不入库，仅当轮有效。 */
 async function clearInspirationChoices(
@@ -42,8 +39,7 @@ async function runCreationAgent(
   state: AgentStateType,
   config?: LangGraphRunnableConfig,
 ) {
-  const agent = getCreationAgent(parseModelTemperature(state));
-  return agent.invoke(state, config);
+  return creationGraph.invoke(state, config);
 }
 
 const workflow = new StateGraph(AgentState)
@@ -61,4 +57,4 @@ const workflow = new StateGraph(AgentState)
   .addEdge("creationAgent", "clearInspirationChoices")
   .addEdge("clearInspirationChoices", END);
 
-export const graph = workflow.compile();
+export const graph = workflow.compile({ checkpointer });

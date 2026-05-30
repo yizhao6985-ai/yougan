@@ -3,9 +3,6 @@ import { DEFAULT_INSPIRATION_CHOICES_HINT } from "@/lib/types";
 
 export type { InspirationChoices };
 
-/** @deprecated 使用 InspirationChoices */
-export type InspirationChoicesPayload = InspirationChoices;
-
 export type InspirationChoice = InspirationChoices["options"][number];
 
 export { DEFAULT_INSPIRATION_CHOICES_HINT as DEFAULT_INSPIRATION_UI_HINT };
@@ -67,6 +64,3 @@ export function normalizeInspirationChoices(
 
   return { hint, options };
 }
-
-/** @deprecated 使用 normalizeInspirationChoices */
-export const normalizeInspirationChoicesPayload = normalizeInspirationChoices;

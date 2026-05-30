@@ -23,7 +23,7 @@ export function LocaleSelect() {
     >
       <SelectTrigger
         className={cn(
-          "h-10 w-auto min-w-[4.75rem] gap-1.5 rounded-full border-border/80 bg-card/90 px-2.5 shadow-sm shadow-border/25 md:h-11 md:min-w-[5.5rem] md:px-3",
+          "h-10 w-auto min-w-[4.75rem] gap-1.5 rounded-lg border-border/80 bg-card/90 px-2.5 shadow-sm shadow-border/25 md:h-11 md:min-w-[5.5rem] md:px-3",
           "focus:ring-ring/50 [&>span]:flex [&>span]:items-center [&>span]:gap-1.5",
         )}
         aria-label={LOCALE.label}

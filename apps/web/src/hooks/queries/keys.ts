@@ -20,6 +20,8 @@ export const queryKeys = {
       ["publications", "feed", filters] as const,
     bySlug: (slug: string) => ["publications", "slug", slug] as const,
     mine: ["publications", "mine"] as const,
+    previewMetadata: (workId: string) =>
+      ["publications", "preview-metadata", workId] as const,
   },
   integrations: {
     all: ["integrations"] as const,

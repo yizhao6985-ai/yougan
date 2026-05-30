@@ -1,13 +1,15 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ExternalLinkIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { PublishConfirmDialog } from "@/components/studio/publish-confirm-dialog";
 import {
   useMyPublicationsQuery,
   usePublishWorkMutation,
 } from "@/hooks/queries/publications";
 import { DISCOVER_SECTION } from "@/lib/content-section";
+import type { PublicationMetadataOverrides } from "@/lib/discover-taxonomy";
 import { PUBLISH, STUDIO } from "@/lib/site-copy";
 import type { GeneratedContent } from "@/lib/types";
 
@@ -18,6 +20,7 @@ export function PublishPlatformActions({
   workId: string;
   creation?: GeneratedContent | null;
 }) {
+  const [dialogOpen, setDialogOpen] = useState(false);
   const { data: publications = [], isLoading } = useMyPublicationsQuery();
   const publishMutation = usePublishWorkMutation();
 
@@ -29,8 +32,9 @@ export function PublishPlatformActions({
     [publications, workId],
   );
 
-  const handlePublish = async () => {
-    await publishMutation.mutateAsync({ workId, publish: true });
+  const handlePublish = async (metadata: PublicationMetadataOverrides) => {
+    await publishMutation.mutateAsync({ workId, publish: true, metadata });
+    setDialogOpen(false);
   };
 
   if (!creation?.body) return null;
@@ -43,7 +47,7 @@ export function PublishPlatformActions({
   if (publication?.status === "published") {
     return (
       <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+        <span className="rounded-md bg-emerald-50 px-2.5 py-1 text-xs text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
           {PUBLISH.publishedBadge}
         </span>
         <Button type="button" variant="outline" size="sm" asChild>
@@ -56,32 +60,31 @@ export function PublishPlatformActions({
     );
   }
 
-  if (publication?.status === "draft") {
-    return (
+  return (
+    <>
       <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-accent px-2.5 py-1 text-xs text-primary">
-          {PUBLISH.draftBadge}
-        </span>
+        {publication?.status === "draft" ? (
+          <span className="rounded-md bg-accent px-2.5 py-1 text-xs text-primary">
+            {PUBLISH.draftBadge}
+          </span>
+        ) : null}
         <Button
           type="button"
           size="sm"
           disabled={publishMutation.isPending}
-          onClick={() => void handlePublish()}
+          onClick={() => setDialogOpen(true)}
         >
           {publishMutation.isPending ? PUBLISH.publishing : PUBLISH.publishButton}
         </Button>
       </div>
-    );
-  }
 
-  return (
-    <Button
-      type="button"
-      size="sm"
-      disabled={publishMutation.isPending}
-      onClick={() => void handlePublish()}
-    >
-      {publishMutation.isPending ? PUBLISH.publishing : PUBLISH.publishButton}
-    </Button>
+      <PublishConfirmDialog
+        workId={workId}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onConfirm={handlePublish}
+        isSubmitting={publishMutation.isPending}
+      />
+    </>
   );
 }

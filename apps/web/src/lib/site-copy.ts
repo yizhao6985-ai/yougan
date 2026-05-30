@@ -140,7 +140,9 @@ export const DISCOVER_SECTION = {
   title: "发现灵感",
   navLabel: "发现灵感",
   navLabelShort: "发现",
-  description: "浏览创作者公开分享的图文，找选题参考，看看不同平台的内容怎么写。",
+  description: "浏览创作者公开分享的内容，按体裁与媒介找到你想看的灵感。",
+  intentHeading: "你想看什么",
+  intentDescription: "按消费意图快速筛选，也可以在下方的详细筛选项里组合条件。",
   featuredHeading: "精选推荐",
   moreHeading: "更多内容",
   emptyFiltered: "没有符合筛选的内容，试试放宽条件。",
@@ -260,7 +262,7 @@ export const BILLING = {
 
 export const STUDIO = {
   worksTitle: "我的作品",
-  worksHint: "一件作品对应一段创作对话，可按分组管理",
+  worksHint: "每件作品一段对话，支持分组",
   newWork: "新建作品",
   newGroup: "新建分组",
   emptyTitle: "创建第一件作品",
@@ -325,14 +327,39 @@ export const CHAT_COPY = {
   }) =>
     `切换模式：${labels.inspiration} 灵感 · ${labels.outline} 大纲 · ${labels.creation} 创作`,
   thinking: "正在回复…",
+  reasoning: {
+    streaming: "正在思考…",
+    doneBrief: "思考完成",
+    doneSeconds: (seconds: number) => `思考了 ${seconds} 秒`,
+  },
   generatingInspirations: "正在生成灵感推荐…",
+  attachmentDrawer: {
+    title: (count: number) => `附件 ${count}`,
+    hint: "发送消息时一并提交",
+    expand: "展开附件",
+    collapse: "收起附件",
+    remove: (name: string) => `移除 ${name}`,
+    uploadTooltip: "添加参考图",
+    uploading: "上传中…",
+    maxReached: "最多 6 张参考图",
+  },
 } as const;
 
 /** 创作台右侧栏 */
 export const CREATIVE_CONTEXT_PANEL = {
   title: "创作脉络",
   hint: "灵感、大纲与成稿在这里逐步沉淀，切换模式时持续更新",
+  expand: "展开创作脉络",
+  collapse: "收起创作脉络",
+  tabs: {
+    inspiration: "灵感",
+    outline: "创作大纲",
+    preview: "内容预览",
+    references: "参考素材",
+  },
 } as const;
+
+export type CreativeContextTabId = keyof typeof CREATIVE_CONTEXT_PANEL.tabs;
 
 /** 创作脉络 · 灵感 */
 export const CONTENT_SETTINGS_PANEL = {
@@ -363,6 +390,17 @@ export const REFERENCE_PANEL = {
   title: "参考素材",
   hint: "对话中上传或解析的参考文案与图片会汇总在这里",
   empty: "添加参考素材后，会显示在这里。",
+  typeLabels: {
+    text: "文案",
+    image: "图片",
+    web: "网页",
+  },
+  fallbackTitle: (n: number) => `参考素材 ${n}`,
+  expand: "展开",
+  collapse: "收起",
+  openLink: "打开链接",
+  openImage: "查看原图",
+  imageUnavailable: "图片不可用",
 } as const;
 
 export const INTEGRATIONS = {
@@ -386,6 +424,18 @@ export const PUBLISH = {
   draftBadge: "草稿已保存",
   publishButton: "发布到有感",
   publishing: "发布中…",
+  confirmTitle: "确认发布分类",
+  confirmDescription:
+    "系统已根据你的创作内容推断分类标签。你可以修改后再发布，帮助其他用户在发现页找到你的内容。",
+  inferredTags: "AI 推断标签",
+  previewLoading: "正在分析内容分类…",
+  previewError: "无法加载分类预览，请稍后再试",
+  fieldFormat: "内容体裁",
+  fieldTopic: "主题类别",
+  fieldMedia: "媒介形态",
+  fieldPlatform: "目标平台",
+  cancel: "取消",
+  confirmPublish: "确认发布",
   goPublish: "去创作台写内容",
   emptyPublications: "还没有发布过的内容",
 } as const;

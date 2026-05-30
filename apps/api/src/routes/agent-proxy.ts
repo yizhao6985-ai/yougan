@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
+import type { ClientRequest } from "node:http";
 import { createProxyMiddleware } from "http-proxy-middleware";
 
 import { env } from "../env.js";
@@ -82,9 +83,10 @@ export function createAgentProxy() {
     changeOrigin: true,
     pathRewrite: { "^/langgraph": "" },
     on: {
-      proxyReq: (proxyReq, req) => {
-        if (!req.body || typeof req.body !== "object") return;
-        const bodyData = JSON.stringify(req.body);
+      proxyReq: (proxyReq: ClientRequest, req) => {
+        const expressReq = req as Request;
+        if (!expressReq.body || typeof expressReq.body !== "object") return;
+        const bodyData = JSON.stringify(expressReq.body);
         proxyReq.setHeader("Content-Type", "application/json");
         proxyReq.setHeader("Content-Length", Buffer.byteLength(bodyData));
         proxyReq.write(bodyData);

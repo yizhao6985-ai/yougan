@@ -76,7 +76,7 @@ export function PublicationsSettingsPanel() {
             type="button"
             onClick={() => setFilter(item.value)}
             className={cn(
-              "rounded-full px-3 py-1.5 text-sm transition",
+              "rounded-md px-3 py-1.5 text-sm transition",
               filter === item.value
                 ? "bg-secondary font-medium text-foreground"
                 : "bg-card text-muted-foreground ring-1 ring-border hover:bg-muted",
@@ -111,7 +111,7 @@ export function PublicationsSettingsPanel() {
                 <SettingsPanelCard className="p-0">
                   <div className="flex flex-col gap-4 p-4 sm:flex-row sm:p-5">
                     {cover ? (
-                      <div className="shrink-0 overflow-hidden rounded-xl border border-border/80 sm:w-36">
+                      <div className="shrink-0 overflow-hidden rounded-lg border border-border/80 sm:w-36">
                         <img
                           src={cover}
                           alt=""
@@ -124,7 +124,7 @@ export function PublicationsSettingsPanel() {
                       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                         <span
                           className={cn(
-                            "rounded-full px-2 py-0.5 font-medium",
+                            "rounded-md px-2 py-0.5 font-medium",
                             publication.status === "published"
                               ? "bg-emerald-50 text-emerald-700"
                               : publication.status === "draft"

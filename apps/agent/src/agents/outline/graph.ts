@@ -9,7 +9,9 @@ import { END, START, StateGraph } from "@langchain/langgraph";
 import type { LangGraphRunnableConfig } from "@langchain/langgraph";
 
 import { getOutlineAgent } from "../../llm/agent-factory.js";
-import { AgentState, parseModelTemperature, type AgentStateType } from "./state.js";
+import { parseModelTemperature } from "../../lib/parse-agent-state.js";
+import { syncReferenceImagesFromLatestMessage } from "../../lib/sync-reference-images.js";
+import { AgentState, type AgentStateType } from "./state.js";
 import {
   shouldAutoSyncOutline,
   syncOutlineFromInspiration,
@@ -19,15 +21,20 @@ import {
 async function prepareOutlineFromInspiration(
   state: AgentStateType,
 ): Promise<Partial<AgentStateType>> {
-  if (!shouldAutoSyncOutline(state)) {
-    return {};
+  const refPatch = await syncReferenceImagesFromLatestMessage(state);
+  const stateAfterRefs = refPatch.profile
+    ? { ...state, profile: refPatch.profile }
+    : state;
+
+  if (!shouldAutoSyncOutline(stateAfterRefs)) {
+    return refPatch;
   }
 
   try {
-    const outline = await syncOutlineFromInspiration(state);
-    return { outline };
+    const outline = await syncOutlineFromInspiration(stateAfterRefs);
+    return { ...refPatch, outline };
   } catch {
-    return {};
+    return refPatch;
   }
 }
 

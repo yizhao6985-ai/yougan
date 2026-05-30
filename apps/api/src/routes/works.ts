@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 
+import { routeParam } from "../lib/route-params.js";
 import type { AuthedRequest } from "../middleware/auth.js";
 import { requireAuth } from "../middleware/auth.js";
 import {
@@ -47,7 +48,7 @@ worksRouter.post("/", async (req: AuthedRequest, res) => {
 });
 
 worksRouter.get("/:workId", async (req: AuthedRequest, res) => {
-  const work = await getWork(req.userId!, req.params.workId);
+  const work = await getWork(req.userId!, routeParam(req.params.workId, "workId"));
   if (!work) {
     res.status(404).json({ error: "Work not found" });
     return;
@@ -61,7 +62,11 @@ worksRouter.patch("/:workId", async (req: AuthedRequest, res) => {
     res.status(400).json({ error: "Invalid request" });
     return;
   }
-  const work = await updateWork(req.userId!, req.params.workId, body.data);
+  const work = await updateWork(
+    req.userId!,
+    routeParam(req.params.workId, "workId"),
+    body.data,
+  );
   if (!work) {
     res.status(404).json({ error: "Work not found" });
     return;
@@ -70,7 +75,7 @@ worksRouter.patch("/:workId", async (req: AuthedRequest, res) => {
 });
 
 worksRouter.delete("/:workId", async (req: AuthedRequest, res) => {
-  const ok = await deleteWork(req.userId!, req.params.workId);
+  const ok = await deleteWork(req.userId!, routeParam(req.params.workId, "workId"));
   if (!ok) {
     res.status(404).json({ error: "Work not found" });
     return;
@@ -79,7 +84,10 @@ worksRouter.delete("/:workId", async (req: AuthedRequest, res) => {
 });
 
 worksRouter.get("/:workId/agent-context", async (req: AuthedRequest, res) => {
-  const context = await getAgentContext(req.userId!, req.params.workId);
+  const context = await getAgentContext(
+    req.userId!,
+    routeParam(req.params.workId, "workId"),
+  );
   if (!context) {
     res.status(404).json({ error: "Work not found" });
     return;
@@ -93,7 +101,7 @@ worksRouter.post(
     try {
       const result = await getWorkInspirationRecommendations(
         req.userId!,
-        req.params.workId,
+        routeParam(req.params.workId, "workId"),
       );
       if (!result) {
         res.status(404).json({ error: "Work not found" });

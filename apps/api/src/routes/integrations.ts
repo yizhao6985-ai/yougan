@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 
+import { routeParam } from "../lib/route-params.js";
 import {
   getPlatformOAuthConfig,
   isPublishPlatformId,
@@ -67,7 +68,7 @@ integrationsRouter.post(
   "/:platform/authorize",
   requireAuth,
   async (req: AuthedRequest, res) => {
-    const platform = req.params.platform;
+    const platform = routeParam(req.params.platform, "platform");
     if (!isPublishPlatformId(platform)) {
       res.status(404).json({ error: "Platform not found" });
       return;
@@ -161,7 +162,7 @@ integrationsRouter.delete(
   "/:platform",
   requireAuth,
   async (req: AuthedRequest, res) => {
-    const platform = req.params.platform;
+    const platform = routeParam(req.params.platform, "platform");
     if (!isPublishPlatformId(platform)) {
       res.status(404).json({ error: "Platform not found" });
       return;
@@ -180,7 +181,7 @@ integrationsRouter.get(
   "/:platform",
   requireAuth,
   async (req: AuthedRequest, res) => {
-    const platform = req.params.platform;
+    const platform = routeParam(req.params.platform, "platform");
     if (!isPublishPlatformId(platform)) {
       res.status(404).json({ error: "Platform not found" });
       return;

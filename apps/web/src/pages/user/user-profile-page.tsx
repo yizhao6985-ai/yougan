@@ -39,7 +39,7 @@ export function UserProfilePage() {
         {loading ? (
           <p className="text-sm text-muted-foreground">加载中…</p>
         ) : notFound || !profile ? (
-          <div className="rounded-2xl border border-dashed border-border bg-card/80 p-10 text-center">
+          <div className="rounded-lg border border-dashed border-border bg-card/80 p-10 text-center">
             <p className="text-sm text-muted-foreground">
               {PROFILE_SECTION.notFound}
             </p>

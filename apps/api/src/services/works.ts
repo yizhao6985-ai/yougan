@@ -1,4 +1,4 @@
-import type { Work } from "@prisma/client";
+import { Prisma, type Work } from "@prisma/client";
 
 import { prisma } from "../db.js";
 import type { WorkDTO } from "../schemas.js";
@@ -8,13 +8,15 @@ const EMPTY_WORK_PROFILE = {
   platform: null,
   content_topic: null,
   content_type: null,
+  content_format: null,
+  media_modality: null,
   content_points: [],
   style: null,
   tone: null,
   persona: null,
-  style_constraints: [],
   audience: null,
   goals: [],
+  style_constraints: [],
   notes: null,
   references: [],
 };
@@ -113,22 +115,35 @@ export async function updateWork(
     if (!group) return null;
   }
 
+  const updateData: Prisma.WorkUpdateInput = {};
+  if (data.title !== undefined) updateData.title = data.title;
+  if (data.mode !== undefined) updateData.mode = data.mode;
+  if (data.threadId !== undefined) updateData.threadId = data.threadId;
+  if (data.groupId !== undefined) {
+    updateData.group =
+      data.groupId === null
+        ? { disconnect: true }
+        : { connect: { id: data.groupId } };
+  }
+  if (data.profile !== undefined) {
+    updateData.profile = data.profile as Prisma.InputJsonValue;
+  }
+  if (data.outline !== undefined) {
+    updateData.outline = data.outline as Prisma.InputJsonValue;
+  }
+  if (data.inspiration !== undefined) {
+    updateData.inspiration = data.inspiration as Prisma.InputJsonValue;
+  }
+  if (data.creation !== undefined) {
+    updateData.creation =
+      data.creation === null
+        ? Prisma.JsonNull
+        : (data.creation as Prisma.InputJsonValue);
+  }
+
   const work = await prisma.work.update({
     where: { id: workId },
-    data: {
-      ...(data.title !== undefined ? { title: data.title } : {}),
-      ...(data.mode !== undefined ? { mode: data.mode } : {}),
-      ...(data.threadId !== undefined ? { threadId: data.threadId } : {}),
-      ...(data.groupId !== undefined ? { groupId: data.groupId } : {}),
-      ...(data.profile !== undefined ? { profile: data.profile as object } : {}),
-      ...(data.outline !== undefined ? { outline: data.outline as object } : {}),
-      ...(data.inspiration !== undefined
-        ? { inspiration: data.inspiration as object }
-        : {}),
-      ...(data.creation !== undefined
-        ? { creation: data.creation as object | null }
-        : {}),
-    },
+    data: updateData,
   });
   return toWorkDTO(work);
 }

@@ -6,12 +6,11 @@
  */
 import { Command, getCurrentTaskInput } from "@langchain/langgraph";
 import { ToolMessage } from "@langchain/core/messages";
-import type { LangGraphRunnableConfig } from "@langchain/langgraph";
+import type { ToolRunnableConfig } from "@langchain/core/tools";
 
 import type { AgentStateType } from "../state.js";
 import type { WorkProfile } from "../schemas.js";
-import { defaultProfile } from "../schemas.js";
-import { parseProfile } from "../state.js";
+import { parseProfile } from "../lib/parse-agent-state.js";
 
 export function getState(): AgentStateType {
   return getCurrentTaskInput() as AgentStateType;
@@ -25,11 +24,11 @@ export function updateProfile(
 }
 
 export function toolCommand(
-  config: LangGraphRunnableConfig,
+  config: ToolRunnableConfig | Record<string, unknown>,
   content: string,
   updates: Record<string, unknown> = {},
 ): Command {
-  const toolCallId = config.toolCall?.id ?? "";
+  const toolCallId = (config as ToolRunnableConfig).toolCall?.id ?? "";
   return new Command({
     update: {
       messages: [new ToolMessage({ content, tool_call_id: toolCallId })],
@@ -47,5 +46,3 @@ export function mergeProfileReferences(
     references: [...(profile.references ?? []), ...(refs ?? [])],
   };
 }
-
-export { defaultProfile };

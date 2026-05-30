@@ -4,6 +4,8 @@ import type { ChatMode } from "@/lib/types";
 export const TOOL_LABELS: Record<string, string> = {
   switch_mode: "切换模式",
   confirm_requirement: "确认灵感",
+  present_inspiration_choices: "展示灵感选项",
+  confirm_content_spec: "确认内容规格",
   update_requirement: "修改灵感",
   delete_requirement: "删除灵感",
   clear_inspirations: "清空灵感",
@@ -21,14 +23,16 @@ export const TOOL_LABELS: Record<string, string> = {
 const PROFILE_FIELD_LABELS: Record<string, string> = {
   platform: "平台",
   content_topic: "主题",
-  content_type: "内容类型",
+  content_type: "类型描述",
+  content_format: "体裁",
+  media_modality: "媒介形式",
   content_points: "内容要点",
   style: "风格",
   tone: "语气",
   persona: "人设",
-  style_constraints: "风格约束",
   audience: "受众",
   goals: "目标",
+  style_constraints: "风格约束",
   notes: "备注",
 };
 

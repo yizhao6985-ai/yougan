@@ -27,7 +27,7 @@ export function SettingsUserStrip() {
   const isPro = subscription?.planId === "pro";
 
   return (
-    <section className="rounded-2xl border border-border/80 bg-card p-4 shadow-sm shadow-border/20 sm:p-5">
+    <section className="rounded-lg border border-border/80 bg-card p-4 shadow-sm shadow-border/20 sm:p-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-center gap-3">
           <AuthorAvatar author={author} size="md" className="size-12 text-base" />
@@ -104,7 +104,7 @@ export function SettingsPanelCard({
   return (
     <section
       className={cn(
-        "rounded-2xl border border-border/80 bg-card p-5 shadow-sm shadow-border/20 sm:p-6",
+        "rounded-lg border border-border/80 bg-card p-5 shadow-sm shadow-border/20 sm:p-6",
         className,
       )}
     >
@@ -123,7 +123,7 @@ export function SettingsPanelCard({
 
 export function SettingsPageBody({ children }: { children: ReactNode }) {
   return (
-    <div className="rounded-2xl border border-border/80 bg-card/40 p-5 sm:p-8">
+    <div className="rounded-lg border border-border/80 bg-card/40 p-5 sm:p-8">
       {children}
     </div>
   );
@@ -139,7 +139,7 @@ export function SettingsNotice({
   return (
     <p
       className={cn(
-        "rounded-xl border px-3 py-2 text-sm",
+        "rounded-lg border px-3 py-2 text-sm",
         tone === "success"
           ? "border-emerald-200 bg-emerald-50 text-emerald-800"
           : "border-red-200 bg-red-50 text-red-700",
@@ -158,7 +158,7 @@ export function SettingsEmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-dashed border-border bg-card/80 px-6 py-12 text-center">
+    <div className="rounded-lg border border-dashed border-border bg-card/80 px-6 py-12 text-center">
       <p className="text-sm text-muted-foreground">{message}</p>
       {action ? <div className="mt-4">{action}</div> : null}
     </div>

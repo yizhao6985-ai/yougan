@@ -2,13 +2,17 @@ import { ImageIcon } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { PromptInputButton } from "@/components/ai-elements/prompt-input";
+import { useComposerAttachmentsContext } from "@/components/studio/composer-attachments-context";
 import { useYouganStreamContext } from "@/components/studio/yougan-stream-provider";
-import { uploadReference } from "@/services/works";
+import { CHAT_COPY } from "@/lib/site-copy";
 
 export function UploadReferenceButton() {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
-  const { sendMessage, canChat } = useYouganStreamContext();
+  const [picking, setPicking] = useState(false);
+  const { canChat } = useYouganStreamContext();
+  const { addFiles, hasUploading, canAddMore } = useComposerAttachmentsContext();
+
+  const disabled = !canChat || hasUploading || !canAddMore || picking;
 
   return (
     <>
@@ -16,23 +20,29 @@ export function UploadReferenceButton() {
         ref={inputRef}
         type="file"
         accept="image/*"
+        multiple
         className="hidden"
         onChange={async (event) => {
-          const file = event.target.files?.[0];
-          if (!file) return;
-          setUploading(true);
+          const files = event.target.files;
+          if (!files?.length) return;
+          setPicking(true);
           try {
-            const data = await uploadReference(file);
-            await sendMessage(`我上传了参考图片，请解析：${data.url}`);
+            await addFiles(files);
           } finally {
-            setUploading(false);
+            setPicking(false);
             if (inputRef.current) inputRef.current.value = "";
           }
         }}
       />
       <PromptInputButton
-        disabled={!canChat || uploading}
-        tooltip={uploading ? "上传中..." : "上传参考图"}
+        disabled={disabled}
+        tooltip={
+          !canAddMore
+            ? CHAT_COPY.attachmentDrawer.maxReached
+            : hasUploading || picking
+              ? CHAT_COPY.attachmentDrawer.uploading
+              : CHAT_COPY.attachmentDrawer.uploadTooltip
+        }
         onClick={() => inputRef.current?.click()}
       >
         <ImageIcon className="size-4" />

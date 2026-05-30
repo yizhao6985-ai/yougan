@@ -63,7 +63,7 @@ function FilterChip({
       type="button"
       onClick={onClick}
       className={cn(
-        "inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm transition",
+        "inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-sm transition",
         active
           ? "bg-secondary font-medium text-foreground"
           : "bg-card text-muted-foreground ring-1 ring-border hover:bg-muted",
@@ -104,7 +104,7 @@ export function DiscoverFiltersPanel({
   const clearAll = () => onChange({});
 
   return (
-    <section className="space-y-5 rounded-2xl border border-border/80 bg-card p-4 shadow-sm shadow-border/25 sm:p-5">
+    <section className="space-y-5 rounded-lg border border-border/80 bg-card p-4 shadow-sm shadow-border/25 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm font-medium text-foreground">筛选内容</p>
@@ -116,7 +116,7 @@ export function DiscoverFiltersPanel({
           <button
             type="button"
             onClick={clearAll}
-            className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs text-muted-foreground transition hover:bg-secondary hover:text-foreground/90"
+            className="inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs text-muted-foreground transition hover:bg-secondary hover:text-foreground/90"
           >
             <XIcon className="size-3.5" />
             清除筛选（{activeCount}）
@@ -143,7 +143,7 @@ export function DiscoverFiltersPanel({
         onSelect={(value) => updateFilter("topicCategory", value)}
       />
       <FilterGroup
-        label="呈现方式"
+        label="媒介形态"
         activeValue={filters.mediaType}
         options={facets.mediaType}
         onSelect={(value) => updateFilter("mediaType", value)}
