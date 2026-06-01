@@ -309,6 +309,27 @@
                 },
                 "created_at": {
                   "type": "string"
+                },
+                "department": {
+                  "type": "string",
+                  "enum": [
+                    "writing",
+                    "design",
+                    "audio",
+                    "video"
+                  ]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "pending",
+                    "in_progress",
+                    "completed"
+                  ]
+                },
+                "assignee": {
+                  "type": "string",
+                  "nullable": true
                 }
               },
               "required": [
@@ -335,6 +356,19 @@
                 "batch_summary": {
                   "type": "string",
                   "nullable": true
+                },
+                "department": {
+                  "type": "string",
+                  "enum": [
+                    "writing",
+                    "design",
+                    "audio",
+                    "video"
+                  ]
+                },
+                "assignee": {
+                  "type": "string",
+                  "nullable": true
                 }
               },
               "required": [
@@ -348,12 +382,39 @@
             "type": "string",
             "nullable": true
           },
-          "outline_summary": {
+          "plan_ready": {
+            "type": "boolean"
+          },
+          "plan_summary": {
+            "type": "string",
+            "nullable": true
+          },
+          "departments": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "writing",
+                "design",
+                "audio",
+                "video"
+              ]
+            }
+          },
+          "industry_context": {
+            "type": "string",
+            "nullable": true
+          },
+          "creative_director_notes": {
             "type": "string",
             "nullable": true
           },
           "outline_ready": {
             "type": "boolean"
+          },
+          "outline_summary": {
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
@@ -461,18 +522,6 @@
             "type": "string",
             "nullable": true
           },
-          "mode": {
-            "type": "string",
-            "enum": [
-              "inspiration",
-              "outline",
-              "creation"
-            ]
-          },
-          "threadId": {
-            "type": "string",
-            "nullable": true
-          },
           "profile": {
             "$ref": "#/components/schemas/WorkProfile"
           },
@@ -496,8 +545,6 @@
           "id",
           "title",
           "groupId",
-          "mode",
-          "threadId",
           "profile",
           "outline",
           "inspiration",
@@ -509,18 +556,6 @@
       "SyncWorkState": {
         "type": "object",
         "properties": {
-          "mode": {
-            "type": "string",
-            "enum": [
-              "inspiration",
-              "outline",
-              "creation"
-            ]
-          },
-          "threadId": {
-            "type": "string",
-            "nullable": true
-          },
           "groupId": {
             "type": "string",
             "nullable": true
@@ -548,12 +583,15 @@
           "workId": {
             "type": "string"
           },
+          "conversationId": {
+            "type": "string"
+          },
           "mode": {
             "type": "string",
             "enum": [
               "inspiration",
-              "outline",
-              "creation"
+              "creation",
+              "ask"
             ]
           },
           "profile": {
@@ -567,6 +605,13 @@
           },
           "creation": {
             "$ref": "#/components/schemas/GeneratedContent"
+          },
+          "threadId": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string"
           }
         },
         "required": [
@@ -608,7 +653,7 @@
               "$ref": "#/components/schemas/InspirationRecommendation"
             },
             "minItems": 1,
-            "maxItems": 5
+            "maxItems": 3
           }
         },
         "required": [

@@ -99,7 +99,7 @@ cp apps/web/.env.local.example apps/web/.env.local
 pnpm db:push
 ```
 
-生产环境请使用 `pnpm --filter @yougan/api db:migrate` 管理迁移，见 [apps/api/README.md](./apps/api/README.md)。
+Schema 变更后执行上述命令即可；v0 不维护 Prisma migrations。
 
 ### 4. 启动开发服务
 

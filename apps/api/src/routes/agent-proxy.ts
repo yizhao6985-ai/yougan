@@ -12,8 +12,8 @@ function langgraphPath(req: Request) {
 }
 
 /**
- * 在转发 LangGraph run 前，从 X-Work-Id 注入作品上下文到请求体 input。
- * 流结束后由前端 PATCH /works/:id 同步状态（或通过 values 事件回调）。
+ * 在转发 LangGraph run 前，从 X-Work-Id / X-Conversation-Id 注入作品长记忆与对话模式。
+ * 流结束后由前端 PATCH 同步：作品 JSON 字段 → Work，threadId/mode → WorkConversation。
  */
 export async function injectWorkContext(
   req: AuthedRequest,
@@ -21,6 +21,10 @@ export async function injectWorkContext(
   next: NextFunction,
 ) {
   const workId = req.headers["x-work-id"];
+  const conversationIdHeader = req.headers["x-conversation-id"];
+  const conversationId =
+    typeof conversationIdHeader === "string" ? conversationIdHeader : undefined;
+
   if (!workId || typeof workId !== "string" || !req.userId) {
     next();
     return;
@@ -46,7 +50,7 @@ export async function injectWorkContext(
       return;
     }
 
-    const context = await getAgentContext(req.userId, workId);
+    const context = await getAgentContext(req.userId, workId, conversationId);
     if (!context) {
       res.status(404).json({ error: "Work not found" });
       return;
@@ -60,15 +64,14 @@ export async function injectWorkContext(
         mode: context.mode,
         workId: context.workId,
         profile: context.profile,
-        outline: context.outline,
+        plan: context.outline,
         inspiration: context.inspiration,
         creation: context.creation,
       },
     };
 
-    // 记录 threadId 若响应中有（由前端 onThreadId 回调 PATCH）
-    if (context.threadId && req.body.config?.configurable) {
-      req.body.config.configurable.workId = workId;
+    if (conversationId && req.body.config?.configurable) {
+      req.body.config.configurable.conversationId = conversationId;
     }
 
     next();
@@ -102,9 +105,8 @@ export async function syncWorkFromAgentState(
   values: Record<string, unknown>,
 ) {
   return updateWork(userId, workId, {
-    mode: values.mode as string | undefined,
     profile: values.profile,
-    outline: values.outline,
+    outline: values.plan ?? values.outline,
     inspiration: values.inspiration,
     creation: values.creation ?? null,
   });

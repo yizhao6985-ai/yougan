@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import { normalizeInspirationChoices } from "@/lib/inspiration-ui-spec";
+import { normalizeInspirationSuggestions } from "@/lib/inspiration-ui-spec";
 import type { ChatMode, YouganValues } from "@/lib/types";
 
 type StreamLike = {
@@ -8,12 +8,34 @@ type StreamLike = {
   isLoading: boolean;
 };
 
-/** 灵感模式选项：只读 Agent 结构化写入的 inspirationChoices */
-export function useInspirationChoices(mode: ChatMode, stream: StreamLike) {
-  const activeChoices = useMemo(() => {
+/** 灵感模式建议：读取 Agent 结构化写入的 inspirationSuggestions */
+export function useInspirationSuggestions(mode: ChatMode, stream: StreamLike) {
+  const activeSuggestions = useMemo(() => {
     if (mode !== "inspiration" || stream.isLoading) return null;
-    return normalizeInspirationChoices(stream.values?.inspirationChoices);
-  }, [mode, stream.isLoading, stream.values?.inspirationChoices]);
+    return normalizeInspirationSuggestions(
+      stream.values?.inspirationSuggestions ?? stream.values?.inspirationChoices,
+    );
+  }, [
+    mode,
+    stream.isLoading,
+    stream.values?.inspirationSuggestions,
+    stream.values?.inspirationChoices,
+  ]);
 
-  return { activeChoices };
+  return { activeSuggestions };
+}
+
+/** @deprecated 使用 useInspirationSuggestions */
+export function useInspirationChoices(mode: ChatMode, stream: StreamLike) {
+  const { activeSuggestions } = useInspirationSuggestions(mode, stream);
+  if (!activeSuggestions) return { activeChoices: null };
+  return {
+    activeChoices: {
+      hint: activeSuggestions.hint,
+      options: activeSuggestions.suggestions.map((s) => ({
+        description: s.message,
+        letter: s.label,
+      })),
+    },
+  };
 }

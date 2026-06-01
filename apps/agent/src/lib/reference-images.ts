@@ -1,6 +1,6 @@
 import type { BaseMessage } from "@langchain/core/messages";
 
-import type { ReferenceItem, WorkProfile } from "../schemas.js";
+import type { ReferenceItem, WorkProfile } from "../schema.js";
 
 export function extractImageUrlsFromHumanContent(content: unknown): string[] {
   if (!Array.isArray(content)) return [];

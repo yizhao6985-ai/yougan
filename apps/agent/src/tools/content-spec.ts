@@ -14,9 +14,10 @@ import {
   mediaModalityLabel,
   resolveContentSpec,
 } from "../lib/content-spec.js";
-import { normalizePlatform } from "../schemas.js";
+import { normalizePlatform } from "../schema.js";
 import { parseMode, parseProfile } from "../lib/parse-agent-state.js";
-import { getState, toolCommand, updateProfile } from "./common.js";
+import { getState, updateProfile } from "../lib/tool-state.js";
+import { toolCommand } from "../lib/tool-command.js";
 
 const formatIds = CONTENT_FORMATS.map((item) => item.id) as [
   string,
@@ -30,10 +31,10 @@ const modalityIds = MEDIA_MODALITIES.map((item) => item.id) as [
 export const confirmContentSpec = tool(
   async (input, config) => {
     const mode = parseMode(getState());
-    if (mode !== "inspiration" && mode !== "outline") {
+    if (mode !== "inspiration" && mode !== "ask") {
       return toolCommand(
         config,
-        "confirm_content_spec 仅在灵感模式或大纲模式可用。",
+        "confirm_content_spec 仅在灵感模式或提问模式可用。",
       );
     }
 

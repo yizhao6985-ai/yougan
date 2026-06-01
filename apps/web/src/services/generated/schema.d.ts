@@ -1201,16 +1201,29 @@ export interface components {
                 id: string;
                 description: string;
                 created_at: string;
+                /** @enum {string} */
+                department?: "writing" | "design" | "audio" | "video";
+                /** @enum {string} */
+                status?: "pending" | "in_progress" | "completed";
+                assignee?: string | null;
             }[];
             executed_changes: {
                 id: string;
                 description: string;
                 executed_at: string;
                 batch_summary?: string | null;
+                /** @enum {string} */
+                department?: "writing" | "design" | "audio" | "video";
+                assignee?: string | null;
             }[];
             last_execution_summary?: string | null;
-            outline_summary?: string | null;
+            plan_ready?: boolean;
+            plan_summary?: string | null;
+            departments?: ("writing" | "design" | "audio" | "video")[];
+            industry_context?: string | null;
+            creative_director_notes?: string | null;
             outline_ready?: boolean;
+            outline_summary?: string | null;
         };
         WorkInspiration: {
             confirmed_requirements: {
@@ -1238,9 +1251,6 @@ export interface components {
             id: string;
             title: string;
             groupId: string | null;
-            /** @enum {string} */
-            mode: "inspiration" | "outline" | "creation";
-            threadId: string | null;
             profile: components["schemas"]["WorkProfile"];
             outline: components["schemas"]["WorkOutline"];
             inspiration: components["schemas"]["WorkInspiration"];
@@ -1249,9 +1259,6 @@ export interface components {
             updatedAt: string;
         };
         SyncWorkState: {
-            /** @enum {string} */
-            mode?: "inspiration" | "outline" | "creation";
-            threadId?: string | null;
             groupId?: string | null;
             profile?: components["schemas"]["WorkProfile"];
             outline?: components["schemas"]["WorkOutline"];
@@ -1261,12 +1268,15 @@ export interface components {
         };
         AgentContext: {
             workId: string;
+            conversationId?: string;
             /** @enum {string} */
-            mode: "inspiration" | "outline" | "creation";
+            mode: "inspiration" | "creation" | "ask";
             profile: components["schemas"]["WorkProfile"];
             outline: components["schemas"]["WorkOutline"];
             inspiration: components["schemas"]["WorkInspiration"];
             creation: components["schemas"]["GeneratedContent"];
+            threadId?: string | null;
+            title?: string;
         };
         InspirationRecommendation: {
             id: string;

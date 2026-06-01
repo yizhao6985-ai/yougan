@@ -5,14 +5,15 @@
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
-import { normalizePlatform } from "../schemas.js";
+import { normalizePlatform } from "../schema.js";
 import {
   isValidContentFormat,
   isValidMediaModality,
   resolveContentSpec,
 } from "../lib/content-spec.js";
 import { parseMode } from "../lib/parse-agent-state.js";
-import { getState, toolCommand, updateProfile } from "./common.js";
+import { getState, updateProfile } from "../lib/tool-state.js";
+import { toolCommand } from "../lib/tool-command.js";
 
 const profileSchema = z.object({
   platform: z.string().nullable().optional(),

@@ -22,7 +22,7 @@ import {
   mergeInspirationState,
   updateInspirationRequirement as replaceInspirationRequirement,
 } from "@/lib/inspiration-merge";
-import type { YouganValues, ChatMode, Work, WorkInspiration } from "@/lib/types";
+import type { YouganValues, Work, WorkInspiration } from "@/lib/types";
 import { EMPTY_WORK_OUTLINE } from "@/lib/types";
 import { useAuthToken } from "@/store/auth";
 import { activeWorkIdAtom } from "@/store/studio";
@@ -128,38 +128,6 @@ export function useWorksStore() {
     [setActiveWorkId],
   );
 
-  const setWorkMode = useCallback(
-    (workId: string, mode: ChatMode) => {
-      patchWorksCache(queryClient, (works) =>
-        works.map((work) => (work.id === workId ? { ...work, mode } : work)),
-      );
-      void updateWorkMutation
-        .mutateAsync({ workId, patch: { mode } })
-        .catch(() => {
-          void queryClient.invalidateQueries({ queryKey: queryKeys.works.list });
-        });
-    },
-    [queryClient, updateWorkMutation],
-  );
-
-  const syncModeFromStream = useCallback(
-    async (workId: string, mode: ChatMode) => {
-      const current = queryClient
-        .getQueryData<Work[]>(queryKeys.works.list)
-        ?.find((work) => work.id === workId);
-      if (current?.mode === mode) return;
-      await updateWorkMutation.mutateAsync({ workId, patch: { mode } });
-    },
-    [queryClient, updateWorkMutation],
-  );
-
-  const setWorkThreadId = useCallback(
-    async (workId: string, threadId: string | null) => {
-      await updateWorkMutation.mutateAsync({ workId, patch: { threadId } });
-    },
-    [updateWorkMutation],
-  );
-
   const syncFromStream = useCallback(
     async (workId: string, values: YouganValues) => {
       const current = queryClient
@@ -173,10 +141,11 @@ export function useWorksStore() {
 
       const patch: Partial<Work> = {};
       if (values.profile !== undefined) patch.profile = values.profile;
-      if (values.outline !== undefined) {
+      const streamPlan = values.plan ?? values.outline;
+      if (streamPlan !== undefined) {
         patch.outline = {
           ...(current?.outline ?? EMPTY_WORK_OUTLINE),
-          ...values.outline,
+          ...streamPlan,
         };
       }
       if (mergedInspiration !== undefined) patch.inspiration = mergedInspiration;
@@ -280,9 +249,6 @@ export function useWorksStore() {
     deleteGroup,
     deleteWork,
     selectWork,
-    setWorkMode,
-    syncModeFromStream,
-    setWorkThreadId,
     syncFromStream,
     updateInspirationRequirement,
     deleteInspirationRequirement,

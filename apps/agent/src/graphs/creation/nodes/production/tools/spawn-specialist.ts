@@ -1,0 +1,102 @@
+import { HumanMessage } from "@langchain/core/messages";
+import { tool } from "@langchain/core/tools";
+import { z } from "zod";
+
+import { createChatModel } from "../../../../../llm/dashscope.js";
+import { resolveContentSpec } from "../../../../../lib/content-spec.js";
+import { departmentBrief } from "../../../../../lib/industry-prompts.js";
+import { getPlanSummary, type GeneratedContent } from "../../../../../schema.js";
+import {
+  parseMode,
+  parseModelTemperature,
+  parseProductionPlan,
+  parseProfile,
+} from "../../../../../lib/parse-agent-state.js";
+import { getState } from "../../../../../lib/tool-state.js";
+import { toolCommand } from "../../../../../lib/tool-command.js";
+
+import { DEPARTMENT_LABELS } from "./shared.js";
+
+export const spawnSpecialist = tool(
+  async ({ department, brief, specialist_name }, config) => {
+    const state = getState();
+    if (parseMode(state) !== "creation") {
+      return toolCommand(config, "spawn_specialist 仅在创作模式可用。");
+    }
+
+    const profile = resolveContentSpec(parseProfile(state));
+    const plan = parseProductionPlan(state);
+    const label = DEPARTMENT_LABELS[department];
+    const name = specialist_name?.trim() || label;
+    const industry = plan.industry_context ?? "";
+
+    const llm = createChatModel({
+      temperature: parseModelTemperature(state),
+    });
+
+    const prompt = `你是${name}（${departmentBrief(department)}），执行以下任务：
+
+任务说明：${brief}
+
+作品主题：${profile.content_topic ?? "未指定"}
+平台：${profile.platform ?? "未指定"}
+制作计划：${getPlanSummary(plan) ?? "无"}
+行业背景：${industry}
+
+请输出该部门的专业交付物（设计稿描述/口播稿/分镜脚本等），用 Markdown 格式。`;
+
+    let output: string;
+    try {
+      const response = await llm.invoke([
+        new HumanMessage(prompt),
+      ]);
+      output =
+        typeof response.content === "string"
+          ? response.content
+          : JSON.stringify(response.content);
+    } catch {
+      output = `${name}暂时无法完成该任务，请稍后重试。`;
+    }
+
+    const existing = state.creation;
+    const section = `\n\n---\n### ${name}（${department}）\n${output}`;
+    const creation: GeneratedContent = existing
+      ? {
+          ...existing,
+          notes: (existing.notes ?? "") + section,
+        }
+      : {
+          platform: profile.platform ?? "unknown",
+          title: profile.content_topic ?? null,
+          body: output,
+          notes: section,
+          publish_ready: false,
+        };
+
+    const pending = plan.pending_changes.map((task) =>
+      task.department === department && !task.assignee
+        ? { ...task, assignee: name, status: "in_progress" as const }
+        : task,
+    );
+
+    return toolCommand(config, `${name} 已完成任务。`, {
+      creation,
+      plan: { ...plan, pending_changes: pending },
+    });
+  },
+  {
+    name: "spawn_specialist",
+    description:
+      "临时创建部门专员执行任务。design=配图方案；audio=口播/播客稿；video=分镜脚本；writing 请用 generate_content。",
+    schema: z.object({
+      department: z
+        .enum(["writing", "design", "audio", "video"])
+        .describe("部门"),
+      brief: z.string().describe("交给专员的具体任务说明"),
+      specialist_name: z
+        .string()
+        .optional()
+        .describe("专员称呼，如「封面设计师小李」"),
+    }),
+  },
+);

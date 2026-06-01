@@ -1,11 +1,11 @@
 import { creativeContextPanelClassNames } from "@/components/studio/creative-context/shared";
 import { CreativeContextDrawer } from "@/components/studio/creative-context-drawer";
 import { CreativeContextPanelContent } from "@/components/studio/creative-context-panel-content";
+import { WorksAside } from "@/components/studio/works-aside";
 import { YouganChat } from "@/components/studio/yougan-chat";
 import { useYouganStreamContext } from "@/components/studio/yougan-stream-provider";
-import { WorksSidebar } from "@/components/studio/works-sidebar";
 import { mergeInspirationState } from "@/lib/inspiration-merge";
-import { CREATIVE_CONTEXT_PANEL, STUDIO } from "@/lib/site-copy";
+import { CREATIVE_CONTEXT_PANEL } from "@/lib/site-copy";
 
 export function StudioCreateView() {
   const {
@@ -16,7 +16,6 @@ export function StudioCreateView() {
     clearWorkInspirations,
   } = useYouganStreamContext();
   const profile = stream.values?.profile ?? activeWork?.profile;
-  const outline = stream.values?.outline ?? activeWork?.outline;
   const inspiration = mergeInspirationState(
     activeWork?.inspiration,
     stream.values?.inspiration,
@@ -27,7 +26,6 @@ export function StudioCreateView() {
     <CreativeContextPanelContent
       activeWork={activeWork}
       profile={profile}
-      outline={outline}
       inspiration={inspiration}
       creation={creation}
       onUpdateRequirement={
@@ -55,15 +53,7 @@ export function StudioCreateView() {
   return (
     <div className="grid h-full min-h-0 flex-1 overflow-hidden lg:grid-cols-[280px_minmax(0,1fr)_auto]">
       <aside className="hidden min-h-0 flex-col border-r border-border/80 bg-card/80 lg:flex">
-        <div className={creativeContextPanelClassNames.asideHeader}>
-          <p className={creativeContextPanelClassNames.asideTitle}>
-            {STUDIO.worksTitle}
-          </p>
-          <p className={creativeContextPanelClassNames.asideHint}>
-            {STUDIO.worksHint}
-          </p>
-        </div>
-        <WorksSidebar />
+        <WorksAside />
       </aside>
 
       <div className="flex min-h-0 min-w-0 flex-col overflow-hidden bg-gradient-to-b from-accent/35 to-background">

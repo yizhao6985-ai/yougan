@@ -122,28 +122,42 @@ model WorkGroup {
 }
 
 model Work {
-  id            String         @id @default(cuid())
+  id            String              @id @default(cuid())
   userId        String
-  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   groupId       String?
-  group         WorkGroup?     @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  group         WorkGroup?          @relation(fields: [groupId], references: [id], onDelete: SetNull)
   title         String
-  /// 创作模式：inspiration=灵感 | outline=大纲 | creation=创作
-  mode          String         @default("inspiration")
-  threadId      String?
-  profile       Json           @default("{}")
-  /// 大纲模式 JSON（创作大纲）
-  outline       Json           @default("{}")
-  /// 灵感模式 JSON（已确认需求 / 灵感总结）
-  inspiration   Json           @default("{}")
-  /// 创作模式 JSON（按大纲生成的最终实现）
+  /// 作品级长记忆：内容概览（含 references）
+  profile       Json                @default("{}")
+  /// 作品级长记忆：制作计划
+  outline       Json                @default("{}")
+  /// 作品级长记忆：已确认灵感 / 需求
+  inspiration   Json                @default("{}")
+  /// 作品级长记忆：最新成稿
   creation      Json?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
   publications  Publication[]
+  conversations WorkConversation[]
 
   @@index([userId, updatedAt(sort: Desc)])
   @@index([userId, groupId, updatedAt(sort: Desc)])
+}
+
+/// 作品下的多轮对话；messages 存 LangGraph thread checkpoint
+model WorkConversation {
+  id        String   @id @default(cuid())
+  workId    String
+  work      Work     @relation(fields: [workId], references: [id], onDelete: Cascade)
+  title     String   @default("新对话")
+  /// 对话模式：inspiration | creation | ask
+  mode      String   @default("inspiration")
+  threadId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workId, updatedAt(sort: Desc)])
 }
 
 model Publication {

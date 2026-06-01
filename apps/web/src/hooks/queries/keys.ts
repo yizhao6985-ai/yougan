@@ -7,6 +7,8 @@ export const queryKeys = {
   works: {
     all: ["works"] as const,
     list: ["works", "list"] as const,
+    conversations: (workId: string) =>
+      ["works", workId, "conversations"] as const,
     inspirationRecommendations: (workId: string, title: string) =>
       ["works", "inspiration-recommendations", workId, title] as const,
   },

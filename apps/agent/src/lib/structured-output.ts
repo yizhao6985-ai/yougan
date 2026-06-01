@@ -1,7 +1,7 @@
 /**
  * LangChain withStructuredOutput 封装。
- * - functionCalling：ChatAnthropic 等（默认）
- * - jsonMode：response_format json_object（需 OpenAI 兼容端点时使用）
+ * - functionCalling：ChatOpenAI 等（默认）
+ * - jsonMode：response_format json_object
  */
 import type { AIMessageChunk } from "@langchain/core/messages";
 import type { BaseLanguageModelInput } from "@langchain/core/language_models/base";

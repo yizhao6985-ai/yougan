@@ -3,7 +3,7 @@
   "node_version": "20",
   "graphs": {
     "yougan": "./src/graph.ts:graph",
-    "inspiration-recommendations": "./src/agents/inspiration-recommendations/graph.ts:graph"
+    "inspiration-recommendations": "./src/graphs/inspiration-recommendations/graph.ts:graph"
   },
   "env": ".env",
   "checkpointer": {

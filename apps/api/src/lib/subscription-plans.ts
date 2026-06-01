@@ -28,7 +28,7 @@ export const SUBSCRIPTION_PLANS: Record<
     priceYearlyCents: 0,
     features: [
       "每月 30 次 AI 创作",
-      "灵感 · 大纲 · 创作全流程",
+      "灵感 · 创作 · 提问全流程",
       "作品分组与云端同步",
     ],
   },

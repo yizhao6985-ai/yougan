@@ -110,8 +110,8 @@ worksRouter.post(
       res.json(result);
     } catch (error) {
       if (error instanceof Error) {
-        if (error.message === "DEEPSEEK_API_KEY_MISSING") {
-          res.status(503).json({ error: "灵感推荐服务未配置 DeepSeek" });
+        if (error.message === "DASHSCOPE_API_KEY_MISSING") {
+          res.status(503).json({ error: "灵感推荐服务未配置百炼 API Key" });
           return;
         }
         if (error.message === "INSPIRATION_RECOMMENDATIONS_EMPTY") {

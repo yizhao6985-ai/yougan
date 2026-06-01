@@ -2,7 +2,7 @@ import type { HTMLAttributes, ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
-/** 对话流内助手侧内容块（思考、正文、工具、系统提示等）共用外观 */
+/** 对话流内助手侧内容块（正文、工具、系统提示等）共用外观 */
 export const chatStreamBlock = {
   root: cn(
     "w-full rounded-lg border border-border/80 bg-card px-4 py-3",

@@ -4,20 +4,19 @@ import type { ChatMode } from "@/lib/types";
 export const TOOL_LABELS: Record<string, string> = {
   switch_mode: "切换模式",
   confirm_requirement: "确认灵感",
-  present_inspiration_choices: "展示灵感选项",
+  confirm_ask_as_requirement: "记入灵感",
   confirm_content_spec: "确认内容规格",
   update_requirement: "修改灵感",
   delete_requirement: "删除灵感",
   clear_inspirations: "清空灵感",
-  sync_outline_from_inspiration: "同步大纲",
-  add_pending_change: "添加大纲条目",
-  complete_outline: "定稿创作大纲",
-  complete_plan: "定稿创作大纲",
+  add_pending_change: "添加制作任务",
   complete_execution: "完成执行",
   update_work_profile: "更新作品特征",
   parse_reference_text: "解析参考文案",
   parse_reference_image: "解析参考图片",
-  generate_content: "生成文案",
+  generate_content: "AI 团队出稿",
+  spawn_specialist: "调度专员",
+  revise_production_plan: "调整制作计划",
 };
 
 const PROFILE_FIELD_LABELS: Record<string, string> = {
@@ -81,12 +80,15 @@ export function getToolInputSummary(
   switch (toolName) {
     case "add_pending_change":
     case "confirm_requirement":
+    case "confirm_ask_as_requirement":
     case "update_requirement":
       return readString(toolInput.description);
+    case "spawn_specialist":
+      return readString(toolInput.brief) || readString(toolInput.department);
+    case "revise_production_plan":
+      return readString(toolInput.reason);
     case "delete_requirement":
       return readString(toolInput.requirement_id) || "删除灵感条目";
-    case "complete_outline":
-    case "complete_plan":
     case "complete_execution":
       return readString(toolInput.summary);
     case "switch_mode": {
@@ -105,9 +107,7 @@ export function getToolInputSummary(
     case "parse_reference_image":
       return readString(toolInput.hint) || "解析参考图片风格";
     case "generate_content":
-      return "按创作大纲生成文案";
-    case "sync_outline_from_inspiration":
-      return "根据灵感同步大纲";
+      return "AI 团队按制作计划出稿";
     case "clear_inspirations":
       return "清空全部灵感";
     default:

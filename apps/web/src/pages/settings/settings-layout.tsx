@@ -6,6 +6,7 @@ import {
   FolderKanbanIcon,
   KeyRoundIcon,
   NewspaperIcon,
+  MessageSquarePlusIcon,
   ReceiptIcon,
   Share2Icon,
   UserRoundIcon,
@@ -17,7 +18,7 @@ import {
 } from "@/components/settings/settings-shell";
 import { SiteHeader } from "@/components/site-header";
 import { scene } from "@/lib/scene-styles";
-import { BILLING, MEMBERSHIP, SETTINGS } from "@/lib/site-copy";
+import { BILLING, FEEDBACK, MEMBERSHIP, SETTINGS } from "@/lib/site-copy";
 import { cn } from "@/lib/utils";
 
 type SettingsNavItem = {
@@ -87,6 +88,17 @@ const NAV_GROUPS: Array<{ label: string; items: SettingsNavItem[] }> = [
         label: "平台集成",
         description: "第三方平台授权",
         icon: Share2Icon,
+      },
+    ],
+  },
+  {
+    label: SETTINGS.navGroups.help,
+    items: [
+      {
+        to: "/feedback",
+        label: FEEDBACK.navLabel,
+        description: FEEDBACK.navDescription,
+        icon: MessageSquarePlusIcon,
       },
     ],
   },

@@ -1,60 +1,32 @@
 /**
  * Yougan 主 Graph 入口（langgraph.json 指向此文件）。
- *
- * 每次用户发消息时，根据 state.mode 路由到对应子图：
- *
- *   START
- *     ├─ inspiration → inspirationAgent → END
- *     ├─ outline     → outlineAgent → clearInspirationChoices → END
- *     └─ creation    → creationGraph（resolveSpec → routeByModality → pipeline）→ clearInspirationChoices → END
- *
- * mode 由前端 submit 或 switch_mode 工具写入；路由只在 START 发生一次，
- * 单次 run 内不会跨模式跳转子图（切换 mode 后下一条消息才进入新子图）。
  */
 import { END, START, StateGraph } from "@langchain/langgraph";
-import type { LangGraphRunnableConfig } from "@langchain/langgraph";
 
-import { inspirationGraph } from "./agents/inspiration/graph.js";
-import { outlineGraph } from "./agents/outline/graph.js";
-import { creationGraph } from "./agents/creation/graph.js";
-import { checkpointer } from "./lib/checkpointer.js";
+import { inspirationGraph } from "./graphs/inspiration/graph.js";
+import { askGraph } from "./graphs/ask/graph.js";
+import { checkpointer } from "./checkpointer.js";
 import { parseMode } from "./lib/parse-agent-state.js";
-import { AgentState, type AgentStateType } from "./state.js";
-
-/** 大纲/创作回合结束后清空结构化选项；inspirationChoices 不入库，仅当轮有效。 */
-async function clearInspirationChoices(
-  _state: AgentStateType,
-): Promise<Partial<AgentStateType>> {
-  return { inspirationChoices: null };
-}
-
-/** 读取 state.mode，决定本次 run 进入哪个模式子图。 */
-function routeByMode(
-  state: AgentStateType,
-): "inspiration" | "outline" | "creation" {
-  return parseMode(state);
-}
-
-async function runCreationAgent(
-  state: AgentStateType,
-  config?: LangGraphRunnableConfig,
-) {
-  return creationGraph.invoke(state, config);
-}
+import { clearSuggestionsNode } from "./nodes/clear-suggestions/index.js";
+import { hydrateWorkMemoryNode } from "./nodes/hydrate-work-memory/index.js";
+import { runCreationGraphNode } from "./nodes/run-creation-graph/index.js";
+import { AgentState } from "./state.js";
 
 const workflow = new StateGraph(AgentState)
-  .addNode("inspirationAgent", inspirationGraph)
-  .addNode("outlineAgent", outlineGraph)
-  .addNode("creationAgent", runCreationAgent)
-  .addNode("clearInspirationChoices", clearInspirationChoices)
-  .addConditionalEdges(START, routeByMode, {
-    inspiration: "inspirationAgent",
-    outline: "outlineAgent",
-    creation: "creationAgent",
+  .addNode("hydrateWorkMemory", hydrateWorkMemoryNode)
+  .addNode("inspirationGraph", inspirationGraph)
+  .addNode("creationGraph", runCreationGraphNode)
+  .addNode("askGraph", askGraph)
+  .addNode("clearSuggestions", clearSuggestionsNode)
+  .addEdge(START, "hydrateWorkMemory")
+  .addConditionalEdges("hydrateWorkMemory", (state) => parseMode(state), {
+    inspiration: "inspirationGraph",
+    creation: "creationGraph",
+    ask: "askGraph",
   })
-  .addEdge("inspirationAgent", END)
-  .addEdge("outlineAgent", "clearInspirationChoices")
-  .addEdge("creationAgent", "clearInspirationChoices")
-  .addEdge("clearInspirationChoices", END);
+  .addEdge("inspirationGraph", END)
+  .addEdge("creationGraph", "clearSuggestions")
+  .addEdge("askGraph", "clearSuggestions")
+  .addEdge("clearSuggestions", END);
 
 export const graph = workflow.compile({ checkpointer });

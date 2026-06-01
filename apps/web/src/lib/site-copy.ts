@@ -1,16 +1,17 @@
 /**
- * 有感 · Yougan 全站文案
+ * 有感 · Yougan 全站文案（C 端口径）
  *
- * 三步：灵感模式（找选题）→ 大纲模式（产出创作大纲）→ 创作模式（按大纲生成最终实现）
+ * 对外主张：帮你找灵感 → AI 团队精良制作内容。
+ * 一件作品三种可随时切换的模式：灵感 · 创作 · 提问。
  */
 
 export const BRAND = {
   full: "有感 · Yougan",
   en: "Yougan",
   taglineLanding: "AI 自媒体创作助手",
-  taglineApp: "灵感 · 大纲 · 创作",
+  taglineApp: "灵感 · 创作 · 提问",
   metaDescription:
-    "有感 Yougan — AI 自媒体创作助手。帮你找灵感、写创作大纲，再按大纲生成图文内容，支持小红书、公众号等平台。",
+    "有感 Yougan — AI 自媒体创作助手。帮你找灵感、理清选题，AI 团队按计划精良制作图文内容，支持小红书、公众号等平台。",
   documentTitle: "有感 · Yougan — AI 自媒体创作助手",
 } as const;
 
@@ -30,40 +31,75 @@ export const NAV = {
   featuresShort: "能力",
   mobile: "手机 App",
   mobileShort: "App",
+  feedback: "问题反馈",
+  feedbackShort: "反馈",
   login: "登录",
+} as const;
+
+export const FEEDBACK = {
+  eyebrow: "产品反馈",
+  title: "告诉我们你遇到的问题",
+  subtitle:
+    "功能异常、体验建议或使用疑问都可以在这里提交。我们会自动附上页面与环境信息，方便排查。后台接入前，提交内容会复制到剪贴板，你也可以一键用邮件发送。",
+  backStudio: "返回创作台",
+  backHome: "返回首页",
+  categoryLabel: "反馈类型",
+  descriptionLabel: "详细描述",
+  descriptionPlaceholder:
+    "请尽量写清楚：你当时在做什么、期望发生什么、实际发生了什么。如有报错提示也请一并写上。",
+  descriptionHint: "至少 10 个字，描述越具体越有助于我们定位问题。",
+  descriptionMinError: "请至少填写 10 个字的描述",
+  contactLabel: "联系邮箱（选填）",
+  contactPlaceholder: "方便我们回复你",
+  contactHint: "登录状态下会自动填入当前账号邮箱。",
+  privacyNote: "提交时会附带当前页面地址与浏览器信息，不含密码等敏感数据。",
+  submit: "提交反馈",
+  submitting: "处理中…",
+  submitSuccess: "反馈内容已准备好",
+  submitSuccessCopied: "反馈内容已复制到剪贴板",
+  submitSuccessHint:
+    "请点击「用邮件发送」完成投递，或自行粘贴到你们团队使用的反馈渠道。正式反馈系统接入后，将改为直接提交到后台。",
+  copyAgain: "重新复制",
+  copiedAgain: "已复制",
+  openMail: "用邮件发送",
+  submitAnother: "再提交一条",
+  footerNote: "商务合作与媒体咨询请见",
+  footerAboutLink: "关于我们",
+  navLabel: "问题反馈",
+  navDescription: "Bug、建议与使用疑问",
 } as const;
 
 export const ABOUT_PAGE = {
   back: "返回首页",
   eyebrow: "关于有感",
-  title: "让创作过程可控、可回溯",
+  title: "找灵感，让 AI 团队帮你精做内容",
   subtitle:
-    "我们专注服务自媒体创作者，用 AI 把「找选题、定结构、写出稿」拆成可确认的三步，减少返工，并连接从构思到发布的完整链路。",
+    "很多工具问一句就出一篇，选题偏了就要整篇重写。有感先帮你找灵感、对齐平台和写法，再由 AI 团队制定计划、精良制作成稿。每一步可确认、可回溯，少返工。",
   missionTitle: "我们在做什么",
   missionBody:
-    "有感（Yougan）是一款 AI 自媒体创作助手。我们相信好内容不是一次 Prompt 碰运气，而是人在关键节点做判断、AI 在每一步做该做的事。产品以 Web 创作台为核心，配合发现灵感社区与多平台发布能力，帮助个人创作者稳定周更、少折腾。",
+    "有感（Yougan）是一款面向自媒体创作者的 AI 创作助手。好内容不是一次 Prompt 碰运气——先找灵感、再按计划精做、成稿可反复改。产品以 Web 创作台为核心，配合「发现灵感」社区与多平台发布，帮你稳定周更、少折腾。",
   valuesTitle: "我们坚持的原则",
   values: [
     {
       title: "过程先于成品",
-      body: "灵感、大纲、成稿分阶段沉淀在「创作脉络」里，方向错了在早期纠正，而不是整篇重写。",
+      body: "已确认灵感与成稿分阶段沉淀在「创作脉络」里；制作计划在对话中跟进，方向偏了可及早纠正。",
     },
     {
-      title: "人做判断，AI 做执行",
-      body: "选题、定稿、发布由你确认；AI 负责提问、整理、按纲生成与修改记录。",
+      title: "人做判断，AI 团队执行",
+      body: "选题、计划与发布由你确认；灵感模式帮你整理方向，创作模式由 AI 团队按计划出稿，过程有记录、方便回看。",
     },
     {
       title: "为真实工作流设计",
-      body: "面向小红书、公众号等日常更新场景，支持作品分组、云端同步与平台内容形态。",
+      body: "面向小红书、公众号等日常更新；支持作品分组、云端同步，以及图文、音视频等多形态制作任务。",
     },
     {
       title: "坦诚的产品边界",
-      body: "大纲未定稿不出正文、灵感模式不写稿——边界清晰，才能建立长期信任。",
+      body: "灵感模式专注找方向、提问模式专注答疑与建议、创作模式专注按计划出稿——各做各的事，边界清晰。",
     },
   ] as const,
   productTitle: "我们的产品",
   productBody:
-    "有感创作台提供灵感、大纲、创作三种模式，一件作品对应一段持续对话；内容可发布到「发现灵感」供他人参考，Pro 会员可绑定主流平台账号减少复制粘贴。",
+    "创作台提供灵感、创作、提问三种模式，一件作品对应一段持续对话；侧栏同步灵感与成稿，制作计划在对话中以任务列表展示。内容可发布到「发现灵感」供他人参考，Pro 会员可绑定主流平台账号，少一道复制粘贴。",
   productLink: "了解产品能力",
   contactTitle: "联系我们",
   contactBody:
@@ -78,25 +114,25 @@ export const HOME = {
   title: "有感",
   titleSuffix: "AI 自媒体创作助手",
   subtitle:
-    "没选题时帮你找灵感，有方向后一起写创作大纲，再按大纲生成能发的图文。适合小红书、公众号等日常更新。",
+    "帮你找灵感、理清平台和选题；AI 团队制定制作计划，文案/设计/音视频按计划精良出稿。适合小红书、公众号等日常更新。",
   ctaStudio: "开始创作",
   ctaFeatures: "了解产品能力",
-  capabilitiesTitle: "三步完成一篇内容",
+  capabilitiesTitle: "三种模式，一件作品走完全流程",
   capabilitiesLink: "查看说明 →",
 } as const;
 
 export const FEATURES_PAGE = {
   back: "返回首页",
   eyebrow: "产品能力",
-  title: "从找灵感到发出内容",
+  title: "从找灵感到 AI 团队出稿",
   subtitle:
-    "很多 AI 工具问一句就出一篇，选题不准就要整篇重写。有感拆成三步：先定选题和写法，再写出创作大纲，最后按大纲生成标题和正文。",
+    "很多 AI 工具问一句就出一篇，选题偏了就要整篇重写。有感先帮你找灵感、对齐写法，再由 AI 团队定计划、精良制作；中间随时提问、改计划。三种模式可随时切换。",
   platformsIntro: "支持这些平台的内容形态",
   workflowTitle: "推荐使用方式",
-  workflowSubtitle: "从新建作品到可以发布，一般这样走",
+  workflowSubtitle: "从新建作品到可以发布，一般这样走（模式可随时切换）",
   modesTitle: "三种创作模式",
   modesSubtitle:
-    "同一件作品里可随时切换；用界面、快捷键，或在对话里说「切到大纲模式」都可以。",
+    "同一件作品里可随时切换；用界面、快捷键，或在对话里说「切到创作模式」都可以。",
   studioTitle: "创作台布局",
   studioSubtitle: "左侧作品列表、中间对话、右侧创作脉络",
   modeBenefitsHeading: "会帮你做",
@@ -108,9 +144,9 @@ export const FEATURES_PAGE = {
 export const MOBILE_PAGE = {
   back: "返回首页",
   eyebrow: "有感 · 手机端",
-  title: "随时记灵感，回电脑写全文",
+  title: "随时记灵感，回电脑精做内容",
   subtitle:
-    "通勤、摸鱼、睡前有想法，用手机先记下来；回到 Web 创作台，在同一件作品里继续写大纲、生成图文。账号与作品自动同步。",
+    "通勤、摸鱼、睡前有想法，用手机先记下来；回到 Web 创作台，在同一件作品里继续找灵感、看制作计划与成稿。账号与作品自动同步。",
   downloadTitle: "扫码下载",
   downloadSubtitle: "选择设备，扫码或点击按钮前往应用商店",
   downloadHint: "使用手机相机或微信扫一扫",
@@ -123,15 +159,15 @@ export const MOBILE_PAGE = {
   features: [
     {
       title: "快速记灵感",
-      body: "有选题想法或片段文案，随时打开记一笔；回到电脑前在同一件作品里接着写。",
+      body: "有选题想法或片段文案，随时打开记一笔；回到电脑前在同一件作品里接着聊、接着做。",
     },
     {
       title: "与 Web 同步",
-      body: "同一账号、同一件作品。手机查看和记录，电脑端写大纲、生成完整内容。",
+      body: "同一账号、同一件作品。手机查看和记录，电脑端由 AI 团队定计划、精良制作完整内容。",
     },
     {
-      title: "方便预览成稿",
-      body: "路上看看大纲和生成结果，确认方向对不对，不必在小屏上改长文。",
+      title: "方便预览交付",
+      body: "路上看看制作计划与成稿预览，确认方向对不对，不必在小屏上改长文。",
     },
   ] as const,
 } as const;
@@ -187,7 +223,10 @@ export const ACCOUNT = {
 
 export const AUTH = {
   loginTitle: "登录有感",
-  loginSubtitle: "作品和创作记录云端保存，换设备也能接着写",
+  registerTitle: "创建账号",
+  loginFormSubtitle: "使用邮箱登录，继续你的创作",
+  registerFormSubtitle: "注册后作品、灵感与制作记录将云端保存",
+  loginSubtitle: "作品、灵感与制作记录云端保存，换设备也能接着写",
   forgotTitle: "忘记密码",
   forgotSubtitle: "输入注册邮箱，我们会发送重置链接（若该邮箱已注册）",
   forgotSent:
@@ -208,6 +247,7 @@ export const SETTINGS = {
     billing: "会员与计费",
     content: "创作与发布",
     connect: "连接",
+    help: "帮助",
   },
   publicationsIntro: (discoverTitle: string) =>
     `管理你发布到有感的内容。想逛公开作品，请前往「${discoverTitle}」。`,
@@ -218,7 +258,7 @@ export const MEMBERSHIP = {
   navDescription: "套餐与 AI 创作额度",
   pageTitle: "会员",
   pageDescription:
-    "查看当前套餐与 AI 创作额度，升级 Pro 获得更高额度与增强出稿。",
+    "查看当前套餐与 AI 创作额度。升级 Pro 获得更高额度与完整 AI 团队制作能力。",
   currentPlan: "当前套餐",
   usageTitle: "本月 AI 创作额度",
   usageHint: (used: number, total: number) =>
@@ -262,16 +302,22 @@ export const BILLING = {
 
 export const STUDIO = {
   worksTitle: "我的作品",
-  worksHint: "每件作品一段对话，支持分组",
+  worksSlogan: "找灵感，出好稿",
+  createMenuLabel: "新建",
+  conversationsLoading: "加载对话中…",
+  newConversation: "新对话",
   newWork: "新建作品",
   newGroup: "新建分组",
   emptyTitle: "创建第一件作品",
   emptyBody:
-    "建议先用灵感模式定选题，再用大纲模式写出创作大纲，最后用创作模式按大纲生成标题和正文。",
+    "建议先用灵感模式找灵感、定方向，需要时在提问模式答疑；切到创作模式后，AI 团队会制定计划并精良制作成稿。",
+  emptyWorksList: "还没有作品或分组，先创建一件，从找灵感开始。",
+  emptyWorksFiltered: "创建第一件作品，从找灵感开始。",
   referencesCount: (n: number) => `已添加 ${n} 条参考素材`,
   publishViewInDiscover: (sectionTitle: string) => `在${sectionTitle}查看`,
   modelTemperatureLabel: "创意度",
-  modelTemperatureHint: "调节 AI 创意程度，越高越有新意（0.1–1.0）",
+  modelTemperatureHint:
+    "仅影响创作模式中 AI 团队的文案与专员出稿，不影响灵感/提问对话与制作计划编排（0.1–1.0）",
 } as const;
 
 export const CHAT_COPY = {
@@ -280,58 +326,52 @@ export const CHAT_COPY = {
     "想做职场类内容，不确定选题方向",
     "还没定发小红书还是公众号",
   ],
-  outlineSuggestions: [
-    "想在小红书发一篇护肤种草，帮我写一份创作大纲",
-    "受众是 25–35 岁职场女性，语气专业、好读",
-    "大纲里要包含封面风格和正文结构",
+  askSuggestions: [
+    "怎么把这个选题写得更好？",
+    "小红书笔记一般是什么结构？",
+    "护肤赛道最近什么内容形式比较常见？",
   ],
   creationSuggestions: [
-    "按当前大纲生成一版文案",
+    "按制作计划生成一版文案",
     "语气改得更口语一点",
     "标题再吸引人一点",
   ],
   placeholders: {
-    inspiration: "也可以直接输入；有选项时点击即发送…",
-    outline: "补充结构、段落、风格等，完善创作大纲…",
-    creation: "说说要改什么，会先记入待执行项再按大纲生成…",
+    inspiration: "也可以直接输入；有建议时点击即发送…",
+    ask: "有问题尽管问：优化建议、创作方法、行业背景…",
+    creation: "说说要改什么，AI 团队会先记入任务再执行…",
   },
   emptyByMode: {
     inspiration: {
-      title: "灵感模式：找选题、定方向",
+      title: "灵感模式：找灵感、定方向",
       bodyDefault:
-        "我会通过提问帮你理清平台、受众、选题和写法；有选项时可直接点击发送，确认后的内容会写入创作脉络。",
+        "我会通过提问帮你找灵感、理清平台、受众、选题和写法；回合结束后会在下方给出可点选建议。",
       bodyWithRecommendations: "根据作品标题准备了灵感推荐，点一个即可开始。",
     },
-    outline: {
-      title: "大纲模式：写创作大纲",
-      body: "我会根据已确认灵感，把结构、段落、风格等整理成创作大纲；你说「就这些」后定稿，再进入创作模式按大纲出稿。",
+    ask: {
+      title: "提问模式：自由提问",
+      body: "问怎么做得更好、创作技巧怎么学、行业或平台怎么回事——我会按问题类型给优化建议、答疑或背景分析，帮你把创作想明白。",
     },
     creation: {
-      title: "创作模式：按大纲出稿",
-      body: "会按已定稿的创作大纲生成与修改标题、正文，并记录本次改了什么。",
+      title: "创作模式：AI 团队精良制作",
+      body: "AI 团队会先制定制作计划，任务会在对话中以列表展示并随执行更新；成稿见右侧「内容预览」。",
     },
   },
   status: {
-    inspirationExploring: "正在帮你理清选题和写法",
-    inspirationConfirmed: (n: number) => `已确认 ${n} 条需求`,
-    outlineDraft: "正在撰写创作大纲，定稿前不生成正文",
-    outlinePending: (n: number) => `${n} 条大纲待补充或定稿`,
-    outlineReady: "创作大纲已定稿，可以按大纲出稿了",
-    creationIdle: "暂无待执行的修改",
-    creationPending: (n: number) => `${n} 条修改待执行`,
+    inspirationExploring: "正在帮你找灵感、理清选题和写法",
+    inspirationConfirmed: (n: number) => `已确认 ${n} 条灵感`,
+    askExploring: "有问题随时问：优化、学习、行业背景都可以",
+    creationPlanning: "AI 团队正在制定制作计划",
+    creationIdle: "制作计划已定稿，可以交付或修改",
+    creationPending: (n: number) => `${n} 项制作任务待执行`,
   },
   modeShortcutsFooter: (labels: {
     inspiration: string;
-    outline: string;
     creation: string;
+    ask: string;
   }) =>
-    `切换模式：${labels.inspiration} 灵感 · ${labels.outline} 大纲 · ${labels.creation} 创作`,
-  thinking: "正在回复…",
-  reasoning: {
-    streaming: "正在思考…",
-    doneBrief: "思考完成",
-    doneSeconds: (seconds: number) => `思考了 ${seconds} 秒`,
-  },
+    `快捷键：灵感 ${labels.inspiration} · 创作 ${labels.creation} · 提问 ${labels.ask}`,
+  replying: "正在回复…",
   generatingInspirations: "正在生成灵感推荐…",
   attachmentDrawer: {
     title: (count: number) => `附件 ${count}`,
@@ -348,12 +388,11 @@ export const CHAT_COPY = {
 /** 创作台右侧栏 */
 export const CREATIVE_CONTEXT_PANEL = {
   title: "创作脉络",
-  hint: "灵感、大纲与成稿在这里逐步沉淀，切换模式时持续更新",
+  hint: "已确认灵感与成稿在这里逐步沉淀；制作计划在对话流中以任务列表展示",
   expand: "展开创作脉络",
   collapse: "收起创作脉络",
   tabs: {
     inspiration: "灵感",
-    outline: "创作大纲",
     preview: "内容预览",
     references: "参考素材",
   },
@@ -364,26 +403,31 @@ export type CreativeContextTabId = keyof typeof CREATIVE_CONTEXT_PANEL.tabs;
 /** 创作脉络 · 灵感 */
 export const CONTENT_SETTINGS_PANEL = {
   title: "灵感",
-  hint: "灵感模式里经你确认的内容会汇总在这里，可补充、修改或删除",
+  hint: "灵感模式里经你确认的灵感会汇总在这里，可补充、修改或删除",
   confirmedLabel: "已确认灵感",
   clearAll: "清空",
-  empty: "还没确认灵感时，我会通过提问帮你定选题和写法。你确认的内容会列在这里。",
+  empty: "还没确认灵感时，我会通过提问帮你定平台、选题和写法。你确认的内容会列在这里。",
 } as const;
 
-/** 创作脉络 · 创作大纲 */
-export const PLAN_PANEL = {
-  title: "创作大纲",
-  hint: "含已实现与待实现条目；大纲模式定稿后进入创作模式按大纲出稿",
-  pendingLabel: "待实现",
-  pendingEmpty: "暂无待实现条目。进入大纲模式后会根据灵感自动生成，也可手动补充。",
-  executedLabel: "已实现",
-  executedEmpty: "创作模式执行后，或对照已有作品时，已实现的条目会显示在这里",
+/** 对话流 · 制作计划任务列表 */
+export const PRODUCTION_PLAN_TODO = {
+  title: "制作计划",
+  subtitlePlanning: "AI 团队正在拟定任务…",
+  subtitleReady: (pending: number, done: number) =>
+    done > 0
+      ? pending > 0
+        ? `已完成 ${done} 项 · 待执行 ${pending} 项`
+        : `已完成 ${done} 项`
+      : pending > 0
+        ? `待执行 ${pending} 项`
+        : "计划已定稿",
+  empty: "进入创作模式后，任务会显示在这里并随执行更新。",
 } as const;
 
 export const PREVIEW_PANEL = {
   title: "内容预览",
-  hint: "创作模式按大纲生成标题和正文后显示在这里",
-  empty: "创作模式生成文案后，会显示在这里。",
+  hint: "AI 团队交付的标题和正文显示在这里",
+  empty: "AI 团队生成文案后，会显示在这里。",
 } as const;
 
 export const REFERENCE_PANEL = {

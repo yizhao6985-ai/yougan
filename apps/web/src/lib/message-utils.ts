@@ -8,8 +8,6 @@ type MessageContent = Message["content"];
 type ContentBlockLike = {
   type?: string;
   text?: string;
-  reasoning?: string;
-  thinking?: string;
 };
 
 type MessageWithBlocks = Message & {
@@ -34,23 +32,16 @@ export function humanMessageDisplayText(content: MessageContent): string {
 }
 
 export function messageContentToText(content: MessageContent): string {
-  return extractAIMessageBlocks({ type: "ai", content } as Message).text;
+  return extractAIMessageText({ type: "ai", content } as Message);
 }
 
-export function extractAIMessageBlocks(message: MessageWithBlocks): {
-  text: string;
-  reasoning: string;
-} {
+export function extractAIMessageText(message: MessageWithBlocks): string {
   if (AIMessage.isInstance(message)) {
     const text = message.contentBlocks
       .filter((block) => block.type === "text")
       .map((block) => block.text)
       .join("");
-    const reasoning = message.contentBlocks
-      .filter((block) => block.type === "reasoning")
-      .map((block) => block.reasoning)
-      .join("");
-    if (text || reasoning) return { text, reasoning };
+    if (text) return text;
   }
 
   if (Array.isArray(message.contentBlocks) && message.contentBlocks.length > 0) {
@@ -58,24 +49,19 @@ export function extractAIMessageBlocks(message: MessageWithBlocks): {
       .filter((block) => block.type === "text")
       .map((block) => block.text ?? "")
       .join("");
-    const reasoning = message.contentBlocks
-      .filter((block) => block.type === "reasoning")
-      .map((block) => block.reasoning ?? "")
-      .join("");
-    if (text || reasoning) return { text, reasoning };
+    if (text) return text;
   }
 
   const content = message.content;
   if (typeof content === "string") {
-    return { text: content, reasoning: "" };
+    return content;
   }
 
   if (!Array.isArray(content)) {
-    return { text: "", reasoning: "" };
+    return "";
   }
 
   let text = "";
-  let reasoning = "";
 
   for (const part of content) {
     if (typeof part === "string") {
@@ -85,10 +71,6 @@ export function extractAIMessageBlocks(message: MessageWithBlocks): {
     const block = part as ContentBlockLike & Record<string, unknown>;
     if (block.type === "text") {
       text += block.text ?? "";
-    } else if (block.type === "reasoning") {
-      reasoning += block.reasoning ?? "";
-    } else if (block.type === "thinking") {
-      reasoning += block.thinking ?? "";
     } else if (typeof block.text === "string") {
       text += block.text;
     } else if (typeof block.content === "string") {
@@ -96,12 +78,7 @@ export function extractAIMessageBlocks(message: MessageWithBlocks): {
     }
   }
 
-  const additional = message.additional_kwargs;
-  if (!reasoning && typeof additional?.reasoning_content === "string") {
-    reasoning = additional.reasoning_content;
-  }
-
-  return { text, reasoning };
+  return text;
 }
 
 type ToolCallLike = {
@@ -197,7 +174,6 @@ export type RenderItem =
       id: string;
       kind: "ai";
       content: string;
-      reasoning?: string;
       isStreaming?: boolean;
     }
   | {
@@ -282,18 +258,17 @@ export function buildRenderItems(
         },
       );
 
-      const { text, reasoning } = extractAIMessageBlocks(message);
+      const text = extractAIMessageText(message);
       const isStreamingAi =
         isLoading &&
         index === lastAiMessageIndex &&
         index > lastHumanIndex;
 
-      if (text || reasoning || isStreamingAi) {
+      if (text || isStreamingAi) {
         items.push({
           id: messageId,
           kind: "ai",
           content: text,
-          reasoning: reasoning || undefined,
           isStreaming: isStreamingAi,
         });
       }

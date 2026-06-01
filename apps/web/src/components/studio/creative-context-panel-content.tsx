@@ -2,7 +2,6 @@ import { useCallback, useState } from "react";
 
 import { ContentPreview } from "@/components/content-preview";
 import { ContentSettingsPanel } from "@/components/content-settings-panel";
-import { PlanPanel } from "@/components/plan-panel";
 import { ReferencePanel } from "@/components/reference-panel";
 import { creativeContextPanelClassNames } from "@/components/studio/creative-context/shared";
 import {
@@ -10,13 +9,12 @@ import {
   type CreativeContextTabId,
 } from "@/lib/site-copy";
 import { readStoredString, writeStoredString } from "@/lib/storage-value";
-import type { Work, WorkInspiration, WorkOutline, WorkProfile } from "@/lib/types";
+import type { Work, WorkInspiration, WorkProfile } from "@/lib/types";
 import type { GeneratedContent } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const TAB_ORDER: CreativeContextTabId[] = [
   "inspiration",
-  "outline",
   "preview",
   "references",
 ];
@@ -34,7 +32,6 @@ function readStoredTab(): CreativeContextTabId {
 type CreativeContextPanelContentProps = {
   activeWork: Work | null;
   profile?: WorkProfile;
-  outline?: WorkOutline;
   inspiration?: WorkInspiration;
   creation?: GeneratedContent | null;
   onUpdateRequirement?: (requirementId: string, description: string) => void;
@@ -45,7 +42,6 @@ type CreativeContextPanelContentProps = {
 export function CreativeContextPanelContent({
   activeWork,
   profile,
-  outline,
   inspiration,
   creation,
   onUpdateRequirement,
@@ -98,22 +94,12 @@ export function CreativeContextPanelContent({
             <ContentSettingsPanel
               inspiration={inspiration}
               profile={profile}
-              editable={activeWork?.mode === "inspiration"}
+              editable={Boolean(activeWork)}
               compact
               onUpdateRequirement={onUpdateRequirement}
               onDeleteRequirement={onDeleteRequirement}
               onClearInspirations={onClearInspirations}
             />
-          </div>
-        ) : null}
-
-        {activeTab === "outline" ? (
-          <div
-            role="tabpanel"
-            id="creative-context-panel-outline"
-            aria-labelledby="creative-context-tab-outline"
-          >
-            <PlanPanel outline={outline} compact />
           </div>
         ) : null}
 

@@ -8,7 +8,7 @@ import {
   EMPTY_WORK_INSPIRATION,
   type ConfirmedRequirement,
   type WorkInspiration,
-} from "../schemas.js";
+} from "../schema.js";
 
 export function dedupeConfirmedRequirements(
   items: ConfirmedRequirement[],

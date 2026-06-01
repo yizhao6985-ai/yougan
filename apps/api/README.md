@@ -37,39 +37,39 @@ pnpm dev
 |------|------|
 | `pnpm dev` | `tsx watch` 热重载 |
 | `pnpm build` / `pnpm check-types` | TypeScript 检查 |
-| `pnpm db:push` | 将 `prisma/schema.prisma` 同步到数据库（本地开发） |
-| `pnpm db:migrate` | 创建/应用迁移（推荐生产） |
+| `pnpm db:push` | 将 `prisma/schema.prisma` 同步到数据库 |
 | `pnpm db:generate` | 生成 Prisma Client（`postinstall` 也会执行） |
 | `pnpm openapi:generate` | 生成 `openapi/openapi.json` |
 
 ## 环境变量
 
-复制 `.env.example` 为 `.env`。主要项如下：
+复制 `.env.example` 为 `.env`。本地开发只需以下变量（其余在代码中有默认值，或见下方说明）：
 
 | 变量 | 必填 | 说明 |
 |------|------|------|
-| `DATABASE_URL` | 是 | API 业务库，默认 `postgresql://yougan:yougan@localhost:5432/yougan_api` |
+| `DATABASE_URL` | 是 | API 业务库 |
 | `JWT_SECRET` | 是 | 签发/校验访问令牌 |
 | `PORT` | 否 | 默认 `4000` |
-| `REDIS_URL` | 否 | 如 `redis://localhost:6379`；留空则禁用缓存 |
-| `AGENT_URL` | 是 | LangGraph 服务，默认 `http://localhost:2024` |
+| `AGENT_URL` | 否 | LangGraph 服务，默认 `http://localhost:2024` |
 | `STORAGE_DRIVER` | 否 | `local`（默认）或 `s3` |
-| `STORAGE_LOCAL_DIR` | local 时 | 本地上传目录，默认 `./storage` |
-| `PUBLIC_BASE_URL` | 是 | 对外 API 根 URL，用于文件 URL 与 OAuth 回调 |
-| `WEB_APP_URL` | 是 | 前端地址，用于邮件中的链接 |
-| `SMTP_*` / `MAIL_FROM` | 否 | 未配置时密码重置链接打印到控制台 |
+| `STORAGE_LOCAL_DIR` | 否 | 本地上传目录，默认 `./storage` |
+| `PUBLIC_BASE_URL` | 否 | 对外 API 根 URL，默认 `http://localhost:4000` |
 
-S3 兼容存储（`STORAGE_DRIVER=s3`）：`OSS_ENDPOINT`、`OSS_REGION`、`OSS_BUCKET`、`OSS_ACCESS_KEY_ID`、`OSS_SECRET_ACCESS_KEY`。
+按需追加（未写入 `.env.example`）：
 
-平台 OAuth 变量见仓库 [docs/platform-oauth.md](../../docs/platform-oauth.md)。
+- `REDIS_URL` — 启用 Redis 缓存；不设则禁用
+- `WEB_APP_URL` — 邮件中的前端链接，默认 `http://localhost:3000`
+- `SMTP_*` / `MAIL_FROM` — 发信；未配置时开发环境将重置链接打印到控制台
+- `OSS_*` — 仅当 `STORAGE_DRIVER=s3` 时需要
+
+平台 OAuth 变量见 [docs/platform-oauth.md](../../docs/platform-oauth.md)。
 
 ## 目录结构
 
 ```
 apps/api/
 ├── prisma/
-│   ├── schema.prisma      # 数据模型
-│   └── migrations/        # SQL 迁移
+│   └── schema.prisma      # 数据模型
 ├── openapi/
 │   ├── registry.ts        # Zod → OpenAPI 注册
 │   └── openapi.json       # 生成产物（勿手改）
@@ -109,13 +109,14 @@ apps/api/
 核心实体：
 
 - **User** — 账号、资料、头像/封面
-- **Work** — 创作容器：`mode`、`threadId`、`profile`、`inspiration`、`outline`、`creation`（JSON）
+- **Work** — 作品级长记忆：`profile`、`inspiration`、`outline`、`creation`（JSON）
+- **WorkConversation** — 作品下多轮对话：`mode`、`threadId`
 - **WorkGroup** — 作品分组
 - **Publication** — 对外发布的内容（草稿/已发布、阅读统计）
 - **PlatformIntegration** — 第三方平台 OAuth 令牌
 - **UserSubscription** / **BillingOrder** — 会员与账单
 
-`Work.mode` 取值：`inspiration` | `outline` | `creation`。
+`WorkConversation.mode` 取值：`inspiration` | `creation` | `ask`。
 
 ## LangGraph 代理
 
@@ -137,16 +138,10 @@ Agent 服务需单独启动（`pnpm dev:agent`）。
 
 ## 数据库
 
-**本地开发**（快速迭代）：
+v0 阶段直接用 schema 同步，不维护 SQL 迁移：
 
 ```bash
 pnpm db:push
-```
-
-**带迁移历史**（协作/生产）：
-
-```bash
-pnpm db:migrate
 ```
 
 两个 Postgres 实例由根目录 `docker-compose.yml` 提供；本服务仅使用 `:5432` 的 `yougan_api` 库。Agent checkpoint 使用 `:5433`，不在此 Prisma schema 中。

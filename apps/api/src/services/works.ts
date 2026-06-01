@@ -2,6 +2,7 @@ import { Prisma, type Work } from "@prisma/client";
 
 import { prisma } from "../db.js";
 import type { WorkDTO } from "../schemas.js";
+import { CHAT_MODES } from "../schemas.js";
 import { getWorkGroup } from "./work-groups.js";
 
 const EMPTY_WORK_PROFILE = {
@@ -25,9 +26,25 @@ const EMPTY_WORK_OUTLINE = {
   pending_changes: [],
   executed_changes: [],
   last_execution_summary: null,
+  plan_ready: false,
+  plan_summary: null,
+  departments: [],
+  industry_context: null,
+  creative_director_notes: null,
   outline_summary: null,
   outline_ready: false,
 };
+
+type ChatMode = (typeof CHAT_MODES)[number];
+
+function normalizeWorkMode(mode: string): ChatMode {
+  if (mode === "outline") return "creation";
+  if (mode === "advice") return "ask";
+  if (mode === "inspiration" || mode === "creation" || mode === "ask") {
+    return mode;
+  }
+  return "inspiration";
+}
 
 const EMPTY_WORK_INSPIRATION = {
   confirmed_requirements: [],
@@ -41,8 +58,6 @@ function toWorkDTO(work: Work): WorkDTO {
     id: work.id,
     title: work.title,
     groupId: work.groupId,
-    mode: work.mode as WorkDTO["mode"],
-    threadId: work.threadId,
     profile: (work.profile as WorkDTO["profile"]) ?? EMPTY_WORK_PROFILE,
     outline: (work.outline as WorkDTO["outline"]) ?? EMPTY_WORK_OUTLINE,
     inspiration:
@@ -78,10 +93,15 @@ export async function createWork(
       userId,
       groupId: groupId ?? null,
       title: title?.trim() || "未命名作品",
-      mode: "inspiration",
       profile: EMPTY_WORK_PROFILE,
       outline: EMPTY_WORK_OUTLINE,
       inspiration: EMPTY_WORK_INSPIRATION,
+      conversations: {
+        create: {
+          title: "对话 1",
+          mode: "inspiration",
+        },
+      },
     },
   });
   return toWorkDTO(work);
@@ -98,8 +118,6 @@ export async function updateWork(
   workId: string,
   data: Partial<{
     title: string;
-    mode: string;
-    threadId: string | null;
     groupId: string | null;
     profile: unknown;
     outline: unknown;
@@ -117,8 +135,6 @@ export async function updateWork(
 
   const updateData: Prisma.WorkUpdateInput = {};
   if (data.title !== undefined) updateData.title = data.title;
-  if (data.mode !== undefined) updateData.mode = data.mode;
-  if (data.threadId !== undefined) updateData.threadId = data.threadId;
   if (data.groupId !== undefined) {
     updateData.group =
       data.groupId === null
@@ -155,17 +171,38 @@ export async function deleteWork(userId: string, workId: string) {
   return true;
 }
 
-export async function getAgentContext(userId: string, workId: string) {
+export async function getAgentContext(
+  userId: string,
+  workId: string,
+  conversationId?: string,
+) {
   const work = await getWork(userId, workId);
   if (!work) return null;
+
+  let mode = "inspiration" as ReturnType<typeof normalizeWorkMode>;
+  let threadId: string | null = null;
+  let resolvedConversationId: string | undefined;
+
+  if (conversationId) {
+    const conversation = await prisma.workConversation.findFirst({
+      where: { id: conversationId, workId },
+    });
+    if (conversation) {
+      mode = normalizeWorkMode(conversation.mode);
+      threadId = conversation.threadId;
+      resolvedConversationId = conversation.id;
+    }
+  }
+
   return {
     workId: work.id,
-    mode: work.mode,
+    conversationId: resolvedConversationId,
+    mode,
     profile: work.profile,
     outline: work.outline,
     inspiration: work.inspiration,
     creation: work.creation,
-    threadId: work.threadId,
+    threadId,
     title: work.title,
   };
 }

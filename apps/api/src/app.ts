@@ -16,6 +16,7 @@ import { authRouter } from "./routes/auth.js";
 import { billingRouter } from "./routes/billing.js";
 import { subscriptionRouter } from "./routes/subscription.js";
 import { worksRouter } from "./routes/works.js";
+import { conversationsRouter } from "./routes/conversations.js";
 import { workGroupsRouter } from "./routes/work-groups.js";
 import { integrationsRouter } from "./routes/integrations.js";
 import { publicationsRouter } from "./routes/publications.js";
@@ -72,6 +73,7 @@ export function createApp() {
   app.use("/api/publications", publicationsRouter);
   app.use("/api/users", usersRouter);
   app.use("/api/works", worksRouter);
+  app.use("/api/works/:workId/conversations", conversationsRouter);
   app.use("/api/upload", uploadRouter);
   app.use("/api", filesRouter);
 

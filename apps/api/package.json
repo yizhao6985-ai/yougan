@@ -8,7 +8,6 @@
     "build": "tsc --noEmit",
     "check-types": "tsc --noEmit",
     "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "openapi:generate": "tsx scripts/generate-openapi.ts",
     "postinstall": "prisma generate"

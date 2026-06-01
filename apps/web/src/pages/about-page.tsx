@@ -116,12 +116,21 @@ export function AboutPage() {
           <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
             {ABOUT_PAGE.contactBody}
           </p>
-          <a
-            href={`mailto:${ABOUT_PAGE.contactEmail}`}
-            className={cn("mt-4 inline-block text-base font-medium", scene.link)}
-          >
-            {ABOUT_PAGE.contactEmail}
-          </a>
+          <div className="mt-4 flex flex-wrap items-center gap-4">
+            <Link
+              to="/feedback"
+              className={cn("inline-flex items-center gap-1.5 text-base font-medium", scene.link)}
+            >
+              提交产品反馈
+              <ArrowRightIcon className="size-4" aria-hidden />
+            </Link>
+            <a
+              href={`mailto:${ABOUT_PAGE.contactEmail}`}
+              className={cn("text-sm text-muted-foreground transition hover:text-primary", scene.link)}
+            >
+              {ABOUT_PAGE.contactEmail}
+            </a>
+          </div>
         </section>
 
         <div className="mt-16 flex flex-wrap justify-center gap-4 border-t border-border/80 pt-12">

@@ -3,40 +3,47 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useStream } from "@langchain/langgraph-sdk/react";
 
 import { buildHumanMessageContent } from "@/lib/build-human-message-content";
-import { normalizeInspirationChoices } from "@/lib/inspiration-ui-spec";
+import { normalizeInspirationSuggestions } from "@/lib/inspiration-ui-spec";
 import { YOUGAN_ASSISTANT_ID, getYouganThreadState } from "@/lib/yougan-chat-api";
 import { LANGGRAPH_API_URL } from "@/lib/env";
-import type { InspirationChoices } from "@/lib/types";
-import type { YouganValues, Work } from "@/lib/types";
+import type { InspirationSuggestions } from "@/lib/types";
+import type { YouganValues, Work, WorkConversation } from "@/lib/types";
 import { useAuthToken } from "@/store/auth";
 
 const STREAM_MODES = ["messages-tuple", "updates", "values"] as const;
 
 interface UseYouganStreamOptions {
   work: Work | null;
+  conversation: WorkConversation | null;
   modelTemperature: number;
-  onThreadId?: (workId: string, threadId: string | null) => void;
+  onThreadId?: (conversationId: string, threadId: string | null) => void;
   onValuesChange?: (workId: string, values: YouganValues) => void;
-  onModeFromStream?: (workId: string, mode: NonNullable<YouganValues["mode"]>) => void;
+  onModeFromStream?: (
+    conversationId: string,
+    mode: NonNullable<YouganValues["mode"]>,
+  ) => void;
 }
 
 export function useYouganStream({
   work,
+  conversation,
   modelTemperature,
   onThreadId,
   onValuesChange,
   onModeFromStream,
 }: UseYouganStreamOptions) {
-  const threadId = work?.threadId ?? null;
+  const threadId = conversation?.threadId ?? null;
   const workId = work?.id ?? null;
+  const conversationId = conversation?.id ?? null;
   const token = useAuthToken();
 
   const defaultHeaders = useMemo(
     () => ({
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(workId ? { "X-Work-Id": workId } : {}),
+      ...(conversationId ? { "X-Conversation-Id": conversationId } : {}),
     }),
-    [token, workId],
+    [token, workId, conversationId],
   );
 
   const stream = useStream<YouganValues>({
@@ -46,14 +53,14 @@ export function useYouganStream({
     defaultHeaders,
     throttle: false,
     onThreadId: (id) => {
-      if (workId) onThreadId?.(workId, id);
+      if (conversationId) onThreadId?.(conversationId, id);
     },
   });
 
   const lastSyncedRef = useRef<string>("");
   const wasLoadingRef = useRef(false);
-  const [threadChoices, setThreadChoices] =
-    useState<InspirationChoices | null>(null);
+  const [threadSuggestions, setThreadSuggestions] =
+    useState<InspirationSuggestions | null>(null);
 
   useEffect(() => {
     if (!workId || !stream.values) return;
@@ -67,12 +74,22 @@ export function useYouganStream({
     const wasLoading = wasLoadingRef.current;
     wasLoadingRef.current = stream.isLoading;
 
-    if (!workId || !wasLoading || stream.isLoading || !stream.values?.mode) {
+    if (
+      !conversationId ||
+      !wasLoading ||
+      stream.isLoading ||
+      !stream.values?.mode
+    ) {
       return;
     }
 
-    onModeFromStream?.(workId, stream.values.mode);
-  }, [onModeFromStream, stream.isLoading, stream.values?.mode, workId]);
+    onModeFromStream?.(conversationId, stream.values.mode);
+  }, [
+    conversationId,
+    onModeFromStream,
+    stream.isLoading,
+    stream.values?.mode,
+  ]);
 
   useEffect(() => {
     if (stream.isLoading || !threadId) return;
@@ -81,10 +98,11 @@ export function useYouganStream({
     void getYouganThreadState(threadId, defaultHeaders)
       .then((state) => {
         if (cancelled) return;
-        const choices = normalizeInspirationChoices(
-          (state.values as YouganValues | undefined)?.inspirationChoices,
+        const values = state.values as YouganValues | undefined;
+        const suggestions = normalizeInspirationSuggestions(
+          values?.inspirationSuggestions ?? values?.inspirationChoices,
         );
-        setThreadChoices(choices);
+        setThreadSuggestions(suggestions);
       })
       .catch(() => undefined);
 
@@ -94,33 +112,37 @@ export function useYouganStream({
   }, [defaultHeaders, stream.isLoading, threadId, stream.messages.length]);
 
   const resolvedValues = useMemo(() => {
-    if (threadChoices) {
+    const fromStream = normalizeInspirationSuggestions(
+      stream.values?.inspirationSuggestions ?? stream.values?.inspirationChoices,
+    );
+    const suggestions = fromStream ?? threadSuggestions;
+    if (suggestions) {
       return {
         ...(stream.values ?? {}),
-        inspirationChoices: threadChoices,
+        inspirationSuggestions: suggestions,
       } satisfies YouganValues;
     }
     return stream.values ?? null;
-  }, [stream.values, threadChoices]);
+  }, [stream.values, threadSuggestions]);
 
   const sendMessage = useCallback(
     async (text: string, imageUrls: string[] = []) => {
       const content = buildHumanMessageContent(text, imageUrls);
       const hasText =
         typeof content === "string" ? Boolean(content.trim()) : content.length > 0;
-      if (!hasText || !work) return;
+      if (!hasText || !work || !conversation) return;
 
-      setThreadChoices(null);
+      setThreadSuggestions(null);
 
       await stream.submit(
         {
           messages: [{ type: "human" as const, content }],
-          mode: work.mode,
+          mode: conversation.mode,
           workId: work.id,
           profile: work.profile,
-          outline: work.outline,
+          plan: work.outline,
           inspiration: work.inspiration,
-          inspirationChoices: null,
+          inspirationSuggestions: null,
           creation: work.creation,
           modelTemperature,
         },
@@ -129,16 +151,16 @@ export function useYouganStream({
         },
       );
     },
-    [modelTemperature, stream, work],
+    [conversation, modelTemperature, stream, work],
   );
 
   return {
     stream,
     threadId,
-    threadChoices,
+    threadSuggestions,
     resolvedValues,
     sendMessage,
-    canChat: Boolean(work && token),
+    canChat: Boolean(work && conversation && token),
   };
 }
 

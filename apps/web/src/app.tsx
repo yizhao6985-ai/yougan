@@ -10,6 +10,7 @@ import { ConfirmEmailPage } from "@/pages/confirm-email-page";
 import { ContentDetailPage } from "@/pages/content/content-detail-page";
 import { ContentFeedPage } from "@/pages/content/content-feed-page";
 import { AboutPage } from "@/pages/about-page";
+import { FeedbackPage } from "@/pages/feedback-page";
 import { FeaturesPage } from "@/pages/features-page";
 import { HomePage } from "@/pages/home-page";
 import { MobileAppPage } from "@/pages/mobile-app-page";
@@ -29,6 +30,7 @@ export function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutPage />} />
+        <Route path="/feedback" element={<FeedbackPage />} />
         <Route path="/features" element={<FeaturesPage />} />
         <Route path="/mobile" element={<MobileAppPage />} />
         <Route path="/content" element={<ContentFeedPage />} />

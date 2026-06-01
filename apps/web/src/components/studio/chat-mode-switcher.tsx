@@ -71,11 +71,13 @@ export function useChatModeShortcuts(
     const onKeyDown = (event: KeyboardEvent) => {
       const nextMode = modeFromShortcut(event);
       if (!nextMode) return;
+
       event.preventDefault();
+      event.stopPropagation();
       handleSwitch(nextMode);
     };
 
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
   }, [active, handleSwitch]);
 }

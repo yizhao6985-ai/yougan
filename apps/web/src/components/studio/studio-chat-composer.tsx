@@ -81,16 +81,18 @@ export function StudioChatComposer({
         <PromptInputFooter>
           <PromptInputTools className="flex-wrap gap-2">
             <UploadReferenceButton />
-            <ModelTemperatureControl
-              level={modelTemperatureLevel}
-              onChange={setModelTemperatureLevel}
-              disabled={stream.isLoading}
-            />
             <ChatModeSwitcher
               mode={mode}
               onChange={onModeChange}
               disabled={stream.isLoading}
             />
+            {mode === "creation" ? (
+              <ModelTemperatureControl
+                level={modelTemperatureLevel}
+                onChange={setModelTemperatureLevel}
+                disabled={stream.isLoading}
+              />
+            ) : null}
           </PromptInputTools>
           <PromptInputSubmit disabled={!canSubmit} status={chatStatus} />
         </PromptInputFooter>
@@ -98,8 +100,8 @@ export function StudioChatComposer({
       <p className="mt-2 text-center text-[11px] text-muted-foreground/70">
         {CHAT_COPY.modeShortcutsFooter({
           inspiration: modeShortcutLabel("inspiration"),
-          outline: modeShortcutLabel("outline"),
           creation: modeShortcutLabel("creation"),
+          ask: modeShortcutLabel("ask"),
         })}
       </p>
     </>

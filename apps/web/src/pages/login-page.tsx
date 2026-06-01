@@ -136,12 +136,12 @@ export function LoginPage() {
             <div className="space-y-6 px-5 py-7 sm:px-7 sm:py-8">
               <div className="space-y-2 px-0.5">
                 <h2 className="text-xl font-semibold text-card-foreground">
-                  {mode === "login" ? AUTH.loginTitle : "创建账号"}
+                  {mode === "login" ? AUTH.loginTitle : AUTH.registerTitle}
                 </h2>
                 <p className="text-sm leading-6 text-muted-foreground">
                   {mode === "login"
-                    ? "使用邮箱登录，继续你的创作"
-                    : "注册后作品与记录将云端保存"}
+                    ? AUTH.loginFormSubtitle
+                    : AUTH.registerFormSubtitle}
                 </p>
               </div>
 

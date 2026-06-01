@@ -4,6 +4,7 @@ import {
   ArrowLeftIcon,
   Building2Icon,
   LayersIcon,
+  MessageSquarePlusIcon,
   NewspaperIcon,
   SmartphoneIcon,
 } from "lucide-react";
@@ -68,6 +69,7 @@ export function SiteHeader() {
     pathname.startsWith("/content") ||
     isProfilePage;
   const onAboutPage = pathname === "/about";
+  const onFeedbackPage = pathname === "/feedback";
   const onFeaturesPage = pathname === "/features";
   const onMobilePage = pathname === "/mobile";
   const onContentPage =
@@ -157,6 +159,13 @@ export function SiteHeader() {
               label={NAV.about}
               shortLabel={NAV.aboutShort}
               icon={<Building2Icon className="size-4 shrink-0" aria-hidden />}
+            />
+            <HeaderNavItem
+              to="/feedback"
+              active={onFeedbackPage}
+              label={NAV.feedback}
+              shortLabel={NAV.feedbackShort}
+              icon={<MessageSquarePlusIcon className="size-4 shrink-0" aria-hidden />}
             />
           </div>
         ) : null}

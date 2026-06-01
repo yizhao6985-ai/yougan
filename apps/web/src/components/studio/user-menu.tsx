@@ -6,6 +6,7 @@ import {
   FolderKanbanIcon,
   KeyRoundIcon,
   LogOutIcon,
+  MessageSquarePlusIcon,
   NewspaperIcon,
   Share2Icon,
   UserRoundIcon,
@@ -23,7 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { AuthorAvatar } from "@/components/content/author-avatar";
 import { useLogoutMutation, useMeQuery } from "@/hooks/queries/auth";
-import { BILLING, MEMBERSHIP, SETTINGS } from "@/lib/site-copy";
+import { BILLING, FEEDBACK, MEMBERSHIP, SETTINGS } from "@/lib/site-copy";
 import type { AuthUser } from "@/services/auth";
 
 type UserMenuItem = {
@@ -143,6 +144,13 @@ export function UserMenu() {
             })}
           </DropdownMenuGroup>
         ))}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link to="/feedback" className="cursor-pointer">
+            <MessageSquarePlusIcon />
+            {FEEDBACK.navLabel}
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="text-red-600 focus:text-red-600"

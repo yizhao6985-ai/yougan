@@ -1,7 +1,7 @@
 import { HumanMessage } from "@langchain/core/messages";
 
-import { createChatModel } from "../llm/minimax.js";
-import type { ReferenceItem } from "../schemas.js";
+import { createChatModel } from "../llm/dashscope.js";
+import type { ReferenceItem } from "../schema.js";
 import { truncateMessageContent } from "./message-content.js";
 import { parseProfile } from "./parse-agent-state.js";
 import {

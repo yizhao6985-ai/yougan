@@ -5,8 +5,8 @@ import { HumanMessage } from "@langchain/core/messages";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
-import { createChatModel } from "../llm/minimax.js";
-import type { ReferenceItem } from "../schemas.js";
+import { createChatModel } from "../llm/dashscope.js";
+import type { ReferenceItem } from "../schema.js";
 import { parseProfile } from "../lib/parse-agent-state.js";
 import { truncateMessageContent } from "../lib/message-content.js";
 import {
@@ -15,7 +15,8 @@ import {
   resolveReferenceImageUrl,
   upsertImageReference,
 } from "../lib/reference-images.js";
-import { getState, mergeProfileReferences, toolCommand } from "./common.js";
+import { getState, mergeProfileReferences } from "../lib/tool-state.js";
+import { toolCommand } from "../lib/tool-command.js";
 
 export const parseReferenceText = tool(
   async ({ reference_text }, config) => {

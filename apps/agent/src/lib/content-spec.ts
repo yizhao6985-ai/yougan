@@ -2,7 +2,7 @@
  * 创作内容规格：体裁（content_format）与媒介形式（media_modality）。
  * 与 API discover-taxonomy 枚举对齐，供 Agent 解析、路由与发布推断共用语义。
  */
-import type { WorkProfile } from "../schemas.js";
+import type { WorkProfile } from "../schema.js";
 
 export const CONTENT_FORMATS = [
   { id: "note", label: "图文笔记" },

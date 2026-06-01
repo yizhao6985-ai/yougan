@@ -1,10 +1,9 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  ClipboardListIcon,
+  BookOpenIcon,
   FolderKanbanIcon,
   ImageIcon,
   LightbulbIcon,
-  ListChecksIcon,
   MessageSquareTextIcon,
   SparklesIcon,
   WandSparklesIcon,
@@ -39,58 +38,49 @@ export const CREATION_MODES: CapabilityMode[] = [
     id: "inspiration",
     anchor: "inspiration",
     icon: LightbulbIcon,
-    tagline: "没想法时，先一起找灵感",
+    tagline: "找灵感、定方向",
     summary:
-      "通过提问帮你定平台、选题、受众和写法，把零散想法整理成「已确认需求」。这一步不写大纲，也不生成正文。",
+      "通过提问帮你找灵感，理清平台、选题、受众和写法，把零散想法整理成「已确认灵感」。每轮对话结束会给出可点选建议。",
     highlights: [
-      "每次问 1–2 个问题，帮你想清楚写什么，而不是替你做决定",
-      "定期总结「目前理解是……」请你确认",
-      "确认后的需求写入侧栏「灵感」",
-      "方向清楚后会建议进入大纲模式",
+      "每次问 1–2 个问题，帮你想清楚写什么",
+      "确认后的灵感写入侧栏「灵感」",
+      "回合结束后自动生成可点选建议",
+      "方向清楚后可进入创作或提问模式",
     ],
-    avoids: [
-      "不直接写出完整方案或正文",
-      "不写入创作大纲、不生成正文",
-    ],
+    avoids: ["不直接写出完整方案或正文", "不执行制作任务"],
     shortcut: modeShortcutLabel("inspiration"),
-  },
-  {
-    id: "outline",
-    anchor: "outline",
-    icon: ClipboardListIcon,
-    tagline: "产出一份创作大纲",
-    summary:
-      "根据已确认灵感，把结构、段落、风格等整理成创作大纲；你定稿后再进入创作模式，按大纲生成标题和正文。",
-    highlights: [
-      "每条要点记成大纲条目",
-      "主动问「还有要补充的吗？」",
-      "你说「没有了」「就这些」时，列出完整大纲请你定稿",
-      "定稿后生成大纲摘要，再引导进入创作模式",
-    ],
-    avoids: [
-      "大纲未定稿前不生成正文",
-      "不用催促话术，等你确认后再出稿",
-    ],
-    shortcut: modeShortcutLabel("outline"),
   },
   {
     id: "creation",
     anchor: "creation",
     icon: WandSparklesIcon,
-    tagline: "按大纲完成最终实现",
+    tagline: "AI 团队精良制作",
     summary:
-      "针对已定稿的创作大纲生成与修改标题、正文；你的调整先记入待执行项，执行后总结改了什么。",
+      "AI 团队制定制作计划，文案/设计/音频/视频按计划执行，精良生成与修改标题、正文等内容。",
     highlights: [
-      "严格按创作大纲出稿，不跳过已定结构",
-      "支持标题、正文与话题标签",
+      "自动制定制作计划",
+      "按部门调度专员（文案、设计、音频、视频）",
+      "动态加载行业经验提示词",
       "每次执行都有摘要，方便对比版本",
-      "可随时回到灵感或大纲模式调整方向",
     ],
-    avoids: [
-      "不跳过记录修改直接生成",
-      "大纲未定稿时不应在此模式出稿",
-    ],
+    avoids: ["不跳过任务记录直接生成"],
     shortcut: modeShortcutLabel("creation"),
+  },
+  {
+    id: "ask",
+    anchor: "ask",
+    icon: BookOpenIcon,
+    tagline: "有问题，随时问",
+    summary:
+      "本质是提问模式：问怎么做得更好给优化建议；问创作方法帮你答疑学习；问行业、平台、受众等背景也一并作答。",
+    highlights: [
+      "优化类：怎么改、怎么提升、哪里可以更好",
+      "学习类：创作技巧、结构、概念与方法答疑",
+      "背景类：行业趋势、平台差异、受众与转化逻辑",
+      "重要结论可记入灵感",
+    ],
+    avoids: ["不直接生成交付稿", "不制定制作计划"],
+    shortcut: modeShortcutLabel("ask"),
   },
 ];
 
@@ -102,18 +92,18 @@ export const WORKFLOW_STEPS = [
   },
   {
     step: "02",
-    title: "灵感模式 · 定选题",
-    body: "用对话确认平台、选题、受众、语气等，侧栏「灵感」展示已确认需求。",
+    title: "灵感模式 · 找灵感",
+    body: "通过对话帮你找灵感，确认平台、选题、受众、语气等，侧栏「灵感」汇总已确认内容。",
   },
   {
     step: "03",
-    title: "大纲模式 · 写大纲",
-    body: "把结构、段落、风格要求等写成创作大纲；确认无补充后定稿。",
+    title: "创作模式 · AI 团队出稿",
+    body: "AI 团队制定制作计划，文案/设计/音视频按任务在「内容预览」精良交付，可反复修改。",
   },
   {
     step: "04",
-    title: "创作模式 · 按大纲出稿",
-    body: "按已定稿大纲在「内容预览」生成标题和正文，可反复修改。",
+    title: "提问模式 · 随时答疑",
+    body: "优化建议、创作方法、行业与平台背景——按问题类型作答，重要结论可记入灵感（任意时刻可切换）。",
   },
 ] as const;
 
@@ -121,29 +111,24 @@ export const STUDIO_PANELS = [
   {
     icon: MessageSquareTextIcon,
     title: "对话区",
-    body: "和 AI 聊选题、聊大纲、聊修改；回复都在这里。",
+    body: "和 AI 聊灵感、聊策略、聊修改；回复都在这里。",
   },
   {
     icon: LightbulbIcon,
     title: "灵感",
-    body: "灵感模式确认的需求会即时汇总在这里，作为大纲模式的输入依据。",
-  },
-  {
-    icon: ListChecksIcon,
-    title: "创作大纲",
-    body: "大纲模式撰写并定稿；创作模式按大纲执行并记录已实现项。",
+    body: "灵感模式确认的灵感会即时汇总在这里。",
   },
   {
     icon: ImageIcon,
     title: "内容预览",
-    body: "创作模式按大纲生成后，在此预览标题、正文和标签。",
+    body: "AI 团队交付的标题、正文和标签显示在这里。",
   },
 ] as const;
 
 const HOME_TEASER_BODIES: Record<ChatMode, string> = {
-  inspiration: "没选题时一起找灵感，定平台、受众和写法。",
-  outline: "产出创作大纲，定稿后再出稿。",
-  creation: "按大纲生成标题和正文。",
+  inspiration: "帮你找灵感，理清平台、选题与写法。",
+  creation: "AI 团队定计划，按计划精良制作。",
+  ask: "优化建议、创作答疑、行业背景，随时可问。",
 };
 
 export const HOME_FEATURE_TEASERS = CREATION_MODES.map((mode) => ({

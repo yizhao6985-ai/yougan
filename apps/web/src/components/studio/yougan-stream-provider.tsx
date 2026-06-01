@@ -1,5 +1,9 @@
 import { createContext, useContext, type ReactNode } from "react";
 
+import {
+  useConversationsStore,
+  type ConversationsStore,
+} from "@/hooks/use-conversations-store";
 import { useModelTemperature } from "@/hooks/use-model-temperature";
 import {
   useYouganStream,
@@ -8,12 +12,46 @@ import {
 import { useWorksStore, type WorksStore } from "@/hooks/use-works-store";
 
 type StudioContextValue = WorksStore &
+  ConversationsStore &
   YouganStream & {
     modelTemperatureLevel: number;
     setModelTemperatureLevel: (level: number) => void;
   };
 
 const StudioContext = createContext<StudioContextValue | null>(null);
+
+function ConversationStreamInner({
+  worksStore,
+  conversationsStore,
+  children,
+}: {
+  worksStore: WorksStore;
+  conversationsStore: ConversationsStore;
+  children: ReactNode;
+}) {
+  const temperatureControl = useModelTemperature(worksStore.activeWork?.id);
+
+  const streamState = useYouganStream({
+    work: worksStore.activeWork,
+    conversation: conversationsStore.activeConversation,
+    modelTemperature: temperatureControl.temperature,
+    onThreadId: conversationsStore.setConversationThreadId,
+    onValuesChange: worksStore.syncFromStream,
+    onModeFromStream: conversationsStore.syncModeFromStream,
+  });
+
+  const value: StudioContextValue = {
+    ...worksStore,
+    ...conversationsStore,
+    ...streamState,
+    modelTemperatureLevel: temperatureControl.level,
+    setModelTemperatureLevel: temperatureControl.setTemperatureLevel,
+  };
+
+  return (
+    <StudioContext.Provider value={value}>{children}</StudioContext.Provider>
+  );
+}
 
 function StreamBridge({
   worksStore,
@@ -22,25 +60,20 @@ function StreamBridge({
   worksStore: WorksStore;
   children: ReactNode;
 }) {
-  const temperatureControl = useModelTemperature(worksStore.activeWork?.id);
-
-  const streamState = useYouganStream({
-    work: worksStore.activeWork,
-    modelTemperature: temperatureControl.temperature,
-    onThreadId: worksStore.setWorkThreadId,
-    onValuesChange: worksStore.syncFromStream,
-    onModeFromStream: worksStore.syncModeFromStream,
-  });
-
-  const value: StudioContextValue = {
-    ...worksStore,
-    ...streamState,
-    modelTemperatureLevel: temperatureControl.level,
-    setModelTemperatureLevel: temperatureControl.setTemperatureLevel,
-  };
+  const conversationsStore = useConversationsStore(worksStore.activeWork?.id ?? null);
+  const streamKey = [
+    worksStore.activeWork?.id ?? "studio-empty",
+    conversationsStore.activeConversation?.id ?? "no-conversation",
+  ].join(":");
 
   return (
-    <StudioContext.Provider value={value}>{children}</StudioContext.Provider>
+    <ConversationStreamInner
+      key={streamKey}
+      worksStore={worksStore}
+      conversationsStore={conversationsStore}
+    >
+      {children}
+    </ConversationStreamInner>
   );
 }
 

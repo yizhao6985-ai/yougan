@@ -19,9 +19,13 @@ import {
 } from "@/components/studio/chat-stream-block";
 import { ComposerAttachmentsProvider } from "@/components/studio/composer-attachments-context";
 import { ChatToolActivity } from "@/components/studio/chat-tool-activity";
-import { InspirationChoiceOptions } from "@/components/studio/inspiration-generative-ui";
-import { useInspirationChoices } from "@/hooks/use-inspiration-choices";
+import { InspirationSuggestionOptions } from "@/components/studio/inspiration-generative-ui";
+import { useInspirationSuggestions } from "@/hooks/use-inspiration-choices";
 import { useChatModeShortcuts } from "@/components/studio/chat-mode-switcher";
+import {
+  hasProductionPlanActivity,
+  ProductionPlanTodoList,
+} from "@/components/studio/production-plan-todo-list";
 import { StudioChatComposer } from "@/components/studio/studio-chat-composer";
 import { InspirationRecommendations } from "@/components/studio/inspiration-recommendations";
 import { Shimmer } from "@/components/ai-elements/shimmer";
@@ -29,11 +33,14 @@ import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
 import { useYouganStreamContext } from "@/components/studio/yougan-stream-provider";
 import { useWorkInspirationRecommendationsQuery } from "@/hooks/queries/inspiration-recommendations";
 import { useWorkItemNameDialog } from "@/hooks/use-work-item-name-dialog";
+import { WorksCreateMenu } from "@/components/studio/works-create-menu";
 import { buildRenderItems } from "@/lib/message-utils";
+import { INSPIRATION_RECOMMENDATIONS_COUNT } from "@/lib/inspiration-recommendations";
 import { scene } from "@/lib/scene-styles";
 import { cn } from "@/lib/utils";
 import { CHAT_COPY, STUDIO } from "@/lib/site-copy";
 import type { ChatMode } from "@/lib/types";
+import { isPlanReady } from "@/lib/types";
 
 export function YouganChat() {
   const {
@@ -41,21 +48,23 @@ export function YouganChat() {
     sendMessage,
     canChat,
     activeWork,
-    setWorkMode,
+    activeConversation,
+    setConversationMode,
     resolvedValues,
   } = useYouganStreamContext();
-  const { dialog: workNameDialog, openCreateWork } = useWorkItemNameDialog();
+  const { dialog: workNameDialog, openCreateWork, openCreateGroup } =
+    useWorkItemNameDialog();
   const [input, setInput] = useState("");
   const [copied, setCopied] = useState(false);
 
-  const mode = activeWork?.mode ?? ("inspiration" as ChatMode);
+  const mode = activeConversation?.mode ?? ("inspiration" as ChatMode);
 
   const handleModeSwitch = useCallback(
     (nextMode: ChatMode) => {
-      if (!activeWork || mode === nextMode) return;
-      setWorkMode(activeWork.id, nextMode);
+      if (!activeConversation || mode === nextMode) return;
+      setConversationMode(activeConversation.id, nextMode);
     },
-    [activeWork, mode, setWorkMode],
+    [activeConversation, mode, setConversationMode],
   );
 
   useChatModeShortcuts(Boolean(activeWork), mode, handleModeSwitch);
@@ -65,7 +74,7 @@ export function YouganChat() {
     [stream.messages, stream.isLoading],
   );
 
-  const { activeChoices } = useInspirationChoices(mode, {
+  const { activeSuggestions } = useInspirationSuggestions(mode, {
     values: resolvedValues,
     isLoading: stream.isLoading,
   });
@@ -130,8 +139,8 @@ export function YouganChat() {
   const suggestions =
     mode === "creation"
       ? CHAT_COPY.creationSuggestions
-      : mode === "outline"
-        ? CHAT_COPY.outlineSuggestions
+      : mode === "ask"
+        ? CHAT_COPY.askSuggestions
         : CHAT_COPY.inspirationSuggestions;
 
   if (!activeWork) {
@@ -140,55 +149,63 @@ export function YouganChat() {
         <div className="flex h-full min-h-0 flex-1 flex-col items-center justify-center gap-4 overflow-y-auto px-6 py-12 text-center">
           <p className="text-lg font-medium text-foreground">{STUDIO.emptyTitle}</p>
           <p className="max-w-md text-sm text-muted-foreground">{STUDIO.emptyBody}</p>
-          <button
-            type="button"
-            onClick={() => openCreateWork()}
-            className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition hover:bg-primary/90"
-          >
-            {STUDIO.newWork}
-          </button>
+          <WorksCreateMenu
+            onCreateWork={() => openCreateWork()}
+            onCreateGroup={() => openCreateGroup()}
+            align="center"
+          />
         </div>
         {workNameDialog}
       </>
     );
   }
 
-  const pendingCount = activeWork.outline.pending_changes?.length ?? 0;
+  const plan =
+    stream.values?.plan ?? stream.values?.outline ?? activeWork.outline;
+  const pendingCount = plan.pending_changes?.length ?? 0;
   const confirmedCount =
     activeWork.inspiration.confirmed_requirements?.length ?? 0;
-  const outlineReady = activeWork.outline.outline_ready ?? false;
+  const planReady = isPlanReady(plan);
+  const showPlanTodo = hasProductionPlanActivity(plan);
 
   const statusHint =
     mode === "inspiration"
       ? confirmedCount > 0
         ? CHAT_COPY.status.inspirationConfirmed(confirmedCount)
         : CHAT_COPY.status.inspirationExploring
-      : mode === "outline"
-        ? outlineReady
-          ? CHAT_COPY.status.outlineReady
-          : pendingCount > 0
-            ? CHAT_COPY.status.outlinePending(pendingCount)
-            : CHAT_COPY.status.outlineDraft
-        : pendingCount > 0
-          ? CHAT_COPY.status.creationPending(pendingCount)
-          : CHAT_COPY.status.creationIdle;
+      : mode === "ask"
+        ? CHAT_COPY.status.askExploring
+        : planReady
+          ? pendingCount > 0
+            ? CHAT_COPY.status.creationPending(pendingCount)
+            : CHAT_COPY.status.creationIdle
+          : CHAT_COPY.status.creationPlanning;
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
       <div className={scene.studioPanelHeader}>
-        <p className={scene.studioPanelHeaderTitle}>{activeWork.title}</p>
-        <p className={scene.studioPanelHeaderHint}>{statusHint}</p>
+        <p className={scene.studioPanelHeaderTitle}>
+          {activeConversation?.title ?? activeWork.title}
+        </p>
+        <p className={scene.studioPanelHeaderHint}>
+          {[activeWork.title, statusHint].join(" · ")}
+        </p>
       </div>
 
       <div className="relative min-h-0 flex-1 overflow-hidden">
       {items.length === 0 ? (
         <div className={cn("flex h-full flex-col items-center justify-center gap-6 overflow-y-auto px-4 py-8", scene.conversationPadBottom)}>
+          {showPlanTodo ? (
+            <div className="mx-auto w-full max-w-3xl shrink-0">
+              <ProductionPlanTodoList plan={plan} />
+            </div>
+          ) : null}
           <div className="text-center">
             <p className="text-lg font-medium text-foreground">
               {mode === "inspiration"
                 ? CHAT_COPY.emptyByMode.inspiration.title
-                : mode === "outline"
-                  ? CHAT_COPY.emptyByMode.outline.title
+                : mode === "ask"
+                  ? CHAT_COPY.emptyByMode.ask.title
                   : CHAT_COPY.emptyByMode.creation.title}
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -197,15 +214,15 @@ export function YouganChat() {
                   inspirationRecommendations.length > 0
                   ? CHAT_COPY.emptyByMode.inspiration.bodyWithRecommendations
                   : CHAT_COPY.emptyByMode.inspiration.bodyDefault
-                : mode === "outline"
-                  ? CHAT_COPY.emptyByMode.outline.body
+                : mode === "ask"
+                  ? CHAT_COPY.emptyByMode.ask.body
                   : CHAT_COPY.emptyByMode.creation.body}
             </p>
           </div>
           {mode === "inspiration" && shouldSuggestInspirations ? (
             inspirationRecommendationsQuery.isLoading ? (
               <Suggestions>
-                {[0, 1, 2].map((index) => (
+                {Array.from({ length: INSPIRATION_RECOMMENDATIONS_COUNT }, (_, index) => (
                   <div
                     key={index}
                     className="inline-flex rounded-md border border-border bg-background px-4 py-2"
@@ -248,6 +265,9 @@ export function YouganChat() {
       ) : (
         <Conversation className="h-full min-h-0">
           <ConversationContent className={cn("mx-auto w-full max-w-3xl gap-6 px-4 py-4", scene.conversationPadBottom)}>
+            {showPlanTodo ? (
+              <ProductionPlanTodoList plan={plan} />
+            ) : null}
             {items.map((item, index) => {
               if (item.kind === "human") {
                 return (
@@ -295,23 +315,22 @@ export function YouganChat() {
               }
 
               const isLastAi = index === lastAiIndex;
-              const showInspirationChoices =
+              const showInspirationSuggestions =
                 isLastAi &&
                 mode === "inspiration" &&
-                Boolean(activeChoices?.options.length) &&
+                Boolean(activeSuggestions?.suggestions.length) &&
                 !stream.isLoading;
               return (
                 <Message key={item.id} from="assistant" className="max-w-full">
                   <MessageContent className="w-full max-w-full">
                     <AIResponse
                       content={item.content}
-                      reasoning={item.reasoning}
                       isStreaming={item.isStreaming}
                     />
-                    {showInspirationChoices && activeChoices && (
-                      <InspirationChoiceOptions
-                        options={activeChoices.options}
-                        hint={activeChoices.hint}
+                    {showInspirationSuggestions && activeSuggestions && (
+                      <InspirationSuggestionOptions
+                        suggestions={activeSuggestions.suggestions}
+                        hint={activeSuggestions.hint}
                         disabled={stream.isLoading || !canChat}
                         onSelect={(value) => void sendMessage(value)}
                       />
@@ -340,7 +359,7 @@ export function YouganChat() {
                 <MessageContent className="w-full max-w-full p-0">
                   <ChatStreamBlock>
                     <Shimmer className={chatStreamBlock.muted}>
-                      {CHAT_COPY.thinking}
+                      {CHAT_COPY.replying}
                     </Shimmer>
                   </ChatStreamBlock>
                 </MessageContent>

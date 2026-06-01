@@ -6,6 +6,7 @@ interface ImportMetaEnv {
   readonly VITE_MOBILE_DOWNLOAD_URL?: string;
   readonly VITE_MOBILE_IOS_DOWNLOAD_URL?: string;
   readonly VITE_MOBILE_ANDROID_DOWNLOAD_URL?: string;
+  readonly VITE_FEEDBACK_EMAIL?: string;
 }
 
 interface ImportMeta {

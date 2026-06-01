@@ -7,3 +7,4 @@ export const LANGGRAPH_API_URL =
 
 export const AUTH_TOKEN_KEY = "yougan:token";
 export const ACTIVE_WORK_KEY = "yougan:activeWorkId";
+export const ACTIVE_CONVERSATION_BY_WORK_KEY = "yougan:activeConversationByWork";
