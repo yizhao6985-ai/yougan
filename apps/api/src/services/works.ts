@@ -12,7 +12,6 @@ import { getWorkGroup } from "./work-groups.js";
 import {
   applyAgentRunToWork,
   duplicateWorkFromRevision,
-  initializeWorkRevisionTimeline,
   parseSnapshot,
 } from "./work-revisions.js";
 import { materializeWorkColumns, parseBrief, parseDraft, parsePlan, parseProfile } from "./revisions.js";
@@ -85,8 +84,6 @@ export async function createWork(
 
     return { work: createdWork, conversationId: conversation.id };
   });
-
-  await initializeWorkRevisionTimeline(work.work.id, work.conversationId);
 
   const refreshed = await prisma.work.findUnique({ where: { id: work.work.id } });
   return toWorkDTO(refreshed!);

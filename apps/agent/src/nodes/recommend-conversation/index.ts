@@ -1,4 +1,4 @@
-import { generateConversationRecommendations } from "./logic.js";
+import { generateConversationRecommendations } from "./generate-opening-suggestions.js";
 import type { AgentStateType } from "../../state.js";
 
 export async function recommendConversationNode(

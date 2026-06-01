@@ -103,17 +103,6 @@ export function detectRevisionKind(
     return "execution_complete";
   }
 
-  if (
-    previous.plan.ready !== next.plan.ready &&
-    next.plan.ready
-  ) {
-    return "plan_ready";
-  }
-
-  if (stableJson(previous.plan) !== stableJson(next.plan)) {
-    return "plan_revised";
-  }
-
   if (!previous.brief.ready && next.brief.ready) {
     return "brief_ready";
   }
@@ -134,6 +123,18 @@ export function detectRevisionKind(
 
   if (previous.brief.ready !== next.brief.ready) {
     return "brief_requirement_updated";
+  }
+
+  // plan 变更不写入版本轴；仅用于触发物化列更新
+  if (
+    previous.plan.ready !== next.plan.ready &&
+    next.plan.ready
+  ) {
+    return "plan_ready";
+  }
+
+  if (stableJson(previous.plan) !== stableJson(next.plan)) {
+    return "plan_revised";
   }
 
   return "profile_updated";

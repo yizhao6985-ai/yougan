@@ -3,7 +3,7 @@
  */
 import { END, START, StateGraph } from "@langchain/langgraph";
 
-import * as afterLlm from "./logic/after-llm.js";
+import * as afterLlm from "./conditional-edges/after-llm.js";
 import { llmCall } from "./nodes/llm-call.js";
 import { prepareAskTurnNode } from "./nodes/prepare-turn.js";
 import { toolNode } from "./nodes/tools.js";

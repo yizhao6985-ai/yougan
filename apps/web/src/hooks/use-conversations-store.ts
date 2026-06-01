@@ -152,6 +152,11 @@ export function useConversationsStore(workId: string | null) {
         )
         ?.find((item) => item.id === conversationId);
       if (current?.mode === mode) return;
+      patchConversationsCache(queryClient, workId, (items) =>
+        items.map((item) =>
+          item.id === conversationId ? { ...item, mode } : item,
+        ),
+      );
       await updateConversationMutation.mutateAsync({
         conversationId,
         patch: { mode },

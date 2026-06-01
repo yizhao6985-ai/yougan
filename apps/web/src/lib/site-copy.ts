@@ -321,26 +321,17 @@ export const STUDIO = {
 } as const;
 
 export const CHAT_COPY = {
-  inspirationSuggestions: [
+  openingSuggestions: [
     "想更新自媒体但还没想好写什么",
-    "想做职场类内容，不确定选题方向",
-    "还没定发小红书还是公众号",
-  ],
-  askSuggestions: [
     "怎么把这个选题写得更好？",
-    "小红书笔记一般是什么结构？",
-    "护肤赛道最近什么内容形式比较常见？",
-  ],
-  creationSuggestions: [
     "按制作计划生成一版文案",
-    "语气改得更口语一点",
-    "标题再吸引人一点",
+    "想做职场类内容，不确定选题方向",
+    "小红书笔记一般是什么结构？",
   ],
-  placeholders: {
-    inspiration: "也可以直接输入；有建议时点击即发送…",
-    ask: "有问题尽管问：优化建议、创作方法、行业背景…",
-    creation: "说说要改什么，AI 团队会先记入任务再执行…",
-  },
+  placeholder: "说说想法、提问，或告诉我要改什么…",
+  emptyTitle: "从一句话开始",
+  emptyBody:
+    "我会根据你的话自动对齐方向、回答问题，或在合适时开始制作；成稿与灵感会沉淀在右侧作品面板。",
   emptyByMode: {
     inspiration: {
       title: "灵感模式：找灵感、定方向",
@@ -364,12 +355,6 @@ export const CHAT_COPY = {
     creationIdle: "制作计划已定稿，可以交付或修改",
     creationPending: (n: number) => `${n} 项制作任务待执行`,
   },
-  modeShortcutsFooter: (labels: {
-    inspiration: string;
-    creation: string;
-    ask: string;
-  }) =>
-    `快捷键：灵感 ${labels.inspiration} · 创作 ${labels.creation} · 提问 ${labels.ask}`,
   replying: "正在回复…",
   recommendationsLoading: "正在生成开场建议…",
   attachmentDrawer: {
@@ -408,20 +393,15 @@ export const WORK_HISTORY_PANEL = {
     "适合换平台、换选题：从当前进度复制一件新作品，不会影响这件作品。",
   duplicateAction: "另存为新作品",
   duplicating: "正在创建…",
-  duplicateDialogTitle: "另存为新作品",
-  duplicateDialogDescription: "为新作品取个名字，方便在侧栏区分。",
-  duplicateNameLabel: "作品名称",
-  duplicateNamePlaceholder: "例如：公众号长文版",
-  duplicateConfirm: "创建",
   duplicateFromHere: "从此版本复制",
   timelineTitle: "版本记录",
-  timelineHint: "每次有意义的 Agent 操作会写入一条记录；可回到历史版本继续编辑。",
-  empty: "还没有版本记录。",
+  timelineHint: "灵感定稿与成稿会各记一条；可回到任意一版继续编辑。",
+  empty: "还没有版本记录。确认灵感或完成出稿后会出现。",
   headBadge: "当前",
   restore: "回到这一版",
   restoreTitle: "回到这一版？",
   restoreDescription:
-    "将把这件作品恢复到所选版本，并追加一条历史记录，不会删除过往记录。",
+    "将把这件作品切回到所选版本，当前进度会被替换，历史记录仍保留。",
   confirmRestore: "确认回到这一版",
   restoring: "恢复中…",
   cancel: "取消",

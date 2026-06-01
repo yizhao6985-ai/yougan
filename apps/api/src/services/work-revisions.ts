@@ -1,3 +1,10 @@
+import {
+  isUserVisibleRevisionKind,
+  userRevisionPhase,
+  type RevisionKind,
+  type WorkRevisionSnapshot,
+} from "@yougan/domain";
+
 import { prisma } from "../db.js";
 import type { WorkRevisionDTO } from "../schemas.js";
 import {
@@ -14,17 +21,12 @@ import {
   snapshotFromAgentValues,
 } from "./revisions.js";
 
-export async function getWorkHeadSnapshot(workId: string) {
-  const work = await prisma.work.findUnique({ where: { id: workId } });
-  if (!work) return null;
-
-  if (work.headRevisionId) {
-    const head = await prisma.workRevision.findUnique({
-      where: { id: work.headRevisionId },
-    });
-    if (head) return parseSnapshot(head.snapshot);
-  }
-
+function snapshotFromWorkColumns(work: {
+  profile: unknown;
+  brief: unknown;
+  plan: unknown;
+  draft: unknown;
+}): WorkRevisionSnapshot {
   return {
     profile: parseProfile(work.profile),
     brief: parseBrief(work.brief),
@@ -33,21 +35,43 @@ export async function getWorkHeadSnapshot(workId: string) {
   };
 }
 
-async function getWorkParentRevisionId(workId: string) {
-  const work = await prisma.work.findUnique({
+export async function getWorkCurrentSnapshot(workId: string) {
+  const work = await prisma.work.findUnique({ where: { id: workId } });
+  if (!work) return null;
+  return snapshotFromWorkColumns(work);
+}
+
+/** @deprecated 读取 head revision 快照；Agent 同步请用 getWorkCurrentSnapshot */
+export async function getWorkHeadSnapshot(workId: string) {
+  return getWorkCurrentSnapshot(workId);
+}
+
+async function updateWorkMaterializedState(
+  workId: string,
+  snapshot: WorkRevisionSnapshot,
+) {
+  const columns = materializeWorkColumns(snapshot);
+  await prisma.work.update({
     where: { id: workId },
-    select: { headRevisionId: true },
+    data: {
+      ...columns,
+      draft: columns.draft ?? undefined,
+    },
   });
-  return work?.headRevisionId ?? null;
 }
 
 export async function appendWorkRevision(input: {
   workId: string;
   conversationId?: string;
-  kind: import("@yougan/domain").RevisionKind;
+  kind: RevisionKind;
   summary: string;
-  snapshot: import("@yougan/domain").WorkRevisionSnapshot;
+  snapshot: WorkRevisionSnapshot;
 }) {
+  const phase = userRevisionPhase(input.kind);
+  if (!phase) {
+    throw new Error(`Revision kind is not user-visible: ${input.kind}`);
+  }
+
   const revision = await prisma.$transaction(async (tx) => {
     const parentRevisionId = (
       await tx.work.findUnique({
@@ -83,35 +107,12 @@ export async function appendWorkRevision(input: {
   return toRevisionDTO(revision);
 }
 
-export async function initializeWorkRevisionTimeline(
-  workId: string,
-  conversationId?: string,
-  snapshot = emptySnapshot(),
-  kind: import("@yougan/domain").RevisionKind = "work_created",
-  summary = "创建作品",
-) {
-  const existing = await prisma.workRevision.findFirst({
-    where: { workId },
-    select: { id: true },
-  });
-  if (existing) return existing.id;
-
-  const revision = await appendWorkRevision({
-    workId,
-    conversationId,
-    kind,
-    summary,
-    snapshot,
-  });
-  return revision.id;
-}
-
 export async function applyAgentRunToWork(input: {
   workId: string;
   conversationId?: string;
   values: Record<string, unknown>;
 }) {
-  const previous = (await getWorkHeadSnapshot(input.workId)) ?? emptySnapshot();
+  const previous = (await getWorkCurrentSnapshot(input.workId)) ?? emptySnapshot();
   const next = snapshotFromAgentValues(input.values);
 
   if (snapshotsEqual(previous, next)) {
@@ -119,6 +120,11 @@ export async function applyAgentRunToWork(input: {
   }
 
   const kind = detectRevisionKind(previous, next);
+  if (!isUserVisibleRevisionKind(kind)) {
+    await updateWorkMaterializedState(input.workId, next);
+    return null;
+  }
+
   const summary = revisionSummary(kind, previous, next);
 
   return appendWorkRevision({
@@ -139,7 +145,11 @@ export async function listWorkRevisions(userId: string, workId: string) {
     orderBy: { createdAt: "desc" },
   });
 
-  return revisions.map(toRevisionDTO);
+  return revisions
+    .filter((revision) =>
+      isUserVisibleRevisionKind(revision.kind as RevisionKind),
+    )
+    .map(toRevisionDTO);
 }
 
 export async function restoreWorkToRevision(
@@ -154,15 +164,87 @@ export async function restoreWorkToRevision(
     where: { id: revisionId, workId },
   });
   if (!revision) return null;
+  if (!isUserVisibleRevisionKind(revision.kind as RevisionKind)) return null;
 
   const snapshot = parseSnapshot(revision.snapshot);
+  const columns = materializeWorkColumns(snapshot);
 
-  return appendWorkRevision({
-    workId,
-    kind: "work_restored",
-    summary: `回到：${revision.summary}`,
-    snapshot,
+  await prisma.work.update({
+    where: { id: workId },
+    data: {
+      ...columns,
+      draft: columns.draft ?? undefined,
+      headRevisionId: revision.id,
+    },
   });
+
+  return toRevisionDTO(revision);
+}
+
+async function copyUserVisibleRevisions(
+  sourceWorkId: string,
+  targetWorkId: string,
+  upToRevisionId?: string,
+) {
+  let upToCreatedAt: Date | undefined;
+  if (upToRevisionId) {
+    const upTo = await prisma.workRevision.findFirst({
+      where: { id: upToRevisionId, workId: sourceWorkId },
+    });
+    if (!upTo) return null;
+    upToCreatedAt = upTo.createdAt;
+  }
+
+  const sourceRevisions = await prisma.workRevision.findMany({
+    where: { workId: sourceWorkId },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const visible = sourceRevisions.filter((revision) => {
+    if (!isUserVisibleRevisionKind(revision.kind as RevisionKind)) {
+      return false;
+    }
+    if (upToCreatedAt && revision.createdAt > upToCreatedAt) {
+      return false;
+    }
+    return true;
+  });
+
+  if (!visible.length) {
+    return null;
+  }
+
+  const idMap = new Map<string, string>();
+  let lastCopiedId: string | null = null;
+
+  await prisma.$transaction(async (tx) => {
+    for (const source of visible) {
+      const created = await tx.workRevision.create({
+        data: {
+          workId: targetWorkId,
+          parentRevisionId: source.parentRevisionId
+            ? (idMap.get(source.parentRevisionId) ?? null)
+            : null,
+          conversationId: null,
+          kind: source.kind,
+          summary: source.summary,
+          snapshot: source.snapshot as object,
+          createdAt: source.createdAt,
+        },
+      });
+      idMap.set(source.id, created.id);
+      lastCopiedId = created.id;
+    }
+
+    if (lastCopiedId) {
+      await tx.work.update({
+        where: { id: targetWorkId },
+        data: { headRevisionId: lastCopiedId },
+      });
+    }
+  });
+
+  return lastCopiedId;
 }
 
 export async function duplicateWorkFromRevision(
@@ -179,7 +261,7 @@ export async function duplicateWorkFromRevision(
   });
   if (!source) return null;
 
-  let snapshot = (await getWorkHeadSnapshot(sourceWorkId)) ?? emptySnapshot();
+  let snapshot = (await getWorkCurrentSnapshot(sourceWorkId)) ?? emptySnapshot();
   let sourceRevisionId = source.headRevisionId;
 
   if (options?.revisionId) {
@@ -230,13 +312,11 @@ export async function duplicateWorkFromRevision(
     return { work: createdWork, conversationId: conversation.id };
   });
 
-  await appendWorkRevision({
-    workId: result.work.id,
-    conversationId: result.conversationId,
-    kind: "work_duplicated",
-    summary: `从「${source.title}」另存为新作品`,
-    snapshot,
-  });
+  await copyUserVisibleRevisions(
+    sourceWorkId,
+    result.work.id,
+    options?.revisionId,
+  );
 
   return result.work;
 }
@@ -251,12 +331,19 @@ function toRevisionDTO(revision: {
   snapshot: unknown;
   createdAt: Date;
 }): WorkRevisionDTO {
+  const kind = revision.kind as RevisionKind;
+  const phase = userRevisionPhase(kind);
+  if (!phase) {
+    throw new Error(`Revision kind is not user-visible: ${kind}`);
+  }
+
   return {
     id: revision.id,
     workId: revision.workId,
     parentRevisionId: revision.parentRevisionId,
     conversationId: revision.conversationId,
-    kind: revision.kind as WorkRevisionDTO["kind"],
+    kind,
+    phase,
     summary: revision.summary,
     snapshot: parseSnapshot(revision.snapshot),
     createdAt: revision.createdAt.toISOString(),

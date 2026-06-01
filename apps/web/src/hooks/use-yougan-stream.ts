@@ -6,7 +6,7 @@ import { buildHumanMessageContent } from "@/lib/build-human-message-content";
 import { normalizeBriefSuggestions } from "@/lib/brief-ui-spec";
 import { YOUGAN_ASSISTANT_ID, getYouganThreadState } from "@/lib/yougan-chat-api";
 import { LANGGRAPH_API_URL } from "@/lib/env";
-import type { BriefSuggestions, YouganValues, Work, WorkConversation, ChatMode } from "@/lib/types";
+import type { BriefSuggestions, YouganValues, Work, WorkConversation } from "@/lib/types";
 import { useAuthToken } from "@/store/auth";
 
 const STREAM_MODES = ["messages-tuple", "updates", "values"] as const;
@@ -58,9 +58,16 @@ export function useYouganStream({
 
   const wasLoadingRef = useRef(false);
   const bootstrapAttemptedRef = useRef<string | null>(null);
-  const conversationModeRef = useRef<ChatMode | null>(null);
   const [threadSuggestions, setThreadSuggestions] =
     useState<BriefSuggestions | null>(null);
+
+  useEffect(() => {
+    if (!conversationId || !stream.values?.mode) {
+      return;
+    }
+
+    onModeFromStream?.(conversationId, stream.values.mode);
+  }, [conversationId, onModeFromStream, stream.values?.mode]);
 
   useEffect(() => {
     const wasLoading = wasLoadingRef.current;
@@ -71,15 +78,7 @@ export function useYouganStream({
     if (workId && stream.values) {
       onRunComplete?.(workId, stream.values);
     }
-
-    if (!conversationId || !stream.values?.mode) {
-      return;
-    }
-
-    onModeFromStream?.(conversationId, stream.values.mode);
   }, [
-    conversationId,
-    onModeFromStream,
     onRunComplete,
     stream.isLoading,
     stream.values,
@@ -149,24 +148,6 @@ export function useYouganStream({
     },
     [conversation, modelTemperature, stream, threadSuggestions, token, work],
   );
-
-  useEffect(() => {
-    if (!conversation) return;
-    const prevMode = conversationModeRef.current;
-    conversationModeRef.current = conversation.mode;
-    if (
-      prevMode !== null &&
-      prevMode !== conversation.mode &&
-      stream.messages.length === 0 &&
-      work &&
-      token
-    ) {
-      bootstrapAttemptedRef.current = conversation.id;
-      void bootstrapRecommendations({ force: true }).catch(() => {
-        bootstrapAttemptedRef.current = null;
-      });
-    }
-  }, [bootstrapRecommendations, conversation, stream.messages.length, token, work]);
 
   useEffect(() => {
     if (!conversation?.id || !work || !token) return;

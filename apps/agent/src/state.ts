@@ -35,7 +35,7 @@ export const AgentState = Annotation.Root({
     default: () => [],
   }),
   mode: Annotation<ChatMode>({
-    reducer: (_prev, next) => next ?? "inspiration",
+    reducer: (prev, next) => next ?? prev ?? "inspiration",
     default: () => "inspiration",
   }),
   workId: Annotation<string | undefined>({

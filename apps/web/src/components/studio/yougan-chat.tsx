@@ -22,7 +22,6 @@ import { ChatToolActivity } from "@/components/studio/chat-tool-activity";
 import { BriefSuggestionOptions } from "@/components/studio/inspiration-generative-ui";
 import { normalizeBriefSuggestions } from "@/lib/brief-ui-spec";
 import { useBriefSuggestions } from "@/hooks/use-brief-suggestions";
-import { useChatModeShortcuts } from "@/components/studio/chat-mode-switcher";
 import {
   hasProductionPlanActivity,
   ProductionPlanTodoList,
@@ -47,7 +46,6 @@ export function YouganChat() {
     canChat,
     activeWork,
     activeConversation,
-    setConversationMode,
     resolvedValues,
   } = useYouganStreamContext();
   const { dialog: workNameDialog, openCreateWork, openCreateGroup } =
@@ -55,17 +53,10 @@ export function YouganChat() {
   const [input, setInput] = useState("");
   const [copied, setCopied] = useState(false);
 
-  const mode = activeConversation?.mode ?? ("inspiration" as ChatMode);
-
-  const handleModeSwitch = useCallback(
-    (nextMode: ChatMode) => {
-      if (!activeConversation || mode === nextMode) return;
-      setConversationMode(activeConversation.id, nextMode);
-    },
-    [activeConversation, mode, setConversationMode],
-  );
-
-  useChatModeShortcuts(Boolean(activeWork), mode, handleModeSwitch);
+  const mode =
+    resolvedValues?.mode ??
+    activeConversation?.mode ??
+    ("inspiration" as ChatMode);
 
   const items = useMemo(
     () => buildRenderItems(stream.messages, stream.isLoading),
@@ -128,12 +119,7 @@ export function YouganChat() {
   }, [items]);
 
   const chatStatus = stream.isLoading ? "streaming" : "ready";
-  const suggestions =
-    mode === "creation"
-      ? CHAT_COPY.creationSuggestions
-      : mode === "ask"
-        ? CHAT_COPY.askSuggestions
-        : CHAT_COPY.inspirationSuggestions;
+  const suggestions = CHAT_COPY.openingSuggestions;
 
   if (!activeWork) {
     return (
@@ -192,18 +178,10 @@ export function YouganChat() {
           ) : null}
           <div className="text-center">
             <p className="text-lg font-medium text-foreground">
-              {mode === "inspiration"
-                ? CHAT_COPY.emptyByMode.inspiration.title
-                : mode === "ask"
-                  ? CHAT_COPY.emptyByMode.ask.title
-                  : CHAT_COPY.emptyByMode.creation.title}
+              {CHAT_COPY.emptyTitle}
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              {mode === "inspiration"
-                ? CHAT_COPY.emptyByMode.inspiration.bodyDefault
-                : mode === "ask"
-                  ? CHAT_COPY.emptyByMode.ask.body
-                  : CHAT_COPY.emptyByMode.creation.body}
+              {CHAT_COPY.emptyBody}
             </p>
           </div>
           {isBootstrappingRecommendations ? (
@@ -345,8 +323,7 @@ export function YouganChat() {
         <div className="pointer-events-auto mx-auto w-full max-w-3xl">
           <ComposerAttachmentsProvider>
             <StudioChatComposer
-              mode={mode}
-              onModeChange={handleModeSwitch}
+              effectiveMode={mode}
               input={input}
               onInputChange={setInput}
               onSend={handleSend}

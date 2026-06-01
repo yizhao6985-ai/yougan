@@ -116,14 +116,14 @@ export async function generateConversationRecommendations(
             "基于已有 brief，我还想再明确几个细节",
           ),
           newBriefSuggestion(
-            "navigate",
-            "去提问",
-            "切换到提问模式，我想问问怎么把这个方向做得更好",
+            "explore",
+            "问问建议",
+            "这个方向怎么做得更好？给我一些具体建议",
           ),
           newBriefSuggestion(
             "navigate",
-            "开始创作",
-            "brief 差不多了，切换到创作模式开始制作",
+            "开始制作",
+            "方向差不多了，开始按计划制作吧",
           ),
         ],
       };

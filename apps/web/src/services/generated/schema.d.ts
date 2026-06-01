@@ -1365,6 +1365,8 @@ export interface components {
             conversationId: string | null;
             /** @enum {string} */
             kind: "work_created" | "work_duplicated" | "work_restored" | "brief_requirement_added" | "brief_requirement_updated" | "brief_requirement_removed" | "brief_ready" | "profile_updated" | "plan_ready" | "plan_revised" | "execution_complete";
+            /** @enum {string} */
+            phase: "inspiration" | "draft";
             summary: string;
             snapshot: components["schemas"]["WorkRevisionSnapshot"];
             createdAt: string;

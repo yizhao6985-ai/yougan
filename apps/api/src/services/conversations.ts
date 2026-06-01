@@ -3,7 +3,6 @@ import type { WorkConversation } from "@prisma/client";
 import { prisma } from "../db.js";
 import type { WorkConversationDTO } from "../schemas.js";
 import { getWork } from "./works.js";
-import { initializeWorkRevisionTimeline } from "./work-revisions.js";
 
 function normalizeConversationMode(mode: string): WorkConversationDTO["mode"] {
   if (mode === "inspiration" || mode === "creation" || mode === "ask") {
@@ -41,7 +40,6 @@ export async function listWorkConversations(userId: string, workId: string) {
         mode: "inspiration",
       },
     });
-    await initializeWorkRevisionTimeline(workId, created.id);
     conversations = [created];
   }
 

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
-import { REVISION_KINDS } from "@yougan/domain";
+import { REVISION_KINDS, USER_REVISION_PHASES } from "@yougan/domain";
 
 extendZodWithOpenApi(z);
 
@@ -116,6 +116,7 @@ export const WorkRevisionSchema = z
     parentRevisionId: z.string().nullable(),
     conversationId: z.string().nullable(),
     kind: z.enum(REVISION_KINDS),
+    phase: z.enum(USER_REVISION_PHASES),
     summary: z.string(),
     snapshot: WorkRevisionSnapshotSchema,
     createdAt: z.string(),

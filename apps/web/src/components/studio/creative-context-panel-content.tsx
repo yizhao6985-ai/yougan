@@ -138,7 +138,6 @@ export function CreativeContextPanelContent({
           >
             <WorkHistoryPanel
               workId={activeWork.id}
-              workTitle={activeWork.title}
               compact
               onDuplicated={onDuplicated}
             />

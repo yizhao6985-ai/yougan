@@ -1,5 +1,5 @@
 import { CopyIcon, HistoryIcon, RotateCcwIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import {
   ChatStreamBlock,
   chatStreamBlock,
@@ -22,7 +21,7 @@ import {
 } from "@/hooks/queries/revisions";
 import {
   formatRevisionTime,
-  revisionKindLabel,
+  revisionPhaseLabel,
 } from "@/lib/revision-labels";
 import { WORK_HISTORY_PANEL } from "@/lib/site-copy";
 import type { WorkRevisionDTO } from "@/lib/types";
@@ -30,25 +29,14 @@ import { cn } from "@/lib/utils";
 
 type WorkHistoryPanelProps = {
   workId: string;
-  workTitle: string;
   compact?: boolean;
   onDuplicated?: (workId: string) => void;
 };
 
 type PendingRestore = WorkRevisionDTO;
 
-type PendingDuplicate = {
-  revisionId?: string;
-  defaultTitle: string;
-};
-
-function defaultDuplicateTitle(workTitle: string) {
-  return `${workTitle} · 副本`;
-}
-
 export function WorkHistoryPanel({
   workId,
-  workTitle,
   compact,
   onDuplicated,
 }: WorkHistoryPanelProps) {
@@ -58,16 +46,8 @@ export function WorkHistoryPanel({
   const [pendingRestore, setPendingRestore] = useState<PendingRestore | null>(
     null,
   );
-  const [pendingDuplicate, setPendingDuplicate] =
-    useState<PendingDuplicate | null>(null);
-  const [duplicateTitle, setDuplicateTitle] = useState("");
 
   const revisions = revisionsQuery.data ?? [];
-
-  useEffect(() => {
-    if (!pendingDuplicate) return;
-    setDuplicateTitle(pendingDuplicate.defaultTitle);
-  }, [pendingDuplicate]);
 
   const handleRestore = () => {
     if (!pendingRestore) return;
@@ -77,27 +57,10 @@ export function WorkHistoryPanel({
       .catch(() => undefined);
   };
 
-  const openDuplicateDialog = (revisionId?: string) => {
-    setPendingDuplicate({
-      revisionId,
-      defaultTitle: defaultDuplicateTitle(workTitle),
-    });
-  };
-
-  const handleDuplicateConfirm = () => {
-    if (!pendingDuplicate) return;
-    const title = duplicateTitle.trim();
-    if (!title) return;
-
+  const handleDuplicate = (revisionId?: string) => {
     void duplicateMutation
-      .mutateAsync({
-        title,
-        revisionId: pendingDuplicate.revisionId,
-      })
-      .then(({ work }) => {
-        setPendingDuplicate(null);
-        onDuplicated?.(work.id);
-      })
+      .mutateAsync({ revisionId })
+      .then(({ work }) => onDuplicated?.(work.id))
       .catch(() => undefined);
   };
 
@@ -118,7 +81,7 @@ export function WorkHistoryPanel({
           variant="secondary"
           className="mt-3 w-full gap-1.5"
           disabled={duplicateMutation.isPending}
-          onClick={() => openDuplicateDialog()}
+          onClick={() => handleDuplicate()}
         >
           <CopyIcon className="size-3.5" />
           {duplicateMutation.isPending
@@ -150,7 +113,7 @@ export function WorkHistoryPanel({
                   disableRestore={restoreMutation.isPending || index === 0}
                   disableDuplicate={duplicateMutation.isPending}
                   onRestore={() => setPendingRestore(revision)}
-                  onDuplicate={() => openDuplicateDialog(revision.id)}
+                  onDuplicate={() => handleDuplicate(revision.id)}
                 />
               </li>
             ))}
@@ -177,7 +140,7 @@ export function WorkHistoryPanel({
                 {pendingRestore.summary}
               </p>
               <p className={cn(chatStreamBlock.caption, "mt-1")}>
-                {revisionKindLabel(pendingRestore.kind)} ·{" "}
+                {revisionPhaseLabel(pendingRestore.phase)} ·{" "}
                 {formatRevisionTime(pendingRestore.createdAt)}
               </p>
             </div>
@@ -198,61 +161,6 @@ export function WorkHistoryPanel({
               {restoreMutation.isPending
                 ? WORK_HISTORY_PANEL.restoring
                 : WORK_HISTORY_PANEL.confirmRestore}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={Boolean(pendingDuplicate)}
-        onOpenChange={(open) => {
-          if (!open) setPendingDuplicate(null);
-        }}
-      >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{WORK_HISTORY_PANEL.duplicateDialogTitle}</DialogTitle>
-            <DialogDescription>
-              {WORK_HISTORY_PANEL.duplicateDialogDescription}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <label
-              htmlFor="duplicate-work-title"
-              className="text-sm font-medium text-foreground"
-            >
-              {WORK_HISTORY_PANEL.duplicateNameLabel}
-            </label>
-            <Input
-              id="duplicate-work-title"
-              value={duplicateTitle}
-              placeholder={WORK_HISTORY_PANEL.duplicateNamePlaceholder}
-              autoFocus
-              onChange={(event) => setDuplicateTitle(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  handleDuplicateConfirm();
-                }
-              }}
-            />
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setPendingDuplicate(null)}
-            >
-              {WORK_HISTORY_PANEL.cancel}
-            </Button>
-            <Button
-              type="button"
-              disabled={duplicateMutation.isPending || !duplicateTitle.trim()}
-              onClick={handleDuplicateConfirm}
-            >
-              {duplicateMutation.isPending
-                ? WORK_HISTORY_PANEL.duplicating
-                : WORK_HISTORY_PANEL.duplicateConfirm}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -281,8 +189,14 @@ function RevisionRow({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className={chatStreamBlock.headerMeta}>
-              {revisionKindLabel(revision.kind)}
+            <span
+              className={cn(
+                chatStreamBlock.headerMeta,
+                revision.phase === "draft" &&
+                  "text-primary",
+              )}
+            >
+              {revisionPhaseLabel(revision.phase)}
             </span>
             {isHead ? (
               <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">

@@ -8,6 +8,7 @@ export type {
   ProductionPlanTask,
   ReferenceItem,
   RevisionKind,
+  UserRevisionPhase,
   WorkBrief,
   WorkDraft,
   WorkDTO,
@@ -31,6 +32,7 @@ export {
   mergeBriefState,
   newBriefRequirement,
   REVISION_KINDS,
+  USER_REVISION_PHASES,
 } from "@yougan/domain";
 
 export function normalizeChatMode(mode: string): import("@yougan/domain").ChatMode {

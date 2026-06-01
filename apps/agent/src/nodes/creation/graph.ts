@@ -3,8 +3,8 @@
  */
 import { END, START, StateGraph } from "@langchain/langgraph";
 
-import * as afterLlm from "./logic/after-llm.js";
-import * as routeByModality from "./logic/route-by-modality.js";
+import * as afterLlm from "./conditional-edges/after-llm.js";
+import * as routeByModality from "./conditional-edges/route-by-modality.js";
 import { creativeDirectorNode } from "./nodes/creative-director.js";
 import { llmCall } from "./nodes/llm-call.js";
 import { prepareCreationTurnNode } from "./nodes/prepare-turn.js";

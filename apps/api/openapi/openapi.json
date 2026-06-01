@@ -735,6 +735,13 @@
               "execution_complete"
             ]
           },
+          "phase": {
+            "type": "string",
+            "enum": [
+              "inspiration",
+              "draft"
+            ]
+          },
           "summary": {
             "type": "string"
           },
@@ -751,6 +758,7 @@
           "parentRevisionId",
           "conversationId",
           "kind",
+          "phase",
           "summary",
           "snapshot",
           "createdAt"
