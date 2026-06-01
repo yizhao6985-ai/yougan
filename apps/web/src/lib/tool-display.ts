@@ -3,18 +3,19 @@ import type { ChatMode } from "@/lib/types";
 
 export const TOOL_LABELS: Record<string, string> = {
   switch_mode: "切换模式",
-  confirm_requirement: "确认灵感",
-  confirm_ask_as_requirement: "记入灵感",
+  add_brief_requirement: "确认 brief 需求",
+  add_brief_from_ask: "记入 brief",
+  confirm_brief_ready: "brief 定稿",
   confirm_content_spec: "确认内容规格",
-  update_requirement: "修改灵感",
-  delete_requirement: "删除灵感",
-  clear_inspirations: "清空灵感",
-  add_pending_change: "添加制作任务",
+  update_brief_requirement: "修改 brief",
+  delete_brief_requirement: "删除 brief",
+  clear_brief: "清空 brief",
+  add_plan_task: "添加制作任务",
   complete_execution: "完成执行",
   update_work_profile: "更新作品特征",
   parse_reference_text: "解析参考文案",
   parse_reference_image: "解析参考图片",
-  generate_content: "AI 团队出稿",
+  generate_draft: "AI 团队出稿",
   spawn_specialist: "调度专员",
   revise_production_plan: "调整制作计划",
 };
@@ -78,17 +79,17 @@ export function getToolInputSummary(
   toolInput: Record<string, unknown>,
 ) {
   switch (toolName) {
-    case "add_pending_change":
-    case "confirm_requirement":
-    case "confirm_ask_as_requirement":
-    case "update_requirement":
+    case "add_plan_task":
+    case "add_brief_requirement":
+    case "add_brief_from_ask":
+    case "update_brief_requirement":
       return readString(toolInput.description);
     case "spawn_specialist":
       return readString(toolInput.brief) || readString(toolInput.department);
     case "revise_production_plan":
       return readString(toolInput.reason);
-    case "delete_requirement":
-      return readString(toolInput.requirement_id) || "删除灵感条目";
+    case "delete_brief_requirement":
+      return readString(toolInput.requirement_id) || "删除 brief 条目";
     case "complete_execution":
       return readString(toolInput.summary);
     case "switch_mode": {
@@ -106,10 +107,10 @@ export function getToolInputSummary(
       return truncate(readString(toolInput.reference_text), 80);
     case "parse_reference_image":
       return readString(toolInput.hint) || "解析参考图片风格";
-    case "generate_content":
+    case "generate_draft":
       return "AI 团队按制作计划出稿";
-    case "clear_inspirations":
-      return "清空全部灵感";
+    case "clear_brief":
+      return "清空 brief";
     default:
       return "";
   }

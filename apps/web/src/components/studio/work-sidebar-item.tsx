@@ -3,7 +3,6 @@ import {
   MessageSquarePlusIcon,
   MessagesSquareIcon,
   PencilIcon,
-  PlusIcon,
   Trash2Icon,
 } from "lucide-react";
 

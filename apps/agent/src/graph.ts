@@ -3,27 +3,23 @@
  */
 import { END, START, StateGraph } from "@langchain/langgraph";
 
-import { inspirationGraph } from "./graphs/inspiration/graph.js";
-import { askGraph } from "./graphs/ask/graph.js";
 import { checkpointer } from "./checkpointer.js";
-import { parseMode } from "./lib/parse-agent-state.js";
-import { clearSuggestionsNode } from "./nodes/clear-suggestions/index.js";
-import { hydrateWorkMemoryNode } from "./nodes/hydrate-work-memory/index.js";
-import { runCreationGraphNode } from "./nodes/run-creation-graph/index.js";
+import * as routeByEntry from "./logic/route-by-entry.js";
+import { askGraph } from "./nodes/ask/graph.js";
+import { clearBriefSuggestionsNode } from "./nodes/clear-suggestions.js";
+import { creationGraph } from "./nodes/creation/graph.js";
+import { inspirationGraph } from "./nodes/inspiration/graph.js";
+import { recommendConversationNode } from "./nodes/recommend-conversation/index.js";
 import { AgentState } from "./state.js";
 
 const workflow = new StateGraph(AgentState)
-  .addNode("hydrateWorkMemory", hydrateWorkMemoryNode)
+  .addNode("recommendConversation", recommendConversationNode)
   .addNode("inspirationGraph", inspirationGraph)
-  .addNode("creationGraph", runCreationGraphNode)
+  .addNode("creationGraph", creationGraph)
   .addNode("askGraph", askGraph)
-  .addNode("clearSuggestions", clearSuggestionsNode)
-  .addEdge(START, "hydrateWorkMemory")
-  .addConditionalEdges("hydrateWorkMemory", (state) => parseMode(state), {
-    inspiration: "inspirationGraph",
-    creation: "creationGraph",
-    ask: "askGraph",
-  })
+  .addNode("clearSuggestions", clearBriefSuggestionsNode)
+  .addConditionalEdges(START, routeByEntry.routeByEntry, routeByEntry.paths)
+  .addEdge("recommendConversation", END)
   .addEdge("inspirationGraph", END)
   .addEdge("creationGraph", "clearSuggestions")
   .addEdge("askGraph", "clearSuggestions")

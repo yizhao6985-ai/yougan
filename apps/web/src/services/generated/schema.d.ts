@@ -724,7 +724,9 @@ export interface paths {
         };
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    conversationId?: string;
+                };
                 header?: never;
                 path: {
                     workId: string;
@@ -754,7 +756,87 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/works/{workId}/inspiration-recommendations": {
+    "/api/works/{workId}/revisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    workId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Revision history for a work */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            revisions: components["schemas"]["WorkRevision"][];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/works/{workId}/restore/{revisionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    workId: string;
+                    revisionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Restore work to a revision snapshot */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            revision: components["schemas"]["WorkRevision"];
+                            work: components["schemas"]["Work"];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/works/{workId}/duplicate": {
         parameters: {
             query?: never;
             header?: never;
@@ -772,42 +854,25 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            requestBody?: never;
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        title?: string;
+                        groupId?: string | null;
+                        revisionId?: string;
+                    };
+                };
+            };
             responses: {
-                /** @description Recommended inspirations for a work */
-                200: {
+                /** @description Duplicate work from current or historical revision */
+                201: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["WorkInspirationRecommendations"];
-                    };
-                };
-                /** @description Work not found */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Recommendation agent failed */
-                502: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description DeepSeek not configured */
-                503: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
+                        "application/json": {
+                            work: components["schemas"]["Work"];
+                        };
                     };
                 };
             };
@@ -1178,6 +1243,19 @@ export interface components {
             createdAt: string;
             updatedAt: string;
         };
+        ReferenceItem: {
+            /** @enum {string} */
+            source_type: "text" | "image" | "web";
+            summary: string;
+            keywords?: string[];
+            tone_hints?: string[];
+            structure_hints?: string[];
+            hashtags?: string[];
+            raw_excerpt?: string | null;
+            image_url?: string | null;
+            url?: string | null;
+            title?: string | null;
+        };
         WorkProfile: {
             platform?: string | null;
             content_topic?: string | null;
@@ -1192,12 +1270,18 @@ export interface components {
             goals?: string[];
             style_constraints?: string[];
             notes?: string | null;
-            references?: {
-                [key: string]: unknown;
-            }[];
+            references?: components["schemas"]["ReferenceItem"][];
         };
-        WorkOutline: {
-            pending_changes: {
+        WorkBrief: {
+            requirements: {
+                id: string;
+                description: string;
+                confirmed_at: string;
+            }[];
+            ready: boolean;
+        };
+        WorkProductionPlan: {
+            pending_tasks: {
                 id: string;
                 description: string;
                 created_at: string;
@@ -1207,7 +1291,7 @@ export interface components {
                 status?: "pending" | "in_progress" | "completed";
                 assignee?: string | null;
             }[];
-            executed_changes: {
+            executed_tasks: {
                 id: string;
                 description: string;
                 executed_at: string;
@@ -1217,34 +1301,19 @@ export interface components {
                 assignee?: string | null;
             }[];
             last_execution_summary?: string | null;
-            plan_ready?: boolean;
-            plan_summary?: string | null;
+            ready?: boolean;
+            summary?: string | null;
             departments?: ("writing" | "design" | "audio" | "video")[];
             industry_context?: string | null;
-            creative_director_notes?: string | null;
-            outline_ready?: boolean;
-            outline_summary?: string | null;
+            director_notes?: string | null;
         };
-        WorkInspiration: {
-            confirmed_requirements: {
-                id: string;
-                description: string;
-                confirmed_at: string;
-            }[];
-            summary?: string | null;
-            inspiration_ready?: boolean;
-            summarized_at?: string | null;
-        };
-        GeneratedContent: {
+        WorkDraft: {
             platform: string;
             title?: string | null;
             body: string;
             hashtags?: string[];
             hook?: string | null;
             notes?: string | null;
-            images?: {
-                [key: string]: unknown;
-            }[];
             publish_ready?: boolean;
         } | null;
         Work: {
@@ -1252,40 +1321,53 @@ export interface components {
             title: string;
             groupId: string | null;
             profile: components["schemas"]["WorkProfile"];
-            outline: components["schemas"]["WorkOutline"];
-            inspiration: components["schemas"]["WorkInspiration"];
-            creation: components["schemas"]["GeneratedContent"];
+            brief: components["schemas"]["WorkBrief"];
+            plan: components["schemas"]["WorkProductionPlan"];
+            draft: components["schemas"]["WorkDraft"];
+            headRevisionId: string | null;
+            sourceWorkId: string | null;
+            sourceRevisionId: string | null;
             createdAt: string;
             updatedAt: string;
         };
         SyncWorkState: {
             groupId?: string | null;
             profile?: components["schemas"]["WorkProfile"];
-            outline?: components["schemas"]["WorkOutline"];
-            inspiration?: components["schemas"]["WorkInspiration"];
-            creation?: components["schemas"]["GeneratedContent"];
+            plan?: components["schemas"]["WorkProductionPlan"];
+            brief?: components["schemas"]["WorkBrief"];
+            draft?: components["schemas"]["WorkDraft"];
             title?: string;
         };
         AgentContext: {
             workId: string;
             conversationId?: string;
+            headRevisionId?: string | null;
             /** @enum {string} */
             mode: "inspiration" | "creation" | "ask";
             profile: components["schemas"]["WorkProfile"];
-            outline: components["schemas"]["WorkOutline"];
-            inspiration: components["schemas"]["WorkInspiration"];
-            creation: components["schemas"]["GeneratedContent"];
+            brief: components["schemas"]["WorkBrief"];
+            plan: components["schemas"]["WorkProductionPlan"];
+            draft: components["schemas"]["WorkDraft"];
             threadId?: string | null;
-            title?: string;
+            workTitle?: string;
+            conversationTitle?: string;
         };
-        InspirationRecommendation: {
+        WorkRevisionSnapshot: {
+            profile: components["schemas"]["WorkProfile"];
+            brief: components["schemas"]["WorkBrief"];
+            plan: components["schemas"]["WorkProductionPlan"];
+            draft: components["schemas"]["WorkDraft"];
+        };
+        WorkRevision: {
             id: string;
-            suggestion: string;
-        };
-        WorkInspirationRecommendations: {
             workId: string;
-            title: string;
-            recommendations: components["schemas"]["InspirationRecommendation"][];
+            parentRevisionId: string | null;
+            conversationId: string | null;
+            /** @enum {string} */
+            kind: "work_created" | "work_duplicated" | "work_restored" | "brief_requirement_added" | "brief_requirement_updated" | "brief_requirement_removed" | "brief_ready" | "profile_updated" | "plan_ready" | "plan_revised" | "execution_complete";
+            summary: string;
+            snapshot: components["schemas"]["WorkRevisionSnapshot"];
+            createdAt: string;
         };
         UploadResponse: {
             url: string;

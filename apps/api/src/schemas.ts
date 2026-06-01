@@ -1,12 +1,27 @@
 import { z } from "zod";
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
+import { REVISION_KINDS } from "@yougan/domain";
 
 extendZodWithOpenApi(z);
 
-/** 创作模式：灵感 → 创作 → 提问 */
 export const CHAT_MODES = ["inspiration", "creation", "ask"] as const;
 
 export const ChatModeSchema = z.enum(CHAT_MODES);
+
+export const ReferenceItemSchema = z
+  .object({
+    source_type: z.enum(["text", "image", "web"]),
+    summary: z.string(),
+    keywords: z.array(z.string()).optional(),
+    tone_hints: z.array(z.string()).optional(),
+    structure_hints: z.array(z.string()).optional(),
+    hashtags: z.array(z.string()).optional(),
+    raw_excerpt: z.string().nullable().optional(),
+    image_url: z.string().nullable().optional(),
+    url: z.string().nullable().optional(),
+    title: z.string().nullable().optional(),
+  })
+  .openapi("ReferenceItem");
 
 export const WorkProfileSchema = z
   .object({
@@ -23,13 +38,13 @@ export const WorkProfileSchema = z
     goals: z.array(z.string()).optional(),
     style_constraints: z.array(z.string()).optional(),
     notes: z.string().nullable().optional(),
-    references: z.array(z.record(z.unknown())).optional(),
+    references: z.array(ReferenceItemSchema).optional(),
   })
   .openapi("WorkProfile");
 
-export const WorkOutlineSchema = z
+export const WorkProductionPlanSchema = z
   .object({
-    pending_changes: z.array(
+    pending_tasks: z.array(
       z.object({
         id: z.string(),
         description: z.string(),
@@ -39,7 +54,7 @@ export const WorkOutlineSchema = z
         assignee: z.string().nullable().optional(),
       }),
     ),
-    executed_changes: z.array(
+    executed_tasks: z.array(
       z.object({
         id: z.string(),
         description: z.string(),
@@ -50,34 +65,30 @@ export const WorkOutlineSchema = z
       }),
     ),
     last_execution_summary: z.string().nullable().optional(),
-    plan_ready: z.boolean().optional(),
-    plan_summary: z.string().nullable().optional(),
+    ready: z.boolean().optional(),
+    summary: z.string().nullable().optional(),
     departments: z
       .array(z.enum(["writing", "design", "audio", "video"]))
       .optional(),
     industry_context: z.string().nullable().optional(),
-    creative_director_notes: z.string().nullable().optional(),
-    outline_ready: z.boolean().optional(),
-    outline_summary: z.string().nullable().optional(),
+    director_notes: z.string().nullable().optional(),
   })
-  .openapi("WorkOutline");
+  .openapi("WorkProductionPlan");
 
-export const WorkInspirationSchema = z
+export const WorkBriefSchema = z
   .object({
-    confirmed_requirements: z.array(
+    requirements: z.array(
       z.object({
         id: z.string(),
         description: z.string(),
         confirmed_at: z.string(),
       }),
     ),
-    summary: z.string().nullable().optional(),
-    inspiration_ready: z.boolean().optional(),
-    summarized_at: z.string().nullable().optional(),
+    ready: z.boolean(),
   })
-  .openapi("WorkInspiration");
+  .openapi("WorkBrief");
 
-export const GeneratedContentSchema = z
+export const WorkDraftSchema = z
   .object({
     platform: z.string(),
     title: z.string().nullable().optional(),
@@ -85,10 +96,31 @@ export const GeneratedContentSchema = z
     hashtags: z.array(z.string()).optional(),
     hook: z.string().nullable().optional(),
     notes: z.string().nullable().optional(),
-    images: z.array(z.record(z.unknown())).optional(),
     publish_ready: z.boolean().optional(),
   })
-  .openapi("GeneratedContent");
+  .openapi("WorkDraft");
+
+export const WorkRevisionSnapshotSchema = z
+  .object({
+    profile: WorkProfileSchema,
+    brief: WorkBriefSchema,
+    plan: WorkProductionPlanSchema,
+    draft: WorkDraftSchema.nullable(),
+  })
+  .openapi("WorkRevisionSnapshot");
+
+export const WorkRevisionSchema = z
+  .object({
+    id: z.string(),
+    workId: z.string(),
+    parentRevisionId: z.string().nullable(),
+    conversationId: z.string().nullable(),
+    kind: z.enum(REVISION_KINDS),
+    summary: z.string(),
+    snapshot: WorkRevisionSnapshotSchema,
+    createdAt: z.string(),
+  })
+  .openapi("WorkRevision");
 
 export const WorkGroupSchema = z
   .object({
@@ -105,9 +137,12 @@ export const WorkSchema = z
     title: z.string(),
     groupId: z.string().nullable(),
     profile: WorkProfileSchema,
-    outline: WorkOutlineSchema,
-    inspiration: WorkInspirationSchema,
-    creation: GeneratedContentSchema.nullable(),
+    brief: WorkBriefSchema,
+    plan: WorkProductionPlanSchema,
+    draft: WorkDraftSchema.nullable(),
+    headRevisionId: z.string().nullable(),
+    sourceWorkId: z.string().nullable(),
+    sourceRevisionId: z.string().nullable(),
     createdAt: z.string(),
     updatedAt: z.string(),
   })
@@ -124,25 +159,6 @@ export const WorkConversationSchema = z
     updatedAt: z.string(),
   })
   .openapi("WorkConversation");
-
-export const InspirationRecommendationSchema = z
-  .object({
-    id: z.string(),
-    suggestion: z.string(),
-  })
-  .openapi("InspirationRecommendation");
-
-export type InspirationRecommendation = z.infer<
-  typeof InspirationRecommendationSchema
->;
-
-export const WorkInspirationRecommendationsSchema = z
-  .object({
-    workId: z.string(),
-    title: z.string(),
-    recommendations: z.array(InspirationRecommendationSchema).min(1).max(3),
-  })
-  .openapi("WorkInspirationRecommendations");
 
 export const UserSchema = z
   .object({
@@ -199,9 +215,9 @@ export const SyncWorkStateSchema = z
   .object({
     groupId: z.string().nullable().optional(),
     profile: WorkProfileSchema.optional(),
-    outline: WorkOutlineSchema.optional(),
-    inspiration: WorkInspirationSchema.optional(),
-    creation: GeneratedContentSchema.nullable().optional(),
+    plan: WorkProductionPlanSchema.optional(),
+    brief: WorkBriefSchema.optional(),
+    draft: WorkDraftSchema.nullable().optional(),
     title: z.string().optional(),
   })
   .openapi("SyncWorkState");
@@ -218,19 +234,22 @@ export const AgentContextSchema = z
   .object({
     workId: z.string(),
     conversationId: z.string().optional(),
+    headRevisionId: z.string().nullable().optional(),
     mode: ChatModeSchema,
     profile: WorkProfileSchema,
-    outline: WorkOutlineSchema,
-    inspiration: WorkInspirationSchema,
-    creation: GeneratedContentSchema.nullable(),
+    brief: WorkBriefSchema,
+    plan: WorkProductionPlanSchema,
+    draft: WorkDraftSchema.nullable(),
     threadId: z.string().nullable().optional(),
-    title: z.string().optional(),
+    workTitle: z.string().optional(),
+    conversationTitle: z.string().optional(),
   })
   .openapi("AgentContext");
 
 export type WorkDTO = z.infer<typeof WorkSchema>;
 export type WorkConversationDTO = z.infer<typeof WorkConversationSchema>;
 export type WorkGroupDTO = z.infer<typeof WorkGroupSchema>;
+export type WorkRevisionDTO = z.infer<typeof WorkRevisionSchema>;
 
 export const UpdateProfileSchema = z
   .object({

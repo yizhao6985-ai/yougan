@@ -16,7 +16,7 @@ export function WorksCreateMenu({
 }: {
   onCreateWork: () => void;
   onCreateGroup: () => void;
-  align?: "start" | "end";
+  align?: "start" | "end" | "center";
 }) {
   return (
     <DropdownMenu>

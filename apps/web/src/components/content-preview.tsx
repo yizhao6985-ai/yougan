@@ -5,15 +5,15 @@ import {
 } from "@/components/studio/creative-context/shared";
 import { PublishPlatformActions } from "@/components/studio/publish-platform-actions";
 import { PREVIEW_PANEL } from "@/lib/site-copy";
-import type { GeneratedContent } from "@/lib/types";
+import type { WorkDraft } from "@/lib/types";
 
 export function ContentPreview({
   workId,
-  creation,
+  draft,
   compact = false,
 }: {
   workId?: string;
-  creation?: GeneratedContent | null;
+  draft?: WorkDraft | null;
   compact?: boolean;
 }) {
   return (
@@ -22,24 +22,24 @@ export function ContentPreview({
       hint={PREVIEW_PANEL.hint}
       compact={compact}
     >
-      {!creation?.body ? (
+      {!draft?.body ? (
         <CreativeContextEmpty>{PREVIEW_PANEL.empty}</CreativeContextEmpty>
       ) : (
         <div className="space-y-4 rounded-lg border border-border/80 bg-background/80 p-4">
           <div>
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              {creation.platform}
+              {draft.platform}
             </p>
-            {creation.title ? (
+            {draft.title ? (
               <h4 className="mt-1.5 text-pretty text-lg font-semibold leading-7 text-foreground">
-                {creation.title}
+                {draft.title}
               </h4>
             ) : null}
           </div>
-          <MarkdownContent content={creation.body} />
-          {creation.hashtags?.length ? (
+          <MarkdownContent content={draft.body} />
+          {draft.hashtags?.length ? (
             <div className="flex flex-wrap gap-2">
-              {creation.hashtags.map((tag) => (
+              {draft.hashtags.map((tag) => (
                 <span
                   key={tag}
                   className="rounded-md bg-accent px-2 py-1 text-xs text-primary"
@@ -52,14 +52,14 @@ export function ContentPreview({
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={() => navigator.clipboard.writeText(creation.body)}
+              onClick={() => navigator.clipboard.writeText(draft.body)}
               className="rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground/90 transition hover:bg-muted"
             >
               复制文案
             </button>
           </div>
           {workId ? (
-            <PublishPlatformActions workId={workId} creation={creation} />
+            <PublishPlatformActions workId={workId} draft={draft} />
           ) : null}
         </div>
       )}

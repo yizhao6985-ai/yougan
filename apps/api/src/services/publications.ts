@@ -381,13 +381,13 @@ export async function previewPublicationMetadata(
   const work = await getWork(userId, workId);
   if (!work) return null;
 
-  const creation = work.creation as OutputLike | null;
-  if (!creation?.body?.trim()) {
+  const draft = work.draft as OutputLike | null;
+  if (!draft?.body?.trim()) {
     throw new Error("WORK_OUTPUT_EMPTY");
   }
 
-  const coverUrl = creation.images?.[0]?.url ?? null;
-  const metadata = metadataFromWork(work, creation, coverUrl);
+  const coverUrl = draft.images?.[0]?.url ?? null;
+  const metadata = metadataFromWork(work, draft, coverUrl);
 
   return {
     metadata,
@@ -406,8 +406,8 @@ export async function createPublicationFromWork(
   const work = await getWork(userId, input.workId);
   if (!work) return null;
 
-  const creation = work.creation as OutputLike | null;
-  if (!creation?.body?.trim()) {
+  const draft = work.draft as OutputLike | null;
+  if (!draft?.body?.trim()) {
     throw new Error("WORK_OUTPUT_EMPTY");
   }
 
@@ -415,11 +415,11 @@ export async function createPublicationFromWork(
     where: { userId, workId: input.workId, status: { not: "archived" } },
   });
 
-  const title = creation.title?.trim() || work.title;
-  const excerpt = creation.hook?.trim() || creation.body.slice(0, 120);
-  const coverUrl = creation.images?.[0]?.url ?? null;
+  const title = draft.title?.trim() || work.title;
+  const excerpt = draft.hook?.trim() || draft.body.slice(0, 120);
+  const coverUrl = draft.images?.[0]?.url ?? null;
   const now = input.publish ? new Date() : null;
-  const metadata = metadataFromWork(work, creation, coverUrl, input.metadata);
+  const metadata = metadataFromWork(work, draft, coverUrl, input.metadata);
 
   if (existing) {
     const row = await prisma.publication.update({
@@ -427,10 +427,10 @@ export async function createPublicationFromWork(
       data: {
         title,
         excerpt,
-        body: creation.body,
+        body: draft.body,
         coverUrl,
-        hashtags: creation.hashtags ?? [],
-        images: creation.images ?? [],
+        hashtags: draft.hashtags ?? [],
+        images: draft.images ?? [],
         status: input.publish ? "published" : existing.status,
         publishedAt: input.publish ? now : existing.publishedAt,
         ...metadata,
@@ -448,10 +448,10 @@ export async function createPublicationFromWork(
       slug: buildSlug(title),
       title,
       excerpt,
-      body: creation.body,
+      body: draft.body,
       coverUrl,
-      hashtags: creation.hashtags ?? [],
-      images: creation.images ?? [],
+      hashtags: draft.hashtags ?? [],
+      images: draft.images ?? [],
       status: input.publish ? "published" : "draft",
       publishedAt: now,
       ...metadata,

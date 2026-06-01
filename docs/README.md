@@ -12,7 +12,7 @@
 | [目标用户与场景](./business/target-users.md) | 用户画像、使用场景 |
 | [用户旅程](./business/user-journeys.md) | 获客→激活→变现→留存 |
 | [功能目录](./business/feature-catalog.md) | 功能清单与实现状态 |
-| [创作方法论](./business/creation-methodology.md) | 灵感·大纲·创作三步模型 |
+| [创作方法论](./business/creation-methodology.md) | 灵感·创作·提问三模式 |
 | [内容与社区](./business/content-ecosystem.md) | 发现灵感、发布、主页 |
 | [内容分类体系](./business/content-taxonomy.md) | 两层 taxonomy、推断与发布确认 |
 | [商业化与定价](./business/monetization.md) | 套餐、计费、单位经济 |
@@ -39,6 +39,7 @@
 | [apps/web/README.md](../apps/web/README.md) | 前端路由、环境变量 |
 | [apps/api/README.md](../apps/api/README.md) | API 路由、Prisma、OpenAPI |
 | [apps/agent/README.md](../apps/agent/README.md) | LangGraph、模型分工 |
+| [technical/revision-graph.md](./technical/revision-graph.md) | 单线版本历史、restore、duplicate |
 | [platform-oauth.md](./platform-oauth.md) | 第三方平台 OAuth 环境变量与回调 |
 
 ## 文档维护原则

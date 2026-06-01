@@ -82,7 +82,7 @@ export const ABOUT_PAGE = {
   values: [
     {
       title: "过程先于成品",
-      body: "已确认灵感与成稿分阶段沉淀在「创作脉络」里；制作计划在对话中跟进，方向偏了可及早纠正。",
+      body: "已确认灵感与成稿分阶段沉淀在「作品面板」里；制作计划在对话中跟进，方向偏了可及早纠正。",
     },
     {
       title: "人做判断，AI 团队执行",
@@ -134,7 +134,7 @@ export const FEATURES_PAGE = {
   modesSubtitle:
     "同一件作品里可随时切换；用界面、快捷键，或在对话里说「切到创作模式」都可以。",
   studioTitle: "创作台布局",
-  studioSubtitle: "左侧作品列表、中间对话、右侧创作脉络",
+  studioSubtitle: "左侧作品列表、中间对话、右侧作品面板",
   modeBenefitsHeading: "会帮你做",
   modeLimitsHeading: "这一步不做",
   ctaStudio: "打开创作台",
@@ -346,7 +346,6 @@ export const CHAT_COPY = {
       title: "灵感模式：找灵感、定方向",
       bodyDefault:
         "我会通过提问帮你找灵感、理清平台、受众、选题和写法；回合结束后会在下方给出可点选建议。",
-      bodyWithRecommendations: "根据作品标题准备了灵感推荐，点一个即可开始。",
     },
     ask: {
       title: "提问模式：自由提问",
@@ -359,7 +358,7 @@ export const CHAT_COPY = {
   },
   status: {
     inspirationExploring: "正在帮你找灵感、理清选题和写法",
-    inspirationConfirmed: (n: number) => `已确认 ${n} 条灵感`,
+    inspirationConfirmed: (n: number) => `已记录 ${n} 条灵感`,
     askExploring: "有问题随时问：优化、学习、行业背景都可以",
     creationPlanning: "AI 团队正在制定制作计划",
     creationIdle: "制作计划已定稿，可以交付或修改",
@@ -372,7 +371,7 @@ export const CHAT_COPY = {
   }) =>
     `快捷键：灵感 ${labels.inspiration} · 创作 ${labels.creation} · 提问 ${labels.ask}`,
   replying: "正在回复…",
-  generatingInspirations: "正在生成灵感推荐…",
+  recommendationsLoading: "正在生成开场建议…",
   attachmentDrawer: {
     title: (count: number) => `附件 ${count}`,
     hint: "发送消息时一并提交",
@@ -387,26 +386,54 @@ export const CHAT_COPY = {
 
 /** 创作台右侧栏 */
 export const CREATIVE_CONTEXT_PANEL = {
-  title: "创作脉络",
-  hint: "已确认灵感与成稿在这里逐步沉淀；制作计划在对话流中以任务列表展示",
-  expand: "展开创作脉络",
-  collapse: "收起创作脉络",
+  title: "作品面板",
+  hint: "灵感、成稿预览、参考素材与版本记录集中在这里；制作计划在对话流中以任务列表展示",
+  expand: "展开作品面板",
+  collapse: "收起作品面板",
   tabs: {
     inspiration: "灵感",
     preview: "内容预览",
     references: "参考素材",
+    history: "版本",
   },
 } as const;
 
 export type CreativeContextTabId = keyof typeof CREATIVE_CONTEXT_PANEL.tabs;
 
-/** 创作脉络 · 灵感 */
+/** 作品面板 · 版本历史 */
+export const WORK_HISTORY_PANEL = {
+  loading: "加载版本记录…",
+  duplicateTitle: "另存为新作品",
+  duplicateHint:
+    "适合换平台、换选题：从当前进度复制一件新作品，不会影响这件作品。",
+  duplicateAction: "另存为新作品",
+  duplicating: "正在创建…",
+  duplicateDialogTitle: "另存为新作品",
+  duplicateDialogDescription: "为新作品取个名字，方便在侧栏区分。",
+  duplicateNameLabel: "作品名称",
+  duplicateNamePlaceholder: "例如：公众号长文版",
+  duplicateConfirm: "创建",
+  duplicateFromHere: "从此版本复制",
+  timelineTitle: "版本记录",
+  timelineHint: "每次有意义的 Agent 操作会写入一条记录；可回到历史版本继续编辑。",
+  empty: "还没有版本记录。",
+  headBadge: "当前",
+  restore: "回到这一版",
+  restoreTitle: "回到这一版？",
+  restoreDescription:
+    "将把这件作品恢复到所选版本，并追加一条历史记录，不会删除过往记录。",
+  confirmRestore: "确认回到这一版",
+  restoring: "恢复中…",
+  cancel: "取消",
+} as const;
+
+/** 作品面板 · 灵感 */
 export const CONTENT_SETTINGS_PANEL = {
   title: "灵感",
-  hint: "灵感模式里经你确认的灵感会汇总在这里，可补充、修改或删除",
-  confirmedLabel: "已确认灵感",
+  hint: "灵感模式里确认的需求会写入 brief；可补充、修改或删除",
+  confirmedLabel: "brief 需求",
   clearAll: "清空",
-  empty: "还没确认灵感时，我会通过提问帮你定平台、选题和写法。你确认的内容会列在这里。",
+  empty: "还没有 brief 需求。在对话里确认方向后，Agent 会通过工具写入这里。",
 } as const;
 
 /** 对话流 · 制作计划任务列表 */

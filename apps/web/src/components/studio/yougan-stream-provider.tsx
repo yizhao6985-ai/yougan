@@ -1,15 +1,17 @@
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useCallback, useContext, type ReactNode } from "react";
 
 import {
   useConversationsStore,
   type ConversationsStore,
 } from "@/hooks/use-conversations-store";
 import { useModelTemperature } from "@/hooks/use-model-temperature";
+import { useInvalidateRevisionQueries } from "@/hooks/queries/revisions";
 import {
   useYouganStream,
   type YouganStream,
 } from "@/hooks/use-yougan-stream";
 import { useWorksStore, type WorksStore } from "@/hooks/use-works-store";
+import type { YouganValues } from "@/lib/types";
 
 type StudioContextValue = WorksStore &
   ConversationsStore &
@@ -30,13 +32,24 @@ function ConversationStreamInner({
   children: ReactNode;
 }) {
   const temperatureControl = useModelTemperature(worksStore.activeWork?.id);
+  const invalidateRevisionQueries = useInvalidateRevisionQueries(
+    worksStore.activeWork?.id ?? null,
+  );
+
+  const handleRunComplete = useCallback(
+    (workId: string, values: YouganValues) => {
+      worksStore.applyStreamValuesToCache(workId, values);
+      void invalidateRevisionQueries();
+    },
+    [invalidateRevisionQueries, worksStore],
+  );
 
   const streamState = useYouganStream({
     work: worksStore.activeWork,
     conversation: conversationsStore.activeConversation,
     modelTemperature: temperatureControl.temperature,
     onThreadId: conversationsStore.setConversationThreadId,
-    onValuesChange: worksStore.syncFromStream,
+    onRunComplete: handleRunComplete,
     onModeFromStream: conversationsStore.syncModeFromStream,
   });
 

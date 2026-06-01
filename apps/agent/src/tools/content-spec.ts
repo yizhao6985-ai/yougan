@@ -1,5 +1,5 @@
 /**
- * 灵感/大纲模式确认内容规格（体裁 + 媒介形式）。
+ * 灵感/创作模式确认内容规格（体裁 + 媒介形式）。
  * 灵感模式禁止 update_work_profile，但允许通过本工具写入结构化分类。
  */
 import { tool } from "@langchain/core/tools";

@@ -3,11 +3,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useStream } from "@langchain/langgraph-sdk/react";
 
 import { buildHumanMessageContent } from "@/lib/build-human-message-content";
-import { normalizeInspirationSuggestions } from "@/lib/inspiration-ui-spec";
+import { normalizeBriefSuggestions } from "@/lib/brief-ui-spec";
 import { YOUGAN_ASSISTANT_ID, getYouganThreadState } from "@/lib/yougan-chat-api";
 import { LANGGRAPH_API_URL } from "@/lib/env";
-import type { InspirationSuggestions } from "@/lib/types";
-import type { YouganValues, Work, WorkConversation } from "@/lib/types";
+import type { BriefSuggestions, YouganValues, Work, WorkConversation, ChatMode } from "@/lib/types";
 import { useAuthToken } from "@/store/auth";
 
 const STREAM_MODES = ["messages-tuple", "updates", "values"] as const;
@@ -17,7 +16,7 @@ interface UseYouganStreamOptions {
   conversation: WorkConversation | null;
   modelTemperature: number;
   onThreadId?: (conversationId: string, threadId: string | null) => void;
-  onValuesChange?: (workId: string, values: YouganValues) => void;
+  onRunComplete?: (workId: string, values: YouganValues) => void;
   onModeFromStream?: (
     conversationId: string,
     mode: NonNullable<YouganValues["mode"]>,
@@ -29,7 +28,7 @@ export function useYouganStream({
   conversation,
   modelTemperature,
   onThreadId,
-  onValuesChange,
+  onRunComplete,
   onModeFromStream,
 }: UseYouganStreamOptions) {
   const threadId = conversation?.threadId ?? null;
@@ -57,29 +56,23 @@ export function useYouganStream({
     },
   });
 
-  const lastSyncedRef = useRef<string>("");
   const wasLoadingRef = useRef(false);
+  const bootstrapAttemptedRef = useRef<string | null>(null);
+  const conversationModeRef = useRef<ChatMode | null>(null);
   const [threadSuggestions, setThreadSuggestions] =
-    useState<InspirationSuggestions | null>(null);
-
-  useEffect(() => {
-    if (!workId || !stream.values) return;
-    const snapshot = JSON.stringify(stream.values);
-    if (snapshot === lastSyncedRef.current) return;
-    lastSyncedRef.current = snapshot;
-    onValuesChange?.(workId, stream.values);
-  }, [onValuesChange, stream.values, workId]);
+    useState<BriefSuggestions | null>(null);
 
   useEffect(() => {
     const wasLoading = wasLoadingRef.current;
     wasLoadingRef.current = stream.isLoading;
 
-    if (
-      !conversationId ||
-      !wasLoading ||
-      stream.isLoading ||
-      !stream.values?.mode
-    ) {
+    if (!wasLoading || stream.isLoading) return;
+
+    if (workId && stream.values) {
+      onRunComplete?.(workId, stream.values);
+    }
+
+    if (!conversationId || !stream.values?.mode) {
       return;
     }
 
@@ -87,8 +80,10 @@ export function useYouganStream({
   }, [
     conversationId,
     onModeFromStream,
+    onRunComplete,
     stream.isLoading,
-    stream.values?.mode,
+    stream.values,
+    workId,
   ]);
 
   useEffect(() => {
@@ -99,9 +94,7 @@ export function useYouganStream({
       .then((state) => {
         if (cancelled) return;
         const values = state.values as YouganValues | undefined;
-        const suggestions = normalizeInspirationSuggestions(
-          values?.inspirationSuggestions ?? values?.inspirationChoices,
-        );
+        const suggestions = normalizeBriefSuggestions(values?.briefSuggestions);
         setThreadSuggestions(suggestions);
       })
       .catch(() => undefined);
@@ -112,18 +105,95 @@ export function useYouganStream({
   }, [defaultHeaders, stream.isLoading, threadId, stream.messages.length]);
 
   const resolvedValues = useMemo(() => {
-    const fromStream = normalizeInspirationSuggestions(
-      stream.values?.inspirationSuggestions ?? stream.values?.inspirationChoices,
-    );
+    const fromStream = normalizeBriefSuggestions(stream.values?.briefSuggestions);
     const suggestions = fromStream ?? threadSuggestions;
     if (suggestions) {
       return {
         ...(stream.values ?? {}),
-        inspirationSuggestions: suggestions,
+        briefSuggestions: suggestions,
       } satisfies YouganValues;
     }
     return stream.values ?? null;
   }, [stream.values, threadSuggestions]);
+
+  const bootstrapRecommendations = useCallback(
+    async (options?: { force?: boolean }) => {
+      if (!work || !conversation || !token) return;
+      if (stream.isLoading) return;
+      if (stream.messages.length > 0) return;
+
+      if (!options?.force) {
+        const existing = normalizeBriefSuggestions(stream.values?.briefSuggestions);
+        if (existing ?? threadSuggestions) return;
+      }
+
+      setThreadSuggestions(null);
+
+      await stream.submit(
+        {
+          mode: conversation.mode,
+          workId: work.id,
+          workTitle: work.title,
+          conversationTitle: conversation.title,
+          profile: work.profile,
+          plan: work.plan,
+          brief: work.brief,
+          briefSuggestions: null,
+          draft: work.draft,
+          modelTemperature,
+        },
+        {
+          streamMode: [...STREAM_MODES],
+        },
+      );
+    },
+    [conversation, modelTemperature, stream, threadSuggestions, token, work],
+  );
+
+  useEffect(() => {
+    if (!conversation) return;
+    const prevMode = conversationModeRef.current;
+    conversationModeRef.current = conversation.mode;
+    if (
+      prevMode !== null &&
+      prevMode !== conversation.mode &&
+      stream.messages.length === 0 &&
+      work &&
+      token
+    ) {
+      bootstrapAttemptedRef.current = conversation.id;
+      void bootstrapRecommendations({ force: true }).catch(() => {
+        bootstrapAttemptedRef.current = null;
+      });
+    }
+  }, [bootstrapRecommendations, conversation, stream.messages.length, token, work]);
+
+  useEffect(() => {
+    if (!conversation?.id || !work || !token) return;
+    if (stream.messages.length > 0) {
+      bootstrapAttemptedRef.current = null;
+      return;
+    }
+    if (bootstrapAttemptedRef.current === conversation.id) return;
+    if (stream.isLoading) return;
+
+    const existing = normalizeBriefSuggestions(stream.values?.briefSuggestions);
+    if (existing ?? threadSuggestions) return;
+
+    bootstrapAttemptedRef.current = conversation.id;
+    void bootstrapRecommendations().catch(() => {
+      bootstrapAttemptedRef.current = null;
+    });
+  }, [
+    bootstrapRecommendations,
+    conversation?.id,
+    stream.isLoading,
+    stream.messages.length,
+    stream.values?.briefSuggestions,
+    threadSuggestions,
+    token,
+    work,
+  ]);
 
   const sendMessage = useCallback(
     async (text: string, imageUrls: string[] = []) => {
@@ -139,11 +209,13 @@ export function useYouganStream({
           messages: [{ type: "human" as const, content }],
           mode: conversation.mode,
           workId: work.id,
+          workTitle: work.title,
+          conversationTitle: conversation.title,
           profile: work.profile,
-          plan: work.outline,
-          inspiration: work.inspiration,
-          inspirationSuggestions: null,
-          creation: work.creation,
+          plan: work.plan,
+          brief: work.brief,
+          briefSuggestions: null,
+          draft: work.draft,
           modelTemperature,
         },
         {
@@ -160,6 +232,7 @@ export function useYouganStream({
     threadSuggestions,
     resolvedValues,
     sendMessage,
+    bootstrapRecommendations,
     canChat: Boolean(work && conversation && token),
   };
 }

@@ -15,7 +15,7 @@ import {
   formatLabel,
   mediaTypeLabel,
 } from "@/lib/discover-taxonomy";
-import type { WorkInspiration, WorkProfile } from "@/lib/types";
+import type { WorkBrief, WorkProfile } from "@/lib/types";
 
 const PROFILE_FIELDS: Array<{
   key: keyof WorkProfile;
@@ -72,7 +72,7 @@ function formatField(
   return null;
 }
 
-function InspirationRequirementItem({
+function BriefRequirementItem({
   description,
   confirmedAt,
   editable,
@@ -163,28 +163,28 @@ function InspirationRequirementItem({
 }
 
 export function ContentSettingsPanel({
-  inspiration,
+  brief,
   profile,
   editable = false,
   compact = false,
   onUpdateRequirement,
   onDeleteRequirement,
-  onClearInspirations,
+  onClearBrief,
 }: {
-  inspiration?: WorkInspiration;
+  brief?: WorkBrief;
   profile?: WorkProfile;
   editable?: boolean;
   compact?: boolean;
   onUpdateRequirement?: (requirementId: string, description: string) => void;
   onDeleteRequirement?: (requirementId: string) => void;
-  onClearInspirations?: () => void;
+  onClearBrief?: () => void;
 }) {
-  const confirmed = inspiration?.confirmed_requirements ?? [];
+  const requirements = brief?.requirements ?? [];
   const profileFields = PROFILE_FIELDS.map((field) => ({
     ...field,
     value: formatField(profile, field),
   })).filter((field) => field.value);
-  const hasContent = profileFields.length > 0 || confirmed.length > 0;
+  const hasContent = profileFields.length > 0 || requirements.length > 0;
 
   return (
     <CreativeContextSection
@@ -192,11 +192,11 @@ export function ContentSettingsPanel({
       hint={CONTENT_SETTINGS_PANEL.hint}
       compact={compact}
       action={
-        editable && confirmed.length > 0 ? (
+        editable && requirements.length > 0 ? (
           <button
             type="button"
             className="text-xs text-muted-foreground transition hover:text-red-600"
-            onClick={onClearInspirations}
+            onClick={onClearBrief}
           >
             {CONTENT_SETTINGS_PANEL.clearAll}
           </button>
@@ -216,14 +216,15 @@ export function ContentSettingsPanel({
         </dl>
       ) : null}
 
-      {confirmed.length > 0 ? (
+      {requirements.length > 0 ? (
         <div className="space-y-2">
           <CreativeContextSubheading tone="primary">
             {CONTENT_SETTINGS_PANEL.confirmedLabel}
+            {brief?.ready ? " · 已定稿" : " · 未定稿"}
           </CreativeContextSubheading>
           <CreativeContextList>
-            {confirmed.map((item) => (
-              <InspirationRequirementItem
+            {requirements.map((item) => (
+              <BriefRequirementItem
                 key={item.id}
                 description={item.description}
                 confirmedAt={item.confirmed_at}

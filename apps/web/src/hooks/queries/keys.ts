@@ -9,8 +9,7 @@ export const queryKeys = {
     list: ["works", "list"] as const,
     conversations: (workId: string) =>
       ["works", workId, "conversations"] as const,
-    inspirationRecommendations: (workId: string, title: string) =>
-      ["works", "inspiration-recommendations", workId, title] as const,
+    revisions: (workId: string) => ["works", workId, "revisions"] as const,
   },
   workGroups: {
     all: ["work-groups"] as const,

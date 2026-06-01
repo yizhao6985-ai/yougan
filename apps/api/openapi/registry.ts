@@ -19,8 +19,9 @@ import {
   PlatformIntegrationSchema,
   UpdateProfileSchema,
   WorkGroupSchema,
+  WorkRevisionSchema,
+  WorkRevisionSnapshotSchema,
   WorkSchema,
-  WorkInspirationRecommendationsSchema,
 } from "../src/schemas.js";
 
 export const registry = new OpenAPIRegistry();
@@ -408,7 +409,10 @@ registry.registerPath({
   path: "/api/works/{workId}/agent-context",
   tags: ["Works"],
   security,
-  request: { params: z.object({ workId: z.string() }) },
+  request: {
+    params: z.object({ workId: z.string() }),
+    query: z.object({ conversationId: z.string().optional() }),
+  },
   responses: {
     200: {
       description: "Agent context for a work",
@@ -420,29 +424,71 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  method: "post",
-  path: "/api/works/{workId}/inspiration-recommendations",
+  method: "get",
+  path: "/api/works/{workId}/revisions",
   tags: ["Works"],
   security,
   request: { params: z.object({ workId: z.string() }) },
   responses: {
     200: {
-      description: "Recommended inspirations for a work",
+      description: "Revision history for a work",
       content: {
-        "application/json": { schema: WorkInspirationRecommendationsSchema },
+        "application/json": {
+          schema: z.object({ revisions: z.array(WorkRevisionSchema) }),
+        },
       },
     },
-    404: {
-      description: "Work not found",
-      content: { "application/json": { schema: ErrorSchema } },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/works/{workId}/restore/{revisionId}",
+  tags: ["Works"],
+  security,
+  request: {
+    params: z.object({ workId: z.string(), revisionId: z.string() }),
+  },
+  responses: {
+    200: {
+      description: "Restore work to a revision snapshot",
+      content: {
+        "application/json": {
+          schema: z.object({
+            revision: WorkRevisionSchema,
+            work: WorkSchema,
+          }),
+        },
+      },
     },
-    502: {
-      description: "Recommendation agent failed",
-      content: { "application/json": { schema: ErrorSchema } },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/works/{workId}/duplicate",
+  tags: ["Works"],
+  security,
+  request: {
+    params: z.object({ workId: z.string() }),
+    body: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            title: z.string().optional(),
+            groupId: z.string().nullable().optional(),
+            revisionId: z.string().optional(),
+          }),
+        },
+      },
     },
-    503: {
-      description: "DeepSeek not configured",
-      content: { "application/json": { schema: ErrorSchema } },
+  },
+  responses: {
+    201: {
+      description: "Duplicate work from current or historical revision",
+      content: {
+        "application/json": { schema: z.object({ work: WorkSchema }) },
+      },
     },
   },
 });

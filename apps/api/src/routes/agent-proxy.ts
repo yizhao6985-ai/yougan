@@ -1,19 +1,50 @@
 import type { Request, Response, NextFunction } from "express";
-import type { ClientRequest } from "node:http";
+import type { ClientRequest, IncomingMessage } from "node:http";
 import { createProxyMiddleware } from "http-proxy-middleware";
 
 import { env } from "../env.js";
 import type { AuthedRequest } from "../middleware/auth.js";
-import { getAgentContext, updateWork } from "../services/works.js";
+import { getLangGraphThreadValues } from "../services/langgraph.js";
+import { applyAgentRunRevision, getAgentContext } from "../services/works.js";
 import { consumeAiUsage } from "../services/subscription.js";
+
+interface StreamSyncContext {
+  userId: string;
+  workId: string;
+  threadId: string;
+  conversationId?: string;
+}
+
+type StreamSyncRequest = AuthedRequest & {
+  youganStreamSync?: StreamSyncContext;
+};
 
 function langgraphPath(req: Request) {
   return req.originalUrl.replace(/^\/langgraph/, "").split("?")[0] ?? req.path;
 }
 
+function parseStreamSyncContext(req: AuthedRequest): StreamSyncContext | null {
+  const path = langgraphPath(req);
+  const match = path.match(/\/threads\/([^/]+)\/runs\/stream$/);
+  if (!match) return null;
+
+  const workId = req.headers["x-work-id"];
+  if (!workId || typeof workId !== "string" || !req.userId) return null;
+
+  const conversationIdHeader = req.headers["x-conversation-id"];
+  const conversationId =
+    typeof conversationIdHeader === "string" ? conversationIdHeader : undefined;
+
+  return {
+    userId: req.userId,
+    workId,
+    threadId: match[1]!,
+    conversationId,
+  };
+}
+
 /**
- * 在转发 LangGraph run 前，从 X-Work-Id / X-Conversation-Id 注入作品长记忆与对话模式。
- * 流结束后由前端 PATCH 同步：作品 JSON 字段 → Work，threadId/mode → WorkConversation。
+ * 在转发 LangGraph run 前注入作品状态；stream 结束后 append WorkRevision。
  */
 export async function injectWorkContext(
   req: AuthedRequest,
@@ -56,6 +87,11 @@ export async function injectWorkContext(
       return;
     }
 
+    const syncContext = parseStreamSyncContext(req);
+    if (syncContext) {
+      (req as StreamSyncRequest).youganStreamSync = syncContext;
+    }
+
     const input = (req.body.input ?? req.body) as Record<string, unknown>;
     req.body = {
       ...req.body,
@@ -63,10 +99,12 @@ export async function injectWorkContext(
         ...input,
         mode: context.mode,
         workId: context.workId,
+        workTitle: context.workTitle,
+        conversationTitle: context.conversationTitle,
         profile: context.profile,
-        plan: context.outline,
-        inspiration: context.inspiration,
-        creation: context.creation,
+        plan: context.plan,
+        brief: context.brief,
+        draft: context.draft,
       },
     };
 
@@ -77,6 +115,26 @@ export async function injectWorkContext(
     next();
   } catch {
     next();
+  }
+}
+
+async function syncWorkAfterStream(
+  context: StreamSyncContext,
+  statusCode: number,
+) {
+  if (statusCode < 200 || statusCode >= 300) return;
+
+  try {
+    const values = await getLangGraphThreadValues(context.threadId);
+    if (!values || typeof values !== "object") return;
+    await applyAgentRunRevision({
+      userId: context.userId,
+      workId: context.workId,
+      conversationId: context.conversationId,
+      values: values as Record<string, unknown>,
+    });
+  } catch (error) {
+    console.error("[agent-proxy] failed to append work revision", error);
   }
 }
 
@@ -95,19 +153,15 @@ export function createAgentProxy() {
         proxyReq.write(bodyData);
         proxyReq.end();
       },
-    },
-  });
-}
+      proxyRes: (proxyRes: IncomingMessage, req) => {
+        const syncContext = (req as StreamSyncRequest).youganStreamSync;
+        if (!syncContext) return;
 
-export async function syncWorkFromAgentState(
-  userId: string,
-  workId: string,
-  values: Record<string, unknown>,
-) {
-  return updateWork(userId, workId, {
-    profile: values.profile,
-    outline: values.plan ?? values.outline,
-    inspiration: values.inspiration,
-    creation: values.creation ?? null,
+        const statusCode = proxyRes.statusCode ?? 500;
+        proxyRes.on("end", () => {
+          void syncWorkAfterStream(syncContext, statusCode);
+        });
+      },
+    },
   });
 }

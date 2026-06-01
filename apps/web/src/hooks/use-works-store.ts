@@ -17,13 +17,11 @@ import {
 import { queryKeys } from "@/hooks/queries/keys";
 import { normalizeWork } from "@/lib/normalize-work";
 import {
-  clearInspirations,
-  deleteInspirationRequirement as removeInspirationRequirement,
-  mergeInspirationState,
-  updateInspirationRequirement as replaceInspirationRequirement,
-} from "@/lib/inspiration-merge";
-import type { YouganValues, Work, WorkInspiration } from "@/lib/types";
-import { EMPTY_WORK_OUTLINE } from "@/lib/types";
+  clearBrief,
+  deleteBriefRequirement as removeBriefRequirement,
+  updateBriefRequirement as replaceBriefRequirement,
+} from "@/lib/brief-merge";
+import type { YouganValues, Work, WorkBrief } from "@/lib/types";
 import { useAuthToken } from "@/store/auth";
 import { activeWorkIdAtom } from "@/store/studio";
 
@@ -128,28 +126,13 @@ export function useWorksStore() {
     [setActiveWorkId],
   );
 
-  const syncFromStream = useCallback(
-    async (workId: string, values: YouganValues) => {
-      const current = queryClient
-        .getQueryData<Work[]>(queryKeys.works.list)
-        ?.find((work) => work.id === workId);
-
-      const mergedInspiration =
-        values.inspiration !== undefined
-          ? mergeInspirationState(current?.inspiration, values.inspiration)
-          : undefined;
-
+  const applyStreamValuesToCache = useCallback(
+    (workId: string, values: YouganValues) => {
       const patch: Partial<Work> = {};
       if (values.profile !== undefined) patch.profile = values.profile;
-      const streamPlan = values.plan ?? values.outline;
-      if (streamPlan !== undefined) {
-        patch.outline = {
-          ...(current?.outline ?? EMPTY_WORK_OUTLINE),
-          ...streamPlan,
-        };
-      }
-      if (mergedInspiration !== undefined) patch.inspiration = mergedInspiration;
-      if (values.creation !== undefined) patch.creation = values.creation;
+      if (values.plan !== undefined) patch.plan = values.plan;
+      if (values.brief !== undefined) patch.brief = values.brief;
+      if (values.draft !== undefined) patch.draft = values.draft;
       if (!Object.keys(patch).length) return;
 
       patchWorksCache(queryClient, (works) =>
@@ -157,21 +140,17 @@ export function useWorksStore() {
           work.id === workId ? normalizeWork({ ...work, ...patch }) : work,
         ),
       );
-
-      await updateWorkMutation.mutateAsync({ workId, patch });
     },
-    [queryClient, updateWorkMutation],
+    [queryClient],
   );
 
-  const patchInspiration = useCallback(
-    (workId: string, inspiration: WorkInspiration) => {
+  const patchBrief = useCallback(
+    (workId: string, brief: WorkBrief) => {
       patchWorksCache(queryClient, (works) =>
-        works.map((work) =>
-          work.id === workId ? { ...work, inspiration } : work,
-        ),
+        works.map((work) => (work.id === workId ? { ...work, brief } : work)),
       );
       void updateWorkMutation
-        .mutateAsync({ workId, patch: { inspiration } })
+        .mutateAsync({ workId, patch: { brief } })
         .catch(() => {
           void queryClient.invalidateQueries({ queryKey: queryKeys.works.list });
         });
@@ -179,42 +158,39 @@ export function useWorksStore() {
     [queryClient, updateWorkMutation],
   );
 
-  const updateInspirationRequirement = useCallback(
+  const updateBriefRequirement = useCallback(
     (workId: string, requirementId: string, description: string) => {
       const current = queryClient
         .getQueryData<Work[]>(queryKeys.works.list)
         ?.find((work) => work.id === workId);
       if (!current) return;
-      const next = replaceInspirationRequirement(
-        current.inspiration,
+      const next = replaceBriefRequirement(
+        current.brief,
         requirementId,
         description,
       );
-      patchInspiration(workId, next);
+      patchBrief(workId, next);
     },
-    [patchInspiration, queryClient],
+    [patchBrief, queryClient],
   );
 
-  const deleteInspirationRequirement = useCallback(
+  const deleteBriefRequirement = useCallback(
     (workId: string, requirementId: string) => {
       const current = queryClient
         .getQueryData<Work[]>(queryKeys.works.list)
         ?.find((work) => work.id === workId);
       if (!current) return;
-      const next = removeInspirationRequirement(
-        current.inspiration,
-        requirementId,
-      );
-      patchInspiration(workId, next);
+      const next = removeBriefRequirement(current.brief, requirementId);
+      patchBrief(workId, next);
     },
-    [patchInspiration, queryClient],
+    [patchBrief, queryClient],
   );
 
-  const clearWorkInspirations = useCallback(
+  const clearWorkBrief = useCallback(
     (workId: string) => {
-      patchInspiration(workId, clearInspirations(undefined));
+      patchBrief(workId, clearBrief(undefined));
     },
-    [patchInspiration],
+    [patchBrief],
   );
 
   const renameWork = useCallback(
@@ -249,10 +225,10 @@ export function useWorksStore() {
     deleteGroup,
     deleteWork,
     selectWork,
-    syncFromStream,
-    updateInspirationRequirement,
-    deleteInspirationRequirement,
-    clearWorkInspirations,
+    applyStreamValuesToCache,
+    updateBriefRequirement,
+    deleteBriefRequirement,
+    clearWorkBrief,
     renameWork,
     moveWorkToGroup,
   };

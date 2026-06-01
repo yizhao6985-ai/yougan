@@ -1,6 +1,6 @@
 /**
  * 更新作品 profile（平台/主题/风格等）。
- * 灵感模式禁止直接写 profile，应通过 confirm_requirement 沉淀需求。
+ * 灵感模式禁止直接写 profile；客户文字消息会自动记入灵感列表。
  */
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
@@ -36,7 +36,7 @@ export const updateWorkProfile = tool(
     if (parseMode(getState()) === "inspiration") {
       return toolCommand(
         config,
-        "灵感模式不直接更新特征。请通过提问帮用户确认需求，用 confirm_requirement 记录。",
+        "灵感模式不直接更新特征。客户消息会自动记入灵感，请通过对话帮用户理清需求。",
       );
     }
 

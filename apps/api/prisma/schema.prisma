@@ -122,30 +122,51 @@ model WorkGroup {
 }
 
 model Work {
-  id            String              @id @default(cuid())
-  userId        String
-  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  groupId       String?
-  group         WorkGroup?          @relation(fields: [groupId], references: [id], onDelete: SetNull)
-  title         String
-  /// 作品级长记忆：内容概览（含 references）
-  profile       Json                @default("{}")
-  /// 作品级长记忆：制作计划
-  outline       Json                @default("{}")
-  /// 作品级长记忆：已确认灵感 / 需求
-  inspiration   Json                @default("{}")
-  /// 作品级长记忆：最新成稿
-  creation      Json?
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
-  publications  Publication[]
-  conversations WorkConversation[]
+  id                 String              @id @default(cuid())
+  userId             String
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  groupId            String?
+  group              WorkGroup?          @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  title              String
+  /// 当前 head revision
+  headRevisionId     String?
+  /// 若由另存为新作品创建，记录来源
+  sourceWorkId       String?
+  sourceRevisionId   String?
+  /// 物化视图：跨模式 profile
+  profile            Json                @default("{}")
+  /// 物化视图：已确认 brief
+  brief              Json                @default("{}")
+  /// 物化视图：制作计划
+  plan               Json                @default("{}")
+  /// 物化视图：最新成稿
+  draft              Json?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  publications       Publication[]
+  conversations      WorkConversation[]
+  revisions          WorkRevision[]
 
   @@index([userId, updatedAt(sort: Desc)])
   @@index([userId, groupId, updatedAt(sort: Desc)])
 }
 
-/// 作品下的多轮对话；messages 存 LangGraph thread checkpoint
+/// 作品版本节点（单线时间轴）
+model WorkRevision {
+  id               String   @id @default(cuid())
+  workId           String
+  work             Work     @relation(fields: [workId], references: [id], onDelete: Cascade)
+  parentRevisionId String?
+  conversationId   String?
+  kind             String
+  summary          String
+  snapshot         Json
+  createdAt        DateTime @default(now())
+
+  @@index([workId, createdAt(sort: Desc)])
+}
+
+/// 作品下的多轮对话；共享同一份作品状态，messages 存 LangGraph thread checkpoint
 model WorkConversation {
   id        String   @id @default(cuid())
   workId    String
@@ -161,29 +182,29 @@ model WorkConversation {
 }
 
 model Publication {
-  id          String    @id @default(cuid())
-  userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workId      String?
-  work        Work?     @relation(fields: [workId], references: [id], onDelete: SetNull)
-  slug        String    @unique
-  title       String
-  excerpt     String?
-  body        String
-  coverUrl    String?
-  platform    String?
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workId        String?
+  work          Work?     @relation(fields: [workId], references: [id], onDelete: SetNull)
+  slug          String    @unique
+  title         String
+  excerpt       String?
+  body          String
+  coverUrl      String?
+  platform      String?
   contentFormat String?
   topicCategory String?
   contentTopic  String?
   contentType   String?
   mediaType     String?
-  hashtags    Json      @default("[]")
-  images      Json      @default("[]")
-  status      String    @default("draft")
-  viewCount   Int       @default(0)
-  publishedAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  hashtags      Json      @default("[]")
+  images        Json      @default("[]")
+  status        String    @default("draft")
+  viewCount     Int       @default(0)
+  publishedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   @@index([userId, status, updatedAt(sort: Desc)])
   @@index([status, publishedAt(sort: Desc)])

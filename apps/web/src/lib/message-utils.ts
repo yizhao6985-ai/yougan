@@ -1,7 +1,7 @@
 import { AIMessage } from "@langchain/core/messages";
 import type { Message } from "@langchain/langgraph-sdk";
 
-import { isInternalInspirationSystemMessage } from "@/lib/inspiration-internal";
+import { isInternalBriefModeSystemMessage } from "@/lib/brief-mode-internal";
 
 type MessageContent = Message["content"];
 
@@ -226,7 +226,7 @@ export function buildRenderItems(
     }
 
     if (message.type === "system") {
-      if (isInternalInspirationSystemMessage(message)) continue;
+      if (isInternalBriefModeSystemMessage(message)) continue;
       const content = messageContentToText(message.content);
       if (content) {
         items.push({

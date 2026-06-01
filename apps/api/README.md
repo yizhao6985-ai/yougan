@@ -92,7 +92,7 @@ apps/api/
 |------|------|------|
 | `/api/auth` | `routes/auth.ts` | 注册、登录、邮箱确认、密码重置 |
 | `/api/users` | `routes/users.ts` | 用户资料、头像封面 |
-| `/api/works` | `routes/works.ts` | 作品 CRUD、模式与 JSON 字段同步 |
+| `/api/works` | `routes/works.ts` | 作品 CRUD、revisions/restore/duplicate、agent-context |
 | `/api/work-groups` | `routes/work-groups.ts` | 作品分组 |
 | `/api/publications` | `routes/publications.ts` | 发布内容、公开阅读 |
 | `/api/upload` | `routes/upload.ts` |  multipart 上传 |
@@ -109,8 +109,9 @@ apps/api/
 核心实体：
 
 - **User** — 账号、资料、头像/封面
-- **Work** — 作品级长记忆：`profile`、`inspiration`、`outline`、`creation`（JSON）
-- **WorkConversation** — 作品下多轮对话：`mode`、`threadId`
+- **Work** — 物化视图：`profile`、`brief`、`plan`、`draft`（JSON），`headRevisionId`
+- **WorkRevision** — 单线版本快照 event log
+- **WorkConversation** — 多轮对话（共享作品状态）：`mode`、`threadId`
 - **WorkGroup** — 作品分组
 - **Publication** — 对外发布的内容（草稿/已发布、阅读统计）
 - **PlatformIntegration** — 第三方平台 OAuth 令牌
@@ -123,8 +124,10 @@ apps/api/
 `POST /langgraph/*` 经 `requireAuth` 与 `injectWorkContext` 后转发到 Agent：
 
 - 校验 JWT，解析当前用户
-- 读取请求头 `X-Work-Id`，加载作品并校验归属
-- 将作品 `profile`、`mode`、`inspiration`、`outline` 等注入 Agent 可调用的上下文
+- 读取请求头 `X-Work-Id`、`X-Conversation-Id`，加载作品并校验归属
+- 按 `X-Work-Id`、`X-Conversation-Id` 注入作品状态；stream 结束后 `applyAgentRunToWork` 写 revision
+
+详见 [docs/technical/revision-graph.md](../../docs/technical/revision-graph.md)。
 
 Agent 服务需单独启动（`pnpm dev:agent`）。
 

@@ -7,12 +7,16 @@ import { requireAuth } from "../middleware/auth.js";
 import {
   createWork,
   deleteWork,
+  duplicateWork,
   getAgentContext,
   getWork,
   listWorks,
   updateWork,
 } from "../services/works.js";
-import { getWorkInspirationRecommendations } from "../services/inspiration-recommendations.js";
+import {
+  listWorkRevisions,
+  restoreWorkToRevision,
+} from "../services/work-revisions.js";
 import { SyncWorkStateSchema } from "../schemas.js";
 
 export const worksRouter = Router();
@@ -84,9 +88,14 @@ worksRouter.delete("/:workId", async (req: AuthedRequest, res) => {
 });
 
 worksRouter.get("/:workId/agent-context", async (req: AuthedRequest, res) => {
+  const conversationId =
+    typeof req.query.conversationId === "string"
+      ? req.query.conversationId
+      : undefined;
   const context = await getAgentContext(
     req.userId!,
     routeParam(req.params.workId, "workId"),
+    conversationId,
   );
   if (!context) {
     res.status(404).json({ error: "Work not found" });
@@ -95,32 +104,58 @@ worksRouter.get("/:workId/agent-context", async (req: AuthedRequest, res) => {
   res.json({ context });
 });
 
+worksRouter.get("/:workId/revisions", async (req: AuthedRequest, res) => {
+  const revisions = await listWorkRevisions(
+    req.userId!,
+    routeParam(req.params.workId, "workId"),
+  );
+  if (!revisions) {
+    res.status(404).json({ error: "Work not found" });
+    return;
+  }
+  res.json({ revisions });
+});
+
 worksRouter.post(
-  "/:workId/inspiration-recommendations",
+  "/:workId/restore/:revisionId",
   async (req: AuthedRequest, res) => {
-    try {
-      const result = await getWorkInspirationRecommendations(
-        req.userId!,
-        routeParam(req.params.workId, "workId"),
-      );
-      if (!result) {
-        res.status(404).json({ error: "Work not found" });
-        return;
-      }
-      res.json(result);
-    } catch (error) {
-      if (error instanceof Error) {
-        if (error.message === "DASHSCOPE_API_KEY_MISSING") {
-          res.status(503).json({ error: "灵感推荐服务未配置百炼 API Key" });
-          return;
-        }
-        if (error.message === "INSPIRATION_RECOMMENDATIONS_EMPTY") {
-          res.status(502).json({ error: "灵感推荐生成失败" });
-          return;
-        }
-      }
-      console.error("[works] inspiration-recommendations failed:", error);
-      res.status(502).json({ error: "灵感推荐服务暂不可用" });
+    const revision = await restoreWorkToRevision(
+      req.userId!,
+      routeParam(req.params.workId, "workId"),
+      routeParam(req.params.revisionId, "revisionId"),
+    );
+    if (!revision) {
+      res.status(404).json({ error: "Revision not found" });
+      return;
     }
+    const work = await getWork(
+      req.userId!,
+      routeParam(req.params.workId, "workId"),
+    );
+    res.json({ revision, work });
   },
 );
+
+worksRouter.post("/:workId/duplicate", async (req: AuthedRequest, res) => {
+  const body = z
+    .object({
+      title: z.string().optional(),
+      groupId: z.string().nullable().optional(),
+      revisionId: z.string().optional(),
+    })
+    .safeParse(req.body ?? {});
+  if (!body.success) {
+    res.status(400).json({ error: "Invalid request" });
+    return;
+  }
+  const work = await duplicateWork(
+    req.userId!,
+    routeParam(req.params.workId, "workId"),
+    body.data,
+  );
+  if (!work) {
+    res.status(404).json({ error: "Work not found" });
+    return;
+  }
+  res.status(201).json({ work });
+});

@@ -221,6 +221,66 @@
           "updatedAt"
         ]
       },
+      "ReferenceItem": {
+        "type": "object",
+        "properties": {
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "image",
+              "web"
+            ]
+          },
+          "summary": {
+            "type": "string"
+          },
+          "keywords": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tone_hints": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "structure_hints": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "hashtags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "raw_excerpt": {
+            "type": "string",
+            "nullable": true
+          },
+          "image_url": {
+            "type": "string",
+            "nullable": true
+          },
+          "url": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "source_type",
+          "summary"
+        ]
+      },
       "WorkProfile": {
         "type": "object",
         "properties": {
@@ -285,18 +345,49 @@
           "references": {
             "type": "array",
             "items": {
-              "type": "object",
-              "additionalProperties": {
-                "nullable": true
-              }
+              "$ref": "#/components/schemas/ReferenceItem"
             }
           }
         }
       },
-      "WorkOutline": {
+      "WorkBrief": {
         "type": "object",
         "properties": {
-          "pending_changes": {
+          "requirements": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "confirmed_at": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "description",
+                "confirmed_at"
+              ]
+            }
+          },
+          "ready": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "requirements",
+          "ready"
+        ]
+      },
+      "WorkProductionPlan": {
+        "type": "object",
+        "properties": {
+          "pending_tasks": {
             "type": "array",
             "items": {
               "type": "object",
@@ -339,7 +430,7 @@
               ]
             }
           },
-          "executed_changes": {
+          "executed_tasks": {
             "type": "array",
             "items": {
               "type": "object",
@@ -382,10 +473,10 @@
             "type": "string",
             "nullable": true
           },
-          "plan_ready": {
+          "ready": {
             "type": "boolean"
           },
-          "plan_summary": {
+          "summary": {
             "type": "string",
             "nullable": true
           },
@@ -405,65 +496,17 @@
             "type": "string",
             "nullable": true
           },
-          "creative_director_notes": {
-            "type": "string",
-            "nullable": true
-          },
-          "outline_ready": {
-            "type": "boolean"
-          },
-          "outline_summary": {
+          "director_notes": {
             "type": "string",
             "nullable": true
           }
         },
         "required": [
-          "pending_changes",
-          "executed_changes"
+          "pending_tasks",
+          "executed_tasks"
         ]
       },
-      "WorkInspiration": {
-        "type": "object",
-        "properties": {
-          "confirmed_requirements": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "description": {
-                  "type": "string"
-                },
-                "confirmed_at": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "id",
-                "description",
-                "confirmed_at"
-              ]
-            }
-          },
-          "summary": {
-            "type": "string",
-            "nullable": true
-          },
-          "inspiration_ready": {
-            "type": "boolean"
-          },
-          "summarized_at": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": [
-          "confirmed_requirements"
-        ]
-      },
-      "GeneratedContent": {
+      "WorkDraft": {
         "type": "object",
         "nullable": true,
         "properties": {
@@ -491,15 +534,6 @@
             "type": "string",
             "nullable": true
           },
-          "images": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "additionalProperties": {
-                "nullable": true
-              }
-            }
-          },
           "publish_ready": {
             "type": "boolean"
           }
@@ -525,14 +559,26 @@
           "profile": {
             "$ref": "#/components/schemas/WorkProfile"
           },
-          "outline": {
-            "$ref": "#/components/schemas/WorkOutline"
+          "brief": {
+            "$ref": "#/components/schemas/WorkBrief"
           },
-          "inspiration": {
-            "$ref": "#/components/schemas/WorkInspiration"
+          "plan": {
+            "$ref": "#/components/schemas/WorkProductionPlan"
           },
-          "creation": {
-            "$ref": "#/components/schemas/GeneratedContent"
+          "draft": {
+            "$ref": "#/components/schemas/WorkDraft"
+          },
+          "headRevisionId": {
+            "type": "string",
+            "nullable": true
+          },
+          "sourceWorkId": {
+            "type": "string",
+            "nullable": true
+          },
+          "sourceRevisionId": {
+            "type": "string",
+            "nullable": true
           },
           "createdAt": {
             "type": "string"
@@ -546,9 +592,12 @@
           "title",
           "groupId",
           "profile",
-          "outline",
-          "inspiration",
-          "creation",
+          "brief",
+          "plan",
+          "draft",
+          "headRevisionId",
+          "sourceWorkId",
+          "sourceRevisionId",
           "createdAt",
           "updatedAt"
         ]
@@ -563,14 +612,14 @@
           "profile": {
             "$ref": "#/components/schemas/WorkProfile"
           },
-          "outline": {
-            "$ref": "#/components/schemas/WorkOutline"
+          "plan": {
+            "$ref": "#/components/schemas/WorkProductionPlan"
           },
-          "inspiration": {
-            "$ref": "#/components/schemas/WorkInspiration"
+          "brief": {
+            "$ref": "#/components/schemas/WorkBrief"
           },
-          "creation": {
-            "$ref": "#/components/schemas/GeneratedContent"
+          "draft": {
+            "$ref": "#/components/schemas/WorkDraft"
           },
           "title": {
             "type": "string"
@@ -586,6 +635,10 @@
           "conversationId": {
             "type": "string"
           },
+          "headRevisionId": {
+            "type": "string",
+            "nullable": true
+          },
           "mode": {
             "type": "string",
             "enum": [
@@ -597,20 +650,23 @@
           "profile": {
             "$ref": "#/components/schemas/WorkProfile"
           },
-          "outline": {
-            "$ref": "#/components/schemas/WorkOutline"
+          "brief": {
+            "$ref": "#/components/schemas/WorkBrief"
           },
-          "inspiration": {
-            "$ref": "#/components/schemas/WorkInspiration"
+          "plan": {
+            "$ref": "#/components/schemas/WorkProductionPlan"
           },
-          "creation": {
-            "$ref": "#/components/schemas/GeneratedContent"
+          "draft": {
+            "$ref": "#/components/schemas/WorkDraft"
           },
           "threadId": {
             "type": "string",
             "nullable": true
           },
-          "title": {
+          "workTitle": {
+            "type": "string"
+          },
+          "conversationTitle": {
             "type": "string"
           }
         },
@@ -618,48 +674,86 @@
           "workId",
           "mode",
           "profile",
-          "outline",
-          "inspiration",
-          "creation"
+          "brief",
+          "plan",
+          "draft"
         ]
       },
-      "InspirationRecommendation": {
+      "WorkRevisionSnapshot": {
+        "type": "object",
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/WorkProfile"
+          },
+          "brief": {
+            "$ref": "#/components/schemas/WorkBrief"
+          },
+          "plan": {
+            "$ref": "#/components/schemas/WorkProductionPlan"
+          },
+          "draft": {
+            "$ref": "#/components/schemas/WorkDraft"
+          }
+        },
+        "required": [
+          "profile",
+          "brief",
+          "plan",
+          "draft"
+        ]
+      },
+      "WorkRevision": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string"
           },
-          "suggestion": {
+          "workId": {
+            "type": "string"
+          },
+          "parentRevisionId": {
+            "type": "string",
+            "nullable": true
+          },
+          "conversationId": {
+            "type": "string",
+            "nullable": true
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "work_created",
+              "work_duplicated",
+              "work_restored",
+              "brief_requirement_added",
+              "brief_requirement_updated",
+              "brief_requirement_removed",
+              "brief_ready",
+              "profile_updated",
+              "plan_ready",
+              "plan_revised",
+              "execution_complete"
+            ]
+          },
+          "summary": {
+            "type": "string"
+          },
+          "snapshot": {
+            "$ref": "#/components/schemas/WorkRevisionSnapshot"
+          },
+          "createdAt": {
             "type": "string"
           }
         },
         "required": [
           "id",
-          "suggestion"
-        ]
-      },
-      "WorkInspirationRecommendations": {
-        "type": "object",
-        "properties": {
-          "workId": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "recommendations": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/InspirationRecommendation"
-            },
-            "minItems": 1,
-            "maxItems": 3
-          }
-        },
-        "required": [
           "workId",
-          "title",
-          "recommendations"
+          "parentRevisionId",
+          "conversationId",
+          "kind",
+          "summary",
+          "snapshot",
+          "createdAt"
         ]
       },
       "UploadResponse": {
@@ -1695,6 +1789,14 @@
             "required": true,
             "name": "workId",
             "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "conversationId",
+            "in": "query"
           }
         ],
         "responses": {
@@ -1719,8 +1821,8 @@
         }
       }
     },
-    "/api/works/{workId}/inspiration-recommendations": {
-      "post": {
+    "/api/works/{workId}/revisions": {
+      "get": {
         "tags": [
           "Works"
         ],
@@ -1741,41 +1843,139 @@
         ],
         "responses": {
           "200": {
-            "description": "Recommended inspirations for a work",
+            "description": "Revision history for a work",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/WorkInspirationRecommendations"
+                  "type": "object",
+                  "properties": {
+                    "revisions": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/WorkRevision"
+                      }
+                    }
+                  },
+                  "required": [
+                    "revisions"
+                  ]
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/works/{workId}/restore/{revisionId}": {
+      "post": {
+        "tags": [
+          "Works"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "workId",
+            "in": "path"
           },
-          "404": {
-            "description": "Work not found",
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "revisionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Restore work to a revision snapshot",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "type": "object",
+                  "properties": {
+                    "revision": {
+                      "$ref": "#/components/schemas/WorkRevision"
+                    },
+                    "work": {
+                      "$ref": "#/components/schemas/Work"
+                    }
+                  },
+                  "required": [
+                    "revision",
+                    "work"
+                  ]
                 }
               }
             }
-          },
-          "502": {
-            "description": "Recommendation agent failed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
+          }
+        }
+      }
+    },
+    "/api/works/{workId}/duplicate": {
+      "post": {
+        "tags": [
+          "Works"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "workId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "groupId": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "revisionId": {
+                    "type": "string"
+                  }
                 }
               }
             }
-          },
-          "503": {
-            "description": "DeepSeek not configured",
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Duplicate work from current or historical revision",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Error"
+                  "type": "object",
+                  "properties": {
+                    "work": {
+                      "$ref": "#/components/schemas/Work"
+                    }
+                  },
+                  "required": [
+                    "work"
+                  ]
                 }
               }
             }

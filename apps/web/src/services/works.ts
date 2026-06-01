@@ -1,5 +1,4 @@
 import { apiFetch } from "@/services/client";
-import type { WorkInspirationRecommendations } from "@/lib/inspiration-recommendations";
 import type { Work } from "@/lib/types";
 
 export async function listWorks() {
@@ -17,9 +16,9 @@ export async function updateWork(
   workId: string,
   patch: Partial<Work> & {
     profile?: Work["profile"];
-    outline?: Work["outline"];
-    inspiration?: Work["inspiration"];
-    creation?: Work["creation"];
+    plan?: Work["plan"];
+    brief?: Work["brief"];
+    draft?: Work["draft"];
   },
 ) {
   return apiFetch<{ work: Work }>(`/api/works/${workId}`, {
@@ -30,13 +29,6 @@ export async function updateWork(
 
 export async function deleteWork(workId: string) {
   await apiFetch<void>(`/api/works/${workId}`, { method: "DELETE" });
-}
-
-export async function fetchWorkInspirationRecommendations(workId: string) {
-  return apiFetch<WorkInspirationRecommendations>(
-    `/api/works/${workId}/inspiration-recommendations`,
-    { method: "POST" },
-  );
 }
 
 export async function uploadReference(file: File) {

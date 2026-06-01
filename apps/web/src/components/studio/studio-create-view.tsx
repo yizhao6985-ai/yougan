@@ -4,48 +4,44 @@ import { CreativeContextPanelContent } from "@/components/studio/creative-contex
 import { WorksAside } from "@/components/studio/works-aside";
 import { YouganChat } from "@/components/studio/yougan-chat";
 import { useYouganStreamContext } from "@/components/studio/yougan-stream-provider";
-import { mergeInspirationState } from "@/lib/inspiration-merge";
+import { mergeBriefForDisplay } from "@/lib/brief-merge";
 import { CREATIVE_CONTEXT_PANEL } from "@/lib/site-copy";
 
 export function StudioCreateView() {
   const {
     activeWork,
     stream,
-    updateInspirationRequirement,
-    deleteInspirationRequirement,
-    clearWorkInspirations,
+    selectWork,
+    updateBriefRequirement,
+    deleteBriefRequirement,
+    clearWorkBrief,
   } = useYouganStreamContext();
+
   const profile = stream.values?.profile ?? activeWork?.profile;
-  const inspiration = mergeInspirationState(
-    activeWork?.inspiration,
-    stream.values?.inspiration,
-  );
-  const creation = activeWork?.creation ?? stream.values?.creation;
+  const brief = mergeBriefForDisplay(activeWork?.brief, stream.values?.brief);
+  const draft = activeWork?.draft ?? stream.values?.draft ?? null;
 
   const panelContent = (
     <CreativeContextPanelContent
       activeWork={activeWork}
       profile={profile}
-      inspiration={inspiration}
-      creation={creation}
+      brief={brief}
+      draft={draft}
+      onDuplicated={selectWork}
       onUpdateRequirement={
         activeWork
           ? (requirementId, description) =>
-              updateInspirationRequirement(
-                activeWork.id,
-                requirementId,
-                description,
-              )
+              updateBriefRequirement(activeWork.id, requirementId, description)
           : undefined
       }
       onDeleteRequirement={
         activeWork
           ? (requirementId) =>
-              deleteInspirationRequirement(activeWork.id, requirementId)
+              deleteBriefRequirement(activeWork.id, requirementId)
           : undefined
       }
-      onClearInspirations={
-        activeWork ? () => clearWorkInspirations(activeWork.id) : undefined
+      onClearBrief={
+        activeWork ? () => clearWorkBrief(activeWork.id) : undefined
       }
     />
   );

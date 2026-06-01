@@ -1,0 +1,329 @@
+import { CopyIcon, HistoryIcon, RotateCcwIcon } from "lucide-react";
+import { useEffect, useState } from "react";
+
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import {
+  ChatStreamBlock,
+  chatStreamBlock,
+} from "@/components/studio/chat-stream-block";
+import {
+  useDuplicateWorkMutation,
+  useRestoreWorkRevisionMutation,
+  useWorkRevisionsQuery,
+} from "@/hooks/queries/revisions";
+import {
+  formatRevisionTime,
+  revisionKindLabel,
+} from "@/lib/revision-labels";
+import { WORK_HISTORY_PANEL } from "@/lib/site-copy";
+import type { WorkRevisionDTO } from "@/lib/types";
+import { cn } from "@/lib/utils";
+
+type WorkHistoryPanelProps = {
+  workId: string;
+  workTitle: string;
+  compact?: boolean;
+  onDuplicated?: (workId: string) => void;
+};
+
+type PendingRestore = WorkRevisionDTO;
+
+type PendingDuplicate = {
+  revisionId?: string;
+  defaultTitle: string;
+};
+
+function defaultDuplicateTitle(workTitle: string) {
+  return `${workTitle} · 副本`;
+}
+
+export function WorkHistoryPanel({
+  workId,
+  workTitle,
+  compact,
+  onDuplicated,
+}: WorkHistoryPanelProps) {
+  const revisionsQuery = useWorkRevisionsQuery(workId);
+  const restoreMutation = useRestoreWorkRevisionMutation(workId);
+  const duplicateMutation = useDuplicateWorkMutation(workId);
+  const [pendingRestore, setPendingRestore] = useState<PendingRestore | null>(
+    null,
+  );
+  const [pendingDuplicate, setPendingDuplicate] =
+    useState<PendingDuplicate | null>(null);
+  const [duplicateTitle, setDuplicateTitle] = useState("");
+
+  const revisions = revisionsQuery.data ?? [];
+
+  useEffect(() => {
+    if (!pendingDuplicate) return;
+    setDuplicateTitle(pendingDuplicate.defaultTitle);
+  }, [pendingDuplicate]);
+
+  const handleRestore = () => {
+    if (!pendingRestore) return;
+    void restoreMutation
+      .mutateAsync(pendingRestore.id)
+      .then(() => setPendingRestore(null))
+      .catch(() => undefined);
+  };
+
+  const openDuplicateDialog = (revisionId?: string) => {
+    setPendingDuplicate({
+      revisionId,
+      defaultTitle: defaultDuplicateTitle(workTitle),
+    });
+  };
+
+  const handleDuplicateConfirm = () => {
+    if (!pendingDuplicate) return;
+    const title = duplicateTitle.trim();
+    if (!title) return;
+
+    void duplicateMutation
+      .mutateAsync({
+        title,
+        revisionId: pendingDuplicate.revisionId,
+      })
+      .then(({ work }) => {
+        setPendingDuplicate(null);
+        onDuplicated?.(work.id);
+      })
+      .catch(() => undefined);
+  };
+
+  if (revisionsQuery.isLoading) {
+    return <p className={chatStreamBlock.muted}>{WORK_HISTORY_PANEL.loading}</p>;
+  }
+
+  return (
+    <div className={cn(chatStreamBlock.stack, compact && "gap-2.5")}>
+      <div className={chatStreamBlock.inset}>
+        <p className={chatStreamBlock.headerTitle}>{WORK_HISTORY_PANEL.duplicateTitle}</p>
+        <p className={cn(chatStreamBlock.caption, "mt-1")}>
+          {WORK_HISTORY_PANEL.duplicateHint}
+        </p>
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          className="mt-3 w-full gap-1.5"
+          disabled={duplicateMutation.isPending}
+          onClick={() => openDuplicateDialog()}
+        >
+          <CopyIcon className="size-3.5" />
+          {duplicateMutation.isPending
+            ? WORK_HISTORY_PANEL.duplicating
+            : WORK_HISTORY_PANEL.duplicateAction}
+        </Button>
+      </div>
+
+      <div>
+        <div className="mb-2 flex items-center gap-2">
+          <HistoryIcon className="size-4 text-muted-foreground" />
+          <p className={chatStreamBlock.headerTitle}>
+            {WORK_HISTORY_PANEL.timelineTitle}
+          </p>
+        </div>
+        <p className={cn(chatStreamBlock.caption, "mb-3")}>
+          {WORK_HISTORY_PANEL.timelineHint}
+        </p>
+
+        {revisions.length === 0 ? (
+          <p className={chatStreamBlock.muted}>{WORK_HISTORY_PANEL.empty}</p>
+        ) : (
+          <ol className="space-y-2">
+            {revisions.map((revision, index) => (
+              <li key={revision.id}>
+                <RevisionRow
+                  revision={revision}
+                  isHead={index === 0}
+                  disableRestore={restoreMutation.isPending || index === 0}
+                  disableDuplicate={duplicateMutation.isPending}
+                  onRestore={() => setPendingRestore(revision)}
+                  onDuplicate={() => openDuplicateDialog(revision.id)}
+                />
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
+
+      <Dialog
+        open={Boolean(pendingRestore)}
+        onOpenChange={(open) => {
+          if (!open) setPendingRestore(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{WORK_HISTORY_PANEL.restoreTitle}</DialogTitle>
+            <DialogDescription>
+              {WORK_HISTORY_PANEL.restoreDescription}
+            </DialogDescription>
+          </DialogHeader>
+          {pendingRestore ? (
+            <div className={chatStreamBlock.inset}>
+              <p className="text-sm font-medium text-foreground">
+                {pendingRestore.summary}
+              </p>
+              <p className={cn(chatStreamBlock.caption, "mt-1")}>
+                {revisionKindLabel(pendingRestore.kind)} ·{" "}
+                {formatRevisionTime(pendingRestore.createdAt)}
+              </p>
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setPendingRestore(null)}
+            >
+              {WORK_HISTORY_PANEL.cancel}
+            </Button>
+            <Button
+              type="button"
+              disabled={restoreMutation.isPending}
+              onClick={handleRestore}
+            >
+              {restoreMutation.isPending
+                ? WORK_HISTORY_PANEL.restoring
+                : WORK_HISTORY_PANEL.confirmRestore}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(pendingDuplicate)}
+        onOpenChange={(open) => {
+          if (!open) setPendingDuplicate(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{WORK_HISTORY_PANEL.duplicateDialogTitle}</DialogTitle>
+            <DialogDescription>
+              {WORK_HISTORY_PANEL.duplicateDialogDescription}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <label
+              htmlFor="duplicate-work-title"
+              className="text-sm font-medium text-foreground"
+            >
+              {WORK_HISTORY_PANEL.duplicateNameLabel}
+            </label>
+            <Input
+              id="duplicate-work-title"
+              value={duplicateTitle}
+              placeholder={WORK_HISTORY_PANEL.duplicateNamePlaceholder}
+              autoFocus
+              onChange={(event) => setDuplicateTitle(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  handleDuplicateConfirm();
+                }
+              }}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setPendingDuplicate(null)}
+            >
+              {WORK_HISTORY_PANEL.cancel}
+            </Button>
+            <Button
+              type="button"
+              disabled={duplicateMutation.isPending || !duplicateTitle.trim()}
+              onClick={handleDuplicateConfirm}
+            >
+              {duplicateMutation.isPending
+                ? WORK_HISTORY_PANEL.duplicating
+                : WORK_HISTORY_PANEL.duplicateConfirm}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function RevisionRow({
+  revision,
+  isHead,
+  disableRestore,
+  disableDuplicate,
+  onRestore,
+  onDuplicate,
+}: {
+  revision: WorkRevisionDTO;
+  isHead: boolean;
+  disableRestore: boolean;
+  disableDuplicate: boolean;
+  onRestore: () => void;
+  onDuplicate: () => void;
+}) {
+  return (
+    <ChatStreamBlock className="px-3 py-2.5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={chatStreamBlock.headerMeta}>
+              {revisionKindLabel(revision.kind)}
+            </span>
+            {isHead ? (
+              <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                {WORK_HISTORY_PANEL.headBadge}
+              </span>
+            ) : null}
+          </div>
+          <p className="mt-1.5 text-sm leading-6 text-foreground/90">
+            {revision.summary}
+          </p>
+          <p className={cn(chatStreamBlock.caption, "mt-1")}>
+            {formatRevisionTime(revision.createdAt)}
+          </p>
+        </div>
+        <div className="flex shrink-0 flex-col gap-1">
+          {!isHead ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="gap-1 text-xs"
+              disabled={disableRestore}
+              onClick={onRestore}
+            >
+              <RotateCcwIcon className="size-3.5" />
+              {WORK_HISTORY_PANEL.restore}
+            </Button>
+          ) : null}
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="gap-1 text-xs"
+            disabled={disableDuplicate}
+            onClick={onDuplicate}
+          >
+            <CopyIcon className="size-3.5" />
+            {WORK_HISTORY_PANEL.duplicateFromHere}
+          </Button>
+        </div>
+      </div>
+    </ChatStreamBlock>
+  );
+}

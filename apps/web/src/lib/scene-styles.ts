@@ -20,7 +20,7 @@ export const scene = {
   /** 悬浮输入框卡片外观（作用于 PromptInput 内 InputGroup） */
   composerFloatingInput:
     "[&_[data-slot=input-group]]:overflow-hidden [&_[data-slot=input-group]]:rounded-lg [&_[data-slot=input-group]]:border-border/80 [&_[data-slot=input-group]]:bg-card/95 [&_[data-slot=input-group]]:shadow-lg [&_[data-slot=input-group]]:shadow-border/25 [&_[data-slot=input-group]]:backdrop-blur-sm [&_[data-slot=input-group]]:has-[[data-slot=input-group-control]:focus-visible]:ring-primary/20 [&_[data-slot=input-group]]:has-[[data-align=block-start]]:flex-col [&_[data-slot=input-group]]:has-[[data-align=block-start]]:items-stretch",
-  /** 创作台各栏顶栏（中间对话区、右侧创作脉络等） */
+  /** 创作台各栏顶栏（中间对话区、右侧作品面板等） */
   studioPanelHeader:
     "flex min-h-[4.75rem] shrink-0 flex-col justify-center border-b border-border/80 bg-card/70 px-4 py-3 backdrop-blur",
   studioPanelHeaderTitle: "font-medium leading-5 text-foreground",

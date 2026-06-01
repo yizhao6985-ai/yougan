@@ -1,15 +1,15 @@
 /**
- * 安全读取 AgentState 字段，避免各处重复 ?? EMPTY_*。
+ * 安全读取 AgentState 字段。
  */
 import { env } from "../env.js";
 import type { AgentStateType } from "../state.js";
 import {
-  EMPTY_WORK_INSPIRATION,
+  EMPTY_WORK_BRIEF,
   EMPTY_WORK_PRODUCTION_PLAN,
   EMPTY_WORK_PROFILE,
   CHAT_MODES,
   type ChatMode,
-  type WorkInspiration,
+  type WorkBrief,
   type WorkProductionPlan,
   type WorkProfile,
 } from "../schema.js";
@@ -19,13 +19,11 @@ export function parseProfile(state: AgentStateType): WorkProfile {
 }
 
 export function parseProductionPlan(state: AgentStateType): WorkProductionPlan {
-  const legacy = (state as AgentStateType & { outline?: WorkProductionPlan })
-    .outline;
-  return state.plan ?? legacy ?? EMPTY_WORK_PRODUCTION_PLAN;
+  return state.plan ?? EMPTY_WORK_PRODUCTION_PLAN;
 }
 
-export function parseInspiration(state: AgentStateType): WorkInspiration {
-  return state.inspiration ?? EMPTY_WORK_INSPIRATION;
+export function parseBrief(state: AgentStateType): WorkBrief {
+  return state.brief ?? EMPTY_WORK_BRIEF;
 }
 
 export function parseMode(state: AgentStateType): ChatMode {
@@ -36,7 +34,6 @@ export function parseMode(state: AgentStateType): ChatMode {
   return "inspiration";
 }
 
-/** 用户「创意度」；仅用于创作团队内的文案/专员生成，不影响 ReAct 编排与结构化流程节点。 */
 export function parseModelTemperature(state: AgentStateType): number {
   const value = state.modelTemperature;
   if (value == null || Number.isNaN(value)) {

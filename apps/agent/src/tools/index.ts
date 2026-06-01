@@ -3,7 +3,7 @@
  */
 export { confirmContentSpec } from "./content-spec.js";
 export { switchMode } from "./mode.js";
-export { addPendingChange } from "./pending-change.js";
+export { addPlanTask } from "./plan-task.js";
 export { updateWorkProfile } from "./profile.js";
 export { REFERENCE_TOOLS, parseReferenceImage, parseReferenceText } from "./references.js";
 export { getState, mergeProfileReferences, updateProfile } from "../lib/tool-state.js";

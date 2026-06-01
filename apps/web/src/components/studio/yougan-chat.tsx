@@ -19,23 +19,21 @@ import {
 } from "@/components/studio/chat-stream-block";
 import { ComposerAttachmentsProvider } from "@/components/studio/composer-attachments-context";
 import { ChatToolActivity } from "@/components/studio/chat-tool-activity";
-import { InspirationSuggestionOptions } from "@/components/studio/inspiration-generative-ui";
-import { useInspirationSuggestions } from "@/hooks/use-inspiration-choices";
+import { BriefSuggestionOptions } from "@/components/studio/inspiration-generative-ui";
+import { normalizeBriefSuggestions } from "@/lib/brief-ui-spec";
+import { useBriefSuggestions } from "@/hooks/use-brief-suggestions";
 import { useChatModeShortcuts } from "@/components/studio/chat-mode-switcher";
 import {
   hasProductionPlanActivity,
   ProductionPlanTodoList,
 } from "@/components/studio/production-plan-todo-list";
 import { StudioChatComposer } from "@/components/studio/studio-chat-composer";
-import { InspirationRecommendations } from "@/components/studio/inspiration-recommendations";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
 import { useYouganStreamContext } from "@/components/studio/yougan-stream-provider";
-import { useWorkInspirationRecommendationsQuery } from "@/hooks/queries/inspiration-recommendations";
 import { useWorkItemNameDialog } from "@/hooks/use-work-item-name-dialog";
 import { WorksCreateMenu } from "@/components/studio/works-create-menu";
 import { buildRenderItems } from "@/lib/message-utils";
-import { INSPIRATION_RECOMMENDATIONS_COUNT } from "@/lib/inspiration-recommendations";
 import { scene } from "@/lib/scene-styles";
 import { cn } from "@/lib/utils";
 import { CHAT_COPY, STUDIO } from "@/lib/site-copy";
@@ -74,24 +72,18 @@ export function YouganChat() {
     [stream.messages, stream.isLoading],
   );
 
-  const { activeSuggestions } = useInspirationSuggestions(mode, {
+  const { activeSuggestions } = useBriefSuggestions(mode, {
     values: resolvedValues,
     isLoading: stream.isLoading,
   });
 
-  const shouldSuggestInspirations =
-    Boolean(activeWork) &&
-    mode === "inspiration" &&
-    items.length === 0;
-
-  const inspirationRecommendationsQuery = useWorkInspirationRecommendationsQuery(
-    activeWork?.id,
-    activeWork?.title,
-    shouldSuggestInspirations,
+  const openingSuggestions = useMemo(
+    () => normalizeBriefSuggestions(resolvedValues?.briefSuggestions),
+    [resolvedValues?.briefSuggestions],
   );
 
-  const inspirationRecommendations =
-    inspirationRecommendationsQuery.data?.recommendations ?? [];
+  const isBootstrappingRecommendations =
+    items.length === 0 && stream.isLoading && !openingSuggestions;
 
   const lastAiIndex = useMemo(() => {
     for (let i = items.length - 1; i >= 0; i--) {
@@ -160,18 +152,16 @@ export function YouganChat() {
     );
   }
 
-  const plan =
-    stream.values?.plan ?? stream.values?.outline ?? activeWork.outline;
-  const pendingCount = plan.pending_changes?.length ?? 0;
-  const confirmedCount =
-    activeWork.inspiration.confirmed_requirements?.length ?? 0;
+  const plan = stream.values?.plan ?? activeWork.plan;
+  const pendingCount = plan.pending_tasks?.length ?? 0;
+  const briefCount = activeWork.brief.requirements?.length ?? 0;
   const planReady = isPlanReady(plan);
   const showPlanTodo = hasProductionPlanActivity(plan);
 
   const statusHint =
     mode === "inspiration"
-      ? confirmedCount > 0
-        ? CHAT_COPY.status.inspirationConfirmed(confirmedCount)
+      ? briefCount > 0
+        ? CHAT_COPY.status.inspirationConfirmed(briefCount)
         : CHAT_COPY.status.inspirationExploring
       : mode === "ask"
         ? CHAT_COPY.status.askExploring
@@ -210,46 +200,27 @@ export function YouganChat() {
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
               {mode === "inspiration"
-                ? shouldSuggestInspirations &&
-                  inspirationRecommendations.length > 0
-                  ? CHAT_COPY.emptyByMode.inspiration.bodyWithRecommendations
-                  : CHAT_COPY.emptyByMode.inspiration.bodyDefault
+                ? CHAT_COPY.emptyByMode.inspiration.bodyDefault
                 : mode === "ask"
                   ? CHAT_COPY.emptyByMode.ask.body
                   : CHAT_COPY.emptyByMode.creation.body}
             </p>
           </div>
-          {mode === "inspiration" && shouldSuggestInspirations ? (
-            inspirationRecommendationsQuery.isLoading ? (
-              <Suggestions>
-                {Array.from({ length: INSPIRATION_RECOMMENDATIONS_COUNT }, (_, index) => (
-                  <div
-                    key={index}
-                    className="inline-flex rounded-md border border-border bg-background px-4 py-2"
-                  >
-                    <Shimmer className="text-sm">
-                      {CHAT_COPY.generatingInspirations}
-                    </Shimmer>
-                  </div>
-                ))}
-              </Suggestions>
-            ) : inspirationRecommendations.length > 0 ? (
-              <InspirationRecommendations
-                recommendations={inspirationRecommendations}
+          {isBootstrappingRecommendations ? (
+            <ChatStreamBlock>
+              <Shimmer className={chatStreamBlock.muted}>
+                {CHAT_COPY.recommendationsLoading}
+              </Shimmer>
+            </ChatStreamBlock>
+          ) : openingSuggestions ? (
+            <div className="mx-auto w-full max-w-3xl">
+              <BriefSuggestionOptions
+                suggestions={openingSuggestions.suggestions}
+                hint={openingSuggestions.hint}
                 disabled={stream.isLoading || !canChat}
-                onSelect={(suggestion) => void sendMessage(suggestion)}
+                onSelect={(value) => void sendMessage(value)}
               />
-            ) : (
-              <Suggestions>
-                {suggestions.map((prompt) => (
-                  <Suggestion
-                    key={prompt}
-                    suggestion={prompt}
-                    onClick={() => void sendMessage(prompt)}
-                  />
-                ))}
-              </Suggestions>
-            )
+            </div>
           ) : (
             <Suggestions>
               {suggestions.map((prompt) => (
@@ -328,7 +299,7 @@ export function YouganChat() {
                       isStreaming={item.isStreaming}
                     />
                     {showInspirationSuggestions && activeSuggestions && (
-                      <InspirationSuggestionOptions
+                      <BriefSuggestionOptions
                         suggestions={activeSuggestions.suggestions}
                         hint={activeSuggestions.hint}
                         disabled={stream.isLoading || !canChat}

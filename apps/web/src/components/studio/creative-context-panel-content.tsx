@@ -3,20 +3,21 @@ import { useCallback, useState } from "react";
 import { ContentPreview } from "@/components/content-preview";
 import { ContentSettingsPanel } from "@/components/content-settings-panel";
 import { ReferencePanel } from "@/components/reference-panel";
+import { WorkHistoryPanel } from "@/components/studio/work-history-panel";
 import { creativeContextPanelClassNames } from "@/components/studio/creative-context/shared";
 import {
   CREATIVE_CONTEXT_PANEL,
   type CreativeContextTabId,
 } from "@/lib/site-copy";
 import { readStoredString, writeStoredString } from "@/lib/storage-value";
-import type { Work, WorkInspiration, WorkProfile } from "@/lib/types";
-import type { GeneratedContent } from "@/lib/types";
+import type { Work, WorkBrief, WorkDraft, WorkProfile } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const TAB_ORDER: CreativeContextTabId[] = [
   "inspiration",
   "preview",
   "references",
+  "history",
 ];
 
 const TAB_STORAGE_KEY = "yougan:creative-context-tab";
@@ -32,21 +33,23 @@ function readStoredTab(): CreativeContextTabId {
 type CreativeContextPanelContentProps = {
   activeWork: Work | null;
   profile?: WorkProfile;
-  inspiration?: WorkInspiration;
-  creation?: GeneratedContent | null;
+  brief?: WorkBrief;
+  draft?: WorkDraft | null;
+  onDuplicated?: (workId: string) => void;
   onUpdateRequirement?: (requirementId: string, description: string) => void;
   onDeleteRequirement?: (requirementId: string) => void;
-  onClearInspirations?: () => void;
+  onClearBrief?: () => void;
 };
 
 export function CreativeContextPanelContent({
   activeWork,
   profile,
-  inspiration,
-  creation,
+  brief,
+  draft,
+  onDuplicated,
   onUpdateRequirement,
   onDeleteRequirement,
-  onClearInspirations,
+  onClearBrief,
 }: CreativeContextPanelContentProps) {
   const [activeTab, setActiveTab] = useState<CreativeContextTabId>(readStoredTab);
 
@@ -92,13 +95,13 @@ export function CreativeContextPanelContent({
             aria-labelledby="creative-context-tab-inspiration"
           >
             <ContentSettingsPanel
-              inspiration={inspiration}
+              brief={brief}
               profile={profile}
               editable={Boolean(activeWork)}
               compact
               onUpdateRequirement={onUpdateRequirement}
               onDeleteRequirement={onDeleteRequirement}
-              onClearInspirations={onClearInspirations}
+              onClearBrief={onClearBrief}
             />
           </div>
         ) : null}
@@ -111,7 +114,7 @@ export function CreativeContextPanelContent({
           >
             <ContentPreview
               workId={activeWork?.id}
-              creation={creation}
+              draft={draft}
               compact
             />
           </div>
@@ -124,6 +127,21 @@ export function CreativeContextPanelContent({
             aria-labelledby="creative-context-tab-references"
           >
             <ReferencePanel references={profile?.references} compact />
+          </div>
+        ) : null}
+
+        {activeTab === "history" && activeWork ? (
+          <div
+            role="tabpanel"
+            id="creative-context-panel-history"
+            aria-labelledby="creative-context-tab-history"
+          >
+            <WorkHistoryPanel
+              workId={activeWork.id}
+              workTitle={activeWork.title}
+              compact
+              onDuplicated={onDuplicated}
+            />
           </div>
         ) : null}
       </div>

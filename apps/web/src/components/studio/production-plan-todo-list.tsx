@@ -19,11 +19,11 @@ const DEPT_LABELS: Record<string, string> = {
 export function hasProductionPlanActivity(plan?: WorkProductionPlan): boolean {
   if (!plan) return false;
   return (
-    (plan.pending_changes?.length ?? 0) > 0 ||
-    (plan.executed_changes?.length ?? 0) > 0 ||
+    (plan.pending_tasks?.length ?? 0) > 0 ||
+    (plan.executed_tasks?.length ?? 0) > 0 ||
     Boolean(getPlanSummary(plan)) ||
     isPlanReady(plan) ||
-    Boolean(plan.creative_director_notes?.trim())
+    Boolean(plan.director_notes?.trim())
   );
 }
 
@@ -36,7 +36,7 @@ type TodoRow = {
 };
 
 function buildTodoRows(plan: WorkProductionPlan): TodoRow[] {
-  const done: TodoRow[] = (plan.executed_changes ?? []).map((change) => ({
+  const done: TodoRow[] = (plan.executed_tasks ?? []).map((change) => ({
     id: change.id,
     description: change.description,
     department: change.department,
@@ -44,7 +44,7 @@ function buildTodoRows(plan: WorkProductionPlan): TodoRow[] {
     inProgress: false,
   }));
 
-  const open: TodoRow[] = (plan.pending_changes ?? []).map((task) => ({
+  const open: TodoRow[] = (plan.pending_tasks ?? []).map((task) => ({
     id: task.id,
     description: task.description,
     department: task.department,
@@ -67,8 +67,8 @@ export function ProductionPlanTodoList({
   const summary = getPlanSummary(plan);
   const ready = isPlanReady(plan);
   const rows = buildTodoRows(plan);
-  const pendingCount = plan.pending_changes?.length ?? 0;
-  const doneCount = plan.executed_changes?.length ?? 0;
+  const pendingCount = plan.pending_tasks?.length ?? 0;
+  const doneCount = plan.executed_tasks?.length ?? 0;
 
   return (
     <ChatStreamBlock className={className}>
@@ -95,8 +95,8 @@ export function ProductionPlanTodoList({
         </p>
       ) : null}
 
-      {outline.creative_director_notes?.trim() ? (
-        <p className={chatStreamBlock.muted}>{outline.creative_director_notes}</p>
+      {plan.director_notes?.trim() ? (
+        <p className={chatStreamBlock.muted}>{plan.director_notes}</p>
       ) : null}
 
       {rows.length > 0 ? (

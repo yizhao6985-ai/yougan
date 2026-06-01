@@ -1,0 +1,133 @@
+/**
+ * 新对话空 thread：按对话标题与模式生成 3 条开场建议。
+ */
+import { HumanMessage } from "@langchain/core/messages";
+
+import { createStructuredModel } from "../../llm/dashscope.js";
+import { invokeStructuredOutput } from "../../lib/structured-output.js";
+import { parseMode, parseBrief } from "../../lib/parse-agent-state.js";
+import {
+  DEFAULT_BRIEF_SUGGESTIONS_HINT,
+  newBriefSuggestion,
+  type ChatMode,
+  type BriefSuggestions,
+} from "../../schema.js";
+import type { AgentStateType } from "../../state.js";
+import { buildConversationRecommendationsPrompt } from "./prompt.js";
+import { ConversationRecommendationsResponseSchema } from "./schema.js";
+
+const OPENING_HINT_BY_MODE: Record<ChatMode, string> = {
+  inspiration: "根据对话主题，点选一条开始探索，或在下方自由输入。",
+  ask: "点选一个问题开始，或在下方自由输入。",
+  creation: "点选一项开始创作，或在下方自由输入。",
+};
+
+function fallbackSuggestions(mode: ChatMode): BriefSuggestions {
+  const byMode: Record<ChatMode, BriefSuggestions> = {
+    inspiration: {
+      hint: OPENING_HINT_BY_MODE.inspiration,
+      suggestions: [
+        newBriefSuggestion("explore", "聊方向", "我想围绕这个主题找几个创作方向"),
+        newBriefSuggestion(
+          "explore",
+          "定受众",
+          "帮我想想目标读者是谁、适合什么平台",
+        ),
+        newBriefSuggestion(
+          "explore",
+          "定选题",
+          "有一个大概想法，帮我细化成具体选题",
+        ),
+      ],
+    },
+    ask: {
+      hint: OPENING_HINT_BY_MODE.ask,
+      suggestions: [
+        newBriefSuggestion(
+          "explore",
+          "怎么写好",
+          "怎么把这个选题写得更好、更有吸引力？",
+        ),
+        newBriefSuggestion(
+          "explore",
+          "结构参考",
+          "这类内容一般是什么结构？有没有范例思路？",
+        ),
+        newBriefSuggestion(
+          "explore",
+          "行业背景",
+          "这个赛道最近什么内容形式比较常见？",
+        ),
+      ],
+    },
+    creation: {
+      hint: OPENING_HINT_BY_MODE.creation,
+      suggestions: [
+        newBriefSuggestion("explore", "生成成稿", "按当前制作计划生成一版成稿"),
+        newBriefSuggestion(
+          "explore",
+          "制定计划",
+          "还没有制作计划，帮 AI 团队先制定一版",
+        ),
+        newBriefSuggestion(
+          "explore",
+          "调整语气",
+          "语气改得更口语、更适合目标平台",
+        ),
+      ],
+    },
+  };
+  return byMode[mode];
+}
+
+export async function generateConversationRecommendations(
+  state: AgentStateType,
+): Promise<BriefSuggestions> {
+  const mode = parseMode(state);
+  const brief = parseBrief(state);
+  const llm = createStructuredModel({ temperature: 0.6 });
+  const prompt = buildConversationRecommendationsPrompt(state);
+
+  try {
+    const parsed = await invokeStructuredOutput(
+      llm,
+      ConversationRecommendationsResponseSchema,
+      [new HumanMessage(prompt)],
+      { name: "conversation_recommendations" },
+    );
+    return {
+      hint:
+        parsed.hint?.trim() ||
+        OPENING_HINT_BY_MODE[mode] ||
+        DEFAULT_BRIEF_SUGGESTIONS_HINT,
+      suggestions: parsed.suggestions.map((s) =>
+        newBriefSuggestion(s.kind, s.label, s.message),
+      ),
+    };
+  } catch {
+    const fallback = fallbackSuggestions(mode);
+    if (brief.requirements.length > 0 && mode === "inspiration") {
+      return {
+        hint: fallback.hint,
+        suggestions: [
+          newBriefSuggestion(
+            "confirm",
+            "补充需求",
+            "基于已有 brief，我还想再明确几个细节",
+          ),
+          newBriefSuggestion(
+            "navigate",
+            "去提问",
+            "切换到提问模式，我想问问怎么把这个方向做得更好",
+          ),
+          newBriefSuggestion(
+            "navigate",
+            "开始创作",
+            "brief 差不多了，切换到创作模式开始制作",
+          ),
+        ],
+      };
+    }
+    return fallback;
+  }
+}

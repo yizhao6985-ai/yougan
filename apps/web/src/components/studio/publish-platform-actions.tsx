@@ -11,14 +11,14 @@ import {
 import { DISCOVER_SECTION } from "@/lib/content-section";
 import type { PublicationMetadataOverrides } from "@/lib/discover-taxonomy";
 import { PUBLISH, STUDIO } from "@/lib/site-copy";
-import type { GeneratedContent } from "@/lib/types";
+import type { WorkDraft } from "@/lib/types";
 
 export function PublishPlatformActions({
   workId,
-  creation,
+  draft,
 }: {
   workId: string;
-  creation?: GeneratedContent | null;
+  draft?: WorkDraft | null;
 }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { data: publications = [], isLoading } = useMyPublicationsQuery();
@@ -37,7 +37,7 @@ export function PublishPlatformActions({
     setDialogOpen(false);
   };
 
-  if (!creation?.body) return null;
+  if (!draft?.body) return null;
   if (isLoading) {
     return (
       <p className="text-xs text-muted-foreground/70">{PUBLISH.checking}</p>

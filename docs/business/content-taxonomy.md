@@ -6,7 +6,7 @@
 
 | 阶段 | 用户是否感知分类 | 平台行为 |
 |------|------------------|----------|
-| 创作（灵感→大纲→创作） | **不暴露**完整 taxonomy | AI 根据对话意图隐式写入 `Work.profile` |
+| 创作（灵感→创作→提问） | **不暴露**完整 taxonomy | AI 根据对话意图隐式写入 `Work.profile` |
 | 发布 | **轻量确认** | 展示 AI 推断标签，用户可修改后发布 |
 | 发现（消费） | **结构化筛选** | 使用稳定枚举字段驱动筛选与展示 |
 
@@ -158,7 +158,7 @@ AI 在对话中隐式维护的 `Work.profile` 字段：
 | 阶段 | 工具 | 行为 |
 |------|------|------|
 | 灵感 | `confirm_content_spec` | 用户明确体裁/形式时写入 |
-| 大纲 | `confirm_content_spec` / `update_work_profile` | 补充或修正规格 |
+| 创作 | `confirm_content_spec` / `update_work_profile` | 补充或修正规格 |
 | 创作入口 | `resolveContentSpec` 节点 | 自动补齐缺失字段 |
 | 创作执行 | `generate_content` | 按体裁/形式约束出稿 |
 | 发布 | 发布确认弹窗 | 用户可覆盖最终分类 |

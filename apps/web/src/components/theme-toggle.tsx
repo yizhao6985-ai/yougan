@@ -46,9 +46,7 @@ export function ThemeToggle() {
       />
       <Switch
         checked={isDark}
-        onCheckedChange={(checked) =>
-          setPreference(checked ? "dark" : "light")
-        }
+        onCheckedChange={(checked) => setPreference(checked ? "dark" : "light")}
         aria-label={THEME.darkMode}
       />
       <MoonIcon

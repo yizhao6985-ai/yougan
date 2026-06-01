@@ -5,14 +5,14 @@ import {
   chatStreamBlock,
 } from "@/components/studio/chat-stream-block";
 import {
-  DEFAULT_INSPIRATION_UI_HINT,
+  DEFAULT_BRIEF_UI_HINT,
   suggestionKindLabel,
-  type InspirationSuggestions,
-} from "@/lib/inspiration-ui-spec";
+  type BriefSuggestions,
+} from "@/lib/brief-ui-spec";
 import { cn } from "@/lib/utils";
 
-type InspirationSuggestionOptionsProps = {
-  suggestions: InspirationSuggestions["suggestions"];
+type BriefSuggestionOptionsProps = {
+  suggestions: BriefSuggestions["suggestions"];
   hint?: string;
   loading?: boolean;
   disabled?: boolean;
@@ -20,15 +20,14 @@ type InspirationSuggestionOptionsProps = {
   className?: string;
 };
 
-/** 灵感模式建议：点击即发送 message */
-export function InspirationSuggestionOptions({
+export function BriefSuggestionOptions({
   suggestions,
-  hint = DEFAULT_INSPIRATION_UI_HINT,
+  hint = DEFAULT_BRIEF_UI_HINT,
   loading = false,
   disabled = false,
   onSelect,
   className,
-}: InspirationSuggestionOptionsProps) {
+}: BriefSuggestionOptionsProps) {
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
 
   const handleSelect = useCallback(
@@ -76,38 +75,5 @@ export function InspirationSuggestionOptions({
       </div>
       <p className={chatStreamBlock.caption}>{hint}</p>
     </ChatStreamBlock>
-  );
-}
-
-/** @deprecated 使用 InspirationSuggestionOptions */
-export function InspirationChoiceOptions({
-  options,
-  hint,
-  loading,
-  disabled,
-  onSelect,
-  className,
-}: {
-  options: Array<{ description: string; letter?: string }>;
-  hint?: string;
-  loading?: boolean;
-  disabled?: boolean;
-  onSelect: (description: string) => void | Promise<void>;
-  className?: string;
-}) {
-  return (
-    <InspirationSuggestionOptions
-      suggestions={options.map((o, i) => ({
-        id: `${i}-${o.description}`,
-        kind: "explore" as const,
-        label: o.letter ?? o.description.slice(0, 8),
-        message: o.description,
-      }))}
-      hint={hint}
-      loading={loading}
-      disabled={disabled}
-      onSelect={onSelect}
-      className={className}
-    />
   );
 }

@@ -3,19 +3,16 @@ import type { WorkConversation } from "@prisma/client";
 import { prisma } from "../db.js";
 import type { WorkConversationDTO } from "../schemas.js";
 import { getWork } from "./works.js";
+import { initializeWorkRevisionTimeline } from "./work-revisions.js";
 
 function normalizeConversationMode(mode: string): WorkConversationDTO["mode"] {
-  if (mode === "outline") return "creation";
-  if (mode === "advice") return "ask";
   if (mode === "inspiration" || mode === "creation" || mode === "ask") {
     return mode;
   }
   return "inspiration";
 }
 
-function toConversationDTO(
-  conversation: WorkConversation,
-): WorkConversationDTO {
+function toConversationDTO(conversation: WorkConversation): WorkConversationDTO {
   return {
     id: conversation.id,
     workId: conversation.workId,
@@ -44,6 +41,7 @@ export async function listWorkConversations(userId: string, workId: string) {
         mode: "inspiration",
       },
     });
+    await initializeWorkRevisionTimeline(workId, created.id);
     conversations = [created];
   }
 
@@ -69,6 +67,7 @@ export async function createWorkConversation(
       mode,
     },
   });
+
   return toConversationDTO(conversation);
 }
 
@@ -121,17 +120,4 @@ export async function deleteWorkConversation(
 
   await prisma.workConversation.delete({ where: { id: conversationId } });
   return true;
-}
-
-export async function ensureDefaultConversation(userId: string, workId: string) {
-  const work = await getWork(userId, workId);
-  if (!work) return null;
-
-  const existing = await prisma.workConversation.findFirst({
-    where: { workId },
-    orderBy: { updatedAt: "desc" },
-  });
-  if (existing) return toConversationDTO(existing);
-
-  return createWorkConversation(userId, workId, { title: "对话 1" });
 }

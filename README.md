@@ -1,6 +1,6 @@
 # 有感 Yougan
 
-AI 自媒体创作助手：帮你找灵感、写创作大纲，再按大纲生成图文内容。
+AI 自媒体创作助手：帮你收集灵感、制定制作计划，再按计划生成图文内容。
 
 Monorepo 采用 **pnpm workspace** + **Turborepo**，三服务协作：前端、Express 中间层、LangGraph Agent。
 
@@ -11,7 +11,7 @@ yougan/
 ├── apps/
 │   ├── web/      # Vite + React 前端（落地页 + /studio 创作台）
 │   ├── api/      # Express 中间层（鉴权、作品 CRUD、OSS、Agent 代理）
-│   └── agent/    # LangGraph Agent（灵感 / 大纲 / 创作子图）
+│   └── agent/    # LangGraph Agent（灵感 / 创作 / 提问子图）
 ├── docs/         # 运维与集成文档（如平台 OAuth）
 ├── docker-compose.yml
 ├── package.json
@@ -20,12 +20,12 @@ yougan/
 
 各应用详细说明见：
 
-| 应用 | README |
-|------|--------|
-| 前端 | [apps/web/README.md](./apps/web/README.md) |
-| API | [apps/api/README.md](./apps/api/README.md) |
+| 应用  | README                                         |
+| ----- | ---------------------------------------------- |
+| 前端  | [apps/web/README.md](./apps/web/README.md)     |
+| API   | [apps/api/README.md](./apps/api/README.md)     |
 | Agent | [apps/agent/README.md](./apps/agent/README.md) |
-| 文档 | [docs/README.md](./docs/README.md) |
+| 文档  | [docs/README.md](./docs/README.md)             |
 
 ## 架构
 
@@ -73,11 +73,11 @@ pnpm install
 docker compose up -d
 ```
 
-| 服务 | 端口 | 用途 |
-|------|------|------|
-| `postgres-api` | 5432 | API 业务库 `yougan_api` |
+| 服务             | 端口 | 用途                               |
+| ---------------- | ---- | ---------------------------------- |
+| `postgres-api`   | 5432 | API 业务库 `yougan_api`            |
 | `postgres-agent` | 5433 | Agent checkpoint 库 `yougan_agent` |
-| `redis` | 6379 | API 可选缓存 |
+| `redis`          | 6379 | API 可选缓存                       |
 
 ### 2. 环境变量
 
@@ -127,29 +127,29 @@ pnpm generate:api       # 生成 apps/web/src/services/generated/schema.d.ts
 
 ## 常用命令
 
-| 命令 | 说明 |
-|------|------|
-| `pnpm dev` | Turborepo 并行启动所有 dev 服务 |
-| `pnpm build` | 构建所有 app（类型检查） |
-| `pnpm check-types` | 全仓 TypeScript 检查 |
-| `pnpm lint` | ESLint（web） |
-| `pnpm db:push` | Prisma 同步 API schema 到数据库 |
-| `pnpm db:generate` | 重新生成 Prisma Client |
-| `pnpm openapi:generate` | 从 Zod 路由生成 OpenAPI JSON |
-| `pnpm generate:api` | 从 OpenAPI 生成前端类型 |
-| `pnpm --filter @yougan/web dev` | 对单个 workspace 包执行脚本 |
+| 命令                            | 说明                            |
+| ------------------------------- | ------------------------------- |
+| `pnpm dev`                      | Turborepo 并行启动所有 dev 服务 |
+| `pnpm build`                    | 构建所有 app（类型检查）        |
+| `pnpm check-types`              | 全仓 TypeScript 检查            |
+| `pnpm lint`                     | ESLint（web）                   |
+| `pnpm db:push`                  | Prisma 同步 API schema 到数据库 |
+| `pnpm db:generate`              | 重新生成 Prisma Client          |
+| `pnpm openapi:generate`         | 从 Zod 路由生成 OpenAPI JSON    |
+| `pnpm generate:api`             | 从 OpenAPI 生成前端类型         |
+| `pnpm --filter @yougan/web dev` | 对单个 workspace 包执行脚本     |
 
 ## 创作模型
 
 一件 **作品（Work）** 对应一段持续对话与一个 LangGraph `threadId`。
 
-| 模式 | `mode` 值 | 行为 |
-|------|-----------|------|
+| 模式 | `mode` 值     | 行为                                                   |
+| ---- | ------------- | ------------------------------------------------------ |
 | 灵感 | `inspiration` | 提问、确认需求（`confirmed_requirements`），不直接出稿 |
-| 大纲 | `outline` | 产出/维护创作大纲（`pending_changes`），定稿后不生成正文 |
-| 创作 | `creation` | 按已定稿大纲执行出稿，`complete_execution` 后更新已实现状态 |
+| 创作 | `creation`    | 创意总监制定制作计划（`plan`），制作团队按任务出稿     |
+| 提问 | `ask`         | 自由答疑与创作咨询，不直接改作品状态                   |
 
-模式可随时切换。作品 JSON 字段（`inspiration` / `outline` / `creation`）存于 API 库；对话 checkpoint 存于 Agent 库。
+模式可随时切换。作品 JSON 字段（`inspiration` / `plan` / `creation`）存于 API 库；对话 checkpoint 存于 Agent 库。
 
 ## 功能概览
 
@@ -163,23 +163,23 @@ pnpm generate:api       # 生成 apps/web/src/services/generated/schema.d.ts
 
 ## 技术栈
 
-| 层级 | 技术 |
-|------|------|
-| Monorepo | pnpm + Turborepo |
-| 前端 | Vite、React 19、React Router、TanStack Query、Jotai、Tailwind v4、LangGraph SDK `useStream` |
-| 中间层 | Express 5、Prisma、JWT、Zod + OpenAPI、http-proxy-middleware、ioredis |
-| Agent | LangGraph JS、MiniMax（主对话）、DeepSeek（结构化） |
-| 存储 | PostgreSQL × 2、Redis（可选）、本地目录 / S3 兼容 OSS |
+| 层级     | 技术                                                                                        |
+| -------- | ------------------------------------------------------------------------------------------- |
+| Monorepo | pnpm + Turborepo                                                                            |
+| 前端     | Vite、React 19、React Router、TanStack Query、Jotai、Tailwind v4、LangGraph SDK `useStream` |
+| 中间层   | Express 5、Prisma、JWT、Zod + OpenAPI、http-proxy-middleware、ioredis                       |
+| Agent    | LangGraph JS、MiniMax（主对话）、DeepSeek（结构化）                                         |
+| 存储     | PostgreSQL × 2、Redis（可选）、本地目录 / S3 兼容 OSS                                       |
 
 ## 故障排查
 
-| 现象 | 可能原因 |
-|------|----------|
-| `pnpm install` 超时 | 使用 npmmirror 或检查代理 |
-| API 启动报数据库错误 | `docker compose up -d` 后执行 `pnpm db:push` |
-| Studio 对话无响应 | 确认 `dev:agent` 已启动且 `MINIMAX_API_KEY` 有效 |
-| `/docs` 503 | 在 `apps/api` 执行 `pnpm openapi:generate` |
-| LangGraph 401 | 前端未登录或 JWT 过期；代理路径应为 `/langgraph` |
+| 现象                 | 可能原因                                         |
+| -------------------- | ------------------------------------------------ |
+| `pnpm install` 超时  | 使用 npmmirror 或检查代理                        |
+| API 启动报数据库错误 | `docker compose up -d` 后执行 `pnpm db:push`     |
+| Studio 对话无响应    | 确认 `dev:agent` 已启动且 `MINIMAX_API_KEY` 有效 |
+| `/docs` 503          | 在 `apps/api` 执行 `pnpm openapi:generate`       |
+| LangGraph 401        | 前端未登录或 JWT 过期；代理路径应为 `/langgraph` |
 
 ## 许可证
 
