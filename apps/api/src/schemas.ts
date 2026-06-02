@@ -4,7 +4,7 @@ import { REVISION_KINDS, USER_REVISION_PHASES } from "@yougan/domain";
 
 extendZodWithOpenApi(z);
 
-export const CHAT_MODES = ["inspiration", "creation", "ask"] as const;
+export const CHAT_MODES = ["inspiration", "outline", "creation", "ask"] as const;
 
 export const ChatModeSchema = z.enum(CHAT_MODES);
 
@@ -41,6 +41,19 @@ export const WorkProfileSchema = z
     references: z.array(ReferenceItemSchema).optional(),
   })
   .openapi("WorkProfile");
+
+export const WorkOutlineSchema = z
+  .object({
+    sections: z.array(
+      z.object({
+        id: z.string(),
+        description: z.string(),
+        confirmed_at: z.string(),
+      }),
+    ),
+    summary: z.string().nullable().optional(),
+  })
+  .openapi("WorkOutline");
 
 export const WorkProductionPlanSchema = z
   .object({
@@ -84,7 +97,6 @@ export const WorkBriefSchema = z
         confirmed_at: z.string(),
       }),
     ),
-    ready: z.boolean(),
   })
   .openapi("WorkBrief");
 
@@ -104,6 +116,7 @@ export const WorkRevisionSnapshotSchema = z
   .object({
     profile: WorkProfileSchema,
     brief: WorkBriefSchema,
+    outline: WorkOutlineSchema,
     plan: WorkProductionPlanSchema,
     draft: WorkDraftSchema.nullable(),
   })
@@ -139,6 +152,7 @@ export const WorkSchema = z
     groupId: z.string().nullable(),
     profile: WorkProfileSchema,
     brief: WorkBriefSchema,
+    outline: WorkOutlineSchema,
     plan: WorkProductionPlanSchema,
     draft: WorkDraftSchema.nullable(),
     headRevisionId: z.string().nullable(),
@@ -216,6 +230,7 @@ export const SyncWorkStateSchema = z
   .object({
     groupId: z.string().nullable().optional(),
     profile: WorkProfileSchema.optional(),
+    outline: WorkOutlineSchema.optional(),
     plan: WorkProductionPlanSchema.optional(),
     brief: WorkBriefSchema.optional(),
     draft: WorkDraftSchema.nullable().optional(),
@@ -239,6 +254,7 @@ export const AgentContextSchema = z
     mode: ChatModeSchema,
     profile: WorkProfileSchema,
     brief: WorkBriefSchema,
+    outline: WorkOutlineSchema,
     plan: WorkProductionPlanSchema,
     draft: WorkDraftSchema.nullable(),
     threadId: z.string().nullable().optional(),

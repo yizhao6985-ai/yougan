@@ -1,28 +1,21 @@
-import { parseMode } from "../lib/parse-agent-state.js";
-import type { ChatMode } from "../schema.js";
 import type { AgentStateType } from "../state.js";
 
-export type EntryRoute = "updateBriefSuggestions" | "resolveTurnMode";
+export type EntryRoute = "updateBriefSuggestions" | "resolveTurnQueue";
 
 /** 当前 thread 是否尚无对话内容（无 messages） */
 export function isEmptyThread(state: AgentStateType): boolean {
   return (state.messages ?? []).length === 0;
 }
 
-/** 主图入口：空 thread → 开场建议；否则先解析本轮意图再路由 */
+/** 主图入口：空 thread → 开场建议；否则解析任务队列 */
 export function routeByEntry(state: AgentStateType): EntryRoute {
   if (isEmptyThread(state)) {
     return "updateBriefSuggestions";
   }
-  return "resolveTurnMode";
+  return "resolveTurnQueue";
 }
 
 export const paths = {
   updateBriefSuggestions: "updateBriefSuggestions",
-  resolveTurnMode: "resolveTurnMode",
+  resolveTurnQueue: "resolveTurnQueue",
 } as const;
-
-/** @deprecated 路由前已由 resolveTurnMode 写入 state.mode */
-export function routeByMode(state: AgentStateType): ChatMode {
-  return parseMode(state);
-}

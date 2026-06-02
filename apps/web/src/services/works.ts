@@ -16,6 +16,7 @@ export async function updateWork(
   workId: string,
   patch: Partial<Work> & {
     profile?: Work["profile"];
+    outline?: Work["outline"];
     plan?: Work["plan"];
     brief?: Work["brief"];
     draft?: Work["draft"];

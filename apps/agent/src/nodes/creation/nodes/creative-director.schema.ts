@@ -1,5 +1,5 @@
 /**
- * 创意总监节点 structured output schema：制作计划。
+ * 创意总监节点 structured output schema：内部创作计划。
  */
 import { z } from "zod";
 

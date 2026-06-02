@@ -384,10 +384,10 @@
           "ready"
         ]
       },
-      "WorkProductionPlan": {
+      "WorkOutline": {
         "type": "object",
         "properties": {
-          "pending_tasks": {
+          "sections": {
             "type": "array",
             "items": {
               "type": "object",
@@ -398,7 +398,7 @@
                 "description": {
                   "type": "string"
                 },
-                "created_at": {
+                "confirmed_at": {
                   "type": "string"
                 },
                 "department": {
@@ -417,20 +417,16 @@
                     "in_progress",
                     "completed"
                   ]
-                },
-                "assignee": {
-                  "type": "string",
-                  "nullable": true
                 }
               },
               "required": [
                 "id",
                 "description",
-                "created_at"
+                "confirmed_at"
               ]
             }
           },
-          "executed_tasks": {
+          "completed_sections": {
             "type": "array",
             "items": {
               "type": "object",
@@ -441,7 +437,7 @@
                 "description": {
                   "type": "string"
                 },
-                "executed_at": {
+                "completed_at": {
                   "type": "string"
                 },
                 "batch_summary": {
@@ -456,16 +452,12 @@
                     "audio",
                     "video"
                   ]
-                },
-                "assignee": {
-                  "type": "string",
-                  "nullable": true
                 }
               },
               "required": [
                 "id",
                 "description",
-                "executed_at"
+                "completed_at"
               ]
             }
           },
@@ -502,8 +494,8 @@
           }
         },
         "required": [
-          "pending_tasks",
-          "executed_tasks"
+          "sections",
+          "completed_sections"
         ]
       },
       "WorkDraft": {
@@ -562,8 +554,8 @@
           "brief": {
             "$ref": "#/components/schemas/WorkBrief"
           },
-          "plan": {
-            "$ref": "#/components/schemas/WorkProductionPlan"
+          "outline": {
+            "$ref": "#/components/schemas/WorkOutline"
           },
           "draft": {
             "$ref": "#/components/schemas/WorkDraft"
@@ -593,7 +585,7 @@
           "groupId",
           "profile",
           "brief",
-          "plan",
+          "outline",
           "draft",
           "headRevisionId",
           "sourceWorkId",
@@ -612,8 +604,8 @@
           "profile": {
             "$ref": "#/components/schemas/WorkProfile"
           },
-          "plan": {
-            "$ref": "#/components/schemas/WorkProductionPlan"
+          "outline": {
+            "$ref": "#/components/schemas/WorkOutline"
           },
           "brief": {
             "$ref": "#/components/schemas/WorkBrief"
@@ -653,8 +645,8 @@
           "brief": {
             "$ref": "#/components/schemas/WorkBrief"
           },
-          "plan": {
-            "$ref": "#/components/schemas/WorkProductionPlan"
+          "outline": {
+            "$ref": "#/components/schemas/WorkOutline"
           },
           "draft": {
             "$ref": "#/components/schemas/WorkDraft"
@@ -675,7 +667,7 @@
           "mode",
           "profile",
           "brief",
-          "plan",
+          "outline",
           "draft"
         ]
       },
@@ -688,8 +680,8 @@
           "brief": {
             "$ref": "#/components/schemas/WorkBrief"
           },
-          "plan": {
-            "$ref": "#/components/schemas/WorkProductionPlan"
+          "outline": {
+            "$ref": "#/components/schemas/WorkOutline"
           },
           "draft": {
             "$ref": "#/components/schemas/WorkDraft"
@@ -698,7 +690,7 @@
         "required": [
           "profile",
           "brief",
-          "plan",
+          "outline",
           "draft"
         ]
       },
@@ -730,8 +722,11 @@
               "brief_requirement_removed",
               "brief_ready",
               "profile_updated",
-              "plan_ready",
-              "plan_revised",
+              "outline_section_added",
+              "outline_section_updated",
+              "outline_section_removed",
+              "outline_ready",
+              "outline_revised",
               "execution_complete"
             ]
           },
@@ -739,6 +734,7 @@
             "type": "string",
             "enum": [
               "inspiration",
+              "outline",
               "draft"
             ]
           },

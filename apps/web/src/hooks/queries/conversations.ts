@@ -52,7 +52,7 @@ export function useCreateWorkConversationMutation(workId: string | null) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (options?: { title?: string; mode?: ChatMode }) => {
+    mutationFn: (options?: { title?: string }) => {
       if (!workId) throw new Error("No active work");
       return apiCreateWorkConversation(workId, options);
     },

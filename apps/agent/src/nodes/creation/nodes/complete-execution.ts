@@ -1,13 +1,16 @@
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
-import { parseMode, parseProductionPlan } from "../../../lib/parse-agent-state.js";
+import {
+  parseActiveTurnTask,
+  parseProductionPlan,
+} from "../../../lib/parse-agent-state.js";
 import { getState } from "../../../lib/tool-state.js";
 import { toolCommand } from "../../../lib/tool-command.js";
 
 export const completeExecution = tool(
   async ({ summary }, config) => {
-    if (parseMode(getState()) !== "creation") {
+    if (parseActiveTurnTask(getState()) !== "creation") {
       return toolCommand(config, "complete_execution 仅在创作模式可用。");
     }
     const trimmed = summary.trim();
@@ -48,7 +51,7 @@ export const completeExecution = tool(
   {
     name: "complete_execution",
     description:
-      "制作团队执行完成后调用：将待执行任务合并进已完成记录，清空待执行列表，记录执行摘要。",
+      "制作团队执行完成后调用：将待执行任务合并进已完成记录，记录执行摘要。",
     schema: z.object({
       summary: z.string().describe("本次执行的修改点摘要"),
     }),

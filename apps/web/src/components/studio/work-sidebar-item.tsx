@@ -11,7 +11,7 @@ import {
   CollapsibleContent,
 } from "@/components/ui/collapsible";
 import { useYouganStreamContext } from "@/components/studio/yougan-stream-provider";
-import { CHAT_MODE_LABELS, type Work } from "@/lib/types";
+import type { Work } from "@/lib/types";
 import { STUDIO } from "@/lib/site-copy";
 import { cn } from "@/lib/utils";
 
@@ -135,9 +135,6 @@ export function WorkSidebarItem({
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-xs font-medium">
                     {conversation.title}
-                  </span>
-                  <span className="block truncate text-[10px] opacity-80">
-                    {CHAT_MODE_LABELS[conversation.mode]}
                   </span>
                 </span>
               </button>

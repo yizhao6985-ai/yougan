@@ -3,8 +3,7 @@
  */
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 
-import { addPlanTask } from "../../../tools/plan-task.js";
-import { switchMode } from "../../../tools/mode.js";
+import { addPlanTask } from "./add-plan-task.js";
 import { updateWorkProfile } from "../../../tools/profile.js";
 import { REFERENCE_TOOLS } from "../../../tools/references.js";
 
@@ -14,7 +13,6 @@ import { reviseProductionPlan } from "./revise-production-plan.js";
 import { spawnSpecialist } from "./spawn-specialist.js";
 
 export const CREATION_TOOLS = [
-  switchMode,
   addPlanTask,
   completeExecution,
   updateWorkProfile,

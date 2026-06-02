@@ -220,7 +220,7 @@ export function ContentSettingsPanel({
         <div className="space-y-2">
           <CreativeContextSubheading tone="primary">
             {CONTENT_SETTINGS_PANEL.confirmedLabel}
-            {brief?.ready ? " · 已定稿" : " · 未定稿"}
+            {requirements.length ? ` · ${requirements.length} 条` : ""}
           </CreativeContextSubheading>
           <CreativeContextList>
             {requirements.map((item) => (

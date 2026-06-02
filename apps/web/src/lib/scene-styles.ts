@@ -15,6 +15,9 @@ export const scene = {
     "pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-background from-35% via-background/85 to-transparent px-4 pb-3 pt-12",
   /** 对话列表底部留白 / 回到底部按钮位置（需与 composer 总高度匹配） */
   conversationPadBottom: "pb-60",
+  /** 开屏空态：紧贴文案下方的建议区，预留高度避免气泡撑开时顶栏跳动 */
+  openingSuggestionsSlot:
+    "w-full min-h-[9.5rem] shrink-0 flex flex-col items-center",
   conversationScrollButton:
     "bottom-44 size-8 rounded-full border-0 bg-background/80 text-muted-foreground shadow-md shadow-black/10 backdrop-blur-sm hover:bg-muted/65 hover:text-foreground hover:shadow-lg hover:shadow-black/15 dark:bg-background/60 dark:shadow-black/45 dark:hover:shadow-black/55",
   /** 悬浮输入框卡片外观（作用于 PromptInput 内 InputGroup） */

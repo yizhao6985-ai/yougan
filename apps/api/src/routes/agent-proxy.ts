@@ -97,11 +97,11 @@ export async function injectWorkContext(
       ...req.body,
       input: {
         ...input,
-        mode: context.mode,
         workId: context.workId,
         workTitle: context.workTitle,
         conversationTitle: context.conversationTitle,
         profile: context.profile,
+        outline: context.outline,
         plan: context.plan,
         brief: context.brief,
         draft: context.draft,

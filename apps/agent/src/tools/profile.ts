@@ -11,7 +11,7 @@ import {
   isValidMediaModality,
   resolveContentSpec,
 } from "../lib/content-spec.js";
-import { parseMode } from "../lib/parse-agent-state.js";
+import { parseActiveTurnTask } from "../lib/parse-agent-state.js";
 import { getState, updateProfile } from "../lib/tool-state.js";
 import { toolCommand } from "../lib/tool-command.js";
 
@@ -33,7 +33,7 @@ const profileSchema = z.object({
 
 export const updateWorkProfile = tool(
   async (input, config) => {
-    if (parseMode(getState()) === "inspiration") {
+    if (parseActiveTurnTask(getState()) === "inspiration") {
       return toolCommand(
         config,
         "灵感模式不直接更新特征。客户消息会自动记入灵感，请通过对话帮用户理清需求。",

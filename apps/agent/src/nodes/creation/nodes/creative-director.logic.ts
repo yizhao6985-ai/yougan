@@ -1,5 +1,5 @@
 /**
- * 创意总监节点：根据 brief 与 profile 制定制作计划。
+ * 创意总监节点：根据当前 brief + 大纲制定内部创作计划。
  */
 import { HumanMessage } from "@langchain/core/messages";
 
@@ -7,6 +7,7 @@ import { createStructuredModel } from "../../../llm/dashscope.js";
 import { invokeStructuredOutput } from "../../../lib/structured-output.js";
 import {
   briefSummary,
+  outlineSummary,
   productionPlanSummary,
   profileSummary,
 } from "../../../prompt/context.js";
@@ -16,6 +17,8 @@ import {
   resolveIndustryContext,
 } from "../../../lib/industry-prompts.js";
 import {
+  hasBriefContent,
+  hasOutlineContent,
   isPlanReady,
   newProductionPlanTask,
   type ProductionDepartment,
@@ -23,6 +26,7 @@ import {
 } from "../../../schema.js";
 import {
   parseBrief,
+  parseOutline,
   parseProductionPlan,
   parseProfile,
 } from "../../../lib/parse-agent-state.js";
@@ -34,6 +38,10 @@ function shouldRunCreativeDirector(
   state: AgentStateType,
   force = false,
 ): boolean {
+  const brief = parseBrief(state);
+  const outline = parseOutline(state);
+  if (!hasBriefContent(brief) || !hasOutlineContent(outline)) return false;
+
   if (force) return true;
   const plan = parseProductionPlan(state);
   if (isPlanReady(plan) && plan.pending_tasks.length > 0) return false;
@@ -47,13 +55,17 @@ function shouldRunCreativeDirector(
 function buildCreativeDirectorPrompt(state: AgentStateType): string {
   const profile = resolveContentSpec(parseProfile(state));
   const brief = parseBrief(state);
+  const outline = parseOutline(state);
   const plan = parseProductionPlan(state);
   const industry = resolveIndustryContext(profile);
 
-  return `你是创意总监（内部角色，不对${YOUGAN_USER_LABEL}直接说话），负责为${YOUGAN_USER_LABEL}的作品制定整体制作计划。
+  return `你是创意总监（内部角色，不对${YOUGAN_USER_LABEL}直接说话），负责将已定稿的内容大纲转化为可执行的**制作计划**。
 
-${YOUGAN_USER_LABEL}已确认的创作需求（brief）：
+${YOUGAN_USER_LABEL}已确认 brief：
 ${briefSummary(brief)}
+
+已定稿内容大纲：
+${outlineSummary(outline)}
 
 作品特征：
 ${profileSummary(profile)}
@@ -64,11 +76,10 @@ ${productionPlanSummary(plan)}
 行业经验：
 ${industry}
 
-请制定制作计划：
-1. 根据 content_format / media_modality 决定需要哪些制作部门（writing/design/audio/video）
-2. 将计划拆分为具体任务，每条任务指定 department
-3. 任务应覆盖从创意到交付的完整流程
-4. 文案类任务由 writing 负责；配图方案由 design；口播/播客由 audio；视频脚本由 video
+请制定内部制作计划：
+1. 根据 content_format / media_modality 决定制作部门
+2. 将大纲条目拆分为具体执行任务，每条指定 department
+3. 任务覆盖从创意到交付的完整流程
 
 只输出结构化计划，不生成正文。`;
 }

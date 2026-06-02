@@ -324,19 +324,24 @@ export const CHAT_COPY = {
   openingSuggestions: [
     "想更新自媒体但还没想好写什么",
     "怎么把这个选题写得更好？",
-    "按制作计划生成一版文案",
+    "按大纲生成一版文案",
     "想做职场类内容，不确定选题方向",
     "小红书笔记一般是什么结构？",
   ],
   placeholder: "说说想法、提问，或告诉我要改什么…",
   emptyTitle: "从一句话开始",
-  emptyBody:
-    "我会根据你的话自动对齐方向、回答问题，或在合适时开始制作；成稿与灵感会沉淀在右侧作品面板。",
+  emptyBody: "灵感与成稿会记在右侧作品面板。",
+  /** 开屏建议区提示（紧贴气泡，勿与 emptyBody 重复能力说明） */
+  openingSuggestionsHint: "点一条开始，或直接输入",
   emptyByMode: {
     inspiration: {
       title: "灵感模式：找灵感、定方向",
       bodyDefault:
         "我会通过提问帮你找灵感、理清平台、受众、选题和写法；回合结束后会在下方给出可点选建议。",
+    },
+    outline: {
+      title: "大纲模式：确认内容结构",
+      body: "根据对话意图进入此模式。在这里维护章节、段落要点与叙事顺序，可随时修改。",
     },
     ask: {
       title: "提问模式：自由提问",
@@ -344,19 +349,18 @@ export const CHAT_COPY = {
     },
     creation: {
       title: "创作模式：AI 团队精良制作",
-      body: "AI 团队会先制定制作计划，任务会在对话中以列表展示并随执行更新；成稿见右侧「内容预览」。",
+      body: "系统根据对话意图进入此模式；AI 团队会在内部编排制作步骤并交付成稿，见右侧「内容预览」。",
     },
   },
   status: {
     inspirationExploring: "正在帮你找灵感、理清选题和写法",
     inspirationConfirmed: (n: number) => `已记录 ${n} 条灵感`,
+    outlineGenerating: "正在根据 brief 生成内容大纲…",
+    outlineEditing: (n: number) => `大纲 ${n} 条，可在右侧随时修改`,
     askExploring: "有问题随时问：优化、学习、行业背景都可以",
-    creationPlanning: "AI 团队正在制定制作计划",
-    creationIdle: "制作计划已定稿，可以交付或修改",
-    creationPending: (n: number) => `${n} 项制作任务待执行`,
+    creationExecuting: "AI 团队正在按大纲精良制作",
   },
   replying: "正在回复…",
-  recommendationsLoading: "正在生成开场建议…",
   attachmentDrawer: {
     title: (count: number) => `附件 ${count}`,
     hint: "发送消息时一并提交",
@@ -372,11 +376,12 @@ export const CHAT_COPY = {
 /** 创作台右侧栏 */
 export const CREATIVE_CONTEXT_PANEL = {
   title: "作品面板",
-  hint: "灵感、成稿预览、参考素材与版本记录集中在这里；制作计划在对话流中以任务列表展示",
+  hint: "灵感、大纲、成稿预览、参考素材与版本记录集中在这里",
   expand: "展开作品面板",
   collapse: "收起作品面板",
   tabs: {
     inspiration: "灵感",
+    outline: "大纲",
     preview: "内容预览",
     references: "参考素材",
     history: "版本",
@@ -395,7 +400,7 @@ export const WORK_HISTORY_PANEL = {
   duplicating: "正在创建…",
   duplicateFromHere: "从此版本复制",
   timelineTitle: "版本记录",
-  timelineHint: "灵感定稿与成稿会各记一条；可回到任意一版继续编辑。",
+  timelineHint: "灵感定稿、大纲更新与成稿会各记一条；可回到任意一版继续编辑。",
   empty: "还没有版本记录。确认灵感或完成出稿后会出现。",
   headBadge: "当前",
   restore: "回到这一版",
@@ -416,20 +421,17 @@ export const CONTENT_SETTINGS_PANEL = {
   empty: "还没有 brief 需求。在对话里确认方向后，Agent 会通过工具写入这里。",
 } as const;
 
-/** 对话流 · 制作计划任务列表 */
-export const PRODUCTION_PLAN_TODO = {
-  title: "制作计划",
-  subtitlePlanning: "AI 团队正在拟定任务…",
-  subtitleReady: (pending: number, done: number) =>
-    done > 0
-      ? pending > 0
-        ? `已完成 ${done} 项 · 待执行 ${pending} 项`
-        : `已完成 ${done} 项`
-      : pending > 0
-        ? `待执行 ${pending} 项`
-        : "计划已定稿",
-  empty: "进入创作模式后，任务会显示在这里并随执行更新。",
+/** 作品面板 · 大纲 */
+export const OUTLINE_PANEL = {
+  title: "大纲",
+  hint: "大纲模式里维护内容结构；可随时在对话或侧栏修改",
+  sectionsLabel: "大纲条目",
+  completedLabel: (n: number) => `共 ${n} 条`,
+  clearAll: "清空",
+  empty: "进入大纲模式后，会根据 brief 自动生成；也可在对话里补充、修改。",
 } as const;
+
+/** 对话流 · 大纲进度（已移除，大纲仅在侧栏展示） */
 
 export const PREVIEW_PANEL = {
   title: "内容预览",

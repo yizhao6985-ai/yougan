@@ -13,6 +13,7 @@ export interface WorkAgentContext {
   mode: ChatMode;
   profile: Work["profile"];
   brief: Work["brief"];
+  outline: Work["outline"];
   plan: Work["plan"];
   draft: Work["draft"];
   threadId?: string | null;

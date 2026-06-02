@@ -1,19 +1,18 @@
 import { useMemo } from "react";
 
 import { normalizeBriefSuggestions } from "@/lib/brief-ui-spec";
-import type { ChatMode, YouganValues } from "@/lib/types";
+import type { YouganValues } from "@/lib/types";
 
-export function useBriefSuggestions(
-  mode: ChatMode,
-  input: {
-    values?: YouganValues | null;
-    isLoading: boolean;
-  },
-) {
+export function useBriefSuggestions(input: {
+  values?: YouganValues | null;
+  isLoading: boolean;
+}) {
   const activeSuggestions = useMemo(() => {
-    if (mode !== "inspiration" || input.isLoading) return null;
+    if (input.isLoading) {
+      return null;
+    }
     return normalizeBriefSuggestions(input.values?.briefSuggestions);
-  }, [input.isLoading, input.values?.briefSuggestions, mode]);
+  }, [input.isLoading, input.values?.briefSuggestions]);
 
   return { activeSuggestions };
 }

@@ -50,7 +50,6 @@ function ConversationStreamInner({
     modelTemperature: temperatureControl.temperature,
     onThreadId: conversationsStore.setConversationThreadId,
     onRunComplete: handleRunComplete,
-    onModeFromStream: conversationsStore.syncModeFromStream,
   });
 
   const value: StudioContextValue = {

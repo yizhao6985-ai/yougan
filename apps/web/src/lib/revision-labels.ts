@@ -2,6 +2,7 @@ import type { UserRevisionPhase } from "@/lib/types";
 
 export const REVISION_PHASE_LABELS: Record<UserRevisionPhase, string> = {
   inspiration: "灵感",
+  outline: "大纲",
   draft: "成稿",
 };
 

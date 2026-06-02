@@ -1,15 +1,15 @@
-import { CHAT_MODE_LABELS } from "@/lib/types";
-import type { ChatMode } from "@/lib/types";
-
 export const TOOL_LABELS: Record<string, string> = {
-  switch_mode: "切换模式",
   add_brief_requirement: "确认 brief 需求",
   add_brief_from_ask: "记入 brief",
-  confirm_brief_ready: "brief 定稿",
   confirm_content_spec: "确认内容规格",
   update_brief_requirement: "修改 brief",
   delete_brief_requirement: "删除 brief",
   clear_brief: "清空 brief",
+  add_outline_section: "添加大纲条目",
+  update_outline_section: "修改大纲条目",
+  delete_outline_section: "删除大纲条目",
+  clear_outline: "清空大纲",
+  revise_outline: "调整大纲",
   add_plan_task: "添加制作任务",
   complete_execution: "完成执行",
   update_work_profile: "更新作品特征",
@@ -17,7 +17,7 @@ export const TOOL_LABELS: Record<string, string> = {
   parse_reference_image: "解析参考图片",
   generate_draft: "AI 团队出稿",
   spawn_specialist: "调度专员",
-  revise_production_plan: "调整制作计划",
+  revise_production_plan: "调整创作计划",
 };
 
 const PROFILE_FIELD_LABELS: Record<string, string> = {
@@ -79,23 +79,24 @@ export function getToolInputSummary(
   toolInput: Record<string, unknown>,
 ) {
   switch (toolName) {
-    case "add_plan_task":
+    case "add_outline_section":
     case "add_brief_requirement":
     case "add_brief_from_ask":
     case "update_brief_requirement":
+    case "update_outline_section":
+    case "add_plan_task":
       return readString(toolInput.description);
     case "spawn_specialist":
       return readString(toolInput.brief) || readString(toolInput.department);
+    case "revise_outline":
     case "revise_production_plan":
       return readString(toolInput.reason);
     case "delete_brief_requirement":
       return readString(toolInput.requirement_id) || "删除 brief 条目";
+    case "delete_outline_section":
+      return readString(toolInput.section_id) || "删除大纲条目";
     case "complete_execution":
       return readString(toolInput.summary);
-    case "switch_mode": {
-      const mode = toolInput.mode as ChatMode | undefined;
-      return mode ? `切换到${CHAT_MODE_LABELS[mode]}` : "";
-    }
     case "update_work_profile": {
       const fields = Object.keys(toolInput).filter(
         (key) => toolInput[key] != null && key in PROFILE_FIELD_LABELS,
@@ -108,9 +109,11 @@ export function getToolInputSummary(
     case "parse_reference_image":
       return readString(toolInput.hint) || "解析参考图片风格";
     case "generate_draft":
-      return "AI 团队按制作计划出稿";
+      return "AI 团队按创作计划出稿";
     case "clear_brief":
       return "清空 brief";
+    case "clear_outline":
+      return "清空大纲";
     default:
       return "";
   }

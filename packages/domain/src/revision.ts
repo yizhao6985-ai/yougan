@@ -1,5 +1,6 @@
 import type { WorkBrief } from "./brief.js";
 import type { WorkDraft } from "./draft.js";
+import type { WorkOutline } from "./outline.js";
 import type { WorkProductionPlan } from "./plan.js";
 import type { WorkProfile } from "./profile.js";
 
@@ -7,16 +8,16 @@ import type { WorkProfile } from "./profile.js";
 export interface WorkRevisionSnapshot {
   profile: WorkProfile;
   brief: WorkBrief;
+  outline: WorkOutline;
   plan: WorkProductionPlan;
   draft: WorkDraft | null;
 }
 
-/** 对外展示的版本阶段（仅灵感 / 成稿） */
-export const USER_REVISION_PHASES = ["inspiration", "draft"] as const;
+/** 对外展示的版本阶段 */
+export const USER_REVISION_PHASES = ["inspiration", "outline", "draft"] as const;
 
 export type UserRevisionPhase = (typeof USER_REVISION_PHASES)[number];
 
-/** 版本节点类型（单线时间轴；plan / 操作类仅内部使用） */
 export const REVISION_KINDS = [
   "work_created",
   "work_duplicated",
@@ -26,6 +27,11 @@ export const REVISION_KINDS = [
   "brief_requirement_removed",
   "brief_ready",
   "profile_updated",
+  "outline_section_added",
+  "outline_section_updated",
+  "outline_section_removed",
+  "outline_ready",
+  "outline_revised",
   "plan_ready",
   "plan_revised",
   "execution_complete",
@@ -37,20 +43,26 @@ const INSPIRATION_REVISION_KINDS = new Set<RevisionKind>([
   "brief_requirement_added",
   "brief_requirement_updated",
   "brief_requirement_removed",
-  "brief_ready",
   "profile_updated",
+]);
+
+const OUTLINE_REVISION_KINDS = new Set<RevisionKind>([
+  "outline_section_added",
+  "outline_section_updated",
+  "outline_section_removed",
+  "outline_revised",
 ]);
 
 const DRAFT_REVISION_KINDS = new Set<RevisionKind>(["execution_complete"]);
 
-/** 是否应对用户展示（过滤 plan 与操作类 revision） */
+/** plan 与操作类 revision 不对用户展示 */
 export function isUserVisibleRevisionKind(kind: RevisionKind): boolean {
   return userRevisionPhase(kind) !== null;
 }
 
-/** 映射为用户可见阶段；不可见则返回 null */
 export function userRevisionPhase(kind: RevisionKind): UserRevisionPhase | null {
   if (INSPIRATION_REVISION_KINDS.has(kind)) return "inspiration";
+  if (OUTLINE_REVISION_KINDS.has(kind)) return "outline";
   if (DRAFT_REVISION_KINDS.has(kind)) return "draft";
   return null;
 }

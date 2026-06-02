@@ -1,6 +1,6 @@
 # @yougan/agent
 
-Node.js LangGraph 服务，实现「有感」三模式创作图：**灵感 · 创作 · 提问**。
+Node.js LangGraph 服务，实现「有感」四模式创作图：**灵感 · 大纲 · 创作 · 提问**。
 
 由 `@langchain/langgraph-cli` 在开发模式启动，默认 `http://localhost:2024`。生产环境由 `apps/api` 的 `/langgraph` 代理访问，不应对公网直接暴露（无 JWT 层）。
 
@@ -51,7 +51,7 @@ LangGraph Studio 默认不自动打开浏览器（`--no-browser`）。
 | `MINIMAX_API_KEY` | 是 | 主对话与工具链（Anthropic 兼容端点） |
 | `MINIMAX_CHAT_BASE_URL` | 否 | 默认 `https://api.minimaxi.com/anthropic` |
 | `MINIMAX_CHAT_MODEL` | 否 | 默认 `MiniMax-M2.7` |
-| `DEEPSEEK_API_KEY` | 建议 | 结构化输出：灵感建议、创意总监制作计划 |
+| `DEEPSEEK_API_KEY` | 建议 | 结构化输出：灵感建议、大纲 agent |
 | `LLM_STREAMING` | 否 | 默认 `true` |
 | `MINIMAX_TEMPERATURE` / `DEEPSEEK_TEMPERATURE` | 否 | 默认 `0.7` / `0.3` |
 | `LANGSMITH_*` | 否 | 可选链路追踪 |
@@ -63,17 +63,19 @@ LangGraph Studio 默认不自动打开浏览器（`--no-browser`）。
 - **叶子 node**：`nodes/<name>.ts`（单文件，不建文件夹）
 - **复合 node（子图）**：`nodes/<name>/` 内含 `graph.ts`，可再递归 `conditional-edges/`、`nodes/`
 - **条件边**：`conditional-edges/<边名>.ts`（单文件，如 `after-llm.ts`）
-- **node 实现**：`<动作>.ts`（如 `classify-turn-mode.ts`、`generate-opening-suggestions.ts`）
+- **node 实现**：`<动作>.ts`（如 `resolve-turn-plan.ts`、`generate-opening-suggestions.ts`）
 - **附属模块**：`<node>.<part>.ts`（如 `llm-call.prompt.ts`、`generate-suggestions.logic.ts`）
 - **跨 node 共享**：根目录 `tools/`、`prompt/`、`schema.ts`、`lib/`
 
 ```
 src/
 ├── graph.ts
-├── conditional-edges/route-by-entry.ts
-├── conditional-edges/route-by-mode.ts
+├── conditional-edges/route-by-entry.ts  # 空 thread → 开场建议；否则 resolveTurnQueue
+├── conditional-edges/route-by-turn-task.ts
+├── conditional-edges/route-after-turn-task.ts
 ├── conditional-edges/route-after-subgraph.ts
-├── nodes/resolve-turn-mode/   # classify-turn-mode.ts → 每轮意图 → mode
+├── nodes/resolve-turn-queue/  # 结构化解析本轮任务队列
+├── nodes/turn-task/           # 各任务路径 + dispatch / advance 出队
 ├── nodes/update-brief-suggestions/  # 空 thread 开场 + 灵感回合后快捷选项
 ├── nodes/
 │   ├── inspiration/
@@ -98,28 +100,22 @@ src/
 ## 创作流程
 
 ```text
-灵感模式 ──确认需求/规格──► 切换创作模式
-                              │
-                              ▼
-              创作子图：resolveContentSpec → creativeDirector（制作计划）
-                              │
-                              ▼
-                    llmCall ⇄ tools 出稿环
-                              │
-                              ▼
-                    complete_execution（更新已实现状态）
-
-提问模式：独立 ReAct 环，答疑与创作咨询，不直接改 plan/draft
+用户消息 → resolveTurnQueue（LLM 结构化输出 tasks[]）→ 按序 dispatch → 各任务路径 → advance → 队列空则结束/建议
+任务类型：references / brief / ensure_outline / outline_patch / outline / inspiration / creation / ask
+静默任务（patch）：references、brief、outline_patch、ensure_outline
+对话任务（子图环）：inspiration、outline、creation、ask
 ```
 
-**灵感工具**（`nodes/inspiration/nodes/brief-tools.ts`）：`add_brief_requirement`、`update_brief_requirement`、`delete_brief_requirement`、`clear_brief`、`confirm_brief_ready`。客户确认后才写入 brief，不自动 append 探索性对话。
+**灵感工具**：`add/update/delete_brief_requirement`、`clear_brief`
 
-**创作复合 node**（`nodes/creation/graph.ts`）：
+**大纲工具**（`nodes/outline/`）：`add/update/delete_outline_section`、`clear_outline`、`revise_outline`
+
+**创作子图**：
 
 1. `resolve-content-spec` — 补齐 `profile.content_format` / `media_modality`
-2. `creative-director` — 制定制作计划（`Work.plan`，结构化输出）
+2. `creativeDirector` — 读取当前 outline，生成内部 `Work.plan`（不对用户展示）
 3. `conditional-edges/route-by-modality` — 路由到 llmCall 出稿环
-4. `llmCall` ⇄ `tools` 执行 `generate_draft` + `complete_execution` + `add_plan_task`
+4. `llmCall` ⇄ `tools` — `add_plan_task`、`spawn_specialist`、`generate_draft`、`complete_execution`、`revise_production_plan`
 
 各媒介管线经 `route-by-modality` 汇入同一 `llmCall` 环；体裁约束由 `llm-call.prompt-format.ts` 与 state 注入。
 
@@ -138,12 +134,12 @@ src/
 |------|----------|------|
 | 灵感 / 创作对话与工具 | `llm/dashscope.ts` | qwen3.7-max |
 | 灵感可点击建议 | `nodes/update-brief-suggestions/after-inspiration-turn.ts` | deepseek-v4-pro（结构化，对齐灵感正文方案） |
-| 创意总监制作计划 | `nodes/creation/nodes/creative-director.logic.ts` | deepseek-v4-pro（结构化） |
+| 大纲 agent | `nodes/update-outline/logic.ts` | deepseek-v4-pro（结构化） |
 | 图像生成 | `llm/dashscope-image.ts` → `generateImage()` | qwen-image-2.0-pro |
 
 ## 与 API 的协作
 
-- API 在 `Work` 表保存 `profile`、`brief`、`plan`、`draft`；完整历史在 `WorkRevision` 单线时间轴
+- API 在 `Work` 表保存 `profile`、`brief`、`outline`、`plan`（内部）、`draft`；完整历史在 `WorkRevision` 单线时间轴
 - 前端经 `/langgraph` 代理发起 run，请求头携带 `X-Work-Id`、`X-Conversation-Id`
 - run 前 API 注入作品状态；stream 结束后 `applyAgentRunToWork` 写 revision 并物化 `Work` 列
 - 平行探索（换平台/选题）：`POST /api/works/:id/duplicate` 另存为新作品
@@ -158,10 +154,10 @@ src/
 
 建议按下列顺序阅读（各模块顶部常有注释）：
 
-1. **`schema.ts`** / **`@yougan/domain`** — `WorkBrief` / `WorkProductionPlan` / `WorkDraft` 数据分工
+1. **`schema.ts`** / **`@yougan/domain`** — `WorkBrief` / `WorkOutline`（用户可见）/ `WorkProductionPlan`（内部）/ `WorkDraft`
 2. **`lib/content-spec.ts`** — 体裁/形式枚举与创作 pipeline 路由
-3. **`state.ts`** — 字段与 reducer（`brief`、`plan`、`draft`、`briefSuggestions`）
-4. **`graph.ts`** + **`conditional-edges/route-by-mode.ts`** — 主图 mode 路由
+3. **`state.ts`** — 字段与 reducer（`brief`、`outline`、`plan`、`draft`、`openingBriefSuggestions`、`briefSuggestions`）
+4. **`graph.ts`** + **`conditional-edges/route-by-turn-task.ts`** — 主图任务队列路由
 5. **`nodes/creation/graph.ts`** + **`conditional-edges/route-by-modality.ts`** — 创作复合 node
 6. **`nodes/inspiration/nodes/llm-call.ts`** / **`nodes/tools.ts`** — LLM ⇄ Tool 环
 7. **`nodes/creation/nodes/llm-call.ts`** + **`conditional-edges/after-llm.ts`** — 出稿环

@@ -49,7 +49,7 @@ ${lastAssistantReply}
 4. 互斥、可执行；禁止客服腔；勿与正文分析矛盾
 5. **禁止**生成「补充想法 / 我还有其他想法 / 自由发挥」类兜底选项——这类引导只写在 hint，由用户在输入框自行补充
 
-hint 须提示：点选一条继续；若有其他想法，可在下方输入框补充。`;
+hint：一行操作指引（≤14 字），如「点一条继续，或直接输入」；勿写能力说明或右侧面板。`;
 }
 
 function fallbackAfterInspirationSuggestions(brief: WorkBrief): BriefSuggestions {
@@ -60,8 +60,8 @@ function fallbackAfterInspirationSuggestions(brief: WorkBrief): BriefSuggestions
         newBriefSuggestion("confirm", "补充受众", "还想再明确一下目标受众是谁"),
         newBriefSuggestion(
           "navigate",
-          "开始创作",
-          "brief 差不多了，切换到创作模式开始制作",
+          "进入大纲",
+          "brief 差不多了，进入大纲模式确认结构",
         ),
         newBriefSuggestion("explore", "再对比", "帮我把这几个方向再对比一下"),
       ]

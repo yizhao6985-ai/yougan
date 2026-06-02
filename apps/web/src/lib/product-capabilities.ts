@@ -4,6 +4,7 @@ import {
   FolderKanbanIcon,
   ImageIcon,
   LightbulbIcon,
+  ListTreeIcon,
   MessageSquareTextIcon,
   SparklesIcon,
   WandSparklesIcon,
@@ -45,10 +46,26 @@ export const CREATION_MODES: CapabilityMode[] = [
       "每次问 1–2 个问题，帮你想清楚写什么",
       "确认后的灵感写入侧栏「灵感」",
       "回合结束后自动生成可点选建议",
-      "方向清楚后可进入创作或提问模式",
+      "方向清楚后可进入大纲或提问模式",
     ],
-    avoids: ["不直接写出完整方案或正文", "不执行制作任务"],
+    avoids: ["不直接写出完整方案或正文", "不编辑内容大纲", "不执行制作任务"],
     shortcut: modeShortcutLabel("inspiration"),
+  },
+  {
+    id: "outline",
+    anchor: "outline",
+    icon: ListTreeIcon,
+    tagline: "确认内容结构",
+    summary:
+      "brief 定稿后进入大纲模式，与 AI 一起确认章节、段落要点与叙事顺序，定稿后再进入创作。",
+    highlights: [
+      "自动生成初版大纲，可在侧栏与对话中修改",
+      "条目描述内容结构，不是制作任务",
+      "确认定稿后进入创作模式",
+      "回合结束后给出可点选建议",
+    ],
+    avoids: ["不收集 brief 需求", "不出稿、不执行制作计划"],
+    shortcut: modeShortcutLabel("outline"),
   },
   {
     id: "creation",
@@ -97,11 +114,16 @@ export const WORKFLOW_STEPS = [
   },
   {
     step: "03",
-    title: "创作模式 · AI 团队出稿",
-    body: "AI 团队制定制作计划，文案/设计/音视频按任务在「内容预览」精良交付，可反复修改。",
+    title: "大纲模式 · 确认结构",
+    body: "brief 定稿后自动生成大纲；在大纲模式里确认章节与叙事顺序，定稿后进入创作。",
   },
   {
     step: "04",
+    title: "创作模式 · AI 团队出稿",
+    body: "AI 团队制定内部制作计划，文案/设计/音视频按任务在「内容预览」精良交付，可反复修改。",
+  },
+  {
+    step: "05",
     title: "提问模式 · 随时答疑",
     body: "优化建议、创作方法、行业与平台背景——按问题类型作答，重要结论可记入灵感（任意时刻可切换）。",
   },
@@ -127,6 +149,7 @@ export const STUDIO_PANELS = [
 
 const HOME_TEASER_BODIES: Record<ChatMode, string> = {
   inspiration: "帮你找灵感，理清平台、选题与写法。",
+  outline: "确认章节结构与叙事顺序。",
   creation: "AI 团队定计划，按计划精良制作。",
   ask: "优化建议、创作答疑、行业背景，随时可问。",
 };

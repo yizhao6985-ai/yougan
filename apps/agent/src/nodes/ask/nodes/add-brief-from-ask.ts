@@ -2,13 +2,13 @@ import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
 import { newBriefRequirement } from "../../../schema.js";
-import { parseBrief, parseMode } from "../../../lib/parse-agent-state.js";
+import { parseActiveTurnTask, parseBrief } from "../../../lib/parse-agent-state.js";
 import { getState } from "../../../lib/tool-state.js";
 import { toolCommand } from "../../../lib/tool-command.js";
 
 export const addBriefFromAsk = tool(
   async ({ description }, config) => {
-    if (parseMode(getState()) !== "ask") {
+    if (parseActiveTurnTask(getState()) !== "ask") {
       return toolCommand(config, "add_brief_from_ask 仅在提问模式可用。");
     }
     const trimmed = description.trim();

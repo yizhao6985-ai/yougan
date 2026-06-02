@@ -1,12 +1,13 @@
 /**
- * 把 profile / plan / brief 转成短文本，嵌入各 agent 的系统提示词。
+ * 把 profile / outline / plan / brief 转成短文本，嵌入各 agent 的系统提示词。
  */
 import type {
   WorkBrief,
+  WorkOutline,
   WorkProductionPlan,
   WorkProfile,
 } from "@yougan/domain";
-import { getPlanSummary, isPlanReady } from "@yougan/domain";
+import { getOutlineSummary, getPlanSummary, isPlanReady } from "@yougan/domain";
 import { contentSpecSummary as buildContentSpecSummary } from "../lib/content-spec.js";
 
 export function contentSpecSummary(profile: WorkProfile): string {
@@ -33,20 +34,36 @@ export function profileSummary(profile: WorkProfile): string {
   return parts.length ? parts.join("；") : "尚无已执行特征";
 }
 
+export function outlineSummary(outline: WorkOutline): string {
+  if (!outline.sections.length && !getOutlineSummary(outline)) {
+    return "尚无内容大纲";
+  }
+  const lines: string[] = [`内容大纲（${outline.sections.length} 条）`];
+  if (getOutlineSummary(outline)) {
+    lines.push(`摘要：${getOutlineSummary(outline)}`);
+  }
+  if (outline.sections.length) {
+    lines.push(
+      `条目：${outline.sections.map((s) => s.description).join("；")}`,
+    );
+  }
+  return lines.join("\n");
+}
+
 export function productionPlanSummary(plan: WorkProductionPlan): string {
   if (
     !plan.pending_tasks.length &&
     !plan.executed_tasks.length &&
     !getPlanSummary(plan)
   ) {
-    return "尚无制作计划";
+    return "尚无内部创作计划";
   }
   const lines: string[] = [];
   if (isPlanReady(plan) && getPlanSummary(plan)) {
-    lines.push(`制作计划状态：已定稿`);
+    lines.push(`创作计划：已定稿`);
     lines.push(`计划摘要：${getPlanSummary(plan)}`);
   } else if (plan.pending_tasks.length) {
-    lines.push(`制作计划状态：拟定中（${plan.pending_tasks.length} 项任务）`);
+    lines.push(`创作计划：拟定中（${plan.pending_tasks.length} 项任务）`);
   }
   if (plan.departments?.length) {
     lines.push(`制作部门：${plan.departments.join("、")}`);
@@ -59,7 +76,7 @@ export function productionPlanSummary(plan: WorkProductionPlan): string {
   }
   if (plan.pending_tasks.length) {
     lines.push(
-      `待执行任务（${plan.pending_tasks.length} 项）：${plan.pending_tasks.map((c) => `${c.department ? `[${c.department}]` : ""}${c.description}`).join("；")}`,
+      `待执行任务：${plan.pending_tasks.map((c) => `${c.department ? `[${c.department}]` : ""}${c.description}`).join("；")}`,
     );
   }
   if (plan.executed_tasks.length) {
@@ -75,9 +92,8 @@ export function productionPlanSummary(plan: WorkProductionPlan): string {
 }
 
 export function briefSummary(brief: WorkBrief): string {
-  if (!brief.requirements.length) return "尚无已确认 brief 需求";
-  const ready = brief.ready ? "（已定稿）" : "（未定稿）";
-  return `Brief 需求${ready}（${brief.requirements.length} 条）：${brief.requirements.map((r) => r.description).join("；")}`;
+  if (!brief.requirements.length) return "尚无 brief 需求";
+  return `Brief 需求（${brief.requirements.length} 条）：${brief.requirements.map((r) => r.description).join("；")}`;
 }
 
 export function profileContext(profile: WorkProfile): string {

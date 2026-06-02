@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 
 import { ContentPreview } from "@/components/content-preview";
 import { ContentSettingsPanel } from "@/components/content-settings-panel";
+import { OutlinePanel } from "@/components/outline-panel";
 import { ReferencePanel } from "@/components/reference-panel";
 import { WorkHistoryPanel } from "@/components/studio/work-history-panel";
 import { creativeContextPanelClassNames } from "@/components/studio/creative-context/shared";
@@ -10,11 +11,12 @@ import {
   type CreativeContextTabId,
 } from "@/lib/site-copy";
 import { readStoredString, writeStoredString } from "@/lib/storage-value";
-import type { Work, WorkBrief, WorkDraft, WorkProfile } from "@/lib/types";
+import type { Work, WorkBrief, WorkDraft, WorkOutline, WorkProfile } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const TAB_ORDER: CreativeContextTabId[] = [
   "inspiration",
+  "outline",
   "preview",
   "references",
   "history",
@@ -34,22 +36,30 @@ type CreativeContextPanelContentProps = {
   activeWork: Work | null;
   profile?: WorkProfile;
   brief?: WorkBrief;
+  outline?: WorkOutline;
   draft?: WorkDraft | null;
   onDuplicated?: (workId: string) => void;
   onUpdateRequirement?: (requirementId: string, description: string) => void;
   onDeleteRequirement?: (requirementId: string) => void;
   onClearBrief?: () => void;
+  onUpdateSection?: (sectionId: string, description: string) => void;
+  onDeleteSection?: (sectionId: string) => void;
+  onClearOutline?: () => void;
 };
 
 export function CreativeContextPanelContent({
   activeWork,
   profile,
   brief,
+  outline,
   draft,
   onDuplicated,
   onUpdateRequirement,
   onDeleteRequirement,
   onClearBrief,
+  onUpdateSection,
+  onDeleteSection,
+  onClearOutline,
 }: CreativeContextPanelContentProps) {
   const [activeTab, setActiveTab] = useState<CreativeContextTabId>(readStoredTab);
 
@@ -102,6 +112,23 @@ export function CreativeContextPanelContent({
               onUpdateRequirement={onUpdateRequirement}
               onDeleteRequirement={onDeleteRequirement}
               onClearBrief={onClearBrief}
+            />
+          </div>
+        ) : null}
+
+        {activeTab === "outline" ? (
+          <div
+            role="tabpanel"
+            id="creative-context-panel-outline"
+            aria-labelledby="creative-context-tab-outline"
+          >
+            <OutlinePanel
+              outline={outline}
+              editable={Boolean(activeWork)}
+              compact
+              onUpdateSection={onUpdateSection}
+              onDeleteSection={onDeleteSection}
+              onClearOutline={onClearOutline}
             />
           </div>
         ) : null}

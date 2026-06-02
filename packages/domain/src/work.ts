@@ -1,5 +1,6 @@
 import type { WorkBrief } from "./brief.js";
 import type { WorkDraft } from "./draft.js";
+import type { WorkOutline } from "./outline.js";
 import type { WorkProductionPlan } from "./plan.js";
 import type { WorkProfile } from "./profile.js";
 
@@ -11,6 +12,8 @@ export interface WorkDTO {
   title: string;
   profile: WorkProfile;
   brief: WorkBrief;
+  outline: WorkOutline;
+  /** 内部创作计划，Agent 持久化用；前端默认不展示 */
   plan: WorkProductionPlan;
   draft: WorkDraft | null;
   headRevisionId: string | null;

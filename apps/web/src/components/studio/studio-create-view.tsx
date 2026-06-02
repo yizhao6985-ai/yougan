@@ -5,6 +5,7 @@ import { WorksAside } from "@/components/studio/works-aside";
 import { YouganChat } from "@/components/studio/yougan-chat";
 import { useYouganStreamContext } from "@/components/studio/yougan-stream-provider";
 import { mergeBriefForDisplay } from "@/lib/brief-merge";
+import { mergeOutlineForDisplay } from "@/lib/outline-merge";
 import { CREATIVE_CONTEXT_PANEL } from "@/lib/site-copy";
 
 export function StudioCreateView() {
@@ -15,10 +16,17 @@ export function StudioCreateView() {
     updateBriefRequirement,
     deleteBriefRequirement,
     clearWorkBrief,
+    updateOutlineSection,
+    deleteOutlineSection,
+    clearWorkOutline,
   } = useYouganStreamContext();
 
   const profile = stream.values?.profile ?? activeWork?.profile;
   const brief = mergeBriefForDisplay(activeWork?.brief, stream.values?.brief);
+  const outline = mergeOutlineForDisplay(
+    activeWork?.outline,
+    stream.values?.outline,
+  );
   const draft = activeWork?.draft ?? stream.values?.draft ?? null;
 
   const panelContent = (
@@ -26,6 +34,7 @@ export function StudioCreateView() {
       activeWork={activeWork}
       profile={profile}
       brief={brief}
+      outline={outline}
       draft={draft}
       onDuplicated={selectWork}
       onUpdateRequirement={
@@ -42,6 +51,20 @@ export function StudioCreateView() {
       }
       onClearBrief={
         activeWork ? () => clearWorkBrief(activeWork.id) : undefined
+      }
+      onUpdateSection={
+        activeWork
+          ? (sectionId, description) =>
+              updateOutlineSection(activeWork.id, sectionId, description)
+          : undefined
+      }
+      onDeleteSection={
+        activeWork
+          ? (sectionId) => deleteOutlineSection(activeWork.id, sectionId)
+          : undefined
+      }
+      onClearOutline={
+        activeWork ? () => clearWorkOutline(activeWork.id) : undefined
       }
     />
   );

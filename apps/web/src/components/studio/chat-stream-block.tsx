@@ -16,10 +16,26 @@ export const chatStreamBlock = {
   body: "text-sm leading-7 text-foreground/90",
   muted: "text-sm leading-6 text-muted-foreground",
   caption: "text-xs leading-5 text-muted-foreground",
-  /** 灵感建议选项：更小、加粗，与正文 leading-7 区分 */
+  /** 灵感建议选项：略小于正文，加粗区分 */
   suggestionItem:
-    "text-xs font-semibold leading-5 tracking-wide text-muted-foreground",
-  suggestionItemActive: "font-bold text-foreground/90",
+    "text-xs font-bold leading-snug tracking-tight text-foreground/85",
+  suggestionItemActive: "text-sm leading-snug tracking-tight text-foreground",
+  suggestionIndex:
+    "font-mono text-[11px] font-bold tabular-nums tracking-tighter leading-none",
+  /** 开屏建议气泡：inline 随打字变宽，自由换行 */
+  openingSuggestionText:
+    "text-xs font-bold leading-snug tracking-tight text-foreground/85",
+  openingChip: cn(
+    "inline-flex max-w-full rounded-2xl border border-border/70 bg-muted/30 px-4 py-2.5",
+    "text-left shadow-sm shadow-black/[0.02] transition-colors",
+    "[&_span]:whitespace-normal",
+  ),
+  openingChipInteractive: cn(
+    "hover:border-primary/25 hover:bg-accent/40",
+    "disabled:cursor-not-allowed disabled:opacity-55",
+  ),
+  openingChipPending:
+    "border-primary/40 bg-primary/10 [&_span]:text-sm [&_span]:text-foreground",
   divider: "border-t border-border/60 pt-3",
   header: "flex items-start gap-2.5",
   headerDot: "mt-1.5 size-2 shrink-0 rounded-md",

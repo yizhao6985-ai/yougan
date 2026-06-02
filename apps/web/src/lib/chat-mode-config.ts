@@ -6,8 +6,9 @@ export { CHAT_MODES, CHAT_MODE_LABELS };
 /** Alt/Option + 数字键，顺序与 CHAT_MODES 一致 */
 export const MODE_SHORTCUT_DIGITS: Record<ChatMode, string> = {
   inspiration: "Digit1",
-  creation: "Digit2",
-  ask: "Digit3",
+  outline: "Digit2",
+  creation: "Digit3",
+  ask: "Digit4",
 };
 
 export function isMacPlatform() {

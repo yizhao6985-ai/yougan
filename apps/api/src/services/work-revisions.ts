@@ -13,6 +13,7 @@ import {
   materializeWorkColumns,
   parseBrief,
   parseDraft,
+  parseOutline,
   parsePlan,
   parseProfile,
   parseSnapshot,
@@ -24,12 +25,14 @@ import {
 function snapshotFromWorkColumns(work: {
   profile: unknown;
   brief: unknown;
+  outline: unknown;
   plan: unknown;
   draft: unknown;
 }): WorkRevisionSnapshot {
   return {
     profile: parseProfile(work.profile),
     brief: parseBrief(work.brief),
+    outline: parseOutline(work.outline),
     plan: parsePlan(work.plan),
     draft: parseDraft(work.draft),
   };
@@ -296,6 +299,7 @@ export async function duplicateWorkFromRevision(
         sourceRevisionId,
         profile: columns.profile as object,
         brief: columns.brief as object,
+        outline: columns.outline as object,
         plan: columns.plan as object,
         draft: columns.draft ?? undefined,
       },

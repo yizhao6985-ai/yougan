@@ -12,7 +12,7 @@ import {
 } from "@/hooks/queries/conversations";
 import { queryKeys } from "@/hooks/queries/keys";
 import { ACTIVE_CONVERSATION_BY_WORK_KEY } from "@/lib/env";
-import type { ChatMode, WorkConversation } from "@/lib/types";
+import type { WorkConversation } from "@/lib/types";
 import { normalizeChatMode } from "@/lib/types";
 
 function readActiveConversationMap(): Record<string, string> {
@@ -104,7 +104,7 @@ export function useConversationsStore(workId: string | null) {
   );
 
   const createConversation = useCallback(
-    async (options?: { title?: string; mode?: ChatMode }) => {
+    async (options?: { title?: string }) => {
       const { conversation } = await createConversationMutation.mutateAsync(
         options,
       );
@@ -122,47 +122,6 @@ export function useConversationsStore(workId: string | null) {
       return normalized;
     },
     [createConversationMutation, setActiveConversationMap, workId],
-  );
-
-  const setConversationMode = useCallback(
-    (conversationId: string, mode: ChatMode) => {
-      if (!workId) return;
-      patchConversationsCache(queryClient, workId, (items) =>
-        items.map((item) =>
-          item.id === conversationId ? { ...item, mode } : item,
-        ),
-      );
-      void updateConversationMutation
-        .mutateAsync({ conversationId, patch: { mode } })
-        .catch(() => {
-          void queryClient.invalidateQueries({
-            queryKey: queryKeys.works.conversations(workId),
-          });
-        });
-    },
-    [queryClient, updateConversationMutation, workId],
-  );
-
-  const syncModeFromStream = useCallback(
-    async (conversationId: string, mode: ChatMode) => {
-      if (!workId) return;
-      const current = queryClient
-        .getQueryData<WorkConversation[]>(
-          queryKeys.works.conversations(workId),
-        )
-        ?.find((item) => item.id === conversationId);
-      if (current?.mode === mode) return;
-      patchConversationsCache(queryClient, workId, (items) =>
-        items.map((item) =>
-          item.id === conversationId ? { ...item, mode } : item,
-        ),
-      );
-      await updateConversationMutation.mutateAsync({
-        conversationId,
-        patch: { mode },
-      });
-    },
-    [queryClient, updateConversationMutation, workId],
   );
 
   const setConversationThreadId = useCallback(
@@ -205,8 +164,6 @@ export function useConversationsStore(workId: string | null) {
     conversationsLoading: conversationsQuery.isLoading,
     selectConversation,
     createConversation,
-    setConversationMode,
-    syncModeFromStream,
     setConversationThreadId,
     deleteConversation,
   };

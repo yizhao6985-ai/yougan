@@ -2,13 +2,13 @@ import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
 import { findBriefRequirementIndex, newBriefRequirement } from "@yougan/domain";
-import { parseBrief, parseMode } from "../../../lib/parse-agent-state.js";
+import { parseActiveTurnTask, parseBrief } from "../../../lib/parse-agent-state.js";
 import { getState } from "../../../lib/tool-state.js";
 import { toolCommand } from "../../../lib/tool-command.js";
 
 export const addBriefRequirement = tool(
   async ({ description }, config) => {
-    if (parseMode(getState()) !== "inspiration") {
+    if (parseActiveTurnTask(getState()) !== "inspiration") {
       return toolCommand(config, "add_brief_requirement 仅在灵感模式可用。");
     }
     const trimmed = description.trim();
@@ -39,7 +39,7 @@ export const addBriefRequirement = tool(
 
 export const updateBriefRequirement = tool(
   async ({ requirement_id, description }, config) => {
-    if (parseMode(getState()) !== "inspiration") {
+    if (parseActiveTurnTask(getState()) !== "inspiration") {
       return toolCommand(config, "update_brief_requirement 仅在灵感模式可用。");
     }
     const trimmed = description.trim();
@@ -73,7 +73,7 @@ export const updateBriefRequirement = tool(
 
 export const deleteBriefRequirement = tool(
   async ({ requirement_id }, config) => {
-    if (parseMode(getState()) !== "inspiration") {
+    if (parseActiveTurnTask(getState()) !== "inspiration") {
       return toolCommand(config, "delete_brief_requirement 仅在灵感模式可用。");
     }
 
@@ -94,7 +94,6 @@ export const deleteBriefRequirement = tool(
         brief: {
           ...brief,
           requirements: nextRequirements,
-          ready: nextRequirements.length ? brief.ready : false,
         },
       },
     );
@@ -110,39 +109,17 @@ export const deleteBriefRequirement = tool(
 
 export const clearBrief = tool(
   async (_input, config) => {
-    if (parseMode(getState()) !== "inspiration") {
+    if (parseActiveTurnTask(getState()) !== "inspiration") {
       return toolCommand(config, "clear_brief 仅在灵感模式可用。");
     }
 
     return toolCommand(config, "已清空 brief。", {
-      brief: { requirements: [], ready: false },
+      brief: { requirements: [] },
     });
   },
   {
     name: "clear_brief",
-    description: "清空全部 brief 需求并重置定稿状态。",
-    schema: z.object({}),
-  },
-);
-
-export const confirmBriefReady = tool(
-  async (_input, config) => {
-    if (parseMode(getState()) !== "inspiration") {
-      return toolCommand(config, "confirm_brief_ready 仅在灵感模式可用。");
-    }
-
-    const brief = parseBrief(getState());
-    if (!brief.requirements.length) {
-      return toolCommand(config, "brief 尚无需求，请先确认至少一条。");
-    }
-
-    return toolCommand(config, "brief 已定稿，可进入创作模式。", {
-      brief: { ...brief, ready: true },
-    });
-  },
-  {
-    name: "confirm_brief_ready",
-    description: "客户确认 brief 已定稿时调用；定稿后才建议切换创作模式。",
+    description: "清空全部 brief 需求。",
     schema: z.object({}),
   },
 );

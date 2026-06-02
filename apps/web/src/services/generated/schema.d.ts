@@ -1280,25 +1280,23 @@ export interface components {
             }[];
             ready: boolean;
         };
-        WorkProductionPlan: {
-            pending_tasks: {
+        WorkOutline: {
+            sections: {
                 id: string;
                 description: string;
-                created_at: string;
+                confirmed_at: string;
                 /** @enum {string} */
                 department?: "writing" | "design" | "audio" | "video";
                 /** @enum {string} */
                 status?: "pending" | "in_progress" | "completed";
-                assignee?: string | null;
             }[];
-            executed_tasks: {
+            completed_sections: {
                 id: string;
                 description: string;
-                executed_at: string;
+                completed_at: string;
                 batch_summary?: string | null;
                 /** @enum {string} */
                 department?: "writing" | "design" | "audio" | "video";
-                assignee?: string | null;
             }[];
             last_execution_summary?: string | null;
             ready?: boolean;
@@ -1322,7 +1320,7 @@ export interface components {
             groupId: string | null;
             profile: components["schemas"]["WorkProfile"];
             brief: components["schemas"]["WorkBrief"];
-            plan: components["schemas"]["WorkProductionPlan"];
+            outline: components["schemas"]["WorkOutline"];
             draft: components["schemas"]["WorkDraft"];
             headRevisionId: string | null;
             sourceWorkId: string | null;
@@ -1333,7 +1331,7 @@ export interface components {
         SyncWorkState: {
             groupId?: string | null;
             profile?: components["schemas"]["WorkProfile"];
-            plan?: components["schemas"]["WorkProductionPlan"];
+            outline?: components["schemas"]["WorkOutline"];
             brief?: components["schemas"]["WorkBrief"];
             draft?: components["schemas"]["WorkDraft"];
             title?: string;
@@ -1346,7 +1344,7 @@ export interface components {
             mode: "inspiration" | "creation" | "ask";
             profile: components["schemas"]["WorkProfile"];
             brief: components["schemas"]["WorkBrief"];
-            plan: components["schemas"]["WorkProductionPlan"];
+            outline: components["schemas"]["WorkOutline"];
             draft: components["schemas"]["WorkDraft"];
             threadId?: string | null;
             workTitle?: string;
@@ -1355,7 +1353,7 @@ export interface components {
         WorkRevisionSnapshot: {
             profile: components["schemas"]["WorkProfile"];
             brief: components["schemas"]["WorkBrief"];
-            plan: components["schemas"]["WorkProductionPlan"];
+            outline: components["schemas"]["WorkOutline"];
             draft: components["schemas"]["WorkDraft"];
         };
         WorkRevision: {
@@ -1364,9 +1362,9 @@ export interface components {
             parentRevisionId: string | null;
             conversationId: string | null;
             /** @enum {string} */
-            kind: "work_created" | "work_duplicated" | "work_restored" | "brief_requirement_added" | "brief_requirement_updated" | "brief_requirement_removed" | "brief_ready" | "profile_updated" | "plan_ready" | "plan_revised" | "execution_complete";
+            kind: "work_created" | "work_duplicated" | "work_restored" | "brief_requirement_added" | "brief_requirement_updated" | "brief_requirement_removed" | "brief_ready" | "profile_updated" | "outline_section_added" | "outline_section_updated" | "outline_section_removed" | "outline_ready" | "outline_revised" | "execution_complete";
             /** @enum {string} */
-            phase: "inspiration" | "draft";
+            phase: "inspiration" | "outline" | "draft";
             summary: string;
             snapshot: components["schemas"]["WorkRevisionSnapshot"];
             createdAt: string;

@@ -1,10 +1,15 @@
 import {
   EMPTY_WORK_BRIEF,
+  EMPTY_WORK_OUTLINE,
   EMPTY_WORK_PRODUCTION_PLAN,
   EMPTY_WORK_PROFILE,
+  parseBriefJson,
+  parseOutlineJson,
+  parsePlanJson,
   type RevisionKind,
   type WorkBrief,
   type WorkDraft,
+  type WorkOutline,
   type WorkProductionPlan,
   type WorkProfile,
   type WorkRevisionSnapshot,
@@ -14,6 +19,7 @@ export function emptySnapshot(): WorkRevisionSnapshot {
   return {
     profile: { ...EMPTY_WORK_PROFILE, references: [] },
     brief: { ...EMPTY_WORK_BRIEF },
+    outline: { ...EMPTY_WORK_OUTLINE },
     plan: { ...EMPTY_WORK_PRODUCTION_PLAN },
     draft: null,
   };
@@ -25,6 +31,7 @@ export function parseSnapshot(raw: unknown): WorkRevisionSnapshot {
   return {
     profile: parseProfile(value.profile),
     brief: parseBrief(value.brief),
+    outline: parseOutline(value.outline),
     plan: parsePlan(value.plan),
     draft: parseDraft(value.draft),
   };
@@ -46,29 +53,15 @@ export function parseProfile(raw: unknown): WorkProfile {
 }
 
 export function parseBrief(raw: unknown): WorkBrief {
-  if (!raw || typeof raw !== "object") return { ...EMPTY_WORK_BRIEF };
-  const value = raw as WorkBrief;
-  return {
-    requirements: value.requirements ?? [],
-    ready: value.ready ?? false,
-  };
+  return parseBriefJson(raw);
+}
+
+export function parseOutline(raw: unknown): WorkOutline {
+  return parseOutlineJson(raw);
 }
 
 export function parsePlan(raw: unknown): WorkProductionPlan {
-  if (!raw || typeof raw !== "object") {
-    return { ...EMPTY_WORK_PRODUCTION_PLAN };
-  }
-  const value = raw as WorkProductionPlan;
-  return {
-    pending_tasks: value.pending_tasks ?? [],
-    executed_tasks: value.executed_tasks ?? [],
-    last_execution_summary: value.last_execution_summary ?? null,
-    ready: value.ready ?? false,
-    summary: value.summary ?? null,
-    departments: value.departments ?? [],
-    industry_context: value.industry_context ?? null,
-    director_notes: value.director_notes ?? null,
-  };
+  return parsePlanJson(raw);
 }
 
 export function parseDraft(raw: unknown): WorkDraft | null {
@@ -82,6 +75,7 @@ export function snapshotFromAgentValues(values: Record<string, unknown>): WorkRe
   return {
     profile: parseProfile(values.profile),
     brief: parseBrief(values.brief),
+    outline: parseOutline(values.outline),
     plan: parsePlan(values.plan),
     draft: parseDraft(values.draft),
   };
@@ -103,10 +97,6 @@ export function detectRevisionKind(
     return "execution_complete";
   }
 
-  if (!previous.brief.ready && next.brief.ready) {
-    return "brief_ready";
-  }
-
   if (stableJson(previous.brief.requirements) !== stableJson(next.brief.requirements)) {
     if (next.brief.requirements.length > previous.brief.requirements.length) {
       return "brief_requirement_added";
@@ -117,19 +107,25 @@ export function detectRevisionKind(
     return "brief_requirement_updated";
   }
 
+  if (stableJson(previous.outline.sections) !== stableJson(next.outline.sections)) {
+    if (next.outline.sections.length > previous.outline.sections.length) {
+      return "outline_section_added";
+    }
+    if (next.outline.sections.length < previous.outline.sections.length) {
+      return "outline_section_removed";
+    }
+    return "outline_section_updated";
+  }
+
   if (stableJson(previous.profile) !== stableJson(next.profile)) {
     return "profile_updated";
   }
 
-  if (previous.brief.ready !== next.brief.ready) {
-    return "brief_requirement_updated";
+  if (stableJson(previous.outline) !== stableJson(next.outline)) {
+    return "outline_revised";
   }
 
-  // plan 变更不写入版本轴；仅用于触发物化列更新
-  if (
-    previous.plan.ready !== next.plan.ready &&
-    next.plan.ready
-  ) {
+  if (previous.plan.ready !== next.plan.ready && next.plan.ready) {
     return "plan_ready";
   }
 
@@ -142,16 +138,26 @@ export function detectRevisionKind(
 
 export function revisionSummary(
   kind: RevisionKind,
-  previous: WorkRevisionSnapshot,
+  _previous: WorkRevisionSnapshot,
   next: WorkRevisionSnapshot,
 ): string {
   switch (kind) {
     case "execution_complete":
       return next.plan.last_execution_summary?.trim() || "完成一轮制作执行";
+    case "outline_ready":
+      return next.outline.summary?.trim() || "内容大纲已定稿";
+    case "outline_revised":
+      return "更新内容大纲";
+    case "outline_section_added":
+      return "新增大纲条目";
+    case "outline_section_updated":
+      return "更新大纲条目";
+    case "outline_section_removed":
+      return "删除大纲条目";
     case "plan_ready":
-      return next.plan.summary?.trim() || "制作计划已定稿";
+      return next.plan.summary?.trim() || "创作计划已定稿";
     case "plan_revised":
-      return "更新制作计划";
+      return "更新创作计划";
     case "brief_ready":
       return "创作 brief 已定稿";
     case "brief_requirement_added":
@@ -177,6 +183,7 @@ export function materializeWorkColumns(snapshot: WorkRevisionSnapshot) {
   return {
     profile: snapshot.profile as object,
     brief: snapshot.brief as object,
+    outline: snapshot.outline as object,
     plan: snapshot.plan as object,
     draft: snapshot.draft ? (snapshot.draft as object) : null,
   };

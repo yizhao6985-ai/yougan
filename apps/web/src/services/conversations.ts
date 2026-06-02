@@ -1,5 +1,5 @@
 import { apiFetch } from "@/services/client";
-import type { ChatMode, WorkConversation } from "@/lib/types";
+import type { WorkConversation } from "@/lib/types";
 
 export async function listWorkConversations(workId: string) {
   return apiFetch<{ conversations: WorkConversation[] }>(
@@ -9,7 +9,7 @@ export async function listWorkConversations(workId: string) {
 
 export async function createWorkConversation(
   workId: string,
-  options?: { title?: string; mode?: ChatMode },
+  options?: { title?: string },
 ) {
   return apiFetch<{ conversation: WorkConversation }>(
     `/api/works/${workId}/conversations`,

@@ -43,12 +43,11 @@ export function deleteBriefRequirement(
   return {
     ...base,
     requirements: nextRequirements,
-    ready: nextRequirements.length ? base.ready : false,
   };
 }
 
 export function clearBrief(_brief: WorkBrief | undefined): WorkBrief {
-  return { requirements: [], ready: false };
+  return { requirements: [] };
 }
 
 export function mergeBriefForDisplay(

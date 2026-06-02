@@ -34,7 +34,7 @@ export function mergeBriefState(
   next: WorkBrief,
 ): WorkBrief {
   const base = prev ?? EMPTY_WORK_BRIEF;
-  if (isBriefEmpty(next) && !isBriefEmpty(base) && !next.ready) {
+  if (isBriefEmpty(next) && !isBriefEmpty(base)) {
     return base;
   }
 
@@ -43,8 +43,5 @@ export function mergeBriefState(
     ...next.requirements,
   ]);
 
-  return {
-    requirements,
-    ready: next.ready || base.ready,
-  };
+  return { requirements };
 }

@@ -21,7 +21,12 @@ import {
   deleteBriefRequirement as removeBriefRequirement,
   updateBriefRequirement as replaceBriefRequirement,
 } from "@/lib/brief-merge";
-import type { YouganValues, Work, WorkBrief } from "@/lib/types";
+import {
+  clearOutline,
+  deleteOutlineSection as removeOutlineSection,
+  updateOutlineSection as replaceOutlineSection,
+} from "@/lib/outline-merge";
+import type { YouganValues, Work, WorkBrief, WorkOutline } from "@/lib/types";
 import { useAuthToken } from "@/store/auth";
 import { activeWorkIdAtom } from "@/store/studio";
 
@@ -130,7 +135,7 @@ export function useWorksStore() {
     (workId: string, values: YouganValues) => {
       const patch: Partial<Work> = {};
       if (values.profile !== undefined) patch.profile = values.profile;
-      if (values.plan !== undefined) patch.plan = values.plan;
+      if (values.outline !== undefined) patch.outline = values.outline;
       if (values.brief !== undefined) patch.brief = values.brief;
       if (values.draft !== undefined) patch.draft = values.draft;
       if (!Object.keys(patch).length) return;
@@ -151,6 +156,20 @@ export function useWorksStore() {
       );
       void updateWorkMutation
         .mutateAsync({ workId, patch: { brief } })
+        .catch(() => {
+          void queryClient.invalidateQueries({ queryKey: queryKeys.works.list });
+        });
+    },
+    [queryClient, updateWorkMutation],
+  );
+
+  const patchOutline = useCallback(
+    (workId: string, outline: WorkOutline) => {
+      patchWorksCache(queryClient, (works) =>
+        works.map((work) => (work.id === workId ? { ...work, outline } : work)),
+      );
+      void updateWorkMutation
+        .mutateAsync({ workId, patch: { outline } })
         .catch(() => {
           void queryClient.invalidateQueries({ queryKey: queryKeys.works.list });
         });
@@ -193,6 +212,41 @@ export function useWorksStore() {
     [patchBrief],
   );
 
+  const updateOutlineSection = useCallback(
+    (workId: string, sectionId: string, description: string) => {
+      const current = queryClient
+        .getQueryData<Work[]>(queryKeys.works.list)
+        ?.find((work) => work.id === workId);
+      if (!current) return;
+      const next = replaceOutlineSection(
+        current.outline,
+        sectionId,
+        description,
+      );
+      patchOutline(workId, next);
+    },
+    [patchOutline, queryClient],
+  );
+
+  const deleteOutlineSection = useCallback(
+    (workId: string, sectionId: string) => {
+      const current = queryClient
+        .getQueryData<Work[]>(queryKeys.works.list)
+        ?.find((work) => work.id === workId);
+      if (!current) return;
+      const next = removeOutlineSection(current.outline, sectionId);
+      patchOutline(workId, next);
+    },
+    [patchOutline, queryClient],
+  );
+
+  const clearWorkOutline = useCallback(
+    (workId: string) => {
+      patchOutline(workId, clearOutline(undefined));
+    },
+    [patchOutline],
+  );
+
   const renameWork = useCallback(
     async (workId: string, title: string) => {
       const trimmed = title.trim();
@@ -229,6 +283,9 @@ export function useWorksStore() {
     updateBriefRequirement,
     deleteBriefRequirement,
     clearWorkBrief,
+    updateOutlineSection,
+    deleteOutlineSection,
+    clearWorkOutline,
     renameWork,
     moveWorkToGroup,
   };

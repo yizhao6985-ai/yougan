@@ -1,11 +1,5 @@
 /**
  * LangGraph 运行时状态定义。
- *
- * 作品级长记忆（单线 revision 物化，持久化为 WorkRevision.snapshot）：
- *   profile  → Work.profile
- *   brief    → Work.brief
- *   plan     → Work.plan
- *   draft    → Work.draft
  */
 import {
   Annotation,
@@ -15,13 +9,16 @@ import {
 import type { BaseMessage } from "@langchain/core/messages";
 import {
   EMPTY_WORK_BRIEF,
+  EMPTY_WORK_OUTLINE,
   EMPTY_WORK_PRODUCTION_PLAN,
   EMPTY_WORK_PROFILE,
   mergeBriefState,
+  mergeOutlineState,
   type BriefSuggestions,
-  type ChatMode,
+  type TurnTaskKind,
   type WorkBrief,
   type WorkDraft,
+  type WorkOutline,
   type WorkProductionPlan,
   type WorkProfile,
 } from "@yougan/domain";
@@ -34,9 +31,20 @@ export const AgentState = Annotation.Root({
     reducer: messagesStateReducer,
     default: () => [],
   }),
-  mode: Annotation<ChatMode>({
-    reducer: (prev, next) => next ?? prev ?? "inspiration",
-    default: () => "inspiration",
+  /** 本轮待执行任务队列（队首为当前/下一项） */
+  turnTaskQueue: Annotation<TurnTaskKind[]>({
+    reducer: (_prev, next) => (next === undefined ? _prev ?? [] : next),
+    default: () => [],
+  }),
+  /** 当前正在执行的任务 */
+  activeTurnTask: Annotation<TurnTaskKind | null>({
+    reducer: (_prev, next) => (next === undefined ? _prev ?? null : next),
+    default: () => null,
+  }),
+  /** 本轮已完成任务（用于回合末建议等） */
+  completedTurnTasks: Annotation<TurnTaskKind[]>({
+    reducer: (_prev, next) => (next === undefined ? _prev ?? [] : next),
+    default: () => [],
   }),
   workId: Annotation<string | undefined>({
     reducer: (_prev, next) => next,
@@ -61,9 +69,20 @@ export const AgentState = Annotation.Root({
     },
     default: () => EMPTY_WORK_BRIEF,
   }),
+  outline: Annotation<WorkOutline>({
+    reducer: (prev, next) => {
+      if (next === undefined) return prev ?? EMPTY_WORK_OUTLINE;
+      return mergeOutlineState(prev, next);
+    },
+    default: () => EMPTY_WORK_OUTLINE,
+  }),
   plan: Annotation<WorkProductionPlan>({
     reducer: (_prev, next) => next ?? EMPTY_WORK_PRODUCTION_PLAN,
     default: () => EMPTY_WORK_PRODUCTION_PLAN,
+  }),
+  openingBriefSuggestions: Annotation<BriefSuggestions | null>({
+    reducer: (_prev, next) => (next === undefined ? _prev : next),
+    default: () => null,
   }),
   briefSuggestions: Annotation<BriefSuggestions | null>({
     reducer: (_prev, next) => (next === undefined ? _prev : next),

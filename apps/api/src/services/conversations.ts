@@ -5,7 +5,12 @@ import type { WorkConversationDTO } from "../schemas.js";
 import { getWork } from "./works.js";
 
 function normalizeConversationMode(mode: string): WorkConversationDTO["mode"] {
-  if (mode === "inspiration" || mode === "creation" || mode === "ask") {
+  if (
+    mode === "inspiration" ||
+    mode === "outline" ||
+    mode === "creation" ||
+    mode === "ask"
+  ) {
     return mode;
   }
   return "inspiration";

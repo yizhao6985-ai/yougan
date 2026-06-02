@@ -20,10 +20,6 @@ interface UseYouganStreamOptions {
   modelTemperature: number;
   onThreadId?: (conversationId: string, threadId: string | null) => void;
   onRunComplete?: (workId: string, values: YouganValues) => void;
-  onModeFromStream?: (
-    conversationId: string,
-    mode: NonNullable<YouganValues["mode"]>,
-  ) => void;
 }
 
 export function useYouganStream({
@@ -32,7 +28,6 @@ export function useYouganStream({
   modelTemperature,
   onThreadId,
   onRunComplete,
-  onModeFromStream,
 }: UseYouganStreamOptions) {
   const threadId = conversation?.threadId ?? null;
   const workId = work?.id ?? null;
@@ -71,14 +66,6 @@ export function useYouganStream({
   const bootstrapAttemptedRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!conversationId || !stream.values?.mode) {
-      return;
-    }
-
-    onModeFromStream?.(conversationId, stream.values.mode);
-  }, [conversationId, onModeFromStream, stream.values?.mode]);
-
-  useEffect(() => {
     const wasLoading = wasLoadingRef.current;
     wasLoadingRef.current = stream.isLoading;
 
@@ -101,19 +88,22 @@ export function useYouganStream({
       if (stream.messages.length > 0) return;
 
       if (!options?.force) {
-        const existing = normalizeBriefSuggestions(stream.values?.briefSuggestions);
+        const existing = normalizeBriefSuggestions(
+          stream.values?.openingBriefSuggestions,
+        );
         if (existing) return;
       }
 
       await stream.submit(
         {
-          mode: conversation.mode,
           workId: work.id,
           workTitle: work.title,
           conversationTitle: conversation.title,
           profile: work.profile,
+          outline: work.outline,
           plan: work.plan,
           brief: work.brief,
+          openingBriefSuggestions: null,
           briefSuggestions: null,
           draft: work.draft,
           modelTemperature,
@@ -135,7 +125,9 @@ export function useYouganStream({
     if (bootstrapAttemptedRef.current === conversation.id) return;
     if (stream.isLoading) return;
 
-    const existing = normalizeBriefSuggestions(stream.values?.briefSuggestions);
+    const existing = normalizeBriefSuggestions(
+      stream.values?.openingBriefSuggestions,
+    );
     if (existing) return;
 
     bootstrapAttemptedRef.current = conversation.id;
@@ -147,7 +139,7 @@ export function useYouganStream({
     conversation?.id,
     stream.isLoading,
     stream.messages.length,
-    stream.values?.briefSuggestions,
+    stream.values?.openingBriefSuggestions,
     token,
     work,
   ]);
@@ -167,8 +159,10 @@ export function useYouganStream({
           workTitle: work.title,
           conversationTitle: conversation.title,
           profile: work.profile,
+          outline: work.outline,
           plan: work.plan,
           brief: work.brief,
+          openingBriefSuggestions: null,
           briefSuggestions: null,
           draft: work.draft,
           modelTemperature,

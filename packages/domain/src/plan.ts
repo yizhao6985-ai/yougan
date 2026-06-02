@@ -10,7 +10,7 @@ export const PRODUCTION_DEPARTMENTS: ProductionDepartment[] = [
   "video",
 ];
 
-/** 制作计划任务条目 */
+/** 创作计划任务（内部，不对用户展示） */
 export interface ProductionPlanTask {
   id: string;
   description: string;
@@ -20,7 +20,7 @@ export interface ProductionPlanTask {
   assignee?: string | null;
 }
 
-/** 已在作品中落地的任务批次 */
+/** 已在作品中落地的任务批次（内部） */
 export interface ExecutedPlanTask {
   id: string;
   description: string;
@@ -30,7 +30,7 @@ export interface ExecutedPlanTask {
   assignee?: string | null;
 }
 
-/** 创意总监制作计划，对应 Work.plan */
+/** 创意总监创作计划，对应 Work.plan（内部物化，用户不可见） */
 export interface WorkProductionPlan {
   pending_tasks: ProductionPlanTask[];
   executed_tasks: ExecutedPlanTask[];
@@ -71,5 +71,23 @@ export function newProductionPlanTask(
     created_at: new Date().toISOString(),
     department,
     status: "pending",
+  };
+}
+
+/** 解析 plan JSON */
+export function parsePlanJson(raw: unknown): WorkProductionPlan {
+  if (!raw || typeof raw !== "object") {
+    return { ...EMPTY_WORK_PRODUCTION_PLAN };
+  }
+  const value = raw as WorkProductionPlan;
+  return {
+    pending_tasks: value.pending_tasks ?? [],
+    executed_tasks: value.executed_tasks ?? [],
+    last_execution_summary: value.last_execution_summary ?? null,
+    ready: value.ready ?? false,
+    summary: value.summary ?? null,
+    departments: value.departments ?? [],
+    industry_context: value.industry_context ?? null,
+    director_notes: value.director_notes ?? null,
   };
 }

@@ -7,25 +7,28 @@ import { resolveContentSpec } from "../../../lib/content-spec.js";
 import { departmentBrief } from "../../../lib/industry-prompts.js";
 import { getPlanSummary, type WorkDraft } from "../../../schema.js";
 import {
-  parseMode,
+  parseActiveTurnTask,
   parseModelTemperature,
+  parseOutline,
   parseProductionPlan,
   parseProfile,
 } from "../../../lib/parse-agent-state.js";
 import { getState } from "../../../lib/tool-state.js";
 import { toolCommand } from "../../../lib/tool-command.js";
+import { outlineSummary } from "../../../prompt/context.js";
 
 import { DEPARTMENT_LABELS } from "./shared.js";
 
 export const spawnSpecialist = tool(
   async ({ department, brief, specialist_name }, config) => {
     const state = getState();
-    if (parseMode(state) !== "creation") {
+    if (parseActiveTurnTask(state) !== "creation") {
       return toolCommand(config, "spawn_specialist 仅在创作模式可用。");
     }
 
     const profile = resolveContentSpec(parseProfile(state));
     const plan = parseProductionPlan(state);
+    const outline = parseOutline(state);
     const label = DEPARTMENT_LABELS[department];
     const name = specialist_name?.trim() || label;
     const industry = plan.industry_context ?? "";
@@ -40,10 +43,11 @@ export const spawnSpecialist = tool(
 
 作品主题：${profile.content_topic ?? "未指定"}
 平台：${profile.platform ?? "未指定"}
-制作计划：${getPlanSummary(plan) ?? "无"}
+内容大纲：${outlineSummary(outline)}
+创作计划：${getPlanSummary(plan) ?? "无"}
 行业背景：${industry}
 
-请输出该部门的专业交付物（设计稿描述/口播稿/分镜脚本等），用 Markdown 格式。`;
+请输出该部门的专业交付物，用 Markdown 格式。`;
 
     let output: string;
     try {
@@ -85,7 +89,7 @@ export const spawnSpecialist = tool(
   {
     name: "spawn_specialist",
     description:
-      "临时创建部门专员执行任务。design=配图方案；audio=口播/播客稿；video=分镜脚本；writing 请用 generate_draft。",
+      "临时创建部门专员执行任务。design=配图；audio=口播；video=分镜；writing 请用 generate_draft。",
     schema: z.object({
       department: z
         .enum(["writing", "design", "audio", "video"])
@@ -94,7 +98,7 @@ export const spawnSpecialist = tool(
       specialist_name: z
         .string()
         .optional()
-        .describe("专员称呼，如「封面设计师小李」"),
+        .describe("专员称呼"),
     }),
   },
 );

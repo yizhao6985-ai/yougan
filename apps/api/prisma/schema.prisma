@@ -137,7 +137,9 @@ model Work {
   profile            Json                @default("{}")
   /// 物化视图：已确认 brief
   brief              Json                @default("{}")
-  /// 物化视图：制作计划
+  /// 物化视图：作品大纲（用户可见）
+  outline            Json                @default("{}")
+  /// 物化视图：内部创作计划（不对用户展示）
   plan               Json                @default("{}")
   /// 物化视图：最新成稿
   draft              Json?
@@ -172,7 +174,7 @@ model WorkConversation {
   workId    String
   work      Work     @relation(fields: [workId], references: [id], onDelete: Cascade)
   title     String   @default("新对话")
-  /// 对话模式：inspiration | creation | ask
+  /// 对话模式：inspiration | outline | creation | ask
   mode      String   @default("inspiration")
   threadId  String?
   createdAt DateTime @default(now())

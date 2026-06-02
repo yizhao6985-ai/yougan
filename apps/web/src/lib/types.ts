@@ -4,6 +4,7 @@ export type {
   BriefSuggestions,
   ChatMode,
   ExecutedPlanTask,
+  OutlineSection,
   ProductionDepartment,
   ProductionPlanTask,
   ReferenceItem,
@@ -12,12 +13,14 @@ export type {
   WorkBrief,
   WorkDraft,
   WorkDTO,
+  WorkOutline,
   WorkProductionPlan,
   WorkProfile,
   WorkRevisionDTO,
   WorkRevisionSnapshot,
   YouganAgentState,
   YouganStreamValues,
+  TurnTaskKind,
 } from "@yougan/domain";
 
 export {
@@ -25,18 +28,29 @@ export {
   CHAT_MODE_LABELS,
   DEFAULT_BRIEF_SUGGESTIONS_HINT,
   EMPTY_WORK_BRIEF,
+  EMPTY_WORK_OUTLINE,
   EMPTY_WORK_PRODUCTION_PLAN,
   EMPTY_WORK_PROFILE,
+  getOutlineSummary,
   getPlanSummary,
+  hasBriefContent,
+  hasOutlineContent,
   isPlanReady,
   mergeBriefState,
+  mergeOutlineState,
   newBriefRequirement,
+  parseBriefJson,
+  parseOutlineJson,
+  parsePlanJson,
   REVISION_KINDS,
   USER_REVISION_PHASES,
+  TURN_TASK_KINDS,
 } from "@yougan/domain";
 
 export function normalizeChatMode(mode: string): import("@yougan/domain").ChatMode {
-  if ((["inspiration", "creation", "ask"] as const).includes(mode as never)) {
+  if (
+    (["inspiration", "outline", "creation", "ask"] as const).includes(mode as never)
+  ) {
     return mode as import("@yougan/domain").ChatMode;
   }
   return "inspiration";
@@ -55,6 +69,7 @@ export interface Work {
   groupId: string | null;
   profile: import("@yougan/domain").WorkProfile;
   brief: import("@yougan/domain").WorkBrief;
+  outline: import("@yougan/domain").WorkOutline;
   plan: import("@yougan/domain").WorkProductionPlan;
   draft: import("@yougan/domain").WorkDraft | null;
   headRevisionId: string | null;

@@ -1,29 +1,21 @@
 import type { Work } from "@/lib/types";
 import {
-  EMPTY_WORK_BRIEF,
-  EMPTY_WORK_PRODUCTION_PLAN,
   EMPTY_WORK_PROFILE,
+  parseBriefJson,
+  parseOutlineJson,
+  parsePlanJson,
 } from "@/lib/types";
 
+function normalizeOutline(outline: Work["outline"] | undefined): Work["outline"] {
+  return parseOutlineJson(outline);
+}
+
 function normalizePlan(plan: Work["plan"] | undefined): Work["plan"] {
-  return {
-    ...EMPTY_WORK_PRODUCTION_PLAN,
-    ...plan,
-    pending_tasks: plan?.pending_tasks ?? [],
-    executed_tasks: plan?.executed_tasks ?? [],
-    ready: plan?.ready ?? false,
-    summary: plan?.summary ?? null,
-    director_notes: plan?.director_notes ?? null,
-  };
+  return parsePlanJson(plan);
 }
 
 function normalizeBrief(brief: Work["brief"] | undefined): Work["brief"] {
-  return {
-    ...EMPTY_WORK_BRIEF,
-    ...brief,
-    requirements: brief?.requirements ?? [],
-    ready: brief?.ready ?? false,
-  };
+  return parseBriefJson(brief);
 }
 
 export function normalizeWork(work: Work): Work {
@@ -34,6 +26,7 @@ export function normalizeWork(work: Work): Work {
     sourceWorkId: work.sourceWorkId ?? null,
     sourceRevisionId: work.sourceRevisionId ?? null,
     profile: work.profile ?? { ...EMPTY_WORK_PROFILE, references: [] },
+    outline: normalizeOutline(work.outline),
     plan: normalizePlan(work.plan),
     brief: normalizeBrief(work.brief),
     draft: work.draft ?? null,

@@ -9,8 +9,8 @@ import { createChatModel } from "../llm/dashscope.js";
 import type { ReferenceItem } from "../schema.js";
 import { parseProfile } from "../lib/parse-agent-state.js";
 import { truncateMessageContent } from "../lib/message-content.js";
+import { getLatestHumanMessageImageUrls } from "../lib/human-message/index.js";
 import {
-  getLatestHumanMessageImageUrls,
   listKnownReferenceImageUrls,
   resolveReferenceImageUrl,
   upsertImageReference,

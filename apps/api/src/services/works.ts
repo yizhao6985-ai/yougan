@@ -1,6 +1,7 @@
 import { Prisma, type Work } from "@prisma/client";
 import {
   EMPTY_WORK_BRIEF,
+  EMPTY_WORK_OUTLINE,
   EMPTY_WORK_PRODUCTION_PLAN,
   EMPTY_WORK_PROFILE,
 } from "@yougan/domain";
@@ -14,12 +15,24 @@ import {
   duplicateWorkFromRevision,
   parseSnapshot,
 } from "./work-revisions.js";
-import { materializeWorkColumns, parseBrief, parseDraft, parsePlan, parseProfile } from "./revisions.js";
+import {
+  materializeWorkColumns,
+  parseBrief,
+  parseDraft,
+  parseOutline,
+  parsePlan,
+  parseProfile,
+} from "./revisions.js";
 
 type ChatMode = (typeof CHAT_MODES)[number];
 
 function normalizeWorkMode(mode: string): ChatMode {
-  if (mode === "inspiration" || mode === "creation" || mode === "ask") {
+  if (
+    mode === "inspiration" ||
+    mode === "outline" ||
+    mode === "creation" ||
+    mode === "ask"
+  ) {
     return mode;
   }
   return "inspiration";
@@ -32,6 +45,7 @@ function toWorkDTO(work: Work): WorkDTO {
     groupId: work.groupId,
     profile: parseProfile(work.profile),
     brief: parseBrief(work.brief),
+    outline: parseOutline(work.outline),
     plan: parsePlan(work.plan),
     draft: parseDraft(work.draft),
     headRevisionId: work.headRevisionId,
@@ -70,6 +84,7 @@ export async function createWork(
         title: title?.trim() || "未命名作品",
         profile: EMPTY_WORK_PROFILE as unknown as Prisma.InputJsonValue,
         brief: EMPTY_WORK_BRIEF as unknown as Prisma.InputJsonValue,
+        outline: EMPTY_WORK_OUTLINE as unknown as Prisma.InputJsonValue,
         plan: EMPTY_WORK_PRODUCTION_PLAN as unknown as Prisma.InputJsonValue,
       },
     });
@@ -116,6 +131,7 @@ export async function updateWork(
     title: string;
     groupId: string | null;
     profile: unknown;
+    outline: unknown;
     plan: unknown;
     brief: unknown;
     draft: unknown | null;
@@ -139,6 +155,9 @@ export async function updateWork(
   }
   if (data.profile !== undefined) {
     updateData.profile = data.profile as Prisma.InputJsonValue;
+  }
+  if (data.outline !== undefined) {
+    updateData.outline = data.outline as Prisma.InputJsonValue;
   }
   if (data.plan !== undefined) {
     updateData.plan = data.plan as Prisma.InputJsonValue;
@@ -197,6 +216,7 @@ export async function getAgentContext(
     mode,
     profile: parseProfile(work.profile),
     brief: parseBrief(work.brief),
+    outline: parseOutline(work.outline),
     plan: parsePlan(work.plan),
     draft: parseDraft(work.draft),
     threadId,

@@ -5,17 +5,22 @@ import { env } from "../env.js";
 import type { AgentStateType } from "../state.js";
 import {
   EMPTY_WORK_BRIEF,
+  EMPTY_WORK_OUTLINE,
   EMPTY_WORK_PRODUCTION_PLAN,
   EMPTY_WORK_PROFILE,
-  CHAT_MODES,
-  type ChatMode,
+  type TurnTaskKind,
   type WorkBrief,
+  type WorkOutline,
   type WorkProductionPlan,
   type WorkProfile,
 } from "../schema.js";
 
 export function parseProfile(state: AgentStateType): WorkProfile {
   return state.profile ?? EMPTY_WORK_PROFILE;
+}
+
+export function parseOutline(state: AgentStateType): WorkOutline {
+  return state.outline ?? EMPTY_WORK_OUTLINE;
 }
 
 export function parseProductionPlan(state: AgentStateType): WorkProductionPlan {
@@ -26,12 +31,18 @@ export function parseBrief(state: AgentStateType): WorkBrief {
   return state.brief ?? EMPTY_WORK_BRIEF;
 }
 
-export function parseMode(state: AgentStateType): ChatMode {
-  const mode = state.mode ?? "inspiration";
-  if ((CHAT_MODES as readonly string[]).includes(mode)) {
-    return mode;
-  }
-  return "inspiration";
+export function parseTurnTaskQueue(state: AgentStateType): TurnTaskKind[] {
+  return state.turnTaskQueue ?? [];
+}
+
+export function parseActiveTurnTask(
+  state: AgentStateType,
+): TurnTaskKind | null {
+  return state.activeTurnTask ?? null;
+}
+
+export function parseCompletedTurnTasks(state: AgentStateType): TurnTaskKind[] {
+  return state.completedTurnTasks ?? [];
 }
 
 export function parseModelTemperature(state: AgentStateType): number {

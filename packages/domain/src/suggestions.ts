@@ -13,8 +13,7 @@ export interface BriefSuggestions {
   suggestions: BriefSuggestion[];
 }
 
-export const DEFAULT_BRIEF_SUGGESTIONS_HINT =
-  "点选一条继续；若有其他想法，可直接在下方输入框补充。";
+export const DEFAULT_BRIEF_SUGGESTIONS_HINT = "点一条继续，或直接输入";
 
 export function newBriefSuggestion(
   kind: BriefSuggestion["kind"],

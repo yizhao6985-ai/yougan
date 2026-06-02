@@ -7,18 +7,13 @@ export interface BriefRequirement {
   confirmed_at: string;
 }
 
-/**
- * 创作 brief：灵感模式确认后的需求集合。
- * ready=true 表示 brief 已定稿，可进入创作模式。
- */
+/** 创作 brief：灵感模式确认的实时需求集合 */
 export interface WorkBrief {
   requirements: BriefRequirement[];
-  ready: boolean;
 }
 
 export const EMPTY_WORK_BRIEF: WorkBrief = {
   requirements: [],
-  ready: false,
 };
 
 export function newBriefRequirement(description: string): BriefRequirement {
@@ -27,4 +22,17 @@ export function newBriefRequirement(description: string): BriefRequirement {
     description,
     confirmed_at: new Date().toISOString(),
   };
+}
+
+export function hasBriefContent(brief: WorkBrief): boolean {
+  return brief.requirements.length > 0;
+}
+
+/** 解析 brief JSON，忽略旧版 ready 字段 */
+export function parseBriefJson(raw: unknown): WorkBrief {
+  if (!raw || typeof raw !== "object") {
+    return { ...EMPTY_WORK_BRIEF };
+  }
+  const value = raw as WorkBrief;
+  return { requirements: value.requirements ?? [] };
 }

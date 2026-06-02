@@ -15,10 +15,10 @@ import { UploadReferenceButton } from "@/components/studio/upload-reference-butt
 import { useYouganStreamContext } from "@/components/studio/yougan-stream-provider";
 import { scene } from "@/lib/scene-styles";
 import { CHAT_COPY } from "@/lib/site-copy";
-import type { ChatMode } from "@/lib/types";
+import type { TurnTaskKind } from "@/lib/types";
 
 type StudioChatComposerProps = {
-  effectiveMode: ChatMode;
+  activeTurnTask?: TurnTaskKind;
   input: string;
   onInputChange: (value: string) => void;
   onSend: (payload: { text: string; imageUrls: string[] }) => void | Promise<void>;
@@ -26,7 +26,7 @@ type StudioChatComposerProps = {
 };
 
 export function StudioChatComposer({
-  effectiveMode,
+  activeTurnTask,
   input,
   onInputChange,
   onSend,
@@ -74,7 +74,7 @@ export function StudioChatComposer({
       <PromptInputFooter>
         <PromptInputTools className="flex-wrap gap-2">
           <UploadReferenceButton />
-          {effectiveMode === "creation" ? (
+          {activeTurnTask === "creation" ? (
             <ModelTemperatureControl
               level={modelTemperatureLevel}
               onChange={setModelTemperatureLevel}

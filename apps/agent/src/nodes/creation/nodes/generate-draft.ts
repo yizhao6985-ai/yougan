@@ -14,15 +14,22 @@ import {
   invokeStructuredOutput,
   streamStructuredOutput,
 } from "../../../lib/structured-output.js";
-import { getPlanSummary, isPlanReady, type WorkDraft } from "../../../schema.js";
+import {
+  getOutlineSummary,
+  getPlanSummary,
+  hasOutlineContent,
+  isPlanReady,
+  type WorkDraft,
+} from "../../../schema.js";
 import { buildFormatGenerationGuidance } from "./llm-call.prompt-format.js";
 import {
   WorkDraftPayloadSchema,
   type WorkDraftPayload,
 } from "./schema.js";
 import {
-  parseMode,
+  parseActiveTurnTask,
   parseModelTemperature,
+  parseOutline,
   parseProductionPlan,
   parseProfile,
 } from "../../../lib/parse-agent-state.js";
@@ -33,19 +40,24 @@ import { profileReady } from "./shared.js";
 export const generateDraft = tool(
   async (_input, config) => {
     const state = getState();
-    if (parseMode(state) !== "creation") {
+    if (parseActiveTurnTask(state) !== "creation") {
       return toolCommand(config, "generate_draft 仅在创作模式可用。");
     }
     const profile = resolveContentSpec(parseProfile(state));
+    const outline = parseOutline(state);
     const plan = parseProductionPlan(state);
+
+    if (!hasOutlineContent(outline)) {
+      return toolCommand(config, "生成被阻止：尚无内容大纲条目。");
+    }
     if (!plan.pending_tasks.length) {
       return toolCommand(
         config,
-        "生成被阻止：请先 add_plan_task 记录待执行任务。",
+        "生成被阻止：内部创作计划尚无待执行任务。",
       );
     }
     if (!isPlanReady(plan)) {
-      return toolCommand(config, "生成被阻止：制作计划尚未定稿。");
+      return toolCommand(config, "生成被阻止：创作计划尚未就绪。");
     }
     if (!profileReady(profile)) {
       return toolCommand(
@@ -71,7 +83,8 @@ export const generateDraft = tool(
 
     const prompt = `为 ${profile.platform} 生成发布文案（文案总监执行）。
 
-制作计划摘要：${getPlanSummary(plan) ?? "无"}
+内容大纲：${getOutlineSummary(outline) ?? "无"}
+创作计划摘要：${getPlanSummary(plan) ?? "无"}
 
 待执行任务（必须全部体现）：
 ${pending}
@@ -94,7 +107,7 @@ ${formatGuidance}
     try {
       const input = [
         new HumanMessage(
-          `你是资深文案总监，根据制作计划生成发布文案。\n\n${prompt}`,
+          `你是资深文案总监，根据创作计划生成发布文案。\n\n${prompt}`,
         ),
       ];
       const structuredOptions = { name: "work_draft" } as const;
@@ -138,7 +151,7 @@ ${formatGuidance}
   },
   {
     name: "generate_draft",
-    description: "文案总监根据待执行任务与制作计划生成或更新成稿，写入 draft。",
+    description: "文案总监根据内部创作计划生成或更新成稿。",
     schema: z.object({}),
   },
 );
