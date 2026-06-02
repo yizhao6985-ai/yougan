@@ -1,28 +1,29 @@
 /**
- * 新对话空 thread：按对话标题与模式生成 3 条开场建议。
+ * 新对话空 thread：按对话标题与模式生成开场可点击建议。
  */
 import { HumanMessage } from "@langchain/core/messages";
 
 import { createStructuredModel } from "../../llm/dashscope.js";
 import { invokeStructuredOutput } from "../../lib/structured-output.js";
-import { parseMode, parseBrief } from "../../lib/parse-agent-state.js";
+import { parseBrief, parseMode } from "../../lib/parse-agent-state.js";
 import {
   DEFAULT_BRIEF_SUGGESTIONS_HINT,
   newBriefSuggestion,
-  type ChatMode,
   type BriefSuggestions,
+  type ChatMode,
 } from "../../schema.js";
 import type { AgentStateType } from "../../state.js";
-import { buildConversationRecommendationsPrompt } from "./prompt.js";
+import { buildOpeningSuggestionsPrompt } from "./opening-prompt.js";
 import { ConversationRecommendationsResponseSchema } from "./schema.js";
+import { dropGenericSupplementOptions } from "./sanitize-suggestions.js";
 
 const OPENING_HINT_BY_MODE: Record<ChatMode, string> = {
-  inspiration: "根据对话主题，点选一条开始探索，或在下方自由输入。",
-  ask: "点选一个问题开始，或在下方自由输入。",
-  creation: "点选一项开始创作，或在下方自由输入。",
+  inspiration: "点选一条开始探索；若有其他想法，可直接在下方输入框补充。",
+  ask: "点选一个问题开始；也可在下方输入框自由提问。",
+  creation: "点选一项开始创作；若有补充说明，可在下方输入框填写。",
 };
 
-function fallbackSuggestions(mode: ChatMode): BriefSuggestions {
+function fallbackOpeningSuggestions(mode: ChatMode): BriefSuggestions {
   const byMode: Record<ChatMode, BriefSuggestions> = {
     inspiration: {
       hint: OPENING_HINT_BY_MODE.inspiration,
@@ -80,13 +81,13 @@ function fallbackSuggestions(mode: ChatMode): BriefSuggestions {
   return byMode[mode];
 }
 
-export async function generateConversationRecommendations(
+export async function generateOpeningBriefSuggestions(
   state: AgentStateType,
 ): Promise<BriefSuggestions> {
   const mode = parseMode(state);
   const brief = parseBrief(state);
   const llm = createStructuredModel({ temperature: 0.6 });
-  const prompt = buildConversationRecommendationsPrompt(state);
+  const prompt = buildOpeningSuggestionsPrompt(state);
 
   try {
     const parsed = await invokeStructuredOutput(
@@ -100,12 +101,14 @@ export async function generateConversationRecommendations(
         parsed.hint?.trim() ||
         OPENING_HINT_BY_MODE[mode] ||
         DEFAULT_BRIEF_SUGGESTIONS_HINT,
-      suggestions: parsed.suggestions.map((s) =>
-        newBriefSuggestion(s.kind, s.label, s.message),
+      suggestions: dropGenericSupplementOptions(
+        parsed.suggestions.map((s) =>
+          newBriefSuggestion(s.kind, s.label, s.message),
+        ),
       ),
     };
   } catch {
-    const fallback = fallbackSuggestions(mode);
+    const fallback = fallbackOpeningSuggestions(mode);
     if (brief.requirements.length > 0 && mode === "inspiration") {
       return {
         hint: fallback.hint,
@@ -117,8 +120,8 @@ export async function generateConversationRecommendations(
           ),
           newBriefSuggestion(
             "explore",
-            "问问建议",
-            "这个方向怎么做得更好？给我一些具体建议",
+            "深入方案一",
+            "我更倾向刚才提到的第一个方向，想再展开聊聊",
           ),
           newBriefSuggestion(
             "navigate",

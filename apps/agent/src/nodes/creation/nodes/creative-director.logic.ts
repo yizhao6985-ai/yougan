@@ -10,6 +10,7 @@ import {
   productionPlanSummary,
   profileSummary,
 } from "../../../prompt/context.js";
+import { YOUGAN_USER_LABEL } from "../../../prompt/persona.js";
 import {
   departmentsBrief,
   resolveIndustryContext,
@@ -49,9 +50,9 @@ function buildCreativeDirectorPrompt(state: AgentStateType): string {
   const plan = parseProductionPlan(state);
   const industry = resolveIndustryContext(profile);
 
-  return `你是创意总监，负责为客户作品制定整体制作计划。
+  return `你是创意总监（内部角色，不对${YOUGAN_USER_LABEL}直接说话），负责为${YOUGAN_USER_LABEL}的作品制定整体制作计划。
 
-客户需求（已确认 brief）：
+${YOUGAN_USER_LABEL}已确认的创作需求（brief）：
 ${briefSummary(brief)}
 
 作品特征：

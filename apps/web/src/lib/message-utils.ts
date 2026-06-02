@@ -191,6 +191,67 @@ export type RenderItem =
       content: string;
     };
 
+/** 按 message id 合并（与 LangGraph messagesStateReducer 一致：同 id 替换）。 */
+export function mergeMessagesById(
+  existing: Message[],
+  incoming: Message[],
+): Message[] {
+  const merged = [...existing];
+  const indexById = new Map<string, number>();
+
+  for (let i = 0; i < merged.length; i += 1) {
+    const id = merged[i]?.id;
+    if (id) indexById.set(id, i);
+  }
+
+  for (const message of incoming) {
+    const id = message.id;
+    if (!id) {
+      merged.push(message);
+      continue;
+    }
+    const index = indexById.get(id);
+    if (index !== undefined) {
+      merged[index] = message;
+    } else {
+      indexById.set(id, merged.length);
+      merged.push(message);
+    }
+  }
+
+  return merged;
+}
+
+/**
+ * 将 LangGraph updates 事件（节点内 pushMessage / 局部写入）合并进 values 形态的全量 state。
+ */
+export function applyGraphUpdatesToValues<T extends { messages?: Message[] }>(
+  prev: T,
+  update: Record<string, unknown>,
+): T {
+  let messages = [...(prev.messages ?? [])];
+  let next = { ...prev } as T;
+
+  for (const [key, raw] of Object.entries(update)) {
+    if (key === "__metadata__") continue;
+    if (!raw || typeof raw !== "object") continue;
+
+    const patch = raw as Record<string, unknown>;
+    if ("messages" in patch) {
+      const incoming = patch.messages;
+      const list = (
+        Array.isArray(incoming) ? incoming : incoming != null ? [incoming] : []
+      ) as Message[];
+      messages = mergeMessagesById(messages, list);
+      continue;
+    }
+
+    next = { ...next, ...(patch as Partial<T>) };
+  }
+
+  return { ...next, messages };
+}
+
 function findLastMessageIndex(
   messages: Message[],
   type: "human" | "ai",

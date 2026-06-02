@@ -27,7 +27,7 @@
 | 作品分组 | 栏目/系列管理 | 已实现 | `WorkGroup` |
 | 三模式对话 | 灵感/创作/提问 | 已实现 | LangGraph `yougan` graph |
 | 创作脉络侧栏 | 状态可视化 | 已实现 | 灵感、制作计划、预览、参考素材 |
-| 灵感可点击建议 | 回合内 AI 生成选项 | 已实现 | 主 graph `generateSuggestions` |
+| 灵感可点击建议 | 回合内 AI 生成选项 | 已实现 | 主 graph `updateBriefSuggestions`（灵感回合后；提问/创作不出建议） |
 | 结构化灵感选项 | 点选即发送 | 已实现 | `inspirationChoices`（当轮有效） |
 | 模式快捷键/指令 | 高效切换 | 已实现 | `chat-mode-config` |
 | 创意度滑杆 | 控制 AI 新颖度 | 已实现 | `modelTemperature` 0.1–1.0 |

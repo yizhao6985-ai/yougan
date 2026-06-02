@@ -1,15 +1,18 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
+import type { Message } from "@langchain/langgraph-sdk";
 import { useStream } from "@langchain/langgraph-sdk/react";
 
 import { buildHumanMessageContent } from "@/lib/build-human-message-content";
 import { normalizeBriefSuggestions } from "@/lib/brief-ui-spec";
-import { YOUGAN_ASSISTANT_ID, getYouganThreadState } from "@/lib/yougan-chat-api";
+import { applyGraphUpdatesToValues } from "@/lib/message-utils";
+import { YOUGAN_ASSISTANT_ID } from "@/lib/yougan-chat-api";
 import { LANGGRAPH_API_URL } from "@/lib/env";
-import type { BriefSuggestions, YouganValues, Work, WorkConversation } from "@/lib/types";
+import type { YouganValues, Work, WorkConversation } from "@/lib/types";
 import { useAuthToken } from "@/store/auth";
 
-const STREAM_MODES = ["messages-tuple", "updates", "values"] as const;
+/** LangGraph run 的 streamMode：values（每步全量 state）。节点内 token 增量走 updates，由 onUpdateEvent 合并。 */
+const LANGGRAPH_STREAM_MODE = ["values"] as const;
 
 interface UseYouganStreamOptions {
   work: Work | null;
@@ -54,12 +57,18 @@ export function useYouganStream({
     onThreadId: (id) => {
       if (conversationId) onThreadId?.(conversationId, id);
     },
+    onUpdateEvent: (update, { mutate }) => {
+      mutate((prev) =>
+        applyGraphUpdatesToValues(
+          (prev ?? {}) as YouganValues & { messages?: Message[] },
+          update as Record<string, unknown>,
+        ),
+      );
+    },
   });
 
   const wasLoadingRef = useRef(false);
   const bootstrapAttemptedRef = useRef<string | null>(null);
-  const [threadSuggestions, setThreadSuggestions] =
-    useState<BriefSuggestions | null>(null);
 
   useEffect(() => {
     if (!conversationId || !stream.values?.mode) {
@@ -85,36 +94,6 @@ export function useYouganStream({
     workId,
   ]);
 
-  useEffect(() => {
-    if (stream.isLoading || !threadId) return;
-
-    let cancelled = false;
-    void getYouganThreadState(threadId, defaultHeaders)
-      .then((state) => {
-        if (cancelled) return;
-        const values = state.values as YouganValues | undefined;
-        const suggestions = normalizeBriefSuggestions(values?.briefSuggestions);
-        setThreadSuggestions(suggestions);
-      })
-      .catch(() => undefined);
-
-    return () => {
-      cancelled = true;
-    };
-  }, [defaultHeaders, stream.isLoading, threadId, stream.messages.length]);
-
-  const resolvedValues = useMemo(() => {
-    const fromStream = normalizeBriefSuggestions(stream.values?.briefSuggestions);
-    const suggestions = fromStream ?? threadSuggestions;
-    if (suggestions) {
-      return {
-        ...(stream.values ?? {}),
-        briefSuggestions: suggestions,
-      } satisfies YouganValues;
-    }
-    return stream.values ?? null;
-  }, [stream.values, threadSuggestions]);
-
   const bootstrapRecommendations = useCallback(
     async (options?: { force?: boolean }) => {
       if (!work || !conversation || !token) return;
@@ -123,10 +102,8 @@ export function useYouganStream({
 
       if (!options?.force) {
         const existing = normalizeBriefSuggestions(stream.values?.briefSuggestions);
-        if (existing ?? threadSuggestions) return;
+        if (existing) return;
       }
-
-      setThreadSuggestions(null);
 
       await stream.submit(
         {
@@ -142,11 +119,11 @@ export function useYouganStream({
           modelTemperature,
         },
         {
-          streamMode: [...STREAM_MODES],
+          streamMode: [...LANGGRAPH_STREAM_MODE],
         },
       );
     },
-    [conversation, modelTemperature, stream, threadSuggestions, token, work],
+    [conversation, modelTemperature, stream, token, work],
   );
 
   useEffect(() => {
@@ -159,7 +136,7 @@ export function useYouganStream({
     if (stream.isLoading) return;
 
     const existing = normalizeBriefSuggestions(stream.values?.briefSuggestions);
-    if (existing ?? threadSuggestions) return;
+    if (existing) return;
 
     bootstrapAttemptedRef.current = conversation.id;
     void bootstrapRecommendations().catch(() => {
@@ -171,7 +148,6 @@ export function useYouganStream({
     stream.isLoading,
     stream.messages.length,
     stream.values?.briefSuggestions,
-    threadSuggestions,
     token,
     work,
   ]);
@@ -182,8 +158,6 @@ export function useYouganStream({
       const hasText =
         typeof content === "string" ? Boolean(content.trim()) : content.length > 0;
       if (!hasText || !work || !conversation) return;
-
-      setThreadSuggestions(null);
 
       await stream.submit(
         {
@@ -200,7 +174,7 @@ export function useYouganStream({
           modelTemperature,
         },
         {
-          streamMode: [...STREAM_MODES],
+          streamMode: [...LANGGRAPH_STREAM_MODE],
         },
       );
     },
@@ -210,8 +184,6 @@ export function useYouganStream({
   return {
     stream,
     threadId,
-    threadSuggestions,
-    resolvedValues,
     sendMessage,
     bootstrapRecommendations,
     canChat: Boolean(work && conversation && token),

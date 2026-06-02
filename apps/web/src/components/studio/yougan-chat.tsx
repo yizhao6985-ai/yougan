@@ -46,15 +46,16 @@ export function YouganChat() {
     canChat,
     activeWork,
     activeConversation,
-    resolvedValues,
   } = useYouganStreamContext();
   const { dialog: workNameDialog, openCreateWork, openCreateGroup } =
     useWorkItemNameDialog();
   const [input, setInput] = useState("");
   const [copied, setCopied] = useState(false);
 
+  const streamValues = stream.values;
+
   const mode =
-    resolvedValues?.mode ??
+    streamValues?.mode ??
     activeConversation?.mode ??
     ("inspiration" as ChatMode);
 
@@ -64,13 +65,13 @@ export function YouganChat() {
   );
 
   const { activeSuggestions } = useBriefSuggestions(mode, {
-    values: resolvedValues,
+    values: streamValues,
     isLoading: stream.isLoading,
   });
 
   const openingSuggestions = useMemo(
-    () => normalizeBriefSuggestions(resolvedValues?.briefSuggestions),
-    [resolvedValues?.briefSuggestions],
+    () => normalizeBriefSuggestions(streamValues?.briefSuggestions),
+    [streamValues?.briefSuggestions],
   );
 
   const isBootstrappingRecommendations =
@@ -193,6 +194,7 @@ export function YouganChat() {
           ) : openingSuggestions ? (
             <div className="mx-auto w-full max-w-3xl">
               <BriefSuggestionOptions
+                variant="opening"
                 suggestions={openingSuggestions.suggestions}
                 hint={openingSuggestions.hint}
                 disabled={stream.isLoading || !canChat}
@@ -278,6 +280,7 @@ export function YouganChat() {
                     />
                     {showInspirationSuggestions && activeSuggestions && (
                       <BriefSuggestionOptions
+                        variant="conversation"
                         suggestions={activeSuggestions.suggestions}
                         hint={activeSuggestions.hint}
                         disabled={stream.isLoading || !canChat}

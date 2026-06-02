@@ -16,7 +16,7 @@ export const scene = {
   /** 对话列表底部留白 / 回到底部按钮位置（需与 composer 总高度匹配） */
   conversationPadBottom: "pb-60",
   conversationScrollButton:
-    "bottom-44 rounded-lg border-0 bg-card/95 text-primary shadow-lg shadow-primary/20 backdrop-blur-sm hover:bg-accent hover:text-primary hover:shadow-xl hover:shadow-primary/25 dark:bg-card/90 dark:shadow-black/35",
+    "bottom-44 size-8 rounded-full border-0 bg-background/80 text-muted-foreground shadow-md shadow-black/10 backdrop-blur-sm hover:bg-muted/65 hover:text-foreground hover:shadow-lg hover:shadow-black/15 dark:bg-background/60 dark:shadow-black/45 dark:hover:shadow-black/55",
   /** 悬浮输入框卡片外观（作用于 PromptInput 内 InputGroup） */
   composerFloatingInput:
     "[&_[data-slot=input-group]]:overflow-hidden [&_[data-slot=input-group]]:rounded-lg [&_[data-slot=input-group]]:border-border/80 [&_[data-slot=input-group]]:bg-card/95 [&_[data-slot=input-group]]:shadow-lg [&_[data-slot=input-group]]:shadow-border/25 [&_[data-slot=input-group]]:backdrop-blur-sm [&_[data-slot=input-group]]:has-[[data-slot=input-group-control]:focus-visible]:ring-primary/20 [&_[data-slot=input-group]]:has-[[data-align=block-start]]:flex-col [&_[data-slot=input-group]]:has-[[data-align=block-start]]:items-stretch",

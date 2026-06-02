@@ -72,9 +72,10 @@ src/
 ├── graph.ts
 ├── conditional-edges/route-by-entry.ts
 ├── conditional-edges/route-by-mode.ts
+├── conditional-edges/route-after-subgraph.ts
 ├── nodes/resolve-turn-mode/   # classify-turn-mode.ts → 每轮意图 → mode
+├── nodes/update-brief-suggestions/  # 空 thread 开场 + 灵感回合后快捷选项
 ├── nodes/
-│   ├── clear-suggestions.ts
 │   ├── inspiration/
 │   │   ├── graph.ts
 │   │   ├── conditional-edges/after-llm.ts
@@ -82,8 +83,7 @@ src/
 │   │       ├── prepare-turn.ts
 │   │       ├── llm-call.ts
 │   │       ├── llm-call.prompt.ts
-│   │       ├── tools.ts
-│   │       └── generate-suggestions.ts
+│   │       └── tools.ts
 │   ├── ask/
 │   └── creation/
 ```
@@ -137,7 +137,7 @@ src/
 | 场景 | 实现位置 | 模型 |
 |------|----------|------|
 | 灵感 / 创作对话与工具 | `llm/dashscope.ts` | qwen3.7-max |
-| 灵感可点击建议 | `nodes/inspiration/nodes/generate-suggestions.logic.ts` | deepseek-v4-pro（结构化） |
+| 灵感可点击建议 | `nodes/update-brief-suggestions/after-inspiration-turn.ts` | deepseek-v4-pro（结构化，对齐灵感正文方案） |
 | 创意总监制作计划 | `nodes/creation/nodes/creative-director.logic.ts` | deepseek-v4-pro（结构化） |
 | 图像生成 | `llm/dashscope-image.ts` → `generateImage()` | qwen-image-2.0-pro |
 

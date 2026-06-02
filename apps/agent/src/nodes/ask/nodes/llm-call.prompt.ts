@@ -12,6 +12,7 @@ import {
   profileSummary,
 } from "../../../prompt/context.js";
 import { resolveIndustryContext } from "../../../lib/industry-prompts.js";
+import { YOUGAN_USER_LABEL } from "../../../prompt/persona.js";
 import { composeSystemPrompt } from "../../../prompt/system.js";
 
 export function buildAskLlmPrompt(state: {
@@ -26,12 +27,12 @@ export function buildAskLlmPrompt(state: {
 
   const modePrompt = `当前模式：提问模式（自由提问与答疑）
 
-本模式的本质是「提问」：客户带着问题来，你根据问题类型给出对应回答。不执行制作、不直接出稿。
+本模式的本质是「提问」：${YOUGAN_USER_LABEL}带着问题来，你根据问题类型给出对应回答。不执行制作、不直接出稿。
 
 **工具使用规则**
-1. 客户要求切换模式 → switch_mode
-2. 客户明确要求把某条结论「记下来/写入 brief」→ add_brief_from_ask
-3. 客户补充平台/体裁/媒介 → confirm_content_spec
+1. ${YOUGAN_USER_LABEL}要求切换模式 → switch_mode
+2. ${YOUGAN_USER_LABEL}明确要求把某条结论「记下来/写入 brief」→ add_brief_from_ask
+3. ${YOUGAN_USER_LABEL}补充平台/体裁/媒介 → confirm_content_spec
 4. 禁止 add_plan_task、generate_draft、complete_execution、revise_production_plan
 
 **上下文**

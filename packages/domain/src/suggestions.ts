@@ -14,7 +14,7 @@ export interface BriefSuggestions {
 }
 
 export const DEFAULT_BRIEF_SUGGESTIONS_HINT =
-  "你可以点选建议快速回复，或在下方输入框自由补充。";
+  "点选一条继续；若有其他想法，可直接在下方输入框补充。";
 
 export function newBriefSuggestion(
   kind: BriefSuggestion["kind"],

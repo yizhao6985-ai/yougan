@@ -16,6 +16,10 @@ export const chatStreamBlock = {
   body: "text-sm leading-7 text-foreground/90",
   muted: "text-sm leading-6 text-muted-foreground",
   caption: "text-xs leading-5 text-muted-foreground",
+  /** 灵感建议选项：更小、加粗，与正文 leading-7 区分 */
+  suggestionItem:
+    "text-xs font-semibold leading-5 tracking-wide text-muted-foreground",
+  suggestionItemActive: "font-bold text-foreground/90",
   divider: "border-t border-border/60 pt-3",
   header: "flex items-start gap-2.5",
   headerDot: "mt-1.5 size-2 shrink-0 rounded-md",
