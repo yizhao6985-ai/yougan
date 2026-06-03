@@ -1,8 +1,8 @@
 /**
  * 安全读取 AgentState 字段。
  */
-import { env } from "../env.js";
-import type { AgentStateType } from "../state.js";
+import { env } from "#agent/env.js";
+import type { AgentStateType } from "#agent/state.js";
 import {
   EMPTY_WORK_BRIEF,
   EMPTY_WORK_OUTLINE,
@@ -13,7 +13,7 @@ import {
   type WorkOutline,
   type WorkProductionPlan,
   type WorkProfile,
-} from "../schema.js";
+} from "#agent/schema.js";
 
 export function parseProfile(state: AgentStateType): WorkProfile {
   return state.profile ?? EMPTY_WORK_PROFILE;

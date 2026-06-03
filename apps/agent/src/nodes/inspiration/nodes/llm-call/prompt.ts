@@ -2,8 +2,8 @@
  * 灵感模式 LLM 节点系统提示词（仅 brief 收集，不含大纲）。
  */
 import type { WorkBrief, WorkProfile } from "@yougan/domain";
-import { briefSummary, profileSummary } from "../../../../prompt/context.js"
-import { composeSystemPrompt } from "../../../../prompt/system.js"
+import { briefSummary, profileSummary } from "#agent/prompt/context.js"
+import { composeSystemPrompt } from "#agent/prompt/system.js"
 
 function getInspirationActionPrompt(profile: WorkProfile, brief: WorkBrief): string {
   return `当前任务：灵感对话（对齐 brief）

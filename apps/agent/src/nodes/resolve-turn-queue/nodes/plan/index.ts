@@ -7,17 +7,17 @@ import {
   type TurnQueueKind,
 } from "@yougan/domain";
 
-import { createStructuredModel } from "../../../../llm/dashscope.js";
-import { invokeStructuredOutput } from "../../../../lib/structured-output.js";
-import { shouldSuggestConversationTitle } from "../../../../lib/conversation-title/should-suggest-conversation-title.js";
+import { createStructuredModel } from "#agent/llm/dashscope.js";
+import { invokeStructuredOutput } from "#agent/lib/structured-output.js";
+import { shouldSuggestConversationTitle } from "#agent/lib/conversation-title/should-suggest-conversation-title.js";
 import {
   countHumanMessages,
   getLatestHumanMessageImageUrls,
   getLatestHumanMessageText,
-} from "../../../../lib/human-message/index.js";
-import type { AgentStateType } from "../../../../state.js";
+} from "#agent/lib/human-message/index.js";
+import type { AgentStateType } from "#agent/state.js";
 import { buildTurnQueuePrompt } from "../../prompt.js";
-import { TurnQueueDecisionSchema } from "../../../../schema.js";
+import { TurnQueueDecisionSchema } from "../../schema.js";
 
 const DEFAULT_QUEUE: TurnQueueKind[] = ["inspiration"];
 

@@ -3,13 +3,13 @@
  */
 import { HumanMessage } from "@langchain/core/messages";
 
-import { createStructuredModel } from "../../llm/dashscope.js";
+import { createStructuredModel } from "#agent/llm/dashscope.js";
 import { invokeStructuredOutput } from "../structured-output.js";
 import {
   briefSummary,
   profileSummary,
-} from "../../prompt/context.js";
-import { YOUGAN_USER_LABEL } from "../../prompt/persona.js";
+} from "#agent/prompt/context.js";
+import { YOUGAN_USER_LABEL } from "#agent/prompt/persona.js";
 import { resolveIndustryContext } from "../industry-prompts.js";
 import { resolveContentSpec } from "../content-spec.js";
 import {
@@ -17,13 +17,13 @@ import {
   hasOutlineContent,
   newOutlineSection,
   type WorkOutline,
-} from "../../schema.js";
+} from "#agent/schema.js";
 import {
   parseBrief,
   parseOutline,
   parseProfile,
 } from "../parse-agent-state.js";
-import type { AgentStateType } from "../../state.js";
+import type { AgentStateType } from "#agent/state.js";
 import { OutlineResponseSchema } from "./response-schema.js";
 
 export function shouldBootstrapOutlineFromBrief(

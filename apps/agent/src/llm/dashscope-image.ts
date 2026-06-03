@@ -2,7 +2,7 @@
  * 阿里百炼 Qwen-Image 文生图 API。
  * @see https://help.aliyun.com/zh/model-studio/qwen-image-api
  */
-import { env } from "../env.js";
+import { env } from "#agent/env.js";
 
 const IMAGE_GENERATION_PATH =
   "/services/aigc/multimodal-generation/generation";

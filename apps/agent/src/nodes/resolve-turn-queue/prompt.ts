@@ -7,16 +7,16 @@ import {
   briefSummary,
   outlineSummary,
   profileSummary,
-} from "../../prompt/context.js";
-import { YOUGAN_USER_LABEL } from "../../prompt/persona.js";
-import type { AgentStateType } from "../../state.js";
+} from "#agent/prompt/context.js";
+import { YOUGAN_USER_LABEL } from "#agent/prompt/persona.js";
+import type { AgentStateType } from "#agent/state.js";
 import {
   parseBrief,
   parseOutline,
   parseProfile,
-} from "../../lib/parse-agent-state.js";
-import { getLatestHumanMessageImageUrls } from "../../lib/human-message/index.js";
-import { shouldSuggestConversationTitle } from "../../lib/conversation-title/should-suggest-conversation-title.js";
+} from "#agent/lib/parse-agent-state.js";
+import { getLatestHumanMessageImageUrls } from "#agent/lib/human-message/index.js";
+import { shouldSuggestConversationTitle } from "#agent/lib/conversation-title/should-suggest-conversation-title.js";
 
 export function buildTurnQueuePrompt(
   state: AgentStateType,

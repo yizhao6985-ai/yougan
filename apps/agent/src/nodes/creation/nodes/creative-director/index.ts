@@ -1,5 +1,5 @@
 import { runCreativeDirector } from "./logic.js";
-import type { AgentStateType } from "../../../../state.js"
+import type { AgentStateType } from "#agent/state.js"
 
 export async function creativeDirectorNode(
   state: AgentStateType,

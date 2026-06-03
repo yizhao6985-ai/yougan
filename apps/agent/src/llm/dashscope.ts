@@ -1,7 +1,7 @@
 /**
  * 阿里百炼 DashScope（OpenAI 兼容模式）模型工厂。
  */
-import { env } from "../env.js";
+import { env } from "#agent/env.js";
 import type { TextLlmRole } from "./models.js";
 import {
   createOpenAiCompatibleChatModel,

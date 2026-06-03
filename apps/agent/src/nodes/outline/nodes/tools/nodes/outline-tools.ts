@@ -11,9 +11,9 @@ import {
 import {
   parseActiveTurnKind,
   parseOutline,
-} from "../../../../../lib/parse-agent-state.js";
-import { getState } from "../../../../../lib/tool-state.js";
-import { toolCommand } from "../../../../../lib/tool-command.js";
+} from "#agent/lib/parse-agent-state.js";
+import { getState } from "#agent/lib/tool-state.js";
+import { toolCommand } from "#agent/lib/tool-command.js";
 
 function requireOutlineMode(config: object): string | null {
   if (parseActiveTurnKind(getState()) !== "outline") {

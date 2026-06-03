@@ -1,7 +1,7 @@
 import { HumanMessage } from "@langchain/core/messages";
 
-import { createChatModel } from "../llm/dashscope.js";
-import type { ReferenceItem } from "../schema.js";
+import { createChatModel } from "#agent/llm/dashscope.js";
+import type { ReferenceItem } from "#agent/schema.js";
 import { truncateMessageContent } from "./message-content.js";
 import { parseProfile } from "./parse-agent-state.js";
 import { getLatestHumanMessageImageUrls } from "./human-message/index.js";
@@ -9,7 +9,7 @@ import {
   listKnownReferenceImageUrls,
   upsertImageReference,
 } from "./reference-images.js";
-import type { AgentStateType } from "../state.js";
+import type { AgentStateType } from "#agent/state.js";
 
 async function analyzeReferenceImage(
   imageUrl: string,

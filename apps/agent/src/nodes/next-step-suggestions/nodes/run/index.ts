@@ -1,12 +1,12 @@
 import { hasOutlineContent } from "@yougan/domain";
 
-import { isEmptyThread } from "../../../../lib/empty/index.js";
+import { isEmptyThread } from "#agent/lib/empty/index.js";
 import {
   parseCompletedTurnKinds,
   parseOutline,
-} from "../../../../lib/parse-agent-state.js";
-import type { BriefSuggestions } from "../../../../schema.js";
-import type { AgentStateType } from "../../../../state.js";
+} from "#agent/lib/parse-agent-state.js";
+import type { BriefSuggestions } from "#agent/schema.js";
+import type { AgentStateType } from "#agent/state.js";
 import { generateAfterInspirationTurnSuggestions } from "../after-turn/inspiration.js";
 import { generateAfterOutlineTurnSuggestions } from "../after-turn/outline.js";
 import { generateOpeningTopicSuggestions } from "../opening-topic/suggestions.js";

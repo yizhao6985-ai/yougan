@@ -1,4 +1,4 @@
-import type { ReferenceItem, WorkProfile } from "../schema.js";
+import type { ReferenceItem, WorkProfile } from "#agent/schema.js";
 
 export function listKnownReferenceImageUrls(profile: WorkProfile): string[] {
   return (profile.references ?? [])

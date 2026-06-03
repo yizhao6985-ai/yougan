@@ -1,29 +1,29 @@
 /** 创作模式 LLM：按内部创作计划执行，不对用户暴露 plan 细节 */
-import { resolveContentSpec } from "../../../../lib/content-spec.js"
+import { resolveContentSpec } from "#agent/lib/content-spec.js"
 import {
   departmentsBrief,
   resolveIndustryContext,
-} from "../../../../lib/industry-prompts.js";
+} from "#agent/lib/industry-prompts.js";
 import {
   getPlanSummary,
   hasOutlineContent,
   isPlanReady,
-} from "../../../../schema.js";
+} from "#agent/schema.js";
 import {
   outlineSummary,
   productionPlanSummary,
   profileSummary,
-} from "../../../../prompt/context.js";
-import { YOUGAN_USER_LABEL } from "../../../../prompt/persona.js"
-import { composeSystemPrompt } from "../../../../prompt/system.js"
+} from "#agent/prompt/context.js";
+import { YOUGAN_USER_LABEL } from "#agent/prompt/persona.js"
+import { composeSystemPrompt } from "#agent/prompt/system.js"
 import { buildFormatGenerationGuidance } from "./prompt-format.js";
 import {
   parseOutline,
   parseProductionPlan,
   parseProfile,
-} from "../../../../lib/parse-agent-state.js";
-import type { AgentStateType } from "../../../../state.js"
-import type { ContentFormatId, MediaModalityId } from "../../../../lib/content-spec.js"
+} from "#agent/lib/parse-agent-state.js";
+import type { AgentStateType } from "#agent/state.js"
+import type { ContentFormatId, MediaModalityId } from "#agent/lib/content-spec.js"
 
 export function buildCreationLlmPrompt(state: AgentStateType): string {
   const profile = resolveContentSpec(parseProfile(state));

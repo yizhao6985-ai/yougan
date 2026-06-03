@@ -3,8 +3,8 @@
  */
 import { END, type ConditionalEdgeRouter } from "@langchain/langgraph";
 
-import { lastAiMessageHasToolCalls } from "../../../lib/graph/index.js";
-import { AgentState } from "../../../state.js";
+import { lastAiMessageHasToolCalls } from "#agent/lib/graph/index.js";
+import { AgentState } from "#agent/state.js";
 
 export const from = "llmCall" as const;
 

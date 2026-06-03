@@ -3,7 +3,7 @@
  */
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 
-import { REFERENCE_TOOLS } from "../../../../tools/references.js"
+import { REFERENCE_TOOLS } from "#agent/tools/references.js"
 
 import {
   addOutlineSection,

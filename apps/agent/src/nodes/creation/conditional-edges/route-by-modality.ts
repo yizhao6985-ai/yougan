@@ -3,9 +3,9 @@ import {
   resolveContentSpec,
   routeCreationPipeline,
   type CreationPipelineId,
-} from "../../../lib/content-spec.js";
-import { parseProfile } from "../../../lib/parse-agent-state.js";
-import type { AgentStateType } from "../../../state.js";
+} from "#agent/lib/content-spec.js";
+import { parseProfile } from "#agent/lib/parse-agent-state.js";
+import type { AgentStateType } from "#agent/state.js";
 
 /** creativeDirector 之后：按 media_modality 路由到 llmCall */
 export const from = "creativeDirector" as const;

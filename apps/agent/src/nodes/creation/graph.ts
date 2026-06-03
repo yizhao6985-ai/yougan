@@ -10,7 +10,7 @@ import { llmCall } from "./nodes/llm-call/index.js";
 import { prepareCreationTurnNode } from "./nodes/prepare-turn/index.js";
 import { resolveContentSpecNode } from "./nodes/resolve-content-spec/index.js";
 import { toolNode } from "./nodes/tools/index.js";
-import { AgentState } from "../../state.js";
+import { AgentState } from "#agent/state.js";
 
 const creationWorkflow = new StateGraph(AgentState)
   .addNode("prepare", prepareCreationTurnNode)

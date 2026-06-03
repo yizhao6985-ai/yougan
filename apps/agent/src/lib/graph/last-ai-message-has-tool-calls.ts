@@ -1,7 +1,7 @@
 /**
  * 判断 messages 最后一条 AI 消息是否含 tool_calls（用于 after-llm 条件边）。
  */
-import type { AgentStateType } from "../../state.js";
+import type { AgentStateType } from "#agent/state.js";
 
 export function lastAiMessageHasToolCalls(state: AgentStateType): boolean {
   const messages = state.messages ?? [];

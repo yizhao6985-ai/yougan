@@ -41,6 +41,22 @@ src/
 └── state.ts
 ```
 
+## 路径别名
+
+`package.json` 的 `imports` 与 `tsconfig` 的 `paths` 对齐，从 `src/` 引用时用 `#agent/` 前缀，避免深层 `../../../../`：
+
+| 别名 | 指向 |
+|------|------|
+| `#agent/lib/*` | `src/lib/*` |
+| `#agent/llm/*` | `src/llm/*` |
+| `#agent/prompt/*` | `src/prompt/*` |
+| `#agent/tools/*` | `src/tools/*`（共用 tool 定义） |
+| `#agent/state.js` | `src/state.ts` |
+| `#agent/schema.js` | `src/schema.ts` |
+| `#agent/env.js` | `src/env.ts` |
+
+同一子图内的节点仍用相对路径（如 `../tools/index.js` 引用该子图的 Tool 节点，而非 `src/tools/index.ts`）。
+
 ## 主图流程
 
 ```text

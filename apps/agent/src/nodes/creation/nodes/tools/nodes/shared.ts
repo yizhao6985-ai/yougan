@@ -1,4 +1,4 @@
-import type { ProductionDepartment } from "../../../../../schema.js"
+import type { ProductionDepartment } from "#agent/schema.js"
 
 export const DEPARTMENT_LABELS: Record<ProductionDepartment, string> = {
   writing: "文案专员",

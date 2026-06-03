@@ -1,6 +1,6 @@
-import { resolveContentSpec } from "../../../../lib/content-spec.js"
-import { parseProfile } from "../../../../lib/parse-agent-state.js"
-import type { AgentStateType } from "../../../../state.js"
+import { resolveContentSpec } from "#agent/lib/content-spec.js"
+import { parseProfile } from "#agent/lib/parse-agent-state.js"
+import type { AgentStateType } from "#agent/state.js"
 
 export async function resolveContentSpecNode(
   state: AgentStateType,

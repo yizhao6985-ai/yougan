@@ -8,9 +8,9 @@ import {
   findBriefRequirementIndex,
   updateBriefRequirement as patchBriefRequirement,
 } from "@yougan/domain";
-import { parseActiveTurnKind, parseBrief } from "../../../../../lib/parse-agent-state.js"
-import { getState } from "../../../../../lib/tool-state.js"
-import { toolCommand } from "../../../../../lib/tool-command.js"
+import { parseActiveTurnKind, parseBrief } from "#agent/lib/parse-agent-state.js"
+import { getState } from "#agent/lib/tool-state.js"
+import { toolCommand } from "#agent/lib/tool-command.js"
 
 export const addBriefRequirement = tool(
   async ({ description }, config) => {

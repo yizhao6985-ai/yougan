@@ -1,5 +1,5 @@
-import { messageContentToText } from "../../lib/message-content.js";
-import type { AgentStateType } from "../../../../state.js";
+import { messageContentToText } from "#agent/lib/message-content.js";
+import type { AgentStateType } from "#agent/state.js";
 
 export function extractLastMessages(state: AgentStateType): {
   lastAssistant: string;

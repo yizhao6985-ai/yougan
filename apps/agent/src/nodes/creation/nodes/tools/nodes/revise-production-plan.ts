@@ -1,9 +1,9 @@
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
-import { parseActiveTurnKind } from "../../../../../lib/parse-agent-state.js"
-import { getState } from "../../../../../lib/tool-state.js"
-import { toolCommand } from "../../../../../lib/tool-command.js"
+import { parseActiveTurnKind } from "#agent/lib/parse-agent-state.js"
+import { getState } from "#agent/lib/tool-state.js"
+import { toolCommand } from "#agent/lib/tool-command.js"
 import { runCreativeDirector } from "../../creative-director/logic.js";
 
 export const reviseProductionPlan = tool(

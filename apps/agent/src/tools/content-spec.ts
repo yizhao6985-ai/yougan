@@ -13,11 +13,11 @@ import {
   isValidMediaModality,
   mediaModalityLabel,
   resolveContentSpec,
-} from "../lib/content-spec.js";
-import { normalizePlatform } from "../schema.js";
-import { parseActiveTurnKind, parseProfile } from "../lib/parse-agent-state.js";
-import { getState, updateProfile } from "../lib/tool-state.js";
-import { toolCommand } from "../lib/tool-command.js";
+} from "#agent/lib/content-spec.js";
+import { normalizePlatform } from "#agent/schema.js";
+import { parseActiveTurnKind, parseProfile } from "#agent/lib/parse-agent-state.js";
+import { getState, updateProfile } from "#agent/lib/tool-state.js";
+import { toolCommand } from "#agent/lib/tool-command.js";
 
 const formatIds = CONTENT_FORMATS.map((item) => item.id) as [
   string,

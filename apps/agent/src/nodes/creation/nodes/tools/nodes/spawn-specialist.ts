@@ -2,20 +2,20 @@ import { HumanMessage } from "@langchain/core/messages";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
-import { createChatModel } from "../../../../../llm/dashscope.js"
-import { resolveContentSpec } from "../../../../../lib/content-spec.js"
-import { departmentBrief } from "../../../../../lib/industry-prompts.js"
-import { getPlanSummary, type WorkDraft } from "../../../../../schema.js"
+import { createChatModel } from "#agent/llm/dashscope.js"
+import { resolveContentSpec } from "#agent/lib/content-spec.js"
+import { departmentBrief } from "#agent/lib/industry-prompts.js"
+import { getPlanSummary, type WorkDraft } from "#agent/schema.js"
 import {
   parseActiveTurnKind,
   parseModelTemperature,
   parseOutline,
   parseProductionPlan,
   parseProfile,
-} from "../../../../../lib/parse-agent-state.js";
-import { getState } from "../../../../../lib/tool-state.js"
-import { toolCommand } from "../../../../../lib/tool-command.js"
-import { outlineSummary } from "../../../../../prompt/context.js"
+} from "#agent/lib/parse-agent-state.js";
+import { getState } from "#agent/lib/tool-state.js"
+import { toolCommand } from "#agent/lib/tool-command.js"
+import { outlineSummary } from "#agent/prompt/context.js"
 
 import { DEPARTMENT_LABELS } from "./shared.js";
 

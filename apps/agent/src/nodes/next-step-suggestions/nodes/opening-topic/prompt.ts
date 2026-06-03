@@ -2,14 +2,14 @@ import {
   briefSummary,
   outlineSummary,
   profileSummary,
-} from "../../../../prompt/context.js";
-import { YOUGAN_USER_LABEL } from "../../../../prompt/persona.js";
-import type { AgentStateType } from "../../../../state.js";
+} from "#agent/prompt/context.js";
+import { YOUGAN_USER_LABEL } from "#agent/prompt/persona.js";
+import type { AgentStateType } from "#agent/state.js";
 import {
   parseBrief,
   parseOutline,
   parseProfile,
-} from "../../../../lib/parse-agent-state.js";
+} from "#agent/lib/parse-agent-state.js";
 import { OPENING_TOPIC_SUGGESTIONS_COUNT } from "../shared/schema.js";
 import { MAX_NEXT_STEP_SUGGESTION_LENGTH } from "@yougan/domain";
 

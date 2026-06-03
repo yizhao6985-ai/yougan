@@ -5,15 +5,15 @@
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
-import { normalizePlatform } from "../schema.js";
+import { normalizePlatform } from "#agent/schema.js";
 import {
   isValidContentFormat,
   isValidMediaModality,
   resolveContentSpec,
-} from "../lib/content-spec.js";
-import { parseActiveTurnKind } from "../lib/parse-agent-state.js";
-import { getState, updateProfile } from "../lib/tool-state.js";
-import { toolCommand } from "../lib/tool-command.js";
+} from "#agent/lib/content-spec.js";
+import { parseActiveTurnKind } from "#agent/lib/parse-agent-state.js";
+import { getState, updateProfile } from "#agent/lib/tool-state.js";
+import { toolCommand } from "#agent/lib/tool-command.js";
 
 const profileSchema = z.object({
   platform: z.string().nullable().optional(),

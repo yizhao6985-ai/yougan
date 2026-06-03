@@ -11,7 +11,7 @@ import type { Runnable, RunnableConfig } from "@langchain/core/runnables";
 import { pushMessage } from "@langchain/langgraph";
 import { nanoid } from "nanoid";
 
-import { env } from "../env.js";
+import { env } from "#agent/env.js";
 
 type StreamableChatModel = Runnable<
   BaseMessage[],

@@ -1,7 +1,7 @@
 /**
  * 按 content_format 注入生成约束，供创作模式 prompt 与 generate_content 共用。
  */
-import type { ContentFormatId } from "../../../../lib/content-spec.js"
+import type { ContentFormatId } from "#agent/lib/content-spec.js"
 
 const FORMAT_GUIDANCE: Record<ContentFormatId, string> = {
   note: "图文笔记：开头强钩子，3-5 个可扫读要点，口语化，适合小红书种草风格，正文 300-800 字。",

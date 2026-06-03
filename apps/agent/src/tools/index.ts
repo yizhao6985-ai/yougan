@@ -4,5 +4,5 @@
 export { confirmContentSpec } from "./content-spec.js";
 export { updateWorkProfile } from "./profile.js";
 export { REFERENCE_TOOLS, parseReferenceImage, parseReferenceText } from "./references.js";
-export { getState, mergeProfileReferences, updateProfile } from "../lib/tool-state.js";
-export { toolCommand } from "../lib/tool-command.js";
+export { getState, mergeProfileReferences, updateProfile } from "#agent/lib/tool-state.js";
+export { toolCommand } from "#agent/lib/tool-command.js";

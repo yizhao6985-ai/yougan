@@ -7,13 +7,13 @@ import { z } from "zod";
 import {
   newProductionPlanTask,
   type ProductionDepartment,
-} from "../../../../../schema.js";
+} from "#agent/schema.js";
 import {
   parseActiveTurnKind,
   parseProductionPlan,
-} from "../../../../../lib/parse-agent-state.js";
-import { getState } from "../../../../../lib/tool-state.js"
-import { toolCommand } from "../../../../../lib/tool-command.js"
+} from "#agent/lib/parse-agent-state.js";
+import { getState } from "#agent/lib/tool-state.js"
+import { toolCommand } from "#agent/lib/tool-command.js"
 
 export const addPlanTask = tool(
   async ({ description, department }, config) => {

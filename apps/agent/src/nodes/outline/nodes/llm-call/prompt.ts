@@ -6,9 +6,9 @@ import {
   briefSummary,
   outlineSummary,
   profileSummary,
-} from "../../../../prompt/context.js";
-import { YOUGAN_USER_LABEL } from "../../../../prompt/persona.js"
-import { composeSystemPrompt } from "../../../../prompt/system.js"
+} from "#agent/prompt/context.js";
+import { YOUGAN_USER_LABEL } from "#agent/prompt/persona.js"
+import { composeSystemPrompt } from "#agent/prompt/system.js"
 
 function getOutlineActionPrompt(
   profile: WorkProfile,

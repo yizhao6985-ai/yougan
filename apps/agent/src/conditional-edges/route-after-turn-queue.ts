@@ -3,8 +3,8 @@ import { END } from "@langchain/langgraph";
 import {
   parseCompletedTurnKinds,
   parseTurnQueue,
-} from "../lib/parse-agent-state.js";
-import type { AgentStateType } from "../state.js";
+} from "#agent/lib/parse-agent-state.js";
+import type { AgentStateType } from "#agent/state.js";
 
 export const from = "advanceTurnQueue" as const;
 

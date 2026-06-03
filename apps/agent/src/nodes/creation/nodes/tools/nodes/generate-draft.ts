@@ -2,25 +2,25 @@ import { HumanMessage } from "@langchain/core/messages";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
-import { createChatModel } from "../../../../../llm/dashscope.js"
-import { env } from "../../../../../env.js"
+import { createChatModel } from "#agent/llm/dashscope.js"
+import { env } from "#agent/env.js"
 import {
   resolveContentSpec,
   type ContentFormatId,
   type MediaModalityId,
-} from "../../../../../lib/content-spec.js";
+} from "#agent/lib/content-spec.js";
 import {
   consumeStructuredOutputStream,
   invokeStructuredOutput,
   streamStructuredOutput,
-} from "../../../../../lib/structured-output.js";
+} from "#agent/lib/structured-output.js";
 import {
   getOutlineSummary,
   getPlanSummary,
   hasOutlineContent,
   isPlanReady,
   type WorkDraft,
-} from "../../../../../schema.js";
+} from "#agent/schema.js";
 import { buildFormatGenerationGuidance } from "../../llm-call/prompt-format.js";
 import {
   WorkDraftPayloadSchema,
@@ -32,9 +32,9 @@ import {
   parseOutline,
   parseProductionPlan,
   parseProfile,
-} from "../../../../../lib/parse-agent-state.js";
-import { getState } from "../../../../../lib/tool-state.js"
-import { toolCommand } from "../../../../../lib/tool-command.js"
+} from "#agent/lib/parse-agent-state.js";
+import { getState } from "#agent/lib/tool-state.js"
+import { toolCommand } from "#agent/lib/tool-command.js"
 import { profileReady } from "./shared.js";
 
 export const generateDraft = tool(

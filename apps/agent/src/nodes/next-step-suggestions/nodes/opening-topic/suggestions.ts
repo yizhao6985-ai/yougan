@@ -3,11 +3,11 @@
  */
 import { HumanMessage } from "@langchain/core/messages";
 
-import { createStructuredModel } from "../../../../llm/dashscope.js";
-import { invokeStructuredOutput } from "../../../../lib/structured-output.js";
-import { parseBrief, parseProfile } from "../../../../lib/parse-agent-state.js";
-import { newBriefSuggestion, type BriefSuggestions } from "../../../.../shared/schema.js";
-import type { AgentStateType } from "../../../../state.js";
+import { createStructuredModel } from "#agent/llm/dashscope.js";
+import { invokeStructuredOutput } from "#agent/lib/structured-output.js";
+import { parseBrief, parseProfile } from "#agent/lib/parse-agent-state.js";
+import { newBriefSuggestion, type BriefSuggestions } from "#agent/schema.js";
+import type { AgentStateType } from "#agent/state.js";
 import { buildOpeningTopicSuggestionsPrompt } from "./prompt.js";
 import { OpeningTopicSuggestionsResponseSchema } from "../shared/schema.js";
 import { sanitizeNextStepSuggestions } from "../shared/sanitize-suggestions.js";

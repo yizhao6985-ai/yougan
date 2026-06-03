@@ -3,8 +3,8 @@ import type { TurnQueueKind } from "@yougan/domain";
 import {
   parseActiveTurnKind,
   parseTurnQueue,
-} from "../lib/parse-agent-state.js";
-import type { AgentStateType } from "../state.js";
+} from "#agent/lib/parse-agent-state.js";
+import type { AgentStateType } from "#agent/state.js";
 
 export const from = "dispatchTurnQueue" as const;
 

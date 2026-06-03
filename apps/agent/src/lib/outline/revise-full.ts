@@ -2,12 +2,12 @@ import { HumanMessage } from "@langchain/core/messages";
 
 import { newOutlineSection, type WorkOutline } from "@yougan/domain";
 
-import { createStructuredModel } from "../../llm/dashscope.js";
+import { createStructuredModel } from "#agent/llm/dashscope.js";
 import { invokeStructuredOutput } from "../structured-output.js";
 import {
   briefSummary,
   profileSummary,
-} from "../../prompt/context.js";
+} from "#agent/prompt/context.js";
 import { resolveIndustryContext } from "../industry-prompts.js";
 import { resolveContentSpec } from "../content-spec.js";
 import {
@@ -15,7 +15,7 @@ import {
   parseOutline,
   parseProfile,
 } from "../parse-agent-state.js";
-import type { AgentStateType } from "../../state.js";
+import type { AgentStateType } from "#agent/state.js";
 import { OutlineResponseSchema } from "./response-schema.js";
 
 /** 整体换方向时全量重做大纲（outline 子图 revise_outline 工具） */

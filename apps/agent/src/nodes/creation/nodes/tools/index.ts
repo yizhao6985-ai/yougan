@@ -4,8 +4,8 @@
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 
 import { addPlanTask } from "./nodes/add-plan-task.js";
-import { updateWorkProfile } from "../../../../tools/profile.js"
-import { REFERENCE_TOOLS } from "../../../../tools/references.js"
+import { updateWorkProfile } from "#agent/tools/profile.js"
+import { REFERENCE_TOOLS } from "#agent/tools/references.js"
 
 import { completeExecution } from "./nodes/complete-execution.js";
 import { generateDraft } from "./nodes/generate-draft.js";

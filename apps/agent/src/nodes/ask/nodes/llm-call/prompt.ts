@@ -1,15 +1,15 @@
 /**
  * 提问模式 LLM 节点系统提示词。
  */
-import type { WorkBrief, WorkOutline, WorkProfile } from "../../../../schema.js"
+import type { WorkBrief, WorkOutline, WorkProfile } from "#agent/schema.js"
 import {
   briefSummary,
   outlineSummary,
   profileSummary,
-} from "../../../../prompt/context.js";
-import { resolveIndustryContext } from "../../../../lib/industry-prompts.js"
-import { YOUGAN_USER_LABEL } from "../../../../prompt/persona.js"
-import { composeSystemPrompt } from "../../../../prompt/system.js"
+} from "#agent/prompt/context.js";
+import { resolveIndustryContext } from "#agent/lib/industry-prompts.js"
+import { YOUGAN_USER_LABEL } from "#agent/prompt/persona.js"
+import { composeSystemPrompt } from "#agent/prompt/system.js"
 
 export function buildAskLlmPrompt(state: {
   profile?: WorkProfile;

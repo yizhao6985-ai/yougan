@@ -7,7 +7,7 @@ import * as afterLlm from "./conditional-edges/after-llm.js";
 import { llmCall } from "./nodes/llm-call/index.js";
 import { prepareOutlineTurnNode } from "./nodes/prepare-turn/index.js";
 import { toolNode } from "./nodes/tools/index.js";
-import { AgentState } from "../../state.js";
+import { AgentState } from "#agent/state.js";
 
 const outlineWorkflow = new StateGraph(AgentState)
   .addNode("prepare", prepareOutlineTurnNode)

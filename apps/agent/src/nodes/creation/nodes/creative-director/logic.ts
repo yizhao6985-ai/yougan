@@ -3,19 +3,19 @@
  */
 import { HumanMessage } from "@langchain/core/messages";
 
-import { createStructuredModel } from "../../../../llm/dashscope.js"
-import { invokeStructuredOutput } from "../../../../lib/structured-output.js"
+import { createStructuredModel } from "#agent/llm/dashscope.js"
+import { invokeStructuredOutput } from "#agent/lib/structured-output.js"
 import {
   briefSummary,
   outlineSummary,
   productionPlanSummary,
   profileSummary,
-} from "../../../../prompt/context.js";
-import { YOUGAN_USER_LABEL } from "../../../../prompt/persona.js"
+} from "#agent/prompt/context.js";
+import { YOUGAN_USER_LABEL } from "#agent/prompt/persona.js"
 import {
   departmentsBrief,
   resolveIndustryContext,
-} from "../../../../lib/industry-prompts.js";
+} from "#agent/lib/industry-prompts.js";
 import {
   hasBriefContent,
   hasOutlineContent,
@@ -23,16 +23,16 @@ import {
   newProductionPlanTask,
   type ProductionDepartment,
   type WorkProductionPlan,
-} from "../../../../schema.js";
+} from "#agent/schema.js";
 import {
   parseBrief,
   parseOutline,
   parseProductionPlan,
   parseProfile,
-} from "../../../../lib/parse-agent-state.js";
-import type { AgentStateType } from "../../../../state.js"
+} from "#agent/lib/parse-agent-state.js";
+import type { AgentStateType } from "#agent/state.js"
 import { ProductionPlanResponseSchema } from "./schema.js";
-import { resolveContentSpec } from "../../../../lib/content-spec.js"
+import { resolveContentSpec } from "#agent/lib/content-spec.js"
 
 function shouldRunCreativeDirector(
   state: AgentStateType,

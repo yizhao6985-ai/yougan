@@ -1,7 +1,7 @@
 /**
  * 根据创意总监提供的平台、主题、体裁动态加载行业经验提示词。
  */
-import type { ProductionDepartment, WorkProfile } from "../schema.js";
+import type { ProductionDepartment, WorkProfile } from "#agent/schema.js";
 
 const PLATFORM_INDUSTRY: Record<string, string> = {
   xiaohongshu:

@@ -4,10 +4,10 @@
 import { SystemMessage } from "@langchain/core/messages";
 import type { GraphNode } from "@langchain/langgraph";
 
-import { streamChatModelToAIMessage } from "../../../../lib/stream-chat-model.js"
-import { env } from "../../../../env.js"
-import { createChatModel } from "../../../../llm/dashscope.js"
-import { AgentState } from "../../../../state.js"
+import { streamChatModelToAIMessage } from "#agent/lib/stream-chat-model.js"
+import { env } from "#agent/env.js"
+import { createChatModel } from "#agent/llm/dashscope.js"
+import { AgentState } from "#agent/state.js"
 import { INSPIRATION_TOOLS } from "../tools/index.js";
 import { buildInspirationLlmPrompt } from "./prompt.js";
 

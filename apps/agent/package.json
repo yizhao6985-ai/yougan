@@ -3,6 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "imports": {
+    "#agent/lib/*": "./src/lib/*",
+    "#agent/llm/*": "./src/llm/*",
+    "#agent/prompt/*": "./src/prompt/*",
+    "#agent/tools/*": "./src/tools/*",
+    "#agent/state.js": "./src/state.ts",
+    "#agent/schema.js": "./src/schema.ts",
+    "#agent/env.js": "./src/env.ts"
+  },
   "scripts": {
     "dev": "langgraphjs dev --port 2024 --no-browser",
     "build": "tsc --noEmit",

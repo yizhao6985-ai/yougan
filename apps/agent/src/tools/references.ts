@@ -5,18 +5,18 @@ import { HumanMessage } from "@langchain/core/messages";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
-import { createChatModel } from "../llm/dashscope.js";
-import type { ReferenceItem } from "../schema.js";
-import { parseProfile } from "../lib/parse-agent-state.js";
-import { truncateMessageContent } from "../lib/message-content.js";
-import { getLatestHumanMessageImageUrls } from "../lib/human-message/index.js";
+import { createChatModel } from "#agent/llm/dashscope.js";
+import type { ReferenceItem } from "#agent/schema.js";
+import { parseProfile } from "#agent/lib/parse-agent-state.js";
+import { truncateMessageContent } from "#agent/lib/message-content.js";
+import { getLatestHumanMessageImageUrls } from "#agent/lib/human-message/index.js";
 import {
   listKnownReferenceImageUrls,
   resolveReferenceImageUrl,
   upsertImageReference,
-} from "../lib/reference-images.js";
-import { getState, mergeProfileReferences } from "../lib/tool-state.js";
-import { toolCommand } from "../lib/tool-command.js";
+} from "#agent/lib/reference-images.js";
+import { getState, mergeProfileReferences } from "#agent/lib/tool-state.js";
+import { toolCommand } from "#agent/lib/tool-command.js";
 
 export const parseReferenceText = tool(
   async ({ reference_text }, config) => {

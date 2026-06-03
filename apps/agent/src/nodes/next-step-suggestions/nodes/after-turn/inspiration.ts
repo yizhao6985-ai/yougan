@@ -3,18 +3,18 @@
  */
 import { HumanMessage } from "@langchain/core/messages";
 
-import { createStructuredModel } from "../../../../llm/dashscope.js";
-import { invokeStructuredOutput } from "../../../../lib/structured-output.js";
+import { createStructuredModel } from "#agent/llm/dashscope.js";
+import { invokeStructuredOutput } from "#agent/lib/structured-output.js";
 import {
   DEFAULT_BRIEF_SUGGESTIONS_HINT,
   newBriefSuggestion,
   type BriefSuggestions,
   type WorkBrief,
-} from "../../../.../shared/schema.js";
-import { briefSummary, profileSummary } from "../../../../prompt/context.js";
-import { YOUGAN_USER_LABEL } from "../../../../prompt/persona.js";
-import type { AgentStateType } from "../../../../state.js";
-import { parseBrief, parseProfile } from "../../../../lib/parse-agent-state.js";
+} from "#agent/schema.js";
+import { briefSummary, profileSummary } from "#agent/prompt/context.js";
+import { YOUGAN_USER_LABEL } from "#agent/prompt/persona.js";
+import type { AgentStateType } from "#agent/state.js";
+import { parseBrief, parseProfile } from "#agent/lib/parse-agent-state.js";
 import { extractLastMessages } from "../shared/extract-last-messages.js";
 import {
   TurnNextStepSuggestionsResponseSchema,

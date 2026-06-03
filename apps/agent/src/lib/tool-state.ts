@@ -4,8 +4,8 @@
 import { getCurrentTaskInput } from "@langchain/langgraph";
 
 import { parseProfile } from "./parse-agent-state.js";
-import type { AgentStateType } from "../state.js";
-import type { WorkProfile } from "../schema.js";
+import type { AgentStateType } from "#agent/state.js";
+import type { WorkProfile } from "#agent/schema.js";
 
 export function getState(): AgentStateType {
   return getCurrentTaskInput() as AgentStateType;

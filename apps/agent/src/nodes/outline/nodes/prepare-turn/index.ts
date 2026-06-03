@@ -1,6 +1,6 @@
-import { syncReferenceImagesFromLatestMessage } from "../../../../lib/sync-reference-images.js"
-import { bootstrapOutlineFromBrief } from "../../../../lib/outline/bootstrap-from-brief.js"
-import type { AgentStateType } from "../../../../state.js"
+import { syncReferenceImagesFromLatestMessage } from "#agent/lib/sync-reference-images.js"
+import { bootstrapOutlineFromBrief } from "#agent/lib/outline/bootstrap-from-brief.js"
+import type { AgentStateType } from "#agent/state.js"
 
 export async function prepareOutlineTurnNode(
   state: AgentStateType,

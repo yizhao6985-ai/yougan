@@ -1,5 +1,5 @@
-import { parseTurnQueue } from "../../lib/parse-agent-state.js";
-import type { AgentStateType } from "../../state.js";
+import { parseTurnQueue } from "#agent/lib/parse-agent-state.js";
+import type { AgentStateType } from "#agent/state.js";
 
 /** 标记当前正在执行的队列项 */
 export async function dispatchTurnQueueNode(

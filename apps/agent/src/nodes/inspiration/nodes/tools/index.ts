@@ -3,8 +3,8 @@
  */
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 
-import { confirmContentSpec } from "../../../../tools/content-spec.js"
-import { REFERENCE_TOOLS } from "../../../../tools/references.js"
+import { confirmContentSpec } from "#agent/tools/content-spec.js"
+import { REFERENCE_TOOLS } from "#agent/tools/references.js"
 
 import {
   addBriefRequirement,

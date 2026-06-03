@@ -1,5 +1,5 @@
-import { isEmptyThread } from "../lib/empty/index.js";
-import type { AgentStateType } from "../state.js";
+import { isEmptyThread } from "#agent/lib/empty/index.js";
+import type { AgentStateType } from "#agent/state.js";
 
 export type EntryRoute = "updateNextStepSuggestions" | "resolveTurnQueue";
 

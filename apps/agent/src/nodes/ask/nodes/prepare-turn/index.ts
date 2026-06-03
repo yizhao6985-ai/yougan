@@ -1,5 +1,5 @@
-import { syncReferenceImagesFromLatestMessage } from "../../../../lib/sync-reference-images.js"
-import type { AgentStateType } from "../../../../state.js"
+import { syncReferenceImagesFromLatestMessage } from "#agent/lib/sync-reference-images.js"
+import type { AgentStateType } from "#agent/state.js"
 
 export async function prepareAskTurnNode(
   state: AgentStateType,
