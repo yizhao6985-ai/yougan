@@ -22,10 +22,7 @@ const MAX_ATTACHMENTS = 6;
 export function useComposerAttachments() {
   const [items, setItems] = useState<ComposerAttachment[]>([]);
   const itemsRef = useRef(items);
-
-  useEffect(() => {
-    itemsRef.current = items;
-  }, [items]);
+  itemsRef.current = items;
 
   useEffect(() => {
     return () => {

@@ -1,33 +1,15 @@
 import { MoonIcon, SunIcon } from "lucide-react";
-import { useEffect, useState } from "react";
 
 import { Switch } from "@/components/ui/switch";
+import { useSystemTheme } from "@/hooks/use-system-theme";
 import { THEME } from "@/lib/site-copy";
-import { getSystemTheme, type ResolvedTheme } from "@/lib/theme";
 import { useThemePreference } from "@/store/theme";
 import { cn } from "@/lib/utils";
 
-function useResolvedTheme(): ResolvedTheme {
-  const [preference] = useThemePreference();
-  const [systemTheme, setSystemTheme] = useState(getSystemTheme);
-
-  useEffect(() => {
-    if (preference !== "system") return;
-
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const sync = () => setSystemTheme(getSystemTheme());
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
-  }, [preference]);
-
-  if (preference === "system") return systemTheme;
-  return preference;
-}
-
 export function ThemeToggle() {
-  const [, setPreference] = useThemePreference();
-  const resolved = useResolvedTheme();
+  const [preference, setPreference] = useThemePreference();
+  const systemTheme = useSystemTheme();
+  const resolved = preference === "system" ? systemTheme : preference;
   const isDark = resolved === "dark";
 
   return (

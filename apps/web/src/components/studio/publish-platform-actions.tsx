@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { PublishConfirmDialog } from "@/components/studio/publish-confirm-dialog";
 import {
   useMyPublicationsQuery,
+  usePublicationMetadataPreviewQuery,
   usePublishWorkMutation,
 } from "@/hooks/queries/publications";
 import { DISCOVER_SECTION } from "@/lib/content-section";
@@ -23,6 +24,10 @@ export function PublishPlatformActions({
   const [dialogOpen, setDialogOpen] = useState(false);
   const { data: publications = [], isLoading } = useMyPublicationsQuery();
   const publishMutation = usePublishWorkMutation();
+  const metadataPreviewQuery = usePublicationMetadataPreviewQuery(
+    workId,
+    dialogOpen,
+  );
 
   const publication = useMemo(
     () =>
@@ -79,11 +84,13 @@ export function PublishPlatformActions({
       </div>
 
       <PublishConfirmDialog
-        workId={workId}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onConfirm={handlePublish}
         isSubmitting={publishMutation.isPending}
+        preview={metadataPreviewQuery.data}
+        previewLoading={metadataPreviewQuery.isLoading}
+        previewError={metadataPreviewQuery.isError}
       />
     </>
   );

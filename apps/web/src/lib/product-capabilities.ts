@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 
 import type { ChatMode } from "@/lib/types";
-import { CHAT_MODE_LABELS } from "@/lib/types";
 
 export const SUPPORTED_PLATFORMS = [
   "小红书",
@@ -26,6 +25,10 @@ export type CapabilityMode = {
   id: ChatMode;
   anchor: string;
   icon: LucideIcon;
+  /** 能力页与首页卡片上的阶段名称 */
+  label: string;
+  /** 首页能力卡片摘要 */
+  teaser: string;
   tagline: string;
   summary: string;
   highlights: string[];
@@ -37,6 +40,8 @@ export const CREATION_MODES: CapabilityMode[] = [
     id: "inspiration",
     anchor: "inspiration",
     icon: LightbulbIcon,
+    label: "灵感",
+    teaser: "帮你找灵感，理清平台、选题与写法。",
     tagline: "找灵感、定方向",
     summary:
       "通过提问帮你找灵感，理清平台、选题、受众和写法，把零散想法整理成「已确认灵感」。每轮对话结束会给出可点选建议。",
@@ -52,6 +57,8 @@ export const CREATION_MODES: CapabilityMode[] = [
     id: "outline",
     anchor: "outline",
     icon: ListTreeIcon,
+    label: "大纲",
+    teaser: "确认章节结构与叙事顺序。",
     tagline: "确认内容结构",
     summary:
       "brief 定稿后进入大纲阶段，与 AI 一起确认章节、段落要点与叙事顺序，定稿后再进入创作。",
@@ -67,6 +74,8 @@ export const CREATION_MODES: CapabilityMode[] = [
     id: "creation",
     anchor: "creation",
     icon: WandSparklesIcon,
+    label: "创作",
+    teaser: "AI 团队定计划，按计划精良制作。",
     tagline: "AI 团队精良制作",
     summary:
       "AI 团队制定制作计划，文案/设计/音频/视频按计划执行，精良生成与修改标题、正文等内容。",
@@ -82,6 +91,8 @@ export const CREATION_MODES: CapabilityMode[] = [
     id: "ask",
     anchor: "ask",
     icon: BookOpenIcon,
+    label: "提问",
+    teaser: "优化建议、创作答疑、行业背景，随时可问。",
     tagline: "有问题，随时问",
     summary:
       "提问阶段：问怎么做得更好给优化建议；问创作方法帮你答疑学习；问行业、平台、受众等背景也一并作答。",
@@ -141,16 +152,9 @@ export const STUDIO_PANELS = [
   },
 ] as const;
 
-const HOME_TEASER_BODIES: Record<ChatMode, string> = {
-  inspiration: "帮你找灵感，理清平台、选题与写法。",
-  outline: "确认章节结构与叙事顺序。",
-  creation: "AI 团队定计划，按计划精良制作。",
-  ask: "优化建议、创作答疑、行业背景，随时可问。",
-};
-
 export const HOME_FEATURE_TEASERS = CREATION_MODES.map((mode) => ({
-  title: CHAT_MODE_LABELS[mode.id],
-  body: HOME_TEASER_BODIES[mode.id],
+  title: mode.label,
+  body: mode.teaser,
   href: `/features#${mode.anchor}`,
 }));
 

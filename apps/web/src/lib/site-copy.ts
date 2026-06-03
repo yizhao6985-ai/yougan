@@ -2,7 +2,7 @@
  * 有感 · Yougan 全站文案（C 端口径）
  *
  * 对外主张：帮你找灵感 → AI 团队精良制作内容。
- * 一件作品三种可随时切换的模式：灵感 · 创作 · 提问。
+ * 创作台按对话意图自动编排灵感、大纲、创作、提问等阶段。
  */
 
 export const BRAND = {
@@ -86,7 +86,7 @@ export const ABOUT_PAGE = {
     },
     {
       title: "人做判断，AI 团队执行",
-      body: "选题、计划与发布由你确认；灵感模式帮你整理方向，创作模式由 AI 团队按计划出稿，过程有记录、方便回看。",
+      body: "选题、计划与发布由你确认；系统会按对话自动整理灵感与方向，再由 AI 团队按计划出稿，过程有记录、方便回看。",
     },
     {
       title: "为真实工作流设计",
@@ -94,12 +94,12 @@ export const ABOUT_PAGE = {
     },
     {
       title: "坦诚的产品边界",
-      body: "灵感模式专注找方向、提问模式专注答疑与建议、创作模式专注按计划出稿——各做各的事，边界清晰。",
+      body: "灵感、大纲、创作、提问各司其职——Agent 根据每条消息自动路由，边界清晰，你只需自然对话。",
     },
   ] as const,
   productTitle: "我们的产品",
   productBody:
-    "创作台提供灵感、创作、提问三种模式，一件作品对应一段持续对话；侧栏同步灵感与成稿，制作计划在对话中以任务列表展示。内容可发布到「发现灵感」供他人参考，Pro 会员可绑定主流平台账号，少一道复制粘贴。",
+    "创作台围绕一件作品的一段持续对话；系统会按消息自动推进灵感、大纲、创作与提问等环节，侧栏同步灵感与成稿，制作计划在对话中以任务列表展示。内容可发布到「发现灵感」供他人参考，Pro 会员可绑定主流平台账号，少一道复制粘贴。",
   productLink: "了解产品能力",
   contactTitle: "联系我们",
   contactBody:
@@ -117,7 +117,7 @@ export const HOME = {
     "帮你找灵感、理清平台和选题；AI 团队制定制作计划，文案/设计/音视频按计划精良出稿。适合小红书、公众号等日常更新。",
   ctaStudio: "开始创作",
   ctaFeatures: "了解产品能力",
-  capabilitiesTitle: "三种模式，一件作品走完全流程",
+  capabilitiesTitle: "四个阶段，一件作品走完全流程",
   capabilitiesLink: "查看说明 →",
 } as const;
 
@@ -126,13 +126,13 @@ export const FEATURES_PAGE = {
   eyebrow: "产品能力",
   title: "从找灵感到 AI 团队出稿",
   subtitle:
-    "很多 AI 工具问一句就出一篇，选题偏了就要整篇重写。有感先帮你找灵感、对齐写法，再由 AI 团队定计划、精良制作；中间随时提问、改计划。三种模式可随时切换。",
+    "很多 AI 工具问一句就出一篇，选题偏了就要整篇重写。有感先帮你找灵感、对齐写法，再由 AI 团队定计划、精良制作；中间随时提问、改计划。系统会根据对话意图自动推进各阶段。",
   platformsIntro: "支持这些平台的内容形态",
   workflowTitle: "推荐使用方式",
-  workflowSubtitle: "从新建作品到可以发布，一般这样走（模式可随时切换）",
-  modesTitle: "三种创作模式",
+  workflowSubtitle: "从新建作品到可以发布，一般这样走（不必手动切换阶段）",
+  modesTitle: "创作流程里的四个阶段",
   modesSubtitle:
-    "同一件作品里可随时切换；用界面、快捷键，或在对话里说「切到创作模式」都可以。",
+    "你只需自然对话；Agent 会根据每条消息自动识别该做灵感收集、大纲确认、出稿还是答疑。",
   studioTitle: "创作台布局",
   studioSubtitle: "左侧作品列表、中间对话、右侧作品面板",
   modeBenefitsHeading: "会帮你做",
@@ -310,14 +310,14 @@ export const STUDIO = {
   newGroup: "新建分组",
   emptyTitle: "创建第一件作品",
   emptyBody:
-    "建议先用灵感模式找灵感、定方向，需要时在提问模式答疑；切到创作模式后，AI 团队会制定计划并精良制作成稿。",
+    "从一句话开始聊即可；系统会帮你找灵感、定大纲，需要时答疑，就绪后 AI 团队按计划出稿。",
   emptyWorksList: "还没有作品或分组，先创建一件，从找灵感开始。",
   emptyWorksFiltered: "创建第一件作品，从找灵感开始。",
   referencesCount: (n: number) => `已添加 ${n} 条参考素材`,
   publishViewInDiscover: (sectionTitle: string) => `在${sectionTitle}查看`,
   modelTemperatureLabel: "创意度",
   modelTemperatureHint:
-    "仅影响创作模式中 AI 团队的文案与专员出稿，不影响灵感/提问对话与制作计划编排（0.1–1.0）",
+    "仅影响创作出稿时 AI 团队的文案与专员产出，不影响灵感/提问对话与制作计划编排（0.1–1.0）",
 } as const;
 
 export const CHAT_COPY = {
@@ -325,25 +325,6 @@ export const CHAT_COPY = {
   placeholder: "说说想法、提问，或告诉我要改什么…",
   /** 开屏空态：单行标题（选题气泡上方不再另起提示） */
   emptyTitle: "从一句话开始，选选题或直接输入",
-  emptyByMode: {
-    inspiration: {
-      title: "灵感模式：找灵感、定方向",
-      bodyDefault:
-        "我会通过提问帮你找灵感、理清平台、受众、选题和写法；回合结束后会在下方给出可点选建议。",
-    },
-    outline: {
-      title: "大纲模式：确认内容结构",
-      body: "根据对话意图进入此模式。在这里维护章节、段落要点与叙事顺序，可随时修改。",
-    },
-    ask: {
-      title: "提问模式：自由提问",
-      body: "问怎么做得更好、创作技巧怎么学、行业或平台怎么回事——我会按问题类型给优化建议、答疑或背景分析，帮你把创作想明白。",
-    },
-    creation: {
-      title: "创作模式：AI 团队精良制作",
-      body: "系统根据对话意图进入此模式；AI 团队会在内部编排制作步骤并交付成稿，见右侧「内容预览」。",
-    },
-  },
   status: {
     inspirationExploring: "正在帮你找灵感、理清选题和写法",
     inspirationConfirmed: (n: number) => `已记录 ${n} 条灵感`,
@@ -392,8 +373,8 @@ export const WORK_HISTORY_PANEL = {
   duplicating: "正在创建…",
   duplicateFromHere: "从此版本复制",
   timelineTitle: "版本记录",
-  timelineHint: "创作模式生成内容预览后会记一条；可回到任意一版继续编辑。",
-  empty: "还没有版本记录。创作模式产出内容预览后会出现。",
+  timelineHint: "创作阶段生成内容预览后会记一条；可回到任意一版继续编辑。",
+  empty: "还没有版本记录。创作阶段产出内容预览后会出现。",
   headBadge: "当前",
   restore: "回到这一版",
   restoreTitle: "回到这一版？",
@@ -407,7 +388,7 @@ export const WORK_HISTORY_PANEL = {
 /** 作品面板 · 灵感 */
 export const CONTENT_SETTINGS_PANEL = {
   title: "灵感",
-  hint: "灵感模式里确认的需求会写入 brief；可补充、修改或删除",
+  hint: "灵感阶段确认的需求会写入 brief；可补充、修改或删除",
   confirmedLabel: "brief 需求",
   clearAll: "清空",
   empty: "还没有 brief 需求。在对话里确认方向后，Agent 会通过工具写入这里。",
@@ -416,11 +397,11 @@ export const CONTENT_SETTINGS_PANEL = {
 /** 作品面板 · 大纲 */
 export const OUTLINE_PANEL = {
   title: "大纲",
-  hint: "大纲模式里维护内容结构；可随时在对话或侧栏修改",
+  hint: "大纲阶段维护内容结构；可随时在对话或侧栏修改",
   sectionsLabel: "大纲条目",
   completedLabel: (n: number) => `共 ${n} 条`,
   clearAll: "清空",
-  empty: "进入大纲模式后，会根据 brief 自动生成；也可在对话里补充、修改。",
+  empty: "进入大纲阶段后，会根据 brief 自动生成；也可在对话里补充、修改。",
 } as const;
 
 /** 对话流 · 大纲进度（已移除，大纲仅在侧栏展示） */

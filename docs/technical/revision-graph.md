@@ -62,5 +62,6 @@
 
 - `apps/api/src/services/work-revisions.ts`
 - `apps/api/src/services/revisions.ts`
-- `packages/domain/src/revision.ts`
+- `packages/domain/src/models/revision.ts`
+- `packages/domain/src/utils/revision.ts`
 - `apps/web/src/components/studio/work-history-panel.tsx`

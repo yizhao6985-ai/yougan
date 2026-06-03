@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { ProfileAppearanceEditor } from "@/components/settings/profile-appearance-editor";
 import {
@@ -14,43 +14,56 @@ import {
   useUpdateProfileMutation,
 } from "@/hooks/queries/auth";
 import { ApiError } from "@/services/client";
+import type { AuthUser } from "@/services/auth";
 
 const BIO_MAX_LENGTH = 160;
 
-export function ProfileSettingsPanel() {
-  const { data: user } = useMeQuery();
+function profileFormKey(user: AuthUser | undefined) {
+  return [
+    user?.id ?? "anonymous",
+    user?.name ?? "",
+    user?.bio ?? "",
+    user?.avatarUrl ?? "",
+    user?.coverUrl ?? "",
+  ].join("\u0000");
+}
+
+function ProfileSettingsForm({
+  user,
+  onNotice,
+  onError,
+}: {
+  user: AuthUser | undefined;
+  onNotice: (message: string | null) => void;
+  onError: (message: string | null) => void;
+}) {
   const updateProfileMutation = useUpdateProfileMutation();
 
-  const [name, setName] = useState("");
-  const [bio, setBio] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [coverUrl, setCoverUrl] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
-
-  useEffect(() => {
-    setName(user?.name ?? "");
-    setBio(user?.bio ?? "");
-    setAvatarUrl(user?.avatarUrl ?? null);
-    setCoverUrl(user?.coverUrl ?? null);
-  }, [user?.name, user?.bio, user?.avatarUrl, user?.coverUrl]);
+  const [name, setName] = useState(user?.name ?? "");
+  const [bio, setBio] = useState(user?.bio ?? "");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(
+    user?.avatarUrl ?? null,
+  );
+  const [coverUrl, setCoverUrl] = useState<string | null>(
+    user?.coverUrl ?? null,
+  );
 
   const saveMedia = async (
     patch: { avatarUrl?: string | null; coverUrl?: string | null },
   ) => {
-    setError(null);
+    onError(null);
     try {
       await updateProfileMutation.mutateAsync(patch);
-      setNotice("图片已更新");
+      onNotice("图片已更新");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "保存失败");
+      onError(err instanceof ApiError ? err.message : "保存失败");
     }
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setError(null);
-    setNotice(null);
+    onError(null);
+    onNotice(null);
 
     const trimmedName = name.trim();
     const trimmedBio = bio.trim();
@@ -65,7 +78,7 @@ export function ProfileSettingsPanel() {
     }
 
     if (!Object.keys(payload).length) {
-      setNotice("没有需要保存的更改");
+      onNotice("没有需要保存的更改");
       return;
     }
 
@@ -74,19 +87,14 @@ export function ProfileSettingsPanel() {
         await updateProfileMutation.mutateAsync(payload);
       setName(updatedUser.name ?? "");
       setBio(updatedUser.bio ?? "");
-      setNotice("保存成功");
+      onNotice("保存成功");
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "保存失败");
+      onError(err instanceof ApiError ? err.message : "保存失败");
     }
   };
 
   return (
-    <div className="space-y-6">
-      <SettingsPageHeader
-        title="个人信息"
-        description="设置对外展示的头像、封面、昵称与个人签名，会同步到个人主页与内容作者信息。"
-      />
-
+    <>
       <SettingsPanelCard
         title="形象展示"
         description="头像与封面将展示在个人主页顶部，与访客看到的布局相同。"
@@ -147,9 +155,6 @@ export function ProfileSettingsPanel() {
             </p>
           </div>
 
-          {notice ? <SettingsNotice tone="success">{notice}</SettingsNotice> : null}
-          {error ? <SettingsNotice tone="error">{error}</SettingsNotice> : null}
-
           <div className="flex justify-end border-t border-border/60 pt-4">
             <Button type="submit" disabled={updateProfileMutation.isPending}>
               {updateProfileMutation.isPending ? "保存中..." : "保存更改"}
@@ -157,6 +162,31 @@ export function ProfileSettingsPanel() {
           </div>
         </form>
       </SettingsPanelCard>
+    </>
+  );
+}
+
+export function ProfileSettingsPanel() {
+  const { data: user } = useMeQuery();
+  const [notice, setNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  return (
+    <div className="space-y-6">
+      <SettingsPageHeader
+        title="个人信息"
+        description="设置对外展示的头像、封面、昵称与个人签名，会同步到个人主页与内容作者信息。"
+      />
+
+      <ProfileSettingsForm
+        key={profileFormKey(user)}
+        user={user}
+        onNotice={setNotice}
+        onError={setError}
+      />
+
+      {notice ? <SettingsNotice tone="success">{notice}</SettingsNotice> : null}
+      {error ? <SettingsNotice tone="error">{error}</SettingsNotice> : null}
     </div>
   );
 }

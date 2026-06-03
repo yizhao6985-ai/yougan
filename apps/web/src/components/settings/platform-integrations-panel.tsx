@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { Link2Icon, Link2OffIcon, RefreshCwIcon } from "lucide-react";
+import { useCallback, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { Link2Icon, Link2OffIcon, RefreshCwIcon } from "lucide-react";
 
 import {
   SettingsNotice,
@@ -14,6 +14,7 @@ import {
   usePlatformIntegrationsQuery,
   useStartPlatformAuthorizationMutation,
 } from "@/hooks/queries/integrations";
+import { useOAuthCallbackQuery } from "@/hooks/queries/oauth-callback";
 import { ApiError } from "@/services/client";
 import { INTEGRATIONS } from "@/lib/site-copy";
 import { cn } from "@/lib/utils";
@@ -21,8 +22,10 @@ import { cn } from "@/lib/utils";
 export function PlatformIntegrationsPanel() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [actionPlatform, setActionPlatform] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const oauthStatusParam = searchParams.get("status");
+  const oauthPlatformParam = searchParams.get("platform") ?? "";
 
   const {
     data: platforms = [],
@@ -34,48 +37,46 @@ export function PlatformIntegrationsPanel() {
   const connectMutation = useStartPlatformAuthorizationMutation();
   const disconnectMutation = useDisconnectPlatformMutation();
 
-  useEffect(() => {
-    const oauthStatus = searchParams.get("status");
-    const oauthPlatform = searchParams.get("platform");
-    if (!oauthStatus) return;
-
-    if (oauthStatus === "connected") {
-      const label =
-        platforms.find((item) => item.id === oauthPlatform)?.label ??
-        oauthPlatform ??
-        "平台";
-      setNotice(INTEGRATIONS.oauthSuccess(label));
-      void refetch();
-    } else if (oauthStatus === "error") {
-      setError("授权失败，请重试或联系管理员检查 OAuth 配置。");
-    }
-
+  const clearCallbackParams = useCallback(() => {
     const next = new URLSearchParams(searchParams);
     next.delete("status");
     next.delete("platform");
     setSearchParams(next, { replace: true });
-  }, [platforms, refetch, searchParams, setSearchParams]);
+  }, [searchParams, setSearchParams]);
+
+  const oauthCallbackQuery = useOAuthCallbackQuery({
+    status: oauthStatusParam,
+    platform: oauthPlatformParam,
+    platforms,
+    platformsReady: !isLoading,
+    clearCallbackParams,
+  });
+
+  const oauthFeedback = oauthCallbackQuery.data;
+  const notice = oauthFeedback?.type === "success" ? oauthFeedback.message : null;
+  const error =
+    oauthFeedback?.type === "error"
+      ? oauthFeedback.message
+      : actionError;
 
   const handleConnect = async (platformId: string) => {
     setActionPlatform(platformId);
-    setError(null);
-    setNotice(null);
+    setActionError(null);
     try {
       await connectMutation.mutateAsync(platformId);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "发起授权失败");
+      setActionError(err instanceof ApiError ? err.message : "发起授权失败");
       setActionPlatform(null);
     }
   };
 
   const handleDisconnect = async (platformId: string) => {
     setActionPlatform(platformId);
-    setError(null);
-    setNotice(null);
+    setActionError(null);
     try {
       await disconnectMutation.mutateAsync(platformId);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "解除授权失败");
+      setActionError(err instanceof ApiError ? err.message : "解除授权失败");
     } finally {
       setActionPlatform(null);
     }

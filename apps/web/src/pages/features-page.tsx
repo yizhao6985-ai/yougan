@@ -16,7 +16,6 @@ import {
 } from "@/lib/product-capabilities";
 import { scene } from "@/lib/scene-styles";
 import { FEATURES_PAGE } from "@/lib/site-copy";
-import { CHAT_MODE_LABELS } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 function ModeSection({
@@ -46,7 +45,7 @@ function ModeSection({
           </span>
           <div>
             <p className="text-xs font-medium uppercase tracking-wider text-primary/90">
-              {CHAT_MODE_LABELS[mode.id]}
+              {mode.label}
             </p>
             <h2 className="mt-1 text-2xl font-semibold text-foreground">
               {mode.tagline}

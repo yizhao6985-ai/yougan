@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { CheckCircle2Icon, CopyIcon, MailIcon } from "lucide-react";
 
@@ -55,20 +55,16 @@ export function FeedbackForm({ className, onSubmitted }: FeedbackFormProps) {
   const [copied, setCopied] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (user?.email && !draft.contactEmail) {
-      setDraft((prev) => ({ ...prev, contactEmail: user.email }));
-    }
-  }, [user?.email, draft.contactEmail]);
-
-  useEffect(() => {
-    if (!submittedBody) {
-      writeFeedbackDraft(draft);
-    }
-  }, [draft, submittedBody]);
+  const contactEmail = draft.contactEmail || user?.email || "";
 
   const updateDraft = (patch: Partial<FeedbackDraft>) => {
-    setDraft((prev) => ({ ...prev, ...patch }));
+    setDraft((prev) => {
+      const next = { ...prev, ...patch };
+      if (!submittedBody) {
+        writeFeedbackDraft(next);
+      }
+      return next;
+    });
     setError(null);
   };
 
@@ -83,12 +79,15 @@ export function FeedbackForm({ className, onSubmitted }: FeedbackFormProps) {
     }
 
     setSubmitting(true);
-    const body = formatFeedbackBody(draft, {
-      pageUrl: `${window.location.origin}${location.pathname}${location.search}`,
-      userAgent: navigator.userAgent,
-      userId: user?.id,
-      userEmail: user?.email,
-    });
+    const body = formatFeedbackBody(
+      { ...draft, contactEmail },
+      {
+        pageUrl: `${window.location.origin}${location.pathname}${location.search}`,
+        userAgent: navigator.userAgent,
+        userId: user?.id,
+        userEmail: user?.email,
+      },
+    );
 
     const didCopy = await copyFeedbackToClipboard(body);
     writeFeedbackDraft(null);
@@ -192,7 +191,7 @@ export function FeedbackForm({ className, onSubmitted }: FeedbackFormProps) {
         <p className="text-sm font-medium text-foreground">{FEEDBACK.contactLabel}</p>
         <Input
           type="email"
-          value={draft.contactEmail}
+          value={contactEmail}
           onChange={(event) => updateDraft({ contactEmail: event.target.value })}
           placeholder={FEEDBACK.contactPlaceholder}
           autoComplete="email"

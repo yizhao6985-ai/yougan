@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef } from "react";
 
 import type { Message } from "@langchain/langgraph-sdk";
 import { useStream } from "@langchain/langgraph-sdk/react";
 
+import { useOpeningBootstrapQuery } from "@/hooks/queries/opening-bootstrap";
 import { buildHumanMessageContent } from "@/lib/build-human-message-content";
 import { applyGraphUpdatesToValues } from "@/lib/message-utils";
 import { YOUGAN_ASSISTANT_ID } from "@/lib/yougan-chat-api";
@@ -21,6 +22,28 @@ interface UseYouganStreamOptions {
   onRunComplete?: (workId: string, values: YouganValues) => void;
 }
 
+function buildStreamSubmitInput(
+  work: Work,
+  conversation: WorkConversation,
+  modelTemperature: number,
+  messages?: Message[],
+): YouganValues & { messages?: Message[] } {
+  return {
+    ...(messages ? { messages } : {}),
+    workId: work.id,
+    workTitle: work.title,
+    conversationTitle: conversation.title,
+    profile: work.profile,
+    outline: work.outline,
+    plan: work.plan,
+    brief: work.brief,
+    openingNextStepSuggestions: null,
+    turnNextStepSuggestions: null,
+    draft: work.draft,
+    modelTemperature,
+  };
+}
+
 export function useYouganStream({
   work,
   conversation,
@@ -32,6 +55,9 @@ export function useYouganStream({
   const workId = work?.id ?? null;
   const conversationId = conversation?.id ?? null;
   const token = useAuthToken();
+
+  const onRunCompleteRef = useRef(onRunComplete);
+  onRunCompleteRef.current = onRunComplete;
 
   const defaultHeaders = useMemo(
     () => ({
@@ -53,6 +79,14 @@ export function useYouganStream({
     onThreadId: (id) => {
       if (conversationId) onThreadId?.(conversationId, id);
     },
+    onFinish: (state) => {
+      if (!workId) return;
+      const values =
+        "values" in state && state.values
+          ? (state.values as YouganValues)
+          : (state as unknown as YouganValues);
+      onRunCompleteRef.current?.(workId, values);
+    },
     onUpdateEvent: (update, { mutate }) => {
       mutate((prev) =>
         applyGraphUpdatesToValues(
@@ -63,68 +97,26 @@ export function useYouganStream({
     },
   });
 
-  const wasLoadingRef = useRef(false);
-  const openingBootstrapInFlightRef = useRef(false);
-
-  useEffect(() => {
-    const wasLoading = wasLoadingRef.current;
-    wasLoadingRef.current = stream.isLoading;
-
-    if (!wasLoading || stream.isLoading) return;
-
-    if (workId && stream.values) {
-      onRunComplete?.(workId, stream.values);
-    }
-  }, [
-    onRunComplete,
-    stream.isLoading,
-    stream.values,
-    workId,
-  ]);
-
-  const bootstrapOpeningSuggestions = useCallback(async () => {
+  const submitOpeningBootstrap = useCallback(async () => {
     if (!work || !conversation || !token) return;
     if (stream.messages.length > 0) return;
 
     await stream.submit(
-      {
-        workId: work.id,
-        workTitle: work.title,
-        conversationTitle: conversation.title,
-        profile: work.profile,
-        outline: work.outline,
-        plan: work.plan,
-        brief: work.brief,
-        openingNextStepSuggestions: null,
-        turnNextStepSuggestions: null,
-        draft: work.draft,
-        modelTemperature,
-      },
+      buildStreamSubmitInput(work, conversation, modelTemperature),
       {
         streamMode: [...LANGGRAPH_STREAM_MODE],
       },
     );
   }, [conversation, modelTemperature, stream, token, work]);
 
-  useEffect(() => {
-    if (!conversation?.id || !work || !token) return;
-    if (stream.messages.length > 0) return;
-    if (stream.isThreadLoading) return;
-    if (stream.isLoading || openingBootstrapInFlightRef.current) return;
-
-    openingBootstrapInFlightRef.current = true;
-    void bootstrapOpeningSuggestions().finally(() => {
-      openingBootstrapInFlightRef.current = false;
-    });
-  }, [
-    bootstrapOpeningSuggestions,
-    conversation?.id,
-    stream.isLoading,
-    stream.isThreadLoading,
-    stream.messages.length,
-    token,
+  const openingBootstrapQuery = useOpeningBootstrapQuery({
     work,
-  ]);
+    conversation,
+    token,
+    messageCount: stream.messages.length,
+    isThreadLoading: stream.isThreadLoading,
+    submitOpeningBootstrap,
+  });
 
   const sendMessage = useCallback(
     async (text: string, imageUrls: string[] = []) => {
@@ -134,20 +126,9 @@ export function useYouganStream({
       if (!hasText || !work || !conversation) return;
 
       await stream.submit(
-        {
-          messages: [{ type: "human" as const, content }],
-          workId: work.id,
-          workTitle: work.title,
-          conversationTitle: conversation.title,
-          profile: work.profile,
-          outline: work.outline,
-          plan: work.plan,
-          brief: work.brief,
-          openingNextStepSuggestions: null,
-          turnNextStepSuggestions: null,
-          draft: work.draft,
-          modelTemperature,
-        },
+        buildStreamSubmitInput(work, conversation, modelTemperature, [
+          { type: "human" as const, content },
+        ]),
         {
           streamMode: [...LANGGRAPH_STREAM_MODE],
         },
@@ -159,7 +140,10 @@ export function useYouganStream({
   const isBootstrappingOpening =
     Boolean(conversation?.id) &&
     stream.messages.length === 0 &&
-    (stream.isLoading || stream.isThreadLoading);
+    (openingBootstrapQuery.isFetching ||
+      openingBootstrapQuery.isPending ||
+      stream.isThreadLoading ||
+      stream.isLoading);
 
   return {
     stream,

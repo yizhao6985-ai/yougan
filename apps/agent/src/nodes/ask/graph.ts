@@ -4,9 +4,9 @@
 import { END, START, StateGraph } from "@langchain/langgraph";
 
 import * as afterLlm from "./conditional-edges/after-llm.js";
-import { llmCall } from "./nodes/llm-call.js";
-import { prepareAskTurnNode } from "./nodes/prepare-turn.js";
-import { toolNode } from "./nodes/tools.js";
+import { llmCall } from "./nodes/llm-call/index.js";
+import { prepareAskTurnNode } from "./nodes/prepare-turn/index.js";
+import { toolNode } from "./nodes/tools/index.js";
 import { AgentState } from "../../state.js";
 
 const askWorkflow = new StateGraph(AgentState)

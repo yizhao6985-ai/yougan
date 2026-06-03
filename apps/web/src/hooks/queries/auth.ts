@@ -107,15 +107,21 @@ export function useRequestEmailChangeMutation() {
   });
 }
 
-export function useConfirmEmailMutation() {
+export function useConfirmEmailQuery(token: string) {
   const queryClient = useQueryClient();
   const setToken = useSetAtom(authTokenAtom);
 
-  return useMutation({
-    mutationFn: (token: string) => confirmEmailChange(token),
-    onSuccess: (data) => {
+  return useQuery({
+    queryKey: queryKeys.auth.confirmEmail(token),
+    queryFn: async () => {
+      const data = await confirmEmailChange(token);
       setToken(data.token);
       queryClient.setQueryData(queryKeys.auth.me, { user: data.user });
+      return data;
     },
+    enabled: Boolean(token),
+    retry: false,
+    staleTime: Number.POSITIVE_INFINITY,
+    gcTime: Number.POSITIVE_INFINITY,
   });
 }

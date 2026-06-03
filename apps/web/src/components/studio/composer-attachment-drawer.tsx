@@ -1,5 +1,5 @@
 import { ChevronDownIcon, Loader2Icon, XIcon } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 
 import {
   Collapsible,
@@ -13,10 +13,16 @@ import { cn } from "@/lib/utils";
 export function ComposerAttachmentDrawer({ className }: { className?: string }) {
   const { items, remove } = useComposerAttachmentsContext();
   const [open, setOpen] = useState(true);
+  const previousCountRef = useRef(items.length);
 
-  useEffect(() => {
-    if (items.length > 0) setOpen(true);
-  }, [items.length]);
+  if (items.length > previousCountRef.current) {
+    previousCountRef.current = items.length;
+    if (!open) {
+      setOpen(true);
+    }
+  } else if (items.length !== previousCountRef.current) {
+    previousCountRef.current = items.length;
+  }
 
   if (items.length === 0) return null;
 

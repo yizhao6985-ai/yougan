@@ -31,10 +31,11 @@ src/
 │   ├── route-by-turn-queue.ts    # 队列项 → 对话子图
 │   └── route-after-turn-queue.ts
 ├── nodes/
-│   ├── resolve-turn-queue/       # planTurnQueue → turnQueue
+│   ├── resolve-turn-queue/       # planTurnQueue → turnQueue（nodes/plan/）
 │   ├── turn-queue/               # 流程：dispatch / advance
 │   ├── inspiration|outline|creation|ask/
-│   └── next-step-suggestions/
+│   │   └── nodes/                # 子图 LangGraph 节点；可递归 nodes/（如 tools/nodes/）
+│   └── next-step-suggestions/  # nodes/run、opening-topic、after-turn、shared
 ├── tools/
 ├── prompt/
 └── state.ts

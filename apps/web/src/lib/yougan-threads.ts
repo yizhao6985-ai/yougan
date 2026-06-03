@@ -1,5 +1,5 @@
 import type { Thread } from "@langchain/langgraph-sdk";
-import { MAX_CONVERSATION_TITLE_LENGTH } from "@yougan/domain";
+import { truncateAtMaxLength } from "@yougan/domain";
 
 import { YOUGAN_ASSISTANT_ID } from "@/lib/yougan-chat-api";
 import { getLangGraphClient } from "@/lib/langgraph-client";
@@ -14,12 +14,6 @@ export type YouganThreadItem = {
   title: string;
   updatedAt: string;
 };
-
-function truncateTitle(text: string, maxLength = MAX_CONVERSATION_TITLE_LENGTH) {
-  const trimmed = text.trim();
-  if (trimmed.length <= maxLength) return trimmed;
-  return `${trimmed.slice(0, maxLength)}…`;
-}
 
 function messageContentToText(content: unknown): string {
   if (typeof content === "string") return content;
@@ -47,7 +41,7 @@ function formatThreadTitle(thread: Thread): string {
   const firstHuman = values?.messages?.find((message) => message.type === "human");
   if (firstHuman) {
     const text = messageContentToText(firstHuman.content).trim();
-    if (text) return truncateTitle(text);
+    if (text) return truncateAtMaxLength(text);
   }
 
   const updatedAt = new Date(thread.updated_at);

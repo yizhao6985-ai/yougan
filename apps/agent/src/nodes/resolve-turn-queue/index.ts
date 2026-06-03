@@ -1,4 +1,4 @@
-import { planTurnQueue } from "./resolve-turn-queue.js";
+import { planTurnQueue } from "./nodes/plan/index.js";
 import type { AgentStateType } from "../../state.js";
 
 /** 结构化解析本轮 turnQueue */

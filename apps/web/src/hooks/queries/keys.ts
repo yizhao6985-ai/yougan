@@ -3,12 +3,15 @@ import type { DiscoverFilters } from "@/lib/discover-taxonomy";
 export const queryKeys = {
   auth: {
     me: ["auth", "me"] as const,
+    confirmEmail: (token: string) => ["auth", "confirm-email", token] as const,
   },
   works: {
     all: ["works"] as const,
     list: ["works", "list"] as const,
     conversations: (workId: string) =>
       ["works", workId, "conversations"] as const,
+    openingBootstrap: (workId: string, conversationId: string) =>
+      ["works", workId, "conversations", conversationId, "opening-bootstrap"] as const,
     revisions: (workId: string) => ["works", workId, "revisions"] as const,
   },
   workGroups: {
@@ -28,6 +31,8 @@ export const queryKeys = {
     all: ["integrations"] as const,
     platforms: ["integrations", "platforms"] as const,
     oauthStatus: ["integrations", "oauth-status"] as const,
+    oauthCallback: (status: string, platform: string) =>
+      ["integrations", "oauth-callback", status, platform] as const,
   },
   subscription: {
     all: ["subscription"] as const,

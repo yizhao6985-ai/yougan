@@ -1,28 +1,16 @@
-import { useEffect } from "react";
-
-import {
-  applyThemeToDocument,
-  getSystemTheme,
-  resolveTheme,
-} from "@/lib/theme";
+import { applyThemeToDocument, resolveTheme } from "@/lib/theme";
+import { useSystemTheme } from "@/hooks/use-system-theme";
 import { useThemePreference } from "@/store/theme";
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [preference] = useThemePreference();
+  const systemTheme = useSystemTheme();
+  const resolved =
+    preference === "system" ? systemTheme : resolveTheme(preference);
 
-  useEffect(() => {
-    applyThemeToDocument(resolveTheme(preference));
-  }, [preference]);
-
-  useEffect(() => {
-    if (preference !== "system") return;
-
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const sync = () => applyThemeToDocument(getSystemTheme());
-    sync();
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
-  }, [preference]);
+  if (typeof document !== "undefined") {
+    applyThemeToDocument(resolved);
+  }
 
   return children;
 }

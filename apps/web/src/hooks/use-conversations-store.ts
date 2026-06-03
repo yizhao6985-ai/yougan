@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useAtom } from "jotai";
 import { atom } from "jotai";
 
@@ -58,34 +58,22 @@ export function useConversationsStore(workId: string | null) {
     ? (activeConversationMap[workId] ?? null)
     : null;
 
-  const activeConversation = useMemo(
-    () =>
-      conversations.find(
-        (conversation) => conversation.id === activeConversationId,
-      ) ??
-      conversations[0] ??
-      null,
-    [activeConversationId, conversations],
-  );
+  const activeConversation = useMemo(() => {
+    if (!conversations.length) return null;
 
-  useEffect(() => {
-    if (!workId || conversationsQuery.isLoading) return;
+    if (
+      activeConversationId &&
+      conversations.some((conversation) => conversation.id === activeConversationId)
+    ) {
+      return (
+        conversations.find(
+          (conversation) => conversation.id === activeConversationId,
+        ) ?? null
+      );
+    }
 
-    if (!conversations.length) return;
-
-    setActiveConversationMap((prev) => {
-      const currentId = prev[workId];
-      if (currentId && conversations.some((item) => item.id === currentId)) {
-        return prev;
-      }
-      return { ...prev, [workId]: conversations[0]!.id };
-    });
-  }, [
-    conversations,
-    conversationsQuery.isLoading,
-    setActiveConversationMap,
-    workId,
-  ]);
+    return conversations[0] ?? null;
+  }, [activeConversationId, conversations]);
 
   const selectConversation = useCallback(
     (conversationId: string) => {

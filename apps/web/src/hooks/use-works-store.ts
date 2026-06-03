@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useAtom } from "jotai";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -58,24 +58,17 @@ export function useWorksStore() {
           ? "加载作品失败"
           : null;
 
-  useEffect(() => {
-    if (!token) {
-      setActiveWorkId(null);
-      return;
+  const resolvedActiveWorkId = useMemo(() => {
+    if (!token || !works.length) return null;
+    if (activeWorkId && works.some((work) => work.id === activeWorkId)) {
+      return activeWorkId;
     }
-    if (!works.length) {
-      setActiveWorkId(null);
-      return;
-    }
-    setActiveWorkId((prev) => {
-      if (prev && works.some((work) => work.id === prev)) return prev;
-      return works[0]?.id ?? null;
-    });
-  }, [token, works, setActiveWorkId]);
+    return works[0]?.id ?? null;
+  }, [activeWorkId, token, works]);
 
   const activeWork = useMemo(
-    () => works.find((work) => work.id === activeWorkId) ?? null,
-    [activeWorkId, works],
+    () => works.find((work) => work.id === resolvedActiveWorkId) ?? null,
+    [resolvedActiveWorkId, works],
   );
 
   const reload = useCallback(async () => {
