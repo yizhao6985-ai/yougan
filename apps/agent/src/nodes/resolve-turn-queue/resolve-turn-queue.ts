@@ -1,27 +1,51 @@
 import { HumanMessage } from "@langchain/core/messages";
 
-import { sortTurnTasks, type TurnTaskKind } from "@yougan/domain";
+import {
+  fallbackConversationTitleFromText,
+  sortTurnQueue,
+  type TurnQueueKind,
+} from "@yougan/domain";
 
 import { createStructuredModel } from "../../llm/dashscope.js";
 import { invokeStructuredOutput } from "../../lib/structured-output.js";
-import { getLatestHumanMessageText } from "../../lib/human-message/index.js";
+import { sanitizeSuggestedConversationTitle } from "../../lib/conversation-title/sanitize-suggested-title.js";
+import { shouldSuggestConversationTitle } from "../../lib/conversation-title/should-suggest-conversation-title.js";
+import {
+  countHumanMessages,
+  getLatestHumanMessageImageUrls,
+  getLatestHumanMessageText,
+} from "../../lib/human-message/index.js";
 import type { AgentStateType } from "../../state.js";
 import { buildTurnQueuePrompt } from "./prompt.js";
 import { TurnQueueDecisionSchema } from "./schema.js";
 
-const DEFAULT_TASK_QUEUE: TurnTaskKind[] = ["inspiration"];
+const DEFAULT_QUEUE: TurnQueueKind[] = ["inspiration"];
 
-/** 用大模型结构化输出解析本轮任务队列。 */
-export async function resolveTurnTaskQueue(
+export type PlanTurnQueueResult = {
+  turnQueue: TurnQueueKind[];
+  suggestedConversationTitle?: string;
+};
+
+/** 用大模型结构化输出解析本轮队列，并在首条用户消息时建议对话标题 */
+export async function planTurnQueue(
   state: AgentStateType,
-): Promise<TurnTaskKind[]> {
-  const userMessage = getLatestHumanMessageText(state.messages);
-  if (!userMessage) {
-    return DEFAULT_TASK_QUEUE;
+): Promise<PlanTurnQueueResult> {
+  if (countHumanMessages(state.messages) < 1) {
+    return { turnQueue: DEFAULT_QUEUE };
   }
 
+  const userMessage = getLatestHumanMessageText(state.messages);
+  const hasImages =
+    getLatestHumanMessageImageUrls(state.messages).length > 0;
+  if (!userMessage && !hasImages) {
+    return { turnQueue: DEFAULT_QUEUE };
+  }
+
+  const requestTitle = shouldSuggestConversationTitle(state);
   const llm = createStructuredModel({ temperature: 0.1 });
-  const prompt = buildTurnQueuePrompt(state, userMessage);
+  const prompt = buildTurnQueuePrompt(state, userMessage, {
+    requestConversationTitle: requestTitle,
+  });
 
   try {
     const parsed = await invokeStructuredOutput(
@@ -30,9 +54,22 @@ export async function resolveTurnTaskQueue(
       [new HumanMessage(prompt)],
       { name: "turn_queue_decision" },
     );
-    const tasks = sortTurnTasks(parsed.tasks);
-    return tasks.length ? tasks : DEFAULT_TASK_QUEUE;
+    const queue = sortTurnQueue(parsed.kinds);
+    const turnQueue = queue.length ? queue : DEFAULT_QUEUE;
+    let suggestedConversationTitle = requestTitle
+      ? sanitizeSuggestedConversationTitle(parsed.conversationTitle)
+      : undefined;
+    if (requestTitle && !suggestedConversationTitle) {
+      suggestedConversationTitle =
+        fallbackConversationTitleFromText(userMessage) ??
+        (hasImages ? "参考图讨论" : undefined);
+      suggestedConversationTitle = sanitizeSuggestedConversationTitle(
+        suggestedConversationTitle,
+      );
+    }
+
+    return { turnQueue, suggestedConversationTitle };
   } catch {
-    return DEFAULT_TASK_QUEUE;
+    return { turnQueue: DEFAULT_QUEUE };
   }
 }

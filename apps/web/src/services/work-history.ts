@@ -4,13 +4,11 @@ import type {
   WorkRevisionDTO,
   WorkRevisionSnapshot,
 } from "@/lib/types";
-import type { ChatMode } from "@/lib/types";
 
 export interface WorkAgentContext {
   workId: string;
   conversationId?: string;
   headRevisionId?: string | null;
-  mode: ChatMode;
   profile: Work["profile"];
   brief: Work["brief"];
   outline: Work["outline"];

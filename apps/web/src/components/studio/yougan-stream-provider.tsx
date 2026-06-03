@@ -5,7 +5,19 @@ import {
   type ConversationsStore,
 } from "@/hooks/use-conversations-store";
 import { useModelTemperature } from "@/hooks/use-model-temperature";
+import {
+  patchConversationsCache,
+  useInvalidateWorkConversations,
+} from "@/hooks/queries/conversations";
 import { useInvalidateRevisionQueries } from "@/hooks/queries/revisions";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  countHumanCheckpointMessages,
+  fallbackConversationTitleFromText,
+  getFirstHumanCheckpointMessageText,
+  isDefaultConversationTitle,
+  sanitizeAutoConversationTitle,
+} from "@yougan/domain";
 import {
   useYouganStream,
   type YouganStream,
@@ -22,7 +34,8 @@ type StudioContextValue = WorksStore &
 
 const StudioContext = createContext<StudioContextValue | null>(null);
 
-function ConversationStreamInner({
+/** 按对话 remount stream，避免切换时残留上一 thread 的 messages / loading */
+function ConversationStreamKeyed({
   worksStore,
   conversationsStore,
   children,
@@ -31,17 +44,58 @@ function ConversationStreamInner({
   conversationsStore: ConversationsStore;
   children: ReactNode;
 }) {
+  const queryClient = useQueryClient();
   const temperatureControl = useModelTemperature(worksStore.activeWork?.id);
-  const invalidateRevisionQueries = useInvalidateRevisionQueries(
-    worksStore.activeWork?.id ?? null,
-  );
+  const workId = worksStore.activeWork?.id ?? null;
+  const invalidateRevisionQueries = useInvalidateRevisionQueries(workId);
+  const invalidateConversations = useInvalidateWorkConversations(workId);
 
   const handleRunComplete = useCallback(
-    (workId: string, values: YouganValues) => {
-      worksStore.applyStreamValuesToCache(workId, values);
+    (completedWorkId: string, values: YouganValues) => {
+      worksStore.applyStreamValuesToCache(completedWorkId, values);
       void invalidateRevisionQueries();
+
+      const conversationId = conversationsStore.activeConversation?.id;
+      const activeTitle = conversationsStore.activeConversation?.title ?? "";
+      const cachedTitle =
+        conversationsStore.conversations.find((c) => c.id === conversationId)
+          ?.title ?? activeTitle;
+      const stillPlaceholderTitle =
+        isDefaultConversationTitle(activeTitle) &&
+        isDefaultConversationTitle(cachedTitle);
+
+      if (!stillPlaceholderTitle || completedWorkId !== workId) return;
+
+      let suggested = sanitizeAutoConversationTitle(
+        values.suggestedConversationTitle,
+      );
+      if (!suggested) {
+        const firstHuman = getFirstHumanCheckpointMessageText(values.messages);
+        suggested = fallbackConversationTitleFromText(firstHuman);
+      }
+      if (conversationId && suggested) {
+        patchConversationsCache(queryClient, completedWorkId, (items) =>
+          items.map((item) =>
+            item.id === conversationId ? { ...item, title: suggested } : item,
+          ),
+        );
+      }
+
+      // 仅占位标题且已有用户消息时拉列表，对齐 agent-proxy 自动标题（开屏 bootstrap 无 human，跳过）
+      if (conversationId && countHumanCheckpointMessages(values.messages) >= 1) {
+        window.setTimeout(() => {
+          void invalidateConversations();
+        }, 800);
+      }
     },
-    [invalidateRevisionQueries, worksStore],
+    [
+      conversationsStore.activeConversation?.id,
+      invalidateConversations,
+      invalidateRevisionQueries,
+      queryClient,
+      workId,
+      worksStore,
+    ],
   );
 
   const streamState = useYouganStream({
@@ -65,6 +119,29 @@ function ConversationStreamInner({
   );
 }
 
+function ConversationStreamInner({
+  worksStore,
+  conversationsStore,
+  children,
+}: {
+  worksStore: WorksStore;
+  conversationsStore: ConversationsStore;
+  children: ReactNode;
+}) {
+  const conversationKey =
+    conversationsStore.activeConversation?.id ?? "__no-conversation__";
+
+  return (
+    <ConversationStreamKeyed
+      key={conversationKey}
+      worksStore={worksStore}
+      conversationsStore={conversationsStore}
+    >
+      {children}
+    </ConversationStreamKeyed>
+  );
+}
+
 function StreamBridge({
   worksStore,
   children,
@@ -73,14 +150,9 @@ function StreamBridge({
   children: ReactNode;
 }) {
   const conversationsStore = useConversationsStore(worksStore.activeWork?.id ?? null);
-  const streamKey = [
-    worksStore.activeWork?.id ?? "studio-empty",
-    conversationsStore.activeConversation?.id ?? "no-conversation",
-  ].join(":");
 
   return (
     <ConversationStreamInner
-      key={streamKey}
       worksStore={worksStore}
       conversationsStore={conversationsStore}
     >

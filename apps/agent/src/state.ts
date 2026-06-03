@@ -15,7 +15,7 @@ import {
   mergeBriefState,
   mergeOutlineState,
   type BriefSuggestions,
-  type TurnTaskKind,
+  type TurnQueueKind,
   type WorkBrief,
   type WorkDraft,
   type WorkOutline,
@@ -31,18 +31,18 @@ export const AgentState = Annotation.Root({
     reducer: messagesStateReducer,
     default: () => [],
   }),
-  /** 本轮待执行任务队列（队首为当前/下一项） */
-  turnTaskQueue: Annotation<TurnTaskKind[]>({
+  /** 本轮待执行队列（队首为当前/下一项） */
+  turnQueue: Annotation<TurnQueueKind[]>({
     reducer: (_prev, next) => (next === undefined ? _prev ?? [] : next),
     default: () => [],
   }),
-  /** 当前正在执行的任务 */
-  activeTurnTask: Annotation<TurnTaskKind | null>({
+  /** 当前正在执行的队列项 */
+  activeTurnKind: Annotation<TurnQueueKind | null>({
     reducer: (_prev, next) => (next === undefined ? _prev ?? null : next),
     default: () => null,
   }),
-  /** 本轮已完成任务（用于回合末建议等） */
-  completedTurnTasks: Annotation<TurnTaskKind[]>({
+  /** 本轮已完成的队列项（用于回合末建议等） */
+  completedTurnKinds: Annotation<TurnQueueKind[]>({
     reducer: (_prev, next) => (next === undefined ? _prev ?? [] : next),
     default: () => [],
   }),
@@ -57,6 +57,10 @@ export const AgentState = Annotation.Root({
   conversationTitle: Annotation<string | undefined>({
     reducer: (_prev, next) => next,
     default: () => undefined,
+  }),
+  suggestedConversationTitle: Annotation<string | null>({
+    reducer: (_prev, next) => (next === undefined ? _prev ?? null : next),
+    default: () => null,
   }),
   profile: Annotation<WorkProfile>({
     reducer: (_prev, next) => next ?? EMPTY_WORK_PROFILE,
@@ -80,11 +84,11 @@ export const AgentState = Annotation.Root({
     reducer: (_prev, next) => next ?? EMPTY_WORK_PRODUCTION_PLAN,
     default: () => EMPTY_WORK_PRODUCTION_PLAN,
   }),
-  openingBriefSuggestions: Annotation<BriefSuggestions | null>({
+  openingNextStepSuggestions: Annotation<BriefSuggestions | null>({
     reducer: (_prev, next) => (next === undefined ? _prev : next),
     default: () => null,
   }),
-  briefSuggestions: Annotation<BriefSuggestions | null>({
+  turnNextStepSuggestions: Annotation<BriefSuggestions | null>({
     reducer: (_prev, next) => (next === undefined ? _prev : next),
     default: () => null,
   }),

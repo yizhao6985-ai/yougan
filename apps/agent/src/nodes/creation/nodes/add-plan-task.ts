@@ -9,7 +9,7 @@ import {
   type ProductionDepartment,
 } from "../../../schema.js";
 import {
-  parseActiveTurnTask,
+  parseActiveTurnKind,
   parseProductionPlan,
 } from "../../../lib/parse-agent-state.js";
 import { getState } from "../../../lib/tool-state.js";
@@ -17,7 +17,7 @@ import { toolCommand } from "../../../lib/tool-command.js";
 
 export const addPlanTask = tool(
   async ({ description, department }, config) => {
-    if (parseActiveTurnTask(getState()) !== "creation") {
+    if (parseActiveTurnKind(getState()) !== "creation") {
       return toolCommand(config, "add_plan_task 仅在创作模式可用。");
     }
     const trimmed = description.trim();

@@ -15,7 +15,7 @@ import {
   resolveContentSpec,
 } from "../lib/content-spec.js";
 import { normalizePlatform } from "../schema.js";
-import { parseActiveTurnTask, parseProfile } from "../lib/parse-agent-state.js";
+import { parseActiveTurnKind, parseProfile } from "../lib/parse-agent-state.js";
 import { getState, updateProfile } from "../lib/tool-state.js";
 import { toolCommand } from "../lib/tool-command.js";
 
@@ -30,7 +30,7 @@ const modalityIds = MEDIA_MODALITIES.map((item) => item.id) as [
 
 export const confirmContentSpec = tool(
   async (input, config) => {
-    const task = parseActiveTurnTask(getState());
+    const task = parseActiveTurnKind(getState());
     if (task !== "inspiration" && task !== "ask") {
       return toolCommand(
         config,

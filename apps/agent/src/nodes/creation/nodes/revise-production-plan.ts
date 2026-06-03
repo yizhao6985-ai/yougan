@@ -1,14 +1,14 @@
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
-import { parseActiveTurnTask } from "../../../lib/parse-agent-state.js";
+import { parseActiveTurnKind } from "../../../lib/parse-agent-state.js";
 import { getState } from "../../../lib/tool-state.js";
 import { toolCommand } from "../../../lib/tool-command.js";
 import { runCreativeDirector } from "./creative-director.logic.js";
 
 export const reviseProductionPlan = tool(
   async ({ reason }, config) => {
-    if (parseActiveTurnTask(getState()) !== "creation") {
+    if (parseActiveTurnKind(getState()) !== "creation") {
       return toolCommand(config, "revise_production_plan 仅在创作模式可用。");
     }
 

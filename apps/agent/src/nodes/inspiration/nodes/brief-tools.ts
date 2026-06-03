@@ -2,13 +2,13 @@ import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
 import { findBriefRequirementIndex, newBriefRequirement } from "@yougan/domain";
-import { parseActiveTurnTask, parseBrief } from "../../../lib/parse-agent-state.js";
+import { parseActiveTurnKind, parseBrief } from "../../../lib/parse-agent-state.js";
 import { getState } from "../../../lib/tool-state.js";
 import { toolCommand } from "../../../lib/tool-command.js";
 
 export const addBriefRequirement = tool(
   async ({ description }, config) => {
-    if (parseActiveTurnTask(getState()) !== "inspiration") {
+    if (parseActiveTurnKind(getState()) !== "inspiration") {
       return toolCommand(config, "add_brief_requirement 仅在灵感模式可用。");
     }
     const trimmed = description.trim();
@@ -39,7 +39,7 @@ export const addBriefRequirement = tool(
 
 export const updateBriefRequirement = tool(
   async ({ requirement_id, description }, config) => {
-    if (parseActiveTurnTask(getState()) !== "inspiration") {
+    if (parseActiveTurnKind(getState()) !== "inspiration") {
       return toolCommand(config, "update_brief_requirement 仅在灵感模式可用。");
     }
     const trimmed = description.trim();
@@ -73,7 +73,7 @@ export const updateBriefRequirement = tool(
 
 export const deleteBriefRequirement = tool(
   async ({ requirement_id }, config) => {
-    if (parseActiveTurnTask(getState()) !== "inspiration") {
+    if (parseActiveTurnKind(getState()) !== "inspiration") {
       return toolCommand(config, "delete_brief_requirement 仅在灵感模式可用。");
     }
 
@@ -109,7 +109,7 @@ export const deleteBriefRequirement = tool(
 
 export const clearBrief = tool(
   async (_input, config) => {
-    if (parseActiveTurnTask(getState()) !== "inspiration") {
+    if (parseActiveTurnKind(getState()) !== "inspiration") {
       return toolCommand(config, "clear_brief 仅在灵感模式可用。");
     }
 

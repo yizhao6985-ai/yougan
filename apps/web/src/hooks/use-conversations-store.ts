@@ -1,19 +1,15 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useAtom } from "jotai";
 import { atom } from "jotai";
-import { useQueryClient } from "@tanstack/react-query";
 
 import {
-  patchConversationsCache,
   useCreateWorkConversationMutation,
   useDeleteWorkConversationMutation,
   useUpdateWorkConversationMutation,
   useWorkConversationsQuery,
 } from "@/hooks/queries/conversations";
-import { queryKeys } from "@/hooks/queries/keys";
 import { ACTIVE_CONVERSATION_BY_WORK_KEY } from "@/lib/env";
 import type { WorkConversation } from "@/lib/types";
-import { normalizeChatMode } from "@/lib/types";
 
 function readActiveConversationMap(): Record<string, string> {
   try {
@@ -49,7 +45,6 @@ const activeConversationByWorkAtom = atom(
 );
 
 export function useConversationsStore(workId: string | null) {
-  const queryClient = useQueryClient();
   const [activeConversationMap, setActiveConversationMap] = useAtom(
     activeConversationByWorkAtom,
   );
@@ -110,7 +105,6 @@ export function useConversationsStore(workId: string | null) {
       );
       const normalized: WorkConversation = {
         ...conversation,
-        mode: normalizeChatMode(conversation.mode),
         threadId: conversation.threadId ?? null,
       };
       if (workId) {

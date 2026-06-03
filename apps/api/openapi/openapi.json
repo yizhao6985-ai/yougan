@@ -374,14 +374,10 @@
                 "confirmed_at"
               ]
             }
-          },
-          "ready": {
-            "type": "boolean"
           }
         },
         "required": [
-          "requirements",
-          "ready"
+          "requirements"
         ]
       },
       "WorkOutline": {
@@ -400,6 +396,40 @@
                 },
                 "confirmed_at": {
                   "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "description",
+                "confirmed_at"
+              ]
+            }
+          },
+          "summary": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "sections"
+        ]
+      },
+      "WorkProductionPlan": {
+        "type": "object",
+        "properties": {
+          "pending_tasks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "created_at": {
+                  "type": "string"
                 },
                 "department": {
                   "type": "string",
@@ -417,16 +447,20 @@
                     "in_progress",
                     "completed"
                   ]
+                },
+                "assignee": {
+                  "type": "string",
+                  "nullable": true
                 }
               },
               "required": [
                 "id",
                 "description",
-                "confirmed_at"
+                "created_at"
               ]
             }
           },
-          "completed_sections": {
+          "executed_tasks": {
             "type": "array",
             "items": {
               "type": "object",
@@ -437,7 +471,7 @@
                 "description": {
                   "type": "string"
                 },
-                "completed_at": {
+                "executed_at": {
                   "type": "string"
                 },
                 "batch_summary": {
@@ -452,12 +486,16 @@
                     "audio",
                     "video"
                   ]
+                },
+                "assignee": {
+                  "type": "string",
+                  "nullable": true
                 }
               },
               "required": [
                 "id",
                 "description",
-                "completed_at"
+                "executed_at"
               ]
             }
           },
@@ -494,8 +532,8 @@
           }
         },
         "required": [
-          "sections",
-          "completed_sections"
+          "pending_tasks",
+          "executed_tasks"
         ]
       },
       "WorkDraft": {
@@ -557,6 +595,9 @@
           "outline": {
             "$ref": "#/components/schemas/WorkOutline"
           },
+          "plan": {
+            "$ref": "#/components/schemas/WorkProductionPlan"
+          },
           "draft": {
             "$ref": "#/components/schemas/WorkDraft"
           },
@@ -586,6 +627,7 @@
           "profile",
           "brief",
           "outline",
+          "plan",
           "draft",
           "headRevisionId",
           "sourceWorkId",
@@ -606,6 +648,9 @@
           },
           "outline": {
             "$ref": "#/components/schemas/WorkOutline"
+          },
+          "plan": {
+            "$ref": "#/components/schemas/WorkProductionPlan"
           },
           "brief": {
             "$ref": "#/components/schemas/WorkBrief"
@@ -631,14 +676,6 @@
             "type": "string",
             "nullable": true
           },
-          "mode": {
-            "type": "string",
-            "enum": [
-              "inspiration",
-              "creation",
-              "ask"
-            ]
-          },
           "profile": {
             "$ref": "#/components/schemas/WorkProfile"
           },
@@ -647,6 +684,9 @@
           },
           "outline": {
             "$ref": "#/components/schemas/WorkOutline"
+          },
+          "plan": {
+            "$ref": "#/components/schemas/WorkProductionPlan"
           },
           "draft": {
             "$ref": "#/components/schemas/WorkDraft"
@@ -664,10 +704,10 @@
         },
         "required": [
           "workId",
-          "mode",
           "profile",
           "brief",
           "outline",
+          "plan",
           "draft"
         ]
       },
@@ -683,6 +723,9 @@
           "outline": {
             "$ref": "#/components/schemas/WorkOutline"
           },
+          "plan": {
+            "$ref": "#/components/schemas/WorkProductionPlan"
+          },
           "draft": {
             "$ref": "#/components/schemas/WorkDraft"
           }
@@ -691,6 +734,7 @@
           "profile",
           "brief",
           "outline",
+          "plan",
           "draft"
         ]
       },
@@ -727,14 +771,14 @@
               "outline_section_removed",
               "outline_ready",
               "outline_revised",
+              "plan_ready",
+              "plan_revised",
               "execution_complete"
             ]
           },
           "phase": {
             "type": "string",
             "enum": [
-              "inspiration",
-              "outline",
               "draft"
             ]
           },

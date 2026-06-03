@@ -31,7 +31,6 @@ conversationsRouter.post("/", async (req: AuthedRequest, res) => {
   const body = z
     .object({
       title: z.string().optional(),
-      mode: z.enum(["inspiration", "outline", "creation", "ask"]).optional(),
     })
     .safeParse(req.body);
   if (!body.success) {

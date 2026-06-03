@@ -2,7 +2,7 @@ import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
 import {
-  parseActiveTurnTask,
+  parseActiveTurnKind,
   parseProductionPlan,
 } from "../../../lib/parse-agent-state.js";
 import { getState } from "../../../lib/tool-state.js";
@@ -10,7 +10,7 @@ import { toolCommand } from "../../../lib/tool-command.js";
 
 export const completeExecution = tool(
   async ({ summary }, config) => {
-    if (parseActiveTurnTask(getState()) !== "creation") {
+    if (parseActiveTurnKind(getState()) !== "creation") {
       return toolCommand(config, "complete_execution 仅在创作模式可用。");
     }
     const trimmed = summary.trim();

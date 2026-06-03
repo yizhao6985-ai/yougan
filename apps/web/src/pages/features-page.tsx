@@ -51,9 +51,6 @@ function ModeSection({
             <h2 className="mt-1 text-2xl font-semibold text-foreground">
               {mode.tagline}
             </h2>
-            <p className="mt-2 text-xs text-muted-foreground">
-              快捷键 {mode.shortcut}
-            </p>
           </div>
         </div>
 

@@ -28,6 +28,24 @@ export function findBriefRequirementIndex(
   return brief.requirements.findIndex((item) => item.id === requirementId);
 }
 
+function isBriefAuthoritativeReplace(
+  base: WorkBrief,
+  next: WorkBrief,
+): boolean {
+  const baseIds = new Set(base.requirements.map((r) => r.id));
+  const nextIds = new Set(next.requirements.map((r) => r.id));
+
+  if (next.requirements.length < base.requirements.length) return true;
+  for (const id of baseIds) {
+    if (!nextIds.has(id)) return true;
+  }
+  for (const item of next.requirements) {
+    const prev = base.requirements.find((r) => r.id === item.id);
+    if (prev && prev.description !== item.description) return true;
+  }
+  return false;
+}
+
 /** 合并 brief 更新，避免空对象覆盖已有内容 */
 export function mergeBriefState(
   prev: WorkBrief | undefined,
@@ -36,6 +54,10 @@ export function mergeBriefState(
   const base = prev ?? EMPTY_WORK_BRIEF;
   if (isBriefEmpty(next) && !isBriefEmpty(base)) {
     return base;
+  }
+
+  if (isBriefAuthoritativeReplace(base, next)) {
+    return { requirements: dedupeBriefRequirements(next.requirements) };
   }
 
   const requirements = dedupeBriefRequirements([

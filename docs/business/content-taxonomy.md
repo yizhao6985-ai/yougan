@@ -155,13 +155,17 @@ AI 在对话中隐式维护的 `Work.profile` 字段：
 
 ### Agent 写入时机
 
-| 阶段 | 工具 | 行为 |
+| 阶段 | 入口 | 行为 |
 |------|------|------|
-| 灵感 | `confirm_content_spec` | 用户明确体裁/形式时写入 |
-| 创作 | `confirm_content_spec` / `update_work_profile` | 补充或修正规格 |
+| 侧栏 / API | `PATCH Work` + 线程同步 | 可更新 `profile`、brief、outline、draft |
+| 聊天 | inspiration / outline 子图 | 对话工具改 brief、大纲；参考图在 prepare-turn 同步 |
+| 灵感 | `confirm_content_spec`（对话工具） | 用户明确体裁/形式时写入 |
+| 创作 | `confirm_content_spec` / profile 工具 | 补充或修正规格 |
 | 创作入口 | `resolveContentSpec` 节点 | 自动补齐缺失字段 |
-| 创作执行 | `generate_content` | 按体裁/形式约束出稿 |
+| 创作执行 | `generate_draft` 等 | 按体裁/形式约束出稿 |
 | 发布 | 发布确认弹窗 | 用户可覆盖最终分类 |
+
+回合队列与线程同步详见 [agent-turn-queue.md](../technical/agent-turn-queue.md)。
 
 ---
 

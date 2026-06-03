@@ -15,6 +15,17 @@ export interface BriefSuggestions {
 
 export const DEFAULT_BRIEF_SUGGESTIONS_HINT = "点一条继续，或直接输入";
 
+/** 下一步建议展示文案（message）统一字数上限 */
+export const MAX_NEXT_STEP_SUGGESTION_LENGTH = 48;
+
+/** 下一步建议 message 写入前的规范化与截断 */
+export function sanitizeNextStepSuggestionMessage(raw: unknown): string {
+  if (typeof raw !== "string") return "";
+  const trimmed = raw.trim().replace(/\s+/g, " ");
+  if (trimmed.length <= MAX_NEXT_STEP_SUGGESTION_LENGTH) return trimmed;
+  return `${trimmed.slice(0, MAX_NEXT_STEP_SUGGESTION_LENGTH)}…`;
+}
+
 export function newBriefSuggestion(
   kind: BriefSuggestion["kind"],
   label: string,

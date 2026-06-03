@@ -8,7 +8,7 @@ import {
   EMPTY_WORK_OUTLINE,
   EMPTY_WORK_PRODUCTION_PLAN,
   EMPTY_WORK_PROFILE,
-  type TurnTaskKind,
+  type TurnQueueKind,
   type WorkBrief,
   type WorkOutline,
   type WorkProductionPlan,
@@ -31,18 +31,18 @@ export function parseBrief(state: AgentStateType): WorkBrief {
   return state.brief ?? EMPTY_WORK_BRIEF;
 }
 
-export function parseTurnTaskQueue(state: AgentStateType): TurnTaskKind[] {
-  return state.turnTaskQueue ?? [];
+export function parseTurnQueue(state: AgentStateType): TurnQueueKind[] {
+  return state.turnQueue ?? [];
 }
 
-export function parseActiveTurnTask(
+export function parseActiveTurnKind(
   state: AgentStateType,
-): TurnTaskKind | null {
-  return state.activeTurnTask ?? null;
+): TurnQueueKind | null {
+  return state.activeTurnKind ?? null;
 }
 
-export function parseCompletedTurnTasks(state: AgentStateType): TurnTaskKind[] {
-  return state.completedTurnTasks ?? [];
+export function parseCompletedTurnKinds(state: AgentStateType): TurnQueueKind[] {
+  return state.completedTurnKinds ?? [];
 }
 
 export function parseModelTemperature(state: AgentStateType): number {

@@ -6,12 +6,12 @@ import {
   findOutlineSectionIndex,
   newOutlineSection,
 } from "@yougan/domain";
-import { parseActiveTurnTask, parseOutline } from "../../../lib/parse-agent-state.js";
+import { parseActiveTurnKind, parseOutline } from "../../../lib/parse-agent-state.js";
 import { getState } from "../../../lib/tool-state.js";
 import { toolCommand } from "../../../lib/tool-command.js";
 
 function requireOutlineMode(config: object): string | null {
-  if (parseActiveTurnTask(getState()) !== "outline") {
+  if (parseActiveTurnKind(getState()) !== "outline") {
     return "大纲工具仅在大纲模式可用。";
   }
   return null;

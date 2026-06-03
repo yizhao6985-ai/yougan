@@ -19,7 +19,7 @@ flowchart LR
 | 触点 | 路径/能力 | 目标 |
 |------|-----------|------|
 | 首页 | `/` | 传达「三步完成一篇内容」，引导「开始创作」 |
-| 能力页 | `/features` | 详解三模式差异、工作流、创作台布局 |
+| 能力页 | `/features` | 详解创作阶段差异、工作流、创作台布局 |
 | 发现灵感 | `/content` | 公域内容曝光，吸引访客转化为注册用户 |
 | 手机页 | `/mobile` | 传达多端协同，引导下载（需配置商店链接） |
 
@@ -69,18 +69,21 @@ sequenceDiagram
 
 ---
 
-## 4. 核心习惯：三步创作
+## 4. 核心习惯：分阶段创作
 
-详见 [创作方法论](./creation-methodology.md)。旅程里程碑：
+详见 [创作方法论](./creation-methodology.md) 与 [agent-turn-queue.md](../technical/agent-turn-queue.md)。旅程里程碑：
 
 | 里程碑 | 用户动作 | 系统状态 |
 |--------|----------|----------|
-| M1 灵感就绪 | 确认若干条需求 | `inspiration.confirmed_requirements` 有内容 |
-| M2 制作计划定稿 | 「没有了」「就这些」 | `plan.plan_ready = true` |
-| M3 首版成稿 | 创作模式执行 | `creation` 有 title/body |
-| M4 修改闭环 | 提出修改 → 执行 | `pending_changes` 清空，executed 有记录 |
+| M1 brief 就绪 | 确认若干条需求 | `brief.requirements` 有内容 |
+| M2 大纲就绪 | 敲定结构条目 | `outline.sections` 有内容 |
+| M3 制作计划定稿 | 创作模式定稿 | 内部 `plan` 可执行 |
+| M4 首版成稿 | 创作模式执行 | `draft` 有正文预览 |
+| M5 修改闭环 | 提出修改 → 执行 | plan 执行记录更新 |
 
-**模式切换**：界面 Tab、快捷键、对话「切到创作模式」等，下次消息进入对应子图。
+**回合编排**：每条消息先解析 `turnQueue`（如 `inspiration` 记需求，再 `outline` 讨论结构）；侧栏直改走 `PATCH Work` + 线程同步。
+
+**阶段路由**：Agent 按消息内容自动解析 `turnQueue`；无需手动切换模式，一条消息可串联多个阶段。
 
 ---
 

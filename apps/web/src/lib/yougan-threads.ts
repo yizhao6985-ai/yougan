@@ -1,4 +1,5 @@
 import type { Thread } from "@langchain/langgraph-sdk";
+import { MAX_CONVERSATION_TITLE_LENGTH } from "@yougan/domain";
 
 import { YOUGAN_ASSISTANT_ID } from "@/lib/yougan-chat-api";
 import { getLangGraphClient } from "@/lib/langgraph-client";
@@ -14,7 +15,7 @@ export type YouganThreadItem = {
   updatedAt: string;
 };
 
-function truncateTitle(text: string, maxLength = 48) {
+function truncateTitle(text: string, maxLength = MAX_CONVERSATION_TITLE_LENGTH) {
   const trimmed = text.trim();
   if (trimmed.length <= maxLength) return trimmed;
   return `${trimmed.slice(0, maxLength)}…`;

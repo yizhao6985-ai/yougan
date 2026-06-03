@@ -1,5 +1,6 @@
 import type { BriefSuggestion, BriefSuggestions } from "@/lib/types";
 import { DEFAULT_BRIEF_SUGGESTIONS_HINT } from "@/lib/types";
+import { sanitizeNextStepSuggestionMessage } from "@yougan/domain";
 
 export type { BriefSuggestions };
 
@@ -27,7 +28,9 @@ export function normalizeBriefSuggestions(
     .map((item) => {
       if (!isRecord(item)) return null;
       const label = typeof item.label === "string" ? item.label.trim() : "";
-      const message = typeof item.message === "string" ? item.message.trim() : "";
+      const message = sanitizeNextStepSuggestionMessage(
+        typeof item.message === "string" ? item.message : "",
+      );
       const id = typeof item.id === "string" ? item.id : "";
       const kind = item.kind;
       if (!label || !message) return null;

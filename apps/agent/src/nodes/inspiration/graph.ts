@@ -1,5 +1,5 @@
 /**
- * 灵感模式子图：prepare → llmCall ⇄ tools（建议由主图 updateBriefSuggestions 生成）。
+ * 灵感模式子图：prepare → llmCall ⇄ tools（建议由主图 updateNextStepSuggestions 生成）。
  */
 import { END, START, StateGraph } from "@langchain/langgraph";
 

@@ -7,7 +7,7 @@ import { resolveContentSpec } from "../../../lib/content-spec.js";
 import { departmentBrief } from "../../../lib/industry-prompts.js";
 import { getPlanSummary, type WorkDraft } from "../../../schema.js";
 import {
-  parseActiveTurnTask,
+  parseActiveTurnKind,
   parseModelTemperature,
   parseOutline,
   parseProductionPlan,
@@ -22,7 +22,7 @@ import { DEPARTMENT_LABELS } from "./shared.js";
 export const spawnSpecialist = tool(
   async ({ department, brief, specialist_name }, config) => {
     const state = getState();
-    if (parseActiveTurnTask(state) !== "creation") {
+    if (parseActiveTurnKind(state) !== "creation") {
       return toolCommand(config, "spawn_specialist 仅在创作模式可用。");
     }
 

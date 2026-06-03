@@ -1,14 +1,15 @@
-import { resolveTurnTaskQueue } from "./resolve-turn-queue.js";
+import { planTurnQueue } from "./resolve-turn-queue.js";
 import type { AgentStateType } from "../../state.js";
 
-/** 结构化解析本轮任务队列。 */
+/** 结构化解析本轮 turnQueue */
 export async function resolveTurnQueueNode(
   state: AgentStateType,
 ): Promise<Partial<AgentStateType>> {
-  const turnTaskQueue = await resolveTurnTaskQueue(state);
+  const { turnQueue, suggestedConversationTitle } = await planTurnQueue(state);
   return {
-    turnTaskQueue,
-    completedTurnTasks: [],
-    activeTurnTask: null,
+    turnQueue,
+    suggestedConversationTitle: suggestedConversationTitle ?? null,
+    completedTurnKinds: [],
+    activeTurnKind: null,
   };
 }

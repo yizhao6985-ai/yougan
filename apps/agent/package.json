@@ -11,16 +11,16 @@
   "dependencies": {
     "@yougan/domain": "workspace:*",
     "@langchain/core": "^1.1.48",
-    "@langchain/langgraph": "^1.3.2",
-    "@langchain/langgraph-checkpoint-postgres": "^1.0.1",
-    "@langchain/openai": "^1.4.0",
-    "dotenv": "^16.6.1",
+    "@langchain/langgraph": "^1.3.3",
+    "@langchain/langgraph-checkpoint-postgres": "^1.0.2",
+    "@langchain/openai": "^1.4.7",
+    "dotenv": "^17.4.2",
     "nanoid": "^5.1.11",
     "zod": "^3.25.76"
   },
   "devDependencies": {
     "@langchain/langgraph-cli": "^1.2.3",
-    "@types/node": "^20.19.0",
-    "typescript": "^5.8.3"
+    "@types/node": "^24.12.4",
+    "typescript": "^5.9.3"
   }
 }

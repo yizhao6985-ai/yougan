@@ -4,7 +4,6 @@ import type { Message } from "@langchain/langgraph-sdk";
 import { useStream } from "@langchain/langgraph-sdk/react";
 
 import { buildHumanMessageContent } from "@/lib/build-human-message-content";
-import { normalizeBriefSuggestions } from "@/lib/brief-ui-spec";
 import { applyGraphUpdatesToValues } from "@/lib/message-utils";
 import { YOUGAN_ASSISTANT_ID } from "@/lib/yougan-chat-api";
 import { LANGGRAPH_API_URL } from "@/lib/env";
@@ -48,6 +47,8 @@ export function useYouganStream({
     assistantId: YOUGAN_ASSISTANT_ID,
     threadId: threadId ?? undefined,
     defaultHeaders,
+    /** 避免 remount / 切 tab 后误 join 未完成的 run */
+    reconnectOnMount: false,
     throttle: false,
     onThreadId: (id) => {
       if (conversationId) onThreadId?.(conversationId, id);
@@ -63,7 +64,7 @@ export function useYouganStream({
   });
 
   const wasLoadingRef = useRef(false);
-  const bootstrapAttemptedRef = useRef<string | null>(null);
+  const openingBootstrapInFlightRef = useRef(false);
 
   useEffect(() => {
     const wasLoading = wasLoadingRef.current;
@@ -81,65 +82,46 @@ export function useYouganStream({
     workId,
   ]);
 
-  const bootstrapRecommendations = useCallback(
-    async (options?: { force?: boolean }) => {
-      if (!work || !conversation || !token) return;
-      if (stream.isLoading) return;
-      if (stream.messages.length > 0) return;
+  const bootstrapOpeningSuggestions = useCallback(async () => {
+    if (!work || !conversation || !token) return;
+    if (stream.messages.length > 0) return;
 
-      if (!options?.force) {
-        const existing = normalizeBriefSuggestions(
-          stream.values?.openingBriefSuggestions,
-        );
-        if (existing) return;
-      }
-
-      await stream.submit(
-        {
-          workId: work.id,
-          workTitle: work.title,
-          conversationTitle: conversation.title,
-          profile: work.profile,
-          outline: work.outline,
-          plan: work.plan,
-          brief: work.brief,
-          openingBriefSuggestions: null,
-          briefSuggestions: null,
-          draft: work.draft,
-          modelTemperature,
-        },
-        {
-          streamMode: [...LANGGRAPH_STREAM_MODE],
-        },
-      );
-    },
-    [conversation, modelTemperature, stream, token, work],
-  );
+    await stream.submit(
+      {
+        workId: work.id,
+        workTitle: work.title,
+        conversationTitle: conversation.title,
+        profile: work.profile,
+        outline: work.outline,
+        plan: work.plan,
+        brief: work.brief,
+        openingNextStepSuggestions: null,
+        turnNextStepSuggestions: null,
+        draft: work.draft,
+        modelTemperature,
+      },
+      {
+        streamMode: [...LANGGRAPH_STREAM_MODE],
+      },
+    );
+  }, [conversation, modelTemperature, stream, token, work]);
 
   useEffect(() => {
     if (!conversation?.id || !work || !token) return;
-    if (stream.messages.length > 0) {
-      bootstrapAttemptedRef.current = null;
-      return;
-    }
-    if (bootstrapAttemptedRef.current === conversation.id) return;
-    if (stream.isLoading) return;
+    if (stream.messages.length > 0) return;
+    if (stream.isThreadLoading) return;
+    if (stream.isLoading || openingBootstrapInFlightRef.current) return;
 
-    const existing = normalizeBriefSuggestions(
-      stream.values?.openingBriefSuggestions,
-    );
-    if (existing) return;
-
-    bootstrapAttemptedRef.current = conversation.id;
-    void bootstrapRecommendations().catch(() => {
-      bootstrapAttemptedRef.current = null;
+    openingBootstrapInFlightRef.current = true;
+    void bootstrapOpeningSuggestions().finally(() => {
+      openingBootstrapInFlightRef.current = false;
     });
   }, [
-    bootstrapRecommendations,
+    bootstrapOpeningSuggestions,
     conversation?.id,
     stream.isLoading,
+    stream.isThreadLoading,
     stream.messages.length,
-    stream.values?.openingBriefSuggestions,
     token,
     work,
   ]);
@@ -154,7 +136,6 @@ export function useYouganStream({
       await stream.submit(
         {
           messages: [{ type: "human" as const, content }],
-          mode: conversation.mode,
           workId: work.id,
           workTitle: work.title,
           conversationTitle: conversation.title,
@@ -162,8 +143,8 @@ export function useYouganStream({
           outline: work.outline,
           plan: work.plan,
           brief: work.brief,
-          openingBriefSuggestions: null,
-          briefSuggestions: null,
+          openingNextStepSuggestions: null,
+          turnNextStepSuggestions: null,
           draft: work.draft,
           modelTemperature,
         },
@@ -175,11 +156,16 @@ export function useYouganStream({
     [conversation, modelTemperature, stream, work],
   );
 
+  const isBootstrappingOpening =
+    Boolean(conversation?.id) &&
+    stream.messages.length === 0 &&
+    (stream.isLoading || stream.isThreadLoading);
+
   return {
     stream,
     threadId,
     sendMessage,
-    bootstrapRecommendations,
+    isBootstrappingOpening,
     canChat: Boolean(work && conversation && token),
   };
 }

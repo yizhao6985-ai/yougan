@@ -309,7 +309,6 @@ export async function duplicateWorkFromRevision(
       data: {
         workId: createdWork.id,
         title: "对话 1",
-        mode: "inspiration",
       },
     });
 

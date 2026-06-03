@@ -93,7 +93,10 @@ export function detectRevisionKind(
   previous: WorkRevisionSnapshot,
   next: WorkRevisionSnapshot,
 ): RevisionKind {
-  if (stableJson(previous.draft) !== stableJson(next.draft)) {
+  if (
+    stableJson(previous.draft) !== stableJson(next.draft) &&
+    parseDraft(next.draft)
+  ) {
     return "execution_complete";
   }
 
@@ -143,7 +146,11 @@ export function revisionSummary(
 ): string {
   switch (kind) {
     case "execution_complete":
-      return next.plan.last_execution_summary?.trim() || "完成一轮制作执行";
+      return (
+        next.plan.last_execution_summary?.trim() ||
+        next.draft?.body?.trim().slice(0, 80) ||
+        "生成内容预览"
+      );
     case "outline_ready":
       return next.outline.summary?.trim() || "内容大纲已定稿";
     case "outline_revised":

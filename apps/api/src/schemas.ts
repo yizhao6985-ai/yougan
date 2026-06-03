@@ -4,10 +4,6 @@ import { REVISION_KINDS, USER_REVISION_PHASES } from "@yougan/domain";
 
 extendZodWithOpenApi(z);
 
-export const CHAT_MODES = ["inspiration", "outline", "creation", "ask"] as const;
-
-export const ChatModeSchema = z.enum(CHAT_MODES);
-
 export const ReferenceItemSchema = z
   .object({
     source_type: z.enum(["text", "image", "web"]),
@@ -168,7 +164,6 @@ export const WorkConversationSchema = z
     id: z.string(),
     workId: z.string(),
     title: z.string(),
-    mode: ChatModeSchema,
     threadId: z.string().nullable(),
     createdAt: z.string(),
     updatedAt: z.string(),
@@ -241,7 +236,6 @@ export const SyncWorkStateSchema = z
 export const SyncWorkConversationSchema = z
   .object({
     title: z.string().optional(),
-    mode: ChatModeSchema.optional(),
     threadId: z.string().nullable().optional(),
   })
   .openapi("SyncWorkConversation");
@@ -251,7 +245,6 @@ export const AgentContextSchema = z
     workId: z.string(),
     conversationId: z.string().optional(),
     headRevisionId: z.string().nullable().optional(),
-    mode: ChatModeSchema,
     profile: WorkProfileSchema,
     brief: WorkBriefSchema,
     outline: WorkOutlineSchema,

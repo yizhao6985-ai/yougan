@@ -13,8 +13,8 @@ export interface WorkRevisionSnapshot {
   draft: WorkDraft | null;
 }
 
-/** 对外展示的版本阶段 */
-export const USER_REVISION_PHASES = ["inspiration", "outline", "draft"] as const;
+/** 对外展示的版本阶段（仅内容预览里程碑） */
+export const USER_REVISION_PHASES = ["draft"] as const;
 
 export type UserRevisionPhase = (typeof USER_REVISION_PHASES)[number];
 
@@ -39,30 +39,15 @@ export const REVISION_KINDS = [
 
 export type RevisionKind = (typeof REVISION_KINDS)[number];
 
-const INSPIRATION_REVISION_KINDS = new Set<RevisionKind>([
-  "brief_requirement_added",
-  "brief_requirement_updated",
-  "brief_requirement_removed",
-  "profile_updated",
-]);
-
-const OUTLINE_REVISION_KINDS = new Set<RevisionKind>([
-  "outline_section_added",
-  "outline_section_updated",
-  "outline_section_removed",
-  "outline_revised",
-]);
-
+/** 创作执行产出内容预览（draft）时记入版本时间轴 */
 const DRAFT_REVISION_KINDS = new Set<RevisionKind>(["execution_complete"]);
 
-/** plan 与操作类 revision 不对用户展示 */
+/** plan、灵感、大纲与操作类 revision 不对用户展示 */
 export function isUserVisibleRevisionKind(kind: RevisionKind): boolean {
   return userRevisionPhase(kind) !== null;
 }
 
 export function userRevisionPhase(kind: RevisionKind): UserRevisionPhase | null {
-  if (INSPIRATION_REVISION_KINDS.has(kind)) return "inspiration";
-  if (OUTLINE_REVISION_KINDS.has(kind)) return "outline";
   if (DRAFT_REVISION_KINDS.has(kind)) return "draft";
   return null;
 }

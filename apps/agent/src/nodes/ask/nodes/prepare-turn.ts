@@ -5,5 +5,5 @@ export async function prepareAskTurnNode(
   state: AgentStateType,
 ): Promise<Partial<AgentStateType>> {
   const refPatch = await syncReferenceImagesFromLatestMessage(state);
-  return { briefSuggestions: null, ...refPatch };
+  return { turnNextStepSuggestions: null, ...refPatch };
 }

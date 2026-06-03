@@ -1278,25 +1278,34 @@ export interface components {
                 description: string;
                 confirmed_at: string;
             }[];
-            ready: boolean;
         };
         WorkOutline: {
             sections: {
                 id: string;
                 description: string;
                 confirmed_at: string;
+            }[];
+            summary?: string | null;
+        };
+        WorkProductionPlan: {
+            pending_tasks: {
+                id: string;
+                description: string;
+                created_at: string;
                 /** @enum {string} */
                 department?: "writing" | "design" | "audio" | "video";
                 /** @enum {string} */
                 status?: "pending" | "in_progress" | "completed";
+                assignee?: string | null;
             }[];
-            completed_sections: {
+            executed_tasks: {
                 id: string;
                 description: string;
-                completed_at: string;
+                executed_at: string;
                 batch_summary?: string | null;
                 /** @enum {string} */
                 department?: "writing" | "design" | "audio" | "video";
+                assignee?: string | null;
             }[];
             last_execution_summary?: string | null;
             ready?: boolean;
@@ -1321,6 +1330,7 @@ export interface components {
             profile: components["schemas"]["WorkProfile"];
             brief: components["schemas"]["WorkBrief"];
             outline: components["schemas"]["WorkOutline"];
+            plan: components["schemas"]["WorkProductionPlan"];
             draft: components["schemas"]["WorkDraft"];
             headRevisionId: string | null;
             sourceWorkId: string | null;
@@ -1332,6 +1342,7 @@ export interface components {
             groupId?: string | null;
             profile?: components["schemas"]["WorkProfile"];
             outline?: components["schemas"]["WorkOutline"];
+            plan?: components["schemas"]["WorkProductionPlan"];
             brief?: components["schemas"]["WorkBrief"];
             draft?: components["schemas"]["WorkDraft"];
             title?: string;
@@ -1340,11 +1351,10 @@ export interface components {
             workId: string;
             conversationId?: string;
             headRevisionId?: string | null;
-            /** @enum {string} */
-            mode: "inspiration" | "creation" | "ask";
             profile: components["schemas"]["WorkProfile"];
             brief: components["schemas"]["WorkBrief"];
             outline: components["schemas"]["WorkOutline"];
+            plan: components["schemas"]["WorkProductionPlan"];
             draft: components["schemas"]["WorkDraft"];
             threadId?: string | null;
             workTitle?: string;
@@ -1354,6 +1364,7 @@ export interface components {
             profile: components["schemas"]["WorkProfile"];
             brief: components["schemas"]["WorkBrief"];
             outline: components["schemas"]["WorkOutline"];
+            plan: components["schemas"]["WorkProductionPlan"];
             draft: components["schemas"]["WorkDraft"];
         };
         WorkRevision: {
@@ -1362,9 +1373,9 @@ export interface components {
             parentRevisionId: string | null;
             conversationId: string | null;
             /** @enum {string} */
-            kind: "work_created" | "work_duplicated" | "work_restored" | "brief_requirement_added" | "brief_requirement_updated" | "brief_requirement_removed" | "brief_ready" | "profile_updated" | "outline_section_added" | "outline_section_updated" | "outline_section_removed" | "outline_ready" | "outline_revised" | "execution_complete";
+            kind: "work_created" | "work_duplicated" | "work_restored" | "brief_requirement_added" | "brief_requirement_updated" | "brief_requirement_removed" | "brief_ready" | "profile_updated" | "outline_section_added" | "outline_section_updated" | "outline_section_removed" | "outline_ready" | "outline_revised" | "plan_ready" | "plan_revised" | "execution_complete";
             /** @enum {string} */
-            phase: "inspiration" | "outline" | "draft";
+            phase: "draft";
             summary: string;
             snapshot: components["schemas"]["WorkRevisionSnapshot"];
             createdAt: string;

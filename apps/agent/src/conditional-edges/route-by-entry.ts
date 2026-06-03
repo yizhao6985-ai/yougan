@@ -1,21 +1,17 @@
+import { isEmptyThread } from "../lib/empty/index.js";
 import type { AgentStateType } from "../state.js";
 
-export type EntryRoute = "updateBriefSuggestions" | "resolveTurnQueue";
+export type EntryRoute = "updateNextStepSuggestions" | "resolveTurnQueue";
 
-/** 当前 thread 是否尚无对话内容（无 messages） */
-export function isEmptyThread(state: AgentStateType): boolean {
-  return (state.messages ?? []).length === 0;
-}
-
-/** 主图入口：空 thread → 开场建议；否则解析任务队列 */
+/** 主图入口：空 thread → 开屏选题建议；否则解析任务队列 */
 export function routeByEntry(state: AgentStateType): EntryRoute {
   if (isEmptyThread(state)) {
-    return "updateBriefSuggestions";
+    return "updateNextStepSuggestions";
   }
   return "resolveTurnQueue";
 }
 
 export const paths = {
-  updateBriefSuggestions: "updateBriefSuggestions",
+  updateNextStepSuggestions: "updateNextStepSuggestions",
   resolveTurnQueue: "resolveTurnQueue",
 } as const;

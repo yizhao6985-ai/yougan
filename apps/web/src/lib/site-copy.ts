@@ -321,18 +321,10 @@ export const STUDIO = {
 } as const;
 
 export const CHAT_COPY = {
-  openingSuggestions: [
-    "想更新自媒体但还没想好写什么",
-    "怎么把这个选题写得更好？",
-    "按大纲生成一版文案",
-    "想做职场类内容，不确定选题方向",
-    "小红书笔记一般是什么结构？",
-  ],
+  openingSuggestionsLoading: "正在生成选题建议…",
   placeholder: "说说想法、提问，或告诉我要改什么…",
-  emptyTitle: "从一句话开始",
-  emptyBody: "灵感与成稿会记在右侧作品面板。",
-  /** 开屏建议区提示（紧贴气泡，勿与 emptyBody 重复能力说明） */
-  openingSuggestionsHint: "点一条开始，或直接输入",
+  /** 开屏空态：单行标题（选题气泡上方不再另起提示） */
+  emptyTitle: "从一句话开始，选选题或直接输入",
   emptyByMode: {
     inspiration: {
       title: "灵感模式：找灵感、定方向",
@@ -400,8 +392,8 @@ export const WORK_HISTORY_PANEL = {
   duplicating: "正在创建…",
   duplicateFromHere: "从此版本复制",
   timelineTitle: "版本记录",
-  timelineHint: "灵感定稿、大纲更新与成稿会各记一条；可回到任意一版继续编辑。",
-  empty: "还没有版本记录。确认灵感或完成出稿后会出现。",
+  timelineHint: "创作模式生成内容预览后会记一条；可回到任意一版继续编辑。",
+  empty: "还没有版本记录。创作模式产出内容预览后会出现。",
   headBadge: "当前",
   restore: "回到这一版",
   restoreTitle: "回到这一版？",

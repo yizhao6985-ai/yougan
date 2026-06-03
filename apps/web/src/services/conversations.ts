@@ -23,7 +23,7 @@ export async function createWorkConversation(
 export async function updateWorkConversation(
   workId: string,
   conversationId: string,
-  patch: Partial<Pick<WorkConversation, "title" | "mode" | "threadId">>,
+  patch: Partial<Pick<WorkConversation, "title" | "threadId">>,
 ) {
   return apiFetch<{ conversation: WorkConversation }>(
     `/api/works/${workId}/conversations/${conversationId}`,

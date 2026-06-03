@@ -1,4 +1,4 @@
-import type { WorkGroup } from "@prisma/client";
+import type { WorkGroup } from "../db.js";
 
 import { prisma } from "../db.js";
 import type { WorkGroupDTO } from "../schemas.js";

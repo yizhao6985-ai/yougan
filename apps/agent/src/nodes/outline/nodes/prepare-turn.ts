@@ -1,7 +1,16 @@
+import { syncReferenceImagesFromLatestMessage } from "../../../lib/sync-reference-images.js";
+import { bootstrapOutlineFromBrief } from "../../../lib/outline/bootstrap-from-brief.js";
 import type { AgentStateType } from "../../../state.js";
 
 export async function prepareOutlineTurnNode(
-  _state: AgentStateType,
+  state: AgentStateType,
 ): Promise<Partial<AgentStateType>> {
-  return { briefSuggestions: null };
+  const refPatch = await syncReferenceImagesFromLatestMessage(state);
+  const merged = { ...state, ...refPatch };
+  const outlinePatch = await bootstrapOutlineFromBrief(merged);
+  return {
+    turnNextStepSuggestions: null,
+    ...refPatch,
+    ...outlinePatch,
+  };
 }

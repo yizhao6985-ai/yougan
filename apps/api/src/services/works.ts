@@ -1,4 +1,4 @@
-import { Prisma, type Work } from "@prisma/client";
+import { Prisma, type Work } from "../db.js";
 import {
   EMPTY_WORK_BRIEF,
   EMPTY_WORK_OUTLINE,
@@ -8,7 +8,6 @@ import {
 
 import { prisma } from "../db.js";
 import type { WorkDTO } from "../schemas.js";
-import { CHAT_MODES } from "../schemas.js";
 import { getWorkGroup } from "./work-groups.js";
 import {
   applyAgentRunToWork,
@@ -23,20 +22,11 @@ import {
   parsePlan,
   parseProfile,
 } from "./revisions.js";
-
-type ChatMode = (typeof CHAT_MODES)[number];
-
-function normalizeWorkMode(mode: string): ChatMode {
-  if (
-    mode === "inspiration" ||
-    mode === "outline" ||
-    mode === "creation" ||
-    mode === "ask"
-  ) {
-    return mode;
-  }
-  return "inspiration";
-}
+import {
+  hasMaterializedAgentFields,
+  materializedFieldsFromWorkUpdate,
+  syncMaterializedStateToAgentThreads,
+} from "./agent-thread-sync.js";
 
 function toWorkDTO(work: Work): WorkDTO {
   return {
@@ -93,14 +83,15 @@ export async function createWork(
       data: {
         workId: createdWork.id,
         title: "对话 1",
-        mode: "inspiration",
       },
     });
 
     return { work: createdWork, conversationId: conversation.id };
   });
 
-  const refreshed = await prisma.work.findUnique({ where: { id: work.work.id } });
+  const refreshed = await prisma.work.findUnique({
+    where: { id: work.work.id },
+  });
   return toWorkDTO(refreshed!);
 }
 
@@ -136,8 +127,11 @@ export async function updateWork(
     brief: unknown;
     draft: unknown | null;
   }>,
+  options?: { conversationId?: string },
 ) {
-  const existing = await prisma.work.findFirst({ where: { id: workId, userId } });
+  const existing = await prisma.work.findFirst({
+    where: { id: workId, userId },
+  });
   if (!existing) return null;
 
   if (data.groupId) {
@@ -167,18 +161,36 @@ export async function updateWork(
   }
   if (data.draft !== undefined) {
     updateData.draft =
-      data.draft === null ? Prisma.JsonNull : (data.draft as Prisma.InputJsonValue);
+      data.draft === null
+        ? Prisma.JsonNull
+        : (data.draft as Prisma.InputJsonValue);
   }
 
   const work = await prisma.work.update({
     where: { id: workId },
     data: updateData,
   });
-  return toWorkDTO(work);
+  const dto = toWorkDTO(work);
+
+  const agentFields = materializedFieldsFromWorkUpdate(data);
+  if (hasMaterializedAgentFields(agentFields)) {
+    const syncFields: typeof agentFields = {};
+    if (agentFields.profile !== undefined) syncFields.profile = dto.profile;
+    if (agentFields.brief !== undefined) syncFields.brief = dto.brief;
+    if (agentFields.outline !== undefined) syncFields.outline = dto.outline;
+    if (agentFields.draft !== undefined) syncFields.draft = dto.draft;
+    await syncMaterializedStateToAgentThreads(workId, syncFields, {
+      conversationId: options?.conversationId,
+    });
+  }
+
+  return dto;
 }
 
 export async function deleteWork(userId: string, workId: string) {
-  const existing = await prisma.work.findFirst({ where: { id: workId, userId } });
+  const existing = await prisma.work.findFirst({
+    where: { id: workId, userId },
+  });
   if (!existing) return false;
   await prisma.work.delete({ where: { id: workId } });
   return true;
@@ -192,7 +204,6 @@ export async function getAgentContext(
   const work = await prisma.work.findFirst({ where: { id: workId, userId } });
   if (!work) return null;
 
-  let mode = "inspiration" as ReturnType<typeof normalizeWorkMode>;
   let threadId: string | null = null;
   let resolvedConversationId: string | undefined;
   let conversationTitle: string | undefined;
@@ -202,7 +213,6 @@ export async function getAgentContext(
       where: { id: conversationId, workId },
     });
     if (conversation) {
-      mode = normalizeWorkMode(conversation.mode);
       threadId = conversation.threadId;
       resolvedConversationId = conversation.id;
       conversationTitle = conversation.title;
@@ -213,7 +223,6 @@ export async function getAgentContext(
     workId: work.id,
     conversationId: resolvedConversationId,
     headRevisionId: work.headRevisionId,
-    mode,
     profile: parseProfile(work.profile),
     brief: parseBrief(work.brief),
     outline: parseOutline(work.outline),

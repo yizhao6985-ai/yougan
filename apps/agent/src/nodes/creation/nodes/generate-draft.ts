@@ -27,7 +27,7 @@ import {
   type WorkDraftPayload,
 } from "./schema.js";
 import {
-  parseActiveTurnTask,
+  parseActiveTurnKind,
   parseModelTemperature,
   parseOutline,
   parseProductionPlan,
@@ -40,7 +40,7 @@ import { profileReady } from "./shared.js";
 export const generateDraft = tool(
   async (_input, config) => {
     const state = getState();
-    if (parseActiveTurnTask(state) !== "creation") {
+    if (parseActiveTurnKind(state) !== "creation") {
       return toolCommand(config, "generate_draft 仅在创作模式可用。");
     }
     const profile = resolveContentSpec(parseProfile(state));

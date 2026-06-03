@@ -5,6 +5,7 @@ import { createProxyMiddleware } from "http-proxy-middleware";
 import { env } from "../env.js";
 import type { AuthedRequest } from "../middleware/auth.js";
 import { getLangGraphThreadValues } from "../services/langgraph.js";
+import { maybeAutoTitleConversation } from "../services/conversation-auto-title.js";
 import { applyAgentRunRevision, getAgentContext } from "../services/works.js";
 import { consumeAiUsage } from "../services/subscription.js";
 
@@ -127,14 +128,29 @@ async function syncWorkAfterStream(
   try {
     const values = await getLangGraphThreadValues(context.threadId);
     if (!values || typeof values !== "object") return;
-    await applyAgentRunRevision({
-      userId: context.userId,
-      workId: context.workId,
-      conversationId: context.conversationId,
-      values: values as Record<string, unknown>,
-    });
+    const record = values as Record<string, unknown>;
+    try {
+      await applyAgentRunRevision({
+        userId: context.userId,
+        workId: context.workId,
+        conversationId: context.conversationId,
+        values: record,
+      });
+    } catch (error) {
+      console.error("[agent-proxy] failed to append work revision", error);
+    }
+    try {
+      await maybeAutoTitleConversation({
+        userId: context.userId,
+        workId: context.workId,
+        conversationId: context.conversationId,
+        values: record,
+      });
+    } catch (error) {
+      console.error("[agent-proxy] failed to auto-title conversation", error);
+    }
   } catch (error) {
-    console.error("[agent-proxy] failed to append work revision", error);
+    console.error("[agent-proxy] failed to read thread state after stream", error);
   }
 }
 

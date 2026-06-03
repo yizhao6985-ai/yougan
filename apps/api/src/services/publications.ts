@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "../db.js";
 
 import {
   applyMetadataOverrides,

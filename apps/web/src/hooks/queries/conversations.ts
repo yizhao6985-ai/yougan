@@ -6,8 +6,7 @@ import {
 import { useCallback } from "react";
 
 import { queryKeys } from "@/hooks/queries/keys";
-import { normalizeChatMode } from "@/lib/types";
-import type { ChatMode, WorkConversation } from "@/lib/types";
+import type { WorkConversation } from "@/lib/types";
 import {
   createWorkConversation as apiCreateWorkConversation,
   deleteWorkConversation as apiDeleteWorkConversation,
@@ -19,7 +18,6 @@ import { useAuthToken } from "@/store/auth";
 function normalizeConversation(conversation: WorkConversation): WorkConversation {
   return {
     ...conversation,
-    mode: normalizeChatMode(conversation.mode),
     threadId: conversation.threadId ?? null,
   };
 }

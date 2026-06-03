@@ -20,7 +20,7 @@ export type {
   WorkRevisionSnapshot,
   YouganAgentState,
   YouganStreamValues,
-  TurnTaskKind,
+  TurnQueueKind,
 } from "@yougan/domain";
 
 export {
@@ -44,17 +44,8 @@ export {
   parsePlanJson,
   REVISION_KINDS,
   USER_REVISION_PHASES,
-  TURN_TASK_KINDS,
+  TURN_QUEUE_KINDS,
 } from "@yougan/domain";
-
-export function normalizeChatMode(mode: string): import("@yougan/domain").ChatMode {
-  if (
-    (["inspiration", "outline", "creation", "ask"] as const).includes(mode as never)
-  ) {
-    return mode as import("@yougan/domain").ChatMode;
-  }
-  return "inspiration";
-}
 
 export interface WorkGroup {
   id: string;
@@ -83,7 +74,6 @@ export interface WorkConversation {
   id: string;
   workId: string;
   title: string;
-  mode: import("@yougan/domain").ChatMode;
   threadId: string | null;
   createdAt: string;
   updatedAt: string;

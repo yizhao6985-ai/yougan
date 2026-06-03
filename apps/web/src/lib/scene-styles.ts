@@ -17,9 +17,9 @@ export const scene = {
   conversationPadBottom: "pb-60",
   /** 开屏空态：紧贴文案下方的建议区，预留高度避免气泡撑开时顶栏跳动 */
   openingSuggestionsSlot:
-    "w-full min-h-[9.5rem] shrink-0 flex flex-col items-center",
+    "w-full max-w-5xl min-h-[17rem] shrink-0 flex flex-col items-center",
   conversationScrollButton:
-    "bottom-44 size-8 rounded-full border-0 bg-background/80 text-muted-foreground shadow-md shadow-black/10 backdrop-blur-sm hover:bg-muted/65 hover:text-foreground hover:shadow-lg hover:shadow-black/15 dark:bg-background/60 dark:shadow-black/45 dark:hover:shadow-black/55",
+    "bottom-44 size-8 rounded-lg border-0 bg-background/80 text-muted-foreground shadow-md shadow-black/10 backdrop-blur-sm hover:bg-muted/65 hover:text-foreground hover:shadow-lg hover:shadow-black/15 dark:bg-background/60 dark:shadow-black/45 dark:hover:shadow-black/55",
   /** 悬浮输入框卡片外观（作用于 PromptInput 内 InputGroup） */
   composerFloatingInput:
     "[&_[data-slot=input-group]]:overflow-hidden [&_[data-slot=input-group]]:rounded-lg [&_[data-slot=input-group]]:border-border/80 [&_[data-slot=input-group]]:bg-card/95 [&_[data-slot=input-group]]:shadow-lg [&_[data-slot=input-group]]:shadow-border/25 [&_[data-slot=input-group]]:backdrop-blur-sm [&_[data-slot=input-group]]:has-[[data-slot=input-group-control]:focus-visible]:ring-primary/20 [&_[data-slot=input-group]]:has-[[data-align=block-start]]:flex-col [&_[data-slot=input-group]]:has-[[data-align=block-start]]:items-stretch",

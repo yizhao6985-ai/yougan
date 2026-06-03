@@ -3,10 +3,10 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { segmentGraphemes } from "@/lib/segment-graphemes";
 import type { BriefSuggestion } from "@/lib/types";
 
-const BETWEEN_ITEMS_MS = 220;
-const MAX_TYPE_MS_PER_ITEM = 1_800;
-const MIN_MS_PER_GRAPHEME = 22;
-const MAX_MS_PER_GRAPHEME = 48;
+const BETWEEN_ITEMS_MS = 70;
+const MAX_TYPE_MS_PER_ITEM = 620;
+const MIN_MS_PER_GRAPHEME = 7;
+const MAX_MS_PER_GRAPHEME = 17;
 
 function msPerGrapheme(graphemeCount: number): number {
   if (graphemeCount < 1) return MIN_MS_PER_GRAPHEME;

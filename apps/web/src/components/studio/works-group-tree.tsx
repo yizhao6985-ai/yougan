@@ -59,15 +59,21 @@ function WorkRow({
             : "border-border/80 bg-card",
         )}
       >
-        <button type="button" className="min-w-0 flex-1 text-left" onClick={onSelect}>
-          <span className="block truncate text-sm font-medium text-foreground">
-            {work.title}
-          </span>
-          {work.profile.platform ? (
-            <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-              {work.profile.platform}
+        <button
+          type="button"
+          className="flex min-w-0 flex-1 items-center text-left"
+          onClick={onSelect}
+        >
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-medium leading-5 text-foreground">
+              {work.title}
             </span>
-          ) : null}
+            {work.profile.platform ? (
+              <span className="mt-0.5 block truncate text-xs leading-4 text-muted-foreground">
+                {work.profile.platform}
+              </span>
+            ) : null}
+          </span>
         </button>
         <div className="flex shrink-0 items-center gap-1">
           <Button
@@ -95,28 +101,30 @@ function WorkRow({
   }
 
   return (
-    <div className="group relative mb-1">
+    <div
+      className={cn(
+        "group mb-1 flex items-center rounded-lg transition",
+        "hover:bg-accent",
+        isActive && "bg-secondary/80",
+      )}
+    >
       <button
         type="button"
         onClick={onSelect}
-        className={cn(
-          "w-full rounded-lg px-3 py-2.5 pr-16 text-left text-sm transition",
-          "hover:bg-accent",
-          isActive && "bg-secondary/80 text-foreground",
-        )}
+        className="min-w-0 flex-1 px-3 py-2.5 text-left text-sm"
       >
-        <span className="block truncate font-medium text-foreground/90">
+        <span className="block truncate font-medium leading-5 text-foreground/90">
           {work.title}
         </span>
         {work.profile.platform ? (
-          <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+          <span className="mt-0.5 block truncate text-xs leading-4 text-muted-foreground">
             {work.profile.platform}
           </span>
         ) : null}
       </button>
       <div
         className={cn(
-          "absolute right-1 top-1/2 flex -translate-y-1/2 items-center gap-0.5",
+          "flex shrink-0 items-center gap-0.5 pr-1",
           "opacity-0 transition group-hover:opacity-100",
           isActive && "opacity-100",
         )}

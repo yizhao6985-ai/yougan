@@ -1,27 +1,14 @@
-import type { WorkConversation } from "@prisma/client";
+import type { WorkConversation } from "../db.js";
 
 import { prisma } from "../db.js";
 import type { WorkConversationDTO } from "../schemas.js";
 import { getWork } from "./works.js";
-
-function normalizeConversationMode(mode: string): WorkConversationDTO["mode"] {
-  if (
-    mode === "inspiration" ||
-    mode === "outline" ||
-    mode === "creation" ||
-    mode === "ask"
-  ) {
-    return mode;
-  }
-  return "inspiration";
-}
 
 function toConversationDTO(conversation: WorkConversation): WorkConversationDTO {
   return {
     id: conversation.id,
     workId: conversation.workId,
     title: conversation.title,
-    mode: normalizeConversationMode(conversation.mode),
     threadId: conversation.threadId,
     createdAt: conversation.createdAt.toISOString(),
     updatedAt: conversation.updatedAt.toISOString(),
@@ -42,7 +29,6 @@ export async function listWorkConversations(userId: string, workId: string) {
       data: {
         workId,
         title: "对话 1",
-        mode: "inspiration",
       },
     });
     conversations = [created];
@@ -54,20 +40,18 @@ export async function listWorkConversations(userId: string, workId: string) {
 export async function createWorkConversation(
   userId: string,
   workId: string,
-  options?: { title?: string; mode?: string },
+  options?: { title?: string },
 ) {
   const work = await getWork(userId, workId);
   if (!work) return null;
 
   const count = await prisma.workConversation.count({ where: { workId } });
   const title = options?.title?.trim() || `对话 ${count + 1}`;
-  const mode = options?.mode ?? "inspiration";
 
   const conversation = await prisma.workConversation.create({
     data: {
       workId,
       title,
-      mode,
     },
   });
 
@@ -95,7 +79,6 @@ export async function updateWorkConversation(
   conversationId: string,
   data: Partial<{
     title: string;
-    mode: string;
     threadId: string | null;
   }>,
 ) {
@@ -106,7 +89,6 @@ export async function updateWorkConversation(
     where: { id: conversationId },
     data: {
       ...(data.title !== undefined ? { title: data.title } : {}),
-      ...(data.mode !== undefined ? { mode: data.mode } : {}),
       ...(data.threadId !== undefined ? { threadId: data.threadId } : {}),
     },
   });

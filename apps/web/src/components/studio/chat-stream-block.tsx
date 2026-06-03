@@ -24,7 +24,7 @@ export const chatStreamBlock = {
     "font-mono text-[11px] font-bold tabular-nums tracking-tighter leading-none",
   /** 开屏建议气泡：inline 随打字变宽，自由换行 */
   openingSuggestionText:
-    "text-xs font-bold leading-snug tracking-tight text-foreground/85",
+    "text-sm font-bold leading-snug tracking-tight text-foreground/85",
   openingChip: cn(
     "inline-flex max-w-full rounded-2xl border border-border/70 bg-muted/30 px-4 py-2.5",
     "text-left shadow-sm shadow-black/[0.02] transition-colors",
@@ -35,7 +35,7 @@ export const chatStreamBlock = {
     "disabled:cursor-not-allowed disabled:opacity-55",
   ),
   openingChipPending:
-    "border-primary/40 bg-primary/10 [&_span]:text-sm [&_span]:text-foreground",
+    "border-primary/40 bg-primary/10 [&_span]:text-base [&_span]:text-foreground",
   divider: "border-t border-border/60 pt-3",
   header: "flex items-start gap-2.5",
   headerDot: "mt-1.5 size-2 shrink-0 rounded-md",

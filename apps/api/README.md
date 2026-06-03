@@ -37,7 +37,10 @@ pnpm dev
 |------|------|
 | `pnpm dev` | `tsx watch` 热重载 |
 | `pnpm build` / `pnpm check-types` | TypeScript 检查 |
-| `pnpm db:push` | 将 `prisma/schema.prisma` 同步到数据库 |
+| `pnpm db:push` | 同步 schema 并 `prisma generate`（Prisma 7，需 Node ≥ 20.19） |
+| `pnpm db:generate` | 生成 `@prisma/client` |
+
+数据库连接在 `prisma.config.ts`（读取 `DATABASE_URL`），不再写在 `schema.prisma`。
 | `pnpm db:generate` | 生成 Prisma Client（`postinstall` 也会执行） |
 | `pnpm openapi:generate` | 生成 `openapi/openapi.json` |
 
@@ -110,14 +113,14 @@ apps/api/
 
 - **User** — 账号、资料、头像/封面
 - **Work** — 物化视图：`profile`、`brief`、`plan`、`draft`（JSON），`headRevisionId`
-- **WorkRevision** — 单线版本快照 event log
-- **WorkConversation** — 多轮对话（共享作品状态）：`mode`、`threadId`
+- **WorkRevision** — 单线版本快照 event log（仅 `execution_complete` / 内容预览）
+- **WorkConversation** — 多轮对话（共享作品状态）：`threadId`
 - **WorkGroup** — 作品分组
 - **Publication** — 对外发布的内容（草稿/已发布、阅读统计）
 - **PlatformIntegration** — 第三方平台 OAuth 令牌
 - **UserSubscription** / **BillingOrder** — 会员与账单
 
-`WorkConversation.mode` 取值：`inspiration` | `creation` | `ask`。
+`WorkConversation` 与 LangGraph `threadId` 一一对应；创作阶段由 Agent 回合队列编排，不再持久化对话模式字段。
 
 ## LangGraph 代理
 
@@ -125,7 +128,8 @@ apps/api/
 
 - 校验 JWT，解析当前用户
 - 读取请求头 `X-Work-Id`、`X-Conversation-Id`，加载作品并校验归属
-- 按 `X-Work-Id`、`X-Conversation-Id` 注入作品状态；stream 结束后 `applyAgentRunToWork` 写 revision
+- 按 `X-Work-Id`、`X-Conversation-Id` 注入作品状态（`profile`、`brief`、`outline` 等）；stream 结束后 `applyAgentRunToWork` 写 revision
+- 侧栏 `PATCH Work` 更新物化列后同步 LangGraph thread（`agent-thread-sync`）；聊天消息经任务队列路由对话子图，见 [agent-turn-queue.md](../../docs/technical/agent-turn-queue.md)
 
 详见 [docs/technical/revision-graph.md](../../docs/technical/revision-graph.md)。
 

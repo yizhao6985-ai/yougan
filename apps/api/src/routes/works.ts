@@ -66,10 +66,15 @@ worksRouter.patch("/:workId", async (req: AuthedRequest, res) => {
     res.status(400).json({ error: "Invalid request" });
     return;
   }
+  const conversationId =
+    typeof req.query.conversationId === "string"
+      ? req.query.conversationId
+      : undefined;
   const work = await updateWork(
     req.userId!,
     routeParam(req.params.workId, "workId"),
     body.data,
+    { conversationId },
   );
   if (!work) {
     res.status(404).json({ error: "Work not found" });

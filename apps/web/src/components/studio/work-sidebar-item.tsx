@@ -39,15 +39,17 @@ export function WorkSidebarItem({
 
   return (
     <Collapsible open={isActive} className="mb-1">
-      <div className="group/work relative">
+      <div
+        className={cn(
+          "group/work flex items-center rounded-lg transition",
+          "hover:bg-accent",
+          isActive && "bg-secondary/80",
+        )}
+      >
         <button
           type="button"
           onClick={() => selectWork(work.id)}
-          className={cn(
-            "flex w-full items-center gap-1.5 rounded-lg py-2 pl-1.5 pr-14 text-left transition",
-            "hover:bg-accent",
-            isActive && "bg-secondary/80",
-          )}
+          className="flex min-w-0 flex-1 items-center gap-1.5 py-2 pl-1.5 text-left"
         >
           <ChevronRightIcon
             className={cn(
@@ -56,11 +58,11 @@ export function WorkSidebarItem({
             )}
           />
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-sm font-medium text-foreground/90">
+            <span className="block truncate text-sm font-medium leading-5 text-foreground/90">
               {work.title}
             </span>
             {work.profile.platform ? (
-              <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+              <span className="mt-0.5 block truncate text-xs leading-4 text-muted-foreground">
                 {work.profile.platform}
               </span>
             ) : null}
@@ -68,7 +70,7 @@ export function WorkSidebarItem({
         </button>
         <div
           className={cn(
-            "absolute right-1 top-2 flex items-center gap-0.5",
+            "flex shrink-0 items-center gap-0.5 pr-1",
             "opacity-0 transition group-hover/work:opacity-100",
             isActive && "opacity-100",
           )}
