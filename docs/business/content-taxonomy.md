@@ -158,7 +158,7 @@ AI 在对话中隐式维护的 `Work.profile` 字段：
 | 阶段 | 入口 | 行为 |
 |------|------|------|
 | 侧栏 / API | `PATCH Work` + 线程同步 | 可更新 `profile`、brief、outline、draft |
-| 聊天 | inspiration / outline 子图 | 对话工具改 brief、大纲；参考图在 prepare-turn 同步 |
+| 聊天 | profile / production / ask 子图 | 对话工具改方案与成稿；参考素材由 profile 子图 parse_reference_* 入库 |
 | 灵感 | `confirm_content_spec`（对话工具） | 用户明确体裁/形式时写入 |
 | 创作 | `confirm_content_spec` / profile 工具 | 补充或修正规格 |
 | 创作入口 | `resolveContentSpec` 节点 | 自动补齐缺失字段 |

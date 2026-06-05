@@ -19,33 +19,18 @@ export const ReferenceItemSchema = z
   })
   .openapi("ReferenceItem");
 
-export const WorkProfileSchema = z
-  .object({
-    platform: z.string().nullable().optional(),
-    content_topic: z.string().nullable().optional(),
-    content_type: z.string().nullable().optional(),
-    content_format: z.string().nullable().optional(),
-    media_modality: z.string().nullable().optional(),
-    content_points: z.array(z.string()).optional(),
-    style: z.string().nullable().optional(),
-    tone: z.string().nullable().optional(),
-    persona: z.string().nullable().optional(),
-    audience: z.string().nullable().optional(),
-    goals: z.array(z.string()).optional(),
-    style_constraints: z.array(z.string()).optional(),
-    notes: z.string().nullable().optional(),
-    references: z.array(ReferenceItemSchema).optional(),
-  })
-  .openapi("WorkProfile");
+export const WorkReferencesSchema = z
+  .array(ReferenceItemSchema)
+  .openapi("WorkReferences");
 
-export const WorkBlueprintSchema = z
+export const WorkProfileSchema = z
   .object({
     spec: z.object({
       platform: z.string().nullable().optional(),
       content_topic: z.string().nullable().optional(),
       content_type: z.string().nullable().optional(),
       content_format: z.string().nullable().optional(),
-      media_modality: z.string().nullable().optional(),
+      media_modalities: z.array(z.string()).optional(),
     }),
     voice: z.object({
       audience: z.string().nullable().optional(),
@@ -55,6 +40,7 @@ export const WorkBlueprintSchema = z
       goals: z.array(z.string()).optional(),
     }),
     premise: z.string(),
+    references: WorkReferencesSchema,
     constraints: z.array(
       z.object({
         id: z.string(),
@@ -71,32 +57,7 @@ export const WorkBlueprintSchema = z
       }),
     ),
   })
-  .openapi("WorkBlueprint");
-
-export const WorkBriefSchema = z
-  .object({
-    requirements: z.array(
-      z.object({
-        id: z.string(),
-        description: z.string(),
-        confirmed_at: z.string(),
-      }),
-    ),
-  })
-  .openapi("WorkBrief");
-
-export const WorkOutlineSchema = z
-  .object({
-    sections: z.array(
-      z.object({
-        id: z.string(),
-        description: z.string(),
-        confirmed_at: z.string(),
-      }),
-    ),
-    summary: z.string().nullable().optional(),
-  })
-  .openapi("WorkOutline");
+  .openapi("WorkProfile");
 
 export const WorkProductionPlanSchema = z
   .object({
@@ -131,7 +92,7 @@ export const WorkProductionPlanSchema = z
   })
   .openapi("WorkProductionPlan");
 
-export const WorkDraftSchema = z
+export const WorkPreviewSchema = z
   .object({
     platform: z.string(),
     title: z.string().nullable().optional(),
@@ -139,16 +100,25 @@ export const WorkDraftSchema = z
     hashtags: z.array(z.string()).optional(),
     hook: z.string().nullable().optional(),
     notes: z.string().nullable().optional(),
+    images: z
+      .array(
+        z.object({
+          url: z.string().url(),
+          alt: z.string().nullable().optional(),
+          prompt: z.string().nullable().optional(),
+        }),
+      )
+      .optional(),
     publish_ready: z.boolean().optional(),
   })
-  .openapi("WorkDraft");
+  .openapi("WorkPreview");
+
 
 export const WorkRevisionSnapshotSchema = z
   .object({
     profile: WorkProfileSchema,
-    blueprint: WorkBlueprintSchema,
-    plan: WorkProductionPlanSchema,
-    draft: WorkDraftSchema.nullable(),
+    productionPlan: WorkProductionPlanSchema,
+    preview: WorkPreviewSchema.nullable(),
   })
   .openapi("WorkRevisionSnapshot");
 
@@ -181,9 +151,8 @@ export const WorkSchema = z
     title: z.string(),
     groupId: z.string().nullable(),
     profile: WorkProfileSchema,
-    blueprint: WorkBlueprintSchema,
-    plan: WorkProductionPlanSchema,
-    draft: WorkDraftSchema.nullable(),
+    productionPlan: WorkProductionPlanSchema,
+    preview: WorkPreviewSchema.nullable(),
     headRevisionId: z.string().nullable(),
     sourceWorkId: z.string().nullable(),
     sourceRevisionId: z.string().nullable(),
@@ -215,25 +184,14 @@ export const UserSchema = z
   })
   .openapi("User");
 
-export const PublicUserSchema = z
-  .object({
-    id: z.string(),
-    name: z.string().nullable(),
-    bio: z.string().nullable(),
-    avatarUrl: z.string().url().nullable(),
-    coverUrl: z.string().url().nullable(),
-    publicationCount: z.number().int(),
-  })
-  .openapi("PublicUser");
-
 export const UserProfileStatsSchema = z
   .object({
-    publicationCount: z.number().int(),
-    totalViews: z.number().int(),
+    publicationCount: z.number(),
+    totalViews: z.number(),
     publicationsByMonth: z.array(
       z.object({
         month: z.string(),
-        count: z.number().int(),
+        count: z.number(),
       }),
     ),
   })
@@ -258,9 +216,8 @@ export const SyncWorkStateSchema = z
   .object({
     groupId: z.string().nullable().optional(),
     profile: WorkProfileSchema.optional(),
-    blueprint: WorkBlueprintSchema.optional(),
-    plan: WorkProductionPlanSchema.optional(),
-    draft: WorkDraftSchema.nullable().optional(),
+    productionPlan: WorkProductionPlanSchema.optional(),
+    preview: WorkPreviewSchema.nullable().optional(),
     title: z.string().optional(),
   })
   .openapi("SyncWorkState");
@@ -278,9 +235,8 @@ export const AgentContextSchema = z
     conversationId: z.string().optional(),
     headRevisionId: z.string().nullable().optional(),
     profile: WorkProfileSchema,
-    blueprint: WorkBlueprintSchema,
-    plan: WorkProductionPlanSchema,
-    draft: WorkDraftSchema.nullable(),
+    productionPlan: WorkProductionPlanSchema,
+    preview: WorkPreviewSchema.nullable(),
     threadId: z.string().nullable().optional(),
     workTitle: z.string().optional(),
     conversationTitle: z.string().optional(),
@@ -340,8 +296,8 @@ export const PublicationAuthorSchema = z.object({
   id: z.string(),
   name: z.string().nullable(),
   email: z.string().email(),
-  bio: z.string().nullable(),
-  avatarUrl: z.string().nullable().optional(),
+  bio: z.string().nullable().optional(),
+  avatarUrl: z.string().url().nullable().optional(),
 });
 
 export const PublicationSchema = z
@@ -352,15 +308,15 @@ export const PublicationSchema = z
     title: z.string(),
     excerpt: z.string().nullable(),
     body: z.string(),
-    coverUrl: z.string().nullable(),
+    coverUrl: z.string().url().nullable(),
     platform: z.string().nullable(),
     contentFormat: z.string().nullable(),
     topicCategory: z.string().nullable(),
     contentTopic: z.string().nullable(),
     contentType: z.string().nullable(),
-    mediaType: z.string().nullable(),
+    mediaTypes: z.array(z.string()),
     hashtags: z.array(z.string()),
-    images: z.array(z.record(z.unknown())),
+    images: z.array(z.object({ url: z.string().url() })),
     status: PublicationStatusSchema,
     publishedAt: z.string().nullable(),
     createdAt: z.string(),
@@ -369,19 +325,19 @@ export const PublicationSchema = z
   })
   .openapi("Publication");
 
-export type PublicationStatus = z.infer<typeof PublicationStatusSchema>;
 export type PublicationDTO = z.infer<typeof PublicationSchema>;
+export type PublicationStatus = z.infer<typeof PublicationStatusSchema>;
 
 export const SubscriptionPlanSchema = z
   .object({
     id: z.string(),
     name: z.string(),
     description: z.string(),
-    monthlyAiQuota: z.number().int(),
+    monthlyAiQuota: z.number(),
     priceMonthlyLabel: z.string(),
     priceYearlyLabel: z.string(),
-    priceMonthlyCents: z.number().int(),
-    priceYearlyCents: z.number().int(),
+    priceMonthlyCents: z.number(),
+    priceYearlyCents: z.number(),
     features: z.array(z.string()),
     highlighted: z.boolean(),
   })
@@ -396,8 +352,8 @@ export const SubscriptionSummarySchema = z
     billingCycle: z.enum(["monthly", "yearly"]).nullable(),
     currentPeriodStart: z.string(),
     currentPeriodEnd: z.string().nullable(),
-    aiUsageThisPeriod: z.number().int(),
-    aiQuotaThisPeriod: z.number().int(),
+    aiUsageThisPeriod: z.number(),
+    aiQuotaThisPeriod: z.number(),
     cancelAtPeriodEnd: z.boolean(),
     features: z.array(z.string()),
   })
@@ -409,7 +365,7 @@ export const BillingOrderSchema = z
     planId: z.string(),
     planName: z.string(),
     billingCycle: z.enum(["monthly", "yearly"]),
-    amountCents: z.number().int(),
+    amountCents: z.number(),
     amountLabel: z.string(),
     currency: z.string(),
     status: z.string(),

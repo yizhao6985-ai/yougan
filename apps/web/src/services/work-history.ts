@@ -10,9 +10,8 @@ export interface WorkAgentContext {
   conversationId?: string;
   headRevisionId?: string | null;
   profile: Work["profile"];
-  blueprint: Work["blueprint"];
-  plan: Work["plan"];
-  draft: Work["draft"];
+  productionPlan: Work["productionPlan"];
+  preview: Work["preview"];
   threadId?: string | null;
   workTitle?: string;
   conversationTitle?: string;

@@ -193,7 +193,8 @@ export function discoverBackLabel() {
   return `返回${DISCOVER_SECTION.title}`;
 }
 
-export const PROFILE_SECTION = {
+/** 用户账号主页（/user/:id）文案 */
+export const ACCOUNT_PAGE = {
   title: "个人主页",
   publicationsHeading: "已发布内容",
   emptyPublications: "还没有公开内容。",
@@ -326,13 +327,15 @@ export const CHAT_COPY = {
   /** 开屏空态：单行标题（选题气泡上方不再另起提示） */
   emptyTitle: "从一句话开始，选选题或直接输入",
   status: {
-    blueprintExploring: "正在帮你整理作品方案",
-    blueprintEditing: (beats: number, constraints: number) =>
+    profileExploring: "正在帮你整理作品方案",
+    profileEditing: (beats: number, constraints: number) =>
       `方案 ${beats} 节 · ${constraints} 条要求，可在右侧随时修改`,
     askExploring: "有问题随时问：优化、学习、行业背景都可以",
-    creationExecuting: "AI 团队正在按方案精良制作",
+    productionExecuting: "AI 团队正在按方案精良制作",
   },
   replying: "正在回复…",
+  interrupted: "已中断",
+  stopRun: "停止",
   attachmentDrawer: {
     title: (count: number) => `附件 ${count}`,
     hint: "发送消息时一并提交",
@@ -352,7 +355,7 @@ export const CREATIVE_CONTEXT_PANEL = {
   expand: "展开作品面板",
   collapse: "收起作品面板",
   tabs: {
-    blueprint: "作品方案",
+    profile: "作品方案",
     preview: "作品预览",
     references: "参考素材",
     history: "版本",
@@ -384,7 +387,7 @@ export const WORK_HISTORY_PANEL = {
 } as const;
 
 /** 作品面板 · 作品方案 */
-export const BLUEPRINT_PANEL = {
+export const PROFILE_PANEL = {
   title: "作品方案",
   hint: "创作主题、体裁形式、表达设定、写作要求与内容节拍；对话中确认后 Agent 会写入这里",
   premiseLabel: "定位",
@@ -400,6 +403,7 @@ export const BLUEPRINT_PANEL = {
 export const PREVIEW_PANEL = {
   title: "作品预览",
   hint: "AI 团队交付的标题和正文显示在这里",
+  unsavedBadge: "（预览未保存）",
   empty: "AI 团队生成文案后，会显示在这里。",
 } as const;
 
@@ -438,7 +442,7 @@ export const INTEGRATIONS = {
 export const PUBLISH = {
   checking: "正在检查发布状态…",
   publishedBadge: "已发布",
-  draftBadge: "草稿已保存",
+  previewSavedBadge: "预览已保存",
   publishButton: "发布到有感",
   publishing: "发布中…",
   confirmTitle: "确认发布分类",

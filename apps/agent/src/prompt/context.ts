@@ -1,12 +1,9 @@
 export {
-  blueprintSummary,
-  blueprintSpecSummary,
-  blueprintVoiceSummary,
-  briefSummary,
+  profileSummary,
+  profileSpecSummary,
+  profileVoiceSummary,
   contentSpecSummary,
-  outlineSummary,
   productionPlanSummary,
   profileContext,
-  profileSummary,
   referencesSummary,
 } from "@yougan/domain";

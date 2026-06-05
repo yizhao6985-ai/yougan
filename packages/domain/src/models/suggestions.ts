@@ -1,17 +1,17 @@
-/** 灵感模式结构化建议（运行时，不入库） */
-export interface BriefSuggestion {
+/** 下一步可点击建议（运行时，不入库） */
+export interface NextStepSuggestion {
   id: string;
   kind: "explore" | "confirm" | "navigate";
   label: string;
   message: string;
 }
 
-export interface BriefSuggestions {
+export interface NextStepSuggestions {
   hint?: string;
-  suggestions: BriefSuggestion[];
+  suggestions: NextStepSuggestion[];
 }
 
-export const DEFAULT_BRIEF_SUGGESTIONS_HINT = "点一条继续，或直接输入";
+export const DEFAULT_NEXT_STEP_SUGGESTIONS_HINT = "点一条继续，或直接输入";
 
-/** 下一步建议展示文案（message）统一字数上限 */
-export const MAX_NEXT_STEP_SUGGESTION_LENGTH = 48;
+/** 前端展示建议气泡时的参考字数（仅 UI，不截断 API 返回） */
+export const MAX_NEXT_STEP_SUGGESTION_DISPLAY_LENGTH = 48;

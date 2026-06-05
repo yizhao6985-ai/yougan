@@ -11,11 +11,12 @@ export * from "./models/content/catalog.js";
 export * from "./models/discover/taxonomy.js";
 
 // —— 工具函数 ——
-export * from "./utils/work/blueprint.js";
+export * from "./utils/work/profile.js";
 export * from "./utils/work/plan.js";
-export * from "./utils/work/blueprint-mutations.js";
+export * from "./utils/work/staging.js";
+export * from "./utils/work/profile-mutations.js";
 export * from "./utils/work/normalize-dto.js";
-export * from "./utils/blueprint-merge.js";
+export * from "./utils/profile-merge.js";
 export * from "./utils/revision.js";
 export * from "./utils/revision-snapshot.js";
 export * from "./utils/suggestions.js";
@@ -25,6 +26,7 @@ export * from "./utils/turn-queue.js";
 export * from "./utils/checkpoint-messages.js";
 export * from "./utils/conversation-title.js";
 export * from "./utils/content-spec.js";
+export * from "./utils/media-modalities.js";
 export * from "./utils/discover/taxonomy.js";
 export * from "./utils/discover/filters.js";
 export * from "./utils/prompt-summaries.js";

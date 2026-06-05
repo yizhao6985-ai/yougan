@@ -281,76 +281,13 @@
           "summary"
         ]
       },
-      "WorkProfile": {
-        "type": "object",
-        "properties": {
-          "platform": {
-            "type": "string",
-            "nullable": true
-          },
-          "content_topic": {
-            "type": "string",
-            "nullable": true
-          },
-          "content_type": {
-            "type": "string",
-            "nullable": true
-          },
-          "content_format": {
-            "type": "string",
-            "nullable": true
-          },
-          "media_modality": {
-            "type": "string",
-            "nullable": true
-          },
-          "content_points": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "style": {
-            "type": "string",
-            "nullable": true
-          },
-          "tone": {
-            "type": "string",
-            "nullable": true
-          },
-          "persona": {
-            "type": "string",
-            "nullable": true
-          },
-          "audience": {
-            "type": "string",
-            "nullable": true
-          },
-          "goals": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "style_constraints": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "notes": {
-            "type": "string",
-            "nullable": true
-          },
-          "references": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ReferenceItem"
-            }
-          }
+      "WorkReferences": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ReferenceItem"
         }
       },
-      "WorkBlueprint": {
+      "WorkProfile": {
         "type": "object",
         "properties": {
           "spec": {
@@ -372,9 +309,11 @@
                 "type": "string",
                 "nullable": true
               },
-              "media_modality": {
-                "type": "string",
-                "nullable": true
+              "media_modalities": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
               }
             }
           },
@@ -407,6 +346,9 @@
           },
           "premise": {
             "type": "string"
+          },
+          "references": {
+            "$ref": "#/components/schemas/WorkReferences"
           },
           "constraints": {
             "type": "array",
@@ -461,6 +403,7 @@
           "spec",
           "voice",
           "premise",
+          "references",
           "constraints",
           "beats"
         ]
@@ -587,7 +530,7 @@
           "executed_tasks"
         ]
       },
-      "WorkDraft": {
+      "WorkPreview": {
         "type": "object",
         "nullable": true,
         "properties": {
@@ -615,6 +558,29 @@
             "type": "string",
             "nullable": true
           },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "alt": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "prompt": {
+                  "type": "string",
+                  "nullable": true
+                }
+              },
+              "required": [
+                "url"
+              ]
+            }
+          },
           "publish_ready": {
             "type": "boolean"
           }
@@ -640,14 +606,11 @@
           "profile": {
             "$ref": "#/components/schemas/WorkProfile"
           },
-          "blueprint": {
-            "$ref": "#/components/schemas/WorkBlueprint"
-          },
-          "plan": {
+          "productionPlan": {
             "$ref": "#/components/schemas/WorkProductionPlan"
           },
-          "draft": {
-            "$ref": "#/components/schemas/WorkDraft"
+          "preview": {
+            "$ref": "#/components/schemas/WorkPreview"
           },
           "headRevisionId": {
             "type": "string",
@@ -673,9 +636,8 @@
           "title",
           "groupId",
           "profile",
-          "blueprint",
-          "plan",
-          "draft",
+          "productionPlan",
+          "preview",
           "headRevisionId",
           "sourceWorkId",
           "sourceRevisionId",
@@ -693,14 +655,11 @@
           "profile": {
             "$ref": "#/components/schemas/WorkProfile"
           },
-          "blueprint": {
-            "$ref": "#/components/schemas/WorkBlueprint"
-          },
-          "plan": {
+          "productionPlan": {
             "$ref": "#/components/schemas/WorkProductionPlan"
           },
-          "draft": {
-            "$ref": "#/components/schemas/WorkDraft"
+          "preview": {
+            "$ref": "#/components/schemas/WorkPreview"
           },
           "title": {
             "type": "string"
@@ -723,14 +682,11 @@
           "profile": {
             "$ref": "#/components/schemas/WorkProfile"
           },
-          "blueprint": {
-            "$ref": "#/components/schemas/WorkBlueprint"
-          },
-          "plan": {
+          "productionPlan": {
             "$ref": "#/components/schemas/WorkProductionPlan"
           },
-          "draft": {
-            "$ref": "#/components/schemas/WorkDraft"
+          "preview": {
+            "$ref": "#/components/schemas/WorkPreview"
           },
           "threadId": {
             "type": "string",
@@ -746,9 +702,8 @@
         "required": [
           "workId",
           "profile",
-          "blueprint",
-          "plan",
-          "draft"
+          "productionPlan",
+          "preview"
         ]
       },
       "WorkRevisionSnapshot": {
@@ -757,21 +712,17 @@
           "profile": {
             "$ref": "#/components/schemas/WorkProfile"
           },
-          "blueprint": {
-            "$ref": "#/components/schemas/WorkBlueprint"
-          },
-          "plan": {
+          "productionPlan": {
             "$ref": "#/components/schemas/WorkProductionPlan"
           },
-          "draft": {
-            "$ref": "#/components/schemas/WorkDraft"
+          "preview": {
+            "$ref": "#/components/schemas/WorkPreview"
           }
         },
         "required": [
           "profile",
-          "blueprint",
-          "plan",
-          "draft"
+          "productionPlan",
+          "preview"
         ]
       },
       "WorkRevision": {
@@ -797,23 +748,23 @@
               "work_created",
               "work_duplicated",
               "work_restored",
-              "profile_updated",
-              "blueprint_constraint_added",
-              "blueprint_constraint_updated",
-              "blueprint_constraint_removed",
-              "blueprint_beat_added",
-              "blueprint_beat_updated",
-              "blueprint_beat_removed",
-              "blueprint_revised",
-              "plan_ready",
-              "plan_revised",
+              "references_updated",
+              "profile_constraint_added",
+              "profile_constraint_updated",
+              "profile_constraint_removed",
+              "profile_beat_added",
+              "profile_beat_updated",
+              "profile_beat_removed",
+              "profile_revised",
+              "production_plan_ready",
+              "production_plan_revised",
               "execution_complete"
             ]
           },
           "phase": {
             "type": "string",
             "enum": [
-              "draft"
+              "preview"
             ]
           },
           "summary": {
@@ -866,7 +817,7 @@
             "type": "string"
           },
           "monthlyAiQuota": {
-            "type": "integer"
+            "type": "number"
           },
           "priceMonthlyLabel": {
             "type": "string"
@@ -875,10 +826,10 @@
             "type": "string"
           },
           "priceMonthlyCents": {
-            "type": "integer"
+            "type": "number"
           },
           "priceYearlyCents": {
-            "type": "integer"
+            "type": "number"
           },
           "features": {
             "type": "array",
@@ -934,10 +885,10 @@
             "nullable": true
           },
           "aiUsageThisPeriod": {
-            "type": "integer"
+            "type": "number"
           },
           "aiQuotaThisPeriod": {
-            "type": "integer"
+            "type": "number"
           },
           "cancelAtPeriodEnd": {
             "type": "boolean"
@@ -983,7 +934,7 @@
             ]
           },
           "amountCents": {
-            "type": "integer"
+            "type": "number"
           },
           "amountLabel": {
             "type": "string"

@@ -2,11 +2,12 @@ import { useCallback, useState } from "react";
 
 import { chatStreamBlock } from "@/components/studio/chat-stream-block";
 import { useOpeningSuggestionsReveal } from "@/hooks/use-opening-suggestions-reveal";
-import type { BriefSuggestions } from "@/lib/types";
+import { truncateSuggestionForDisplay } from "@/lib/suggestion-display";
+import type { NextStepSuggestions } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type OpeningNextStepSuggestionsProps = {
-  suggestions: BriefSuggestions["suggestions"];
+  suggestions: NextStepSuggestions["suggestions"];
   hint?: string;
   animate?: boolean;
   disabled?: boolean;
@@ -15,7 +16,7 @@ type OpeningNextStepSuggestionsProps = {
   className?: string;
 };
 
-/** 开屏选题建议（无消息时展示） */
+/** 开屏选题建议（无消息时展示；打字机动画 + 展示截断，点击发送完整 message） */
 export function OpeningNextStepSuggestions({
   suggestions,
   hint,
@@ -60,14 +61,19 @@ export function OpeningNextStepSuggestions({
       <div className="flex flex-wrap items-center justify-center gap-2">
         {suggestions.slice(0, reveal.visibleCount).map((item, index) => {
           const isPending = pendingMessage === item.message;
-          const displayText = reveal.getDisplayText(index);
-          const showCaret = reveal.showCaret(index);
+          const isTyping = reveal.showCaret(index);
+          const typedText = reveal.getDisplayText(index);
+          const displayText =
+            isTyping || isPending
+              ? typedText
+              : truncateSuggestionForDisplay(item.message);
 
           return (
             <button
               key={item.id}
               type="button"
               disabled={isLocked && !isPending}
+              title={item.message}
               onClick={() => handleSelect(item.message)}
               className={cn(
                 chatStreamBlock.openingChip,
@@ -84,7 +90,7 @@ export function OpeningNextStepSuggestions({
                 )}
               >
                 {displayText}
-                {showCaret ? (
+                {isTyping ? (
                   <span
                     aria-hidden
                     className="ml-px inline-block w-[2px] animate-pulse bg-primary/70 align-[-0.1em]"

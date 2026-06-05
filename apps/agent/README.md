@@ -1,6 +1,6 @@
 # @yougan/agent
 
-Node.js LangGraph 服务：**回合队列**编排 + 四条对话子图（灵感 / 大纲 / 创作 / 提问）。聊天中的状态变更均经对话子图（可见回复与工具）；UI 直改作品状态由 API `PATCH Work` + 线程同步完成。
+Node.js LangGraph 服务：**两层三分**编排 + 对话子图。聊天中的状态变更均经对话子图（可见回复与工具）；UI 直改作品状态由 API `PATCH Work` + 线程同步完成。
 
 由 `@langchain/langgraph-cli` 在开发模式启动，默认 `http://localhost:2024`。生产环境由 `apps/api` 的 `/langgraph` 代理访问，不应对公网直接暴露（无 JWT 层）。
 
@@ -12,32 +12,50 @@ Node.js LangGraph 服务：**回合队列**编排 + 四条对话子图（灵感 
 
 Checkpoint：**Agent 专用 Postgres**（`POSTGRES_URI`，默认 `:5433`）。
 
-## 开发
+## 两层三分架构
 
-```bash
-cp apps/agent/.env.example apps/agent/.env
-# 填写 DASHSCOPE_API_KEY（阿里百炼 OpenAI 兼容端点）
-docker compose up -d
-pnpm dev:agent
-```
+### 外层 turn（主图）
+
+| 角色 | 目录 | 节点 | 职责 |
+|------|------|------|------|
+| 计划者 | `nodes/planner/` | `orchestrateTurn` | 解析用户意图 → `turnQueue[]`，fork `staging` |
+| 执行者 | `nodes/executor/` | `dispatchTurnQueue` / `advanceTurnQueue` + 子图 | 按队列路由并执行 profile / production / ask |
+| 验收者 | `nodes/verifier/` | `verifyTurn` / `commitTurn` | 验收通过 → 生成 `nextStepSuggestions` → 提交 canonical |
+
+路由边：`nodes/edges/`
+
+### 内层 production（制作子图）
+
+| 角色 | 目录 | 节点 | 职责 |
+|------|------|------|------|
+| 计划者 | `planner/` | ensureProfile / resolveContentSpec / scheduleProduction | 补全方案、解析规格、制定制作计划 |
+| 创作者 | `creator/` | llmCall / designLlmCall ⇄ tools | 按任务产出文案、设计、预览 |
+| 验收者 | `inspector/` | inspectProduction | 单任务质检，不通过则重试 |
+
+profile / ask 子图由 `createChatLoopGraph` 生成（直连 llm ⇄ tools）；方案缺口由 production 的 ensureProfile 在进入制作时补全。
+
+共享工厂见 `lib/graph/`：`createLlmCallNode`、`createChatLoopGraph`、`after-llm`。
 
 ## 目录结构
 
 ```
 src/
 ├── graph.ts
-├── lib/outline/                  # bootstrap、全量修订、schema（子图复用）
-├── conditional-edges/
-│   ├── route-by-entry.ts
-│   ├── route-by-turn-queue.ts    # 队列项 → 对话子图
-│   └── route-after-turn-queue.ts
 ├── nodes/
-│   ├── resolve-turn-queue/       # planTurnQueue → turnQueue（nodes/plan/）
-│   ├── turn-queue/               # 流程：dispatch / advance
-│   ├── inspiration|outline|creation|ask/
-│   │   └── nodes/                # 子图 LangGraph 节点；可递归 nodes/（如 tools/nodes/）
-│   └── next-step-suggestions/  # nodes/run、opening-topic、after-turn、shared
-├── tools/
+│   ├── edges/                        # 主图条件路由
+│   ├── planner/                      # 外层·计划者
+│   ├── executor/                     # 外层·执行者
+│   │   ├── dispatch.ts
+│   │   ├── advance.ts
+│   │   └── subgraphs/
+│   │       ├── profile/
+│   │       ├── ask/
+│   │       └── production/           # 内层 planner / creator / inspector
+│   └── verifier/                     # 外层·验收者
+│       ├── index.ts                  # verifyTurn
+│       ├── commit.ts
+│       └── suggestions/
+├── lib/
 ├── prompt/
 └── state.ts
 ```
@@ -51,24 +69,25 @@ src/
 | `#agent/lib/*` | `src/lib/*` |
 | `#agent/llm/*` | `src/llm/*` |
 | `#agent/prompt/*` | `src/prompt/*` |
-| `#agent/tools/*` | `src/tools/*`（共用 tool 定义） |
 | `#agent/state.js` | `src/state.ts` |
 | `#agent/schema.js` | `src/schema.ts` |
 | `#agent/env.js` | `src/env.ts` |
 
-同一子图内的节点仍用相对路径（如 `../tools/index.js` 引用该子图的 Tool 节点，而非 `src/tools/index.ts`）。
+profile 子图：`graph.ts`、`prompt.ts`、`tools/`（`index.ts` 聚合 profile-tools / reference-tools / revise-profile）；ask 为 `graph.ts`、`prompt.ts`、`tools.ts`。
 
 ## 主图流程
 
 ```text
-resolveTurnQueue → dispatchTurnQueue → [*Graph] → advanceTurnQueue → …
+START
+  ├─ 空 thread → verifyTurn（开屏 7 条建议）→ END
+  └─ 有消息 → orchestrateTurn → dispatchTurnQueue → [*Graph] → advanceTurnQueue
+         → verifyTurn（对话流 4 条建议）→ commitTurn → END
 ```
 
-| TurnQueueKind | 节点 | 说明 |
+| TurnQueueKind | 子图 | 说明 |
 |---------------|------|------|
-| `outline` | `outlineGraph` | llmCall ⇄ tools；prepare-turn 可 bootstrap 空大纲 |
-| `inspiration` | `inspirationGraph` | 改 brief 等 |
-| `creation` | `creationGraph` | 计划 + 出稿 |
+| `profile` | `profileGraph` | 改作品方案 |
+| `production` | `productionGraph` | 制作计划 + 出稿 + 质检 |
 | `ask` | `askGraph` | 答疑 |
 
 详见 [docs/technical/agent-turn-queue.md](../../docs/technical/agent-turn-queue.md)。
@@ -85,16 +104,7 @@ resolveTurnQueue → dispatchTurnQueue → [*Graph] → advanceTurnQueue → …
 | 队列解析、下一步建议、创意总监 | `createStructuredModel` | deepseek-v4-pro |
 | 文生图 | `llm/dashscope-image.ts` | qwen-image-2.0-pro |
 
-## 与 API
-
-- 物化列：`profile`、`brief`、`outline`、`plan`、`draft`
-- UI 更新物化列后 API 同步 LangGraph thread（`agent-thread-sync`）
-- Stream 字段含 `turnQueue`、`activeTurnKind`、`completedTurnKinds`
-- 详见 [revision-graph.md](../../docs/technical/revision-graph.md)
-
-修改 `state.ts` 或 graph 后重启 `pnpm dev:agent`。
-
 ## 相关文档
 
 - [agent-turn-queue.md](../../docs/technical/agent-turn-queue.md)
-- [creation-methodology.md](../../docs/business/creation-methodology.md)
+- [revision-graph.md](../../docs/technical/revision-graph.md)

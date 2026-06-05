@@ -4,7 +4,7 @@ import { CameraIcon, ImagePlusIcon, Loader2Icon, Trash2Icon } from "lucide-react
 import { AuthorAvatar } from "@/components/content/author-avatar";
 import { Button } from "@/components/ui/button";
 import { authorDisplayName } from "@/lib/publication-utils";
-import { PROFILE_SECTION } from "@/lib/site-copy";
+import { ACCOUNT_PAGE } from "@/lib/site-copy";
 import { scene } from "@/lib/scene-styles";
 import { uploadImage } from "@/services/upload";
 import { ApiError } from "@/services/client";
@@ -130,14 +130,14 @@ export function ProfileAppearanceEditor({
               author={author}
               size="lg"
               className={cn(
-                scene.profileHeroAvatar,
+                scene.accountHeroAvatar,
                 "size-24 border-4 border-white text-3xl shadow-md ring-1 ring-border/40 sm:size-28 sm:text-4xl",
               )}
             />
             {!avatarUrl ? (
               <span
                 className={cn(
-                  scene.profileHeroAvatar,
+                  scene.accountHeroAvatar,
                   "pointer-events-none absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 transition group-hover/avatar:opacity-100",
                 )}
               >
@@ -147,7 +147,7 @@ export function ProfileAppearanceEditor({
 
             <div
               className={cn(
-                scene.profileHeroAvatar,
+                scene.accountHeroAvatar,
                 "absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition-opacity",
                 "group-hover/avatar:opacity-100 focus-within:opacity-100",
                 uploading === "avatar" && "opacity-100",
@@ -199,8 +199,8 @@ export function ProfileAppearanceEditor({
       {/* 移动端 / 无障碍：显式操作条 */}
       <div className="grid gap-3 sm:grid-cols-2">
         <MediaHintCard
-          label={PROFILE_SECTION.coverLabel}
-          hint={PROFILE_SECTION.coverHint}
+          label={ACCOUNT_PAGE.coverLabel}
+          hint={ACCOUNT_PAGE.coverHint}
           hasImage={Boolean(coverUrl)}
           uploading={uploading === "cover"}
           disabled={busy}
@@ -208,8 +208,8 @@ export function ProfileAppearanceEditor({
           onRemove={coverUrl ? () => onCoverChange(null) : undefined}
         />
         <MediaHintCard
-          label={PROFILE_SECTION.avatarLabel}
-          hint={PROFILE_SECTION.avatarHint}
+          label={ACCOUNT_PAGE.avatarLabel}
+          hint={ACCOUNT_PAGE.avatarHint}
           hasImage={Boolean(avatarUrl)}
           uploading={uploading === "avatar"}
           disabled={busy}

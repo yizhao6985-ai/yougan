@@ -1,8 +1,8 @@
 export type {
-  BlueprintBeat,
-  BlueprintConstraint,
-  BriefSuggestion,
-  BriefSuggestions,
+  ProfileBeat,
+  ProfileConstraint,
+  NextStepSuggestion,
+  NextStepSuggestions,
   ChatMode,
   ExecutedPlanTask,
   ProductionDepartment,
@@ -10,8 +10,7 @@ export type {
   ReferenceItem,
   RevisionKind,
   UserRevisionPhase,
-  WorkBlueprint,
-  WorkDraft,
+  WorkPreview,
   WorkDTO,
   WorkProductionPlan,
   WorkProfile,
@@ -25,19 +24,21 @@ export type {
 
 export {
   CHAT_MODES,
-  DEFAULT_BRIEF_SUGGESTIONS_HINT,
-  EMPTY_WORK_BLUEPRINT,
-  EMPTY_WORK_PRODUCTION_PLAN,
+  DEFAULT_NEXT_STEP_SUGGESTIONS_HINT,
   EMPTY_WORK_PROFILE,
-  getBlueprintPremise,
+  EMPTY_WORK_PRODUCTION_PLAN,
+  EMPTY_WORK_REFERENCES,
+  getProfilePremise,
   getPlanSummary,
-  hasBlueprintContent,
-  hasOutlineContent,
-  isBlueprintActionable,
+  hasProfileContent,
+  hasProfileBeats,
+  normalizeNextStepSuggestions,
+  isProfileActionable,
   isPlanReady,
-  mergeBlueprintState,
-  parseBlueprintJson,
-  parsePlanJson,
+  mergeProfileState,
+  mergeProfileForDisplay,
+  parseProfileJson,
+  parseProductionPlanJson,
   REVISION_KINDS,
   USER_REVISION_PHASES,
   TURN_QUEUE_KINDS,
@@ -55,9 +56,8 @@ export interface Work {
   title: string;
   groupId: string | null;
   profile: import("@yougan/domain").WorkProfile;
-  blueprint: import("@yougan/domain").WorkBlueprint;
-  plan: import("@yougan/domain").WorkProductionPlan;
-  draft: import("@yougan/domain").WorkDraft | null;
+  productionPlan: import("@yougan/domain").WorkProductionPlan;
+  preview: import("@yougan/domain").WorkPreview | null;
   headRevisionId: string | null;
   sourceWorkId: string | null;
   sourceRevisionId: string | null;

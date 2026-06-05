@@ -1,6 +1,5 @@
 import {
   CONTENT_FORMATS,
-  MEDIA_MODALITIES,
   type ContentFormatId,
   type MediaModalityId,
 } from "../../models/content/catalog.js";
@@ -14,6 +13,14 @@ import {
   type PublicationMetadata,
   type PublicationMetadataOverrides,
 } from "../../models/discover/taxonomy.js";
+import {
+  inferMediaModalities,
+  isMediaModalityId,
+  mediaModalitiesLabel,
+  mediaModalityLabel,
+  normalizeMediaModalities,
+  sortMediaModalities,
+} from "../media-modalities.js";
 
 const FORMAT_LABELS = Object.fromEntries(
   CONTENT_FORMATS.map((item) => [item.id, item.label]),
@@ -22,10 +29,6 @@ const FORMAT_LABELS = Object.fromEntries(
 const TOPIC_LABELS = Object.fromEntries(
   DISCOVER_TOPIC_CATEGORIES.map((item) => [item.id, item.label]),
 ) as Record<DiscoverTopicCategoryId, string>;
-
-const MEDIA_LABELS = Object.fromEntries(
-  MEDIA_MODALITIES.map((item) => [item.id, item.label]),
-) as Record<MediaModalityId, string>;
 
 const PLATFORM_LABELS = Object.fromEntries(
   DISCOVER_PLATFORMS.map((item) => [item.id, item.label]),
@@ -36,6 +39,8 @@ type ProfileLike = {
   content_topic?: string | null;
   content_type?: string | null;
   content_format?: string | null;
+  media_modalities?: MediaModalityId[];
+  /** @deprecated */
   media_modality?: string | null;
 };
 
@@ -55,9 +60,12 @@ export function topicCategoryLabel(id: string | null | undefined) {
   return TOPIC_LABELS[id as DiscoverTopicCategoryId] ?? id;
 }
 
-export function mediaTypeLabel(id: string | null | undefined) {
-  if (!id) return null;
-  return MEDIA_LABELS[id as MediaModalityId] ?? id;
+export function mediaTypeLabel(
+  input: MediaModalityId | MediaModalityId[] | string | null | undefined,
+) {
+  if (Array.isArray(input)) return mediaModalitiesLabel(input);
+  if (!input) return null;
+  return mediaModalityLabel(input);
 }
 
 export function platformTaxonomyLabel(id: string | null | undefined) {
@@ -90,6 +98,8 @@ function normalizeContentFormatFromType(contentType: string | null | undefined) 
   const value = contentType?.trim();
   if (!value) return null;
 
+  if (/绘画|插画|概念图|AI绘画|艺术作品|绘本|海报设计|封面设计/.test(value))
+    return "illustration";
   if (/小说|短篇|连载|言情|科幻小说/.test(value)) return "novel";
   if (/博客|Blog|blog/.test(value)) return "blog";
   if (/笔记|种草|图文笔记/.test(value)) return "note";
@@ -135,24 +145,24 @@ export function inferContentFormat(input: {
   }
 }
 
-export function inferMediaType(input: {
+export function inferMediaTypes(input: {
   coverUrl?: string | null;
   images?: unknown;
   contentType?: string | null;
   body?: string | null;
-}) {
-  const contentType = input.contentType?.trim() ?? "";
-  if (/音频|播客|音乐|BGM|歌曲|语音/.test(contentType)) return "audio";
-  if (/视频|口播|短视频|Vlog|vlog|分镜/.test(contentType)) return "video";
-
+  contentFormat?: string | null;
+}): MediaModalityId[] {
+  const bodyLength = input.body?.trim().length ?? 0;
   const hasImage =
     Boolean(input.coverUrl) ||
     (Array.isArray(input.images) && input.images.length > 0);
-  const bodyLength = input.body?.trim().length ?? 0;
 
-  if (hasImage && bodyLength > 100) return "mixed";
-  if (hasImage) return "image";
-  return "text";
+  return inferMediaModalities({
+    contentType: input.contentType,
+    contentFormat: input.contentFormat,
+    hasImage,
+    bodyLength,
+  });
 }
 
 export function buildPublicationMetadata(input: {
@@ -186,15 +196,19 @@ export function buildPublicationMetadata(input: {
           hasImage,
         });
   const topicCategory = normalizeTopicCategory(contentTopic);
-  const mediaType =
-    profile.media_modality &&
-    MEDIA_MODALITIES.some((item) => item.id === profile.media_modality)
-      ? profile.media_modality
-      : inferMediaType({
+  const mediaTypes = profile.media_modalities?.length
+    ? sortMediaModalities(profile.media_modalities)
+    : profile.media_modality
+      ? normalizeMediaModalities(
+          profile.media_modality,
+          profile.content_format ?? contentFormat,
+        )
+      : inferMediaTypes({
           coverUrl: input.coverUrl,
           images: input.images ?? output.images,
           contentType,
           body,
+          contentFormat,
         });
 
   return {
@@ -203,7 +217,7 @@ export function buildPublicationMetadata(input: {
     topicCategory,
     contentTopic,
     contentType,
-    mediaType,
+    mediaTypes,
   };
 }
 
@@ -220,6 +234,16 @@ export function applyMetadataOverrides(
 ): PublicationMetadata {
   if (!overrides) return metadata;
 
+  const mediaTypes = overrides.mediaTypes?.length
+    ? sortMediaModalities(
+        overrides.mediaTypes.filter((item): item is MediaModalityId =>
+          isMediaModalityId(item),
+        ),
+      )
+    : overrides.mediaType && isMediaModalityId(overrides.mediaType)
+      ? [overrides.mediaType]
+      : metadata.mediaTypes;
+
   return {
     ...metadata,
     platform: isValidCatalogId(DISCOVER_PLATFORMS, overrides.platform)
@@ -234,9 +258,7 @@ export function applyMetadataOverrides(
     )
       ? (overrides.topicCategory as DiscoverTopicCategoryId)
       : metadata.topicCategory,
-    mediaType: isValidCatalogId(MEDIA_MODALITIES, overrides.mediaType)
-      ? overrides.mediaType!
-      : metadata.mediaType,
+    mediaTypes: mediaTypes.length ? mediaTypes : metadata.mediaTypes,
   };
 }
 
@@ -245,7 +267,7 @@ export function buildMetadataLabels(metadata: PublicationMetadata) {
     platform: platformTaxonomyLabel(metadata.platform),
     contentFormat: formatLabel(metadata.contentFormat),
     topicCategory: topicCategoryLabel(metadata.topicCategory),
-    mediaType: mediaTypeLabel(metadata.mediaType),
+    mediaTypes: mediaModalitiesLabel(metadata.mediaTypes),
   };
 }
 

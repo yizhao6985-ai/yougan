@@ -22,6 +22,7 @@ type StudioChatComposerProps = {
   input: string;
   onInputChange: (value: string) => void;
   onSend: (payload: { text: string; imageUrls: string[] }) => void | Promise<void>;
+  onStop?: () => void | Promise<void>;
   chatStatus: "ready" | "submitted" | "streaming" | "error";
 };
 
@@ -30,6 +31,7 @@ export function StudioChatComposer({
   input,
   onInputChange,
   onSend,
+  onStop,
   chatStatus,
 }: StudioChatComposerProps) {
   const { stream, modelTemperatureLevel, setModelTemperatureLevel } =
@@ -74,7 +76,7 @@ export function StudioChatComposer({
       <PromptInputFooter>
         <PromptInputTools className="flex-wrap gap-2">
           <UploadReferenceButton />
-          {activeTurnKind === "creation" ? (
+          {activeTurnKind === "production" ? (
             <ModelTemperatureControl
               level={modelTemperatureLevel}
               onChange={setModelTemperatureLevel}
@@ -82,7 +84,11 @@ export function StudioChatComposer({
             />
           ) : null}
         </PromptInputTools>
-        <PromptInputSubmit disabled={!canSubmit} status={chatStatus} />
+        <PromptInputSubmit
+          disabled={!canSubmit && chatStatus !== "streaming"}
+          status={chatStatus}
+          onStop={() => void onStop?.()}
+        />
       </PromptInputFooter>
     </PromptInput>
   );

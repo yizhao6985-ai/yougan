@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { segmentGraphemes } from "@/lib/segment-graphemes";
-import type { BriefSuggestion } from "@/lib/types";
+import type { NextStepSuggestion } from "@/lib/types";
 
 const BETWEEN_ITEMS_MS = 15;
 const MAX_TYPE_MS_PER_ITEM = 220;
@@ -47,7 +47,7 @@ export function useOpeningSuggestionsReveal({
   animate,
   onComplete,
 }: {
-  suggestions: BriefSuggestion[];
+  suggestions: NextStepSuggestion[];
   animate: boolean;
   onComplete?: () => void;
 }) {

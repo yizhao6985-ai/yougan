@@ -44,7 +44,7 @@ function WorkRow({
   onDelete,
   onRename,
 }: {
-  work: { id: string; title: string; blueprint: Work["blueprint"] };
+  work: { id: string; title: string; profile: Work["profile"] };
   isActive: boolean;
   mode: WorksGroupTreeProps["mode"];
   onSelect: () => void;

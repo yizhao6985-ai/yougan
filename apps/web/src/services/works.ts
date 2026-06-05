@@ -16,9 +16,8 @@ export async function updateWork(
   workId: string,
   patch: Partial<Work> & {
     profile?: Work["profile"];
-    blueprint?: Work["blueprint"];
-    plan?: Work["plan"];
-    draft?: Work["draft"];
+    productionPlan?: Work["productionPlan"];
+    preview?: Work["preview"];
   },
 ) {
   return apiFetch<{ work: Work }>(`/api/works/${workId}`, {

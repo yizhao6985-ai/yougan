@@ -13,7 +13,6 @@
       "#agent/lib/*": ["./src/lib/*"],
       "#agent/llm/*": ["./src/llm/*"],
       "#agent/prompt/*": ["./src/prompt/*"],
-      "#agent/tools/*": ["./src/tools/*"],
       "#agent/state.js": ["./src/state.ts"],
       "#agent/schema.js": ["./src/schema.ts"],
       "#agent/env.js": ["./src/env.ts"]

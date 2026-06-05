@@ -1,7 +1,7 @@
-import type { ReferenceItem, WorkProfile } from "#agent/schema.js";
+import type { ReferenceItem } from "#agent/schema.js";
 
-export function listKnownReferenceImageUrls(profile: WorkProfile): string[] {
-  return (profile.references ?? [])
+export function listKnownReferenceImageUrls(references: ReferenceItem[]): string[] {
+  return references
     .filter((item) => item.source_type === "image" && item.image_url)
     .map((item) => item.image_url!);
 }
@@ -44,14 +44,14 @@ export function resolveReferenceImageUrl(
 }
 
 export function upsertImageReference(
-  profile: WorkProfile,
+  references: ReferenceItem[],
   item: ReferenceItem,
-): WorkProfile {
+): ReferenceItem[] {
   if (item.source_type !== "image" || !item.image_url) {
-    return profile;
+    return references;
   }
 
-  const refs = [...(profile.references ?? [])];
+  const refs = [...references];
   const index = refs.findIndex(
     (ref) => ref.source_type === "image" && ref.image_url === item.image_url,
   );
@@ -62,5 +62,5 @@ export function upsertImageReference(
     refs.push(item);
   }
 
-  return { ...profile, references: refs };
+  return refs;
 }

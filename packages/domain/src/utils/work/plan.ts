@@ -27,8 +27,8 @@ export function newProductionPlanTask(
   };
 }
 
-/** 解析 plan JSON */
-export function parsePlanJson(raw: unknown): WorkProductionPlan {
+/** 解析 productionPlan JSON */
+export function parseProductionPlanJson(raw: unknown): WorkProductionPlan {
   if (!raw || typeof raw !== "object") {
     return { ...EMPTY_WORK_PRODUCTION_PLAN };
   }

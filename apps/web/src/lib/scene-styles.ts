@@ -72,7 +72,7 @@ export const scene = {
   avatar:
     "inline-flex shrink-0 items-center justify-center rounded-lg bg-secondary font-medium text-primary",
   /** 个人主页 / 资料设置中的大尺寸头像 */
-  profileHeroAvatar: "rounded-2xl",
+  accountHeroAvatar: "rounded-2xl",
 
   authCard:
     "w-full max-w-md rounded-lg border border-border bg-card p-8 shadow-sm",

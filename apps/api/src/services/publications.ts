@@ -49,7 +49,7 @@ type PublicationRow = {
   topicCategory: string | null;
   contentTopic: string | null;
   contentType: string | null;
-  mediaType: string | null;
+  mediaTypes: string[];
   hashtags: unknown;
   images: unknown;
   status: string;
@@ -79,7 +79,7 @@ function toPublicationDTO(publication: PublicationRow): PublicationDTO {
     topicCategory: publication.topicCategory,
     contentTopic: publication.contentTopic,
     contentType: publication.contentType,
-    mediaType: publication.mediaType,
+    mediaTypes: publication.mediaTypes,
     hashtags: Array.isArray(publication.hashtags)
       ? (publication.hashtags as string[])
       : [],
@@ -116,6 +116,8 @@ type ProfileLike = {
   content_topic?: string | null;
   content_type?: string | null;
   content_format?: string | null;
+  media_modalities?: string[];
+  /** @deprecated */
   media_modality?: string | null;
 };
 
@@ -172,14 +174,14 @@ function buildPublishedWhere(
     where.topicCategory = query.topicCategory;
   }
   if (query.mediaType && omit !== "mediaType") {
-    where.mediaType = query.mediaType;
+    where.mediaTypes = { has: query.mediaType };
   }
 
   return where;
 }
 
 async function buildFacets(query: PublicationFeedQuery) {
-  const [platformRows, formatRows, topicRows, mediaRows] = await Promise.all([
+  const [platformRows, formatRows, topicRows] = await Promise.all([
     prisma.publication.groupBy({
       by: ["platform"],
       where: buildPublishedWhere(query, "platform"),
@@ -195,12 +197,19 @@ async function buildFacets(query: PublicationFeedQuery) {
       where: buildPublishedWhere(query, "topicCategory"),
       _count: { _all: true },
     }),
-    prisma.publication.groupBy({
-      by: ["mediaType"],
-      where: buildPublishedWhere(query, "mediaType"),
-      _count: { _all: true },
-    }),
   ]);
+
+  const mediaCounts = await Promise.all(
+    DISCOVER_MEDIA_TYPES.map(async (item) => ({
+      id: item.id,
+      count: await prisma.publication.count({
+        where: {
+          ...buildPublishedWhere(query, "mediaType"),
+          mediaTypes: { has: item.id },
+        },
+      }),
+    })),
+  );
 
   const toCountMap = (
     rows: Array<{ _count: { _all: number } } & Record<string, unknown>>,
@@ -227,7 +236,7 @@ async function buildFacets(query: PublicationFeedQuery) {
     ),
     mediaType: buildFacetOptions(
       DISCOVER_MEDIA_TYPES,
-      toCountMap(mediaRows, "mediaType"),
+      Object.fromEntries(mediaCounts.map((row) => [row.id, row.count])),
     ),
   };
 }
@@ -381,13 +390,13 @@ export async function previewPublicationMetadata(
   const work = await getWork(userId, workId);
   if (!work) return null;
 
-  const draft = work.draft as OutputLike | null;
-  if (!draft?.body?.trim()) {
+  const preview = work.preview as OutputLike | null;
+  if (!preview?.body?.trim()) {
     throw new Error("WORK_OUTPUT_EMPTY");
   }
 
-  const coverUrl = draft.images?.[0]?.url ?? null;
-  const metadata = metadataFromWork(work, draft, coverUrl);
+  const coverUrl = preview.images?.[0]?.url ?? null;
+  const metadata = metadataFromWork(work, preview, coverUrl);
 
   return {
     metadata,
@@ -406,8 +415,8 @@ export async function createPublicationFromWork(
   const work = await getWork(userId, input.workId);
   if (!work) return null;
 
-  const draft = work.draft as OutputLike | null;
-  if (!draft?.body?.trim()) {
+  const preview = work.preview as OutputLike | null;
+  if (!preview?.body?.trim()) {
     throw new Error("WORK_OUTPUT_EMPTY");
   }
 
@@ -415,11 +424,11 @@ export async function createPublicationFromWork(
     where: { userId, workId: input.workId, status: { not: "archived" } },
   });
 
-  const title = draft.title?.trim() || work.title;
-  const excerpt = draft.hook?.trim() || draft.body.slice(0, 120);
-  const coverUrl = draft.images?.[0]?.url ?? null;
+  const title = preview.title?.trim() || work.title;
+  const excerpt = preview.hook?.trim() || preview.body.slice(0, 120);
+  const coverUrl = preview.images?.[0]?.url ?? null;
   const now = input.publish ? new Date() : null;
-  const metadata = metadataFromWork(work, draft, coverUrl, input.metadata);
+  const metadata = metadataFromWork(work, preview, coverUrl, input.metadata);
 
   if (existing) {
     const row = await prisma.publication.update({
@@ -427,10 +436,10 @@ export async function createPublicationFromWork(
       data: {
         title,
         excerpt,
-        body: draft.body,
+        body: preview.body,
         coverUrl,
-        hashtags: draft.hashtags ?? [],
-        images: draft.images ?? [],
+        hashtags: preview.hashtags ?? [],
+        images: preview.images ?? [],
         status: input.publish ? "published" : existing.status,
         publishedAt: input.publish ? now : existing.publishedAt,
         ...metadata,
@@ -448,10 +457,10 @@ export async function createPublicationFromWork(
       slug: buildSlug(title),
       title,
       excerpt,
-      body: draft.body,
+      body: preview.body,
       coverUrl,
-      hashtags: draft.hashtags ?? [],
-      images: draft.images ?? [],
+      hashtags: preview.hashtags ?? [],
+      images: preview.images ?? [],
       status: input.publish ? "published" : "draft",
       publishedAt: now,
       ...metadata,

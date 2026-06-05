@@ -102,9 +102,8 @@ export async function injectWorkContext(
         workTitle: context.workTitle,
         conversationTitle: context.conversationTitle,
         profile: context.profile,
-        blueprint: context.blueprint,
-        plan: context.plan,
-        draft: context.draft,
+        productionPlan: context.productionPlan,
+        preview: context.preview,
       },
     };
 
@@ -128,6 +127,8 @@ async function syncWorkAfterStream(
     const values = await getLangGraphThreadValues(context.threadId);
     if (!values || typeof values !== "object") return;
     const record = values as Record<string, unknown>;
+    if (record.turnCommitted !== true) return;
+
     try {
       await applyAgentRunRevision({
         userId: context.userId,

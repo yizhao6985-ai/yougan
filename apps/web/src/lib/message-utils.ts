@@ -1,7 +1,7 @@
 import { AIMessage } from "@langchain/core/messages";
 import type { Message } from "@langchain/langgraph-sdk";
 
-import { isInternalBriefModeSystemMessage } from "@/lib/brief-mode-internal";
+import { isInternalOpeningModeSystemMessage } from "@/lib/opening-mode-internal";
 
 type MessageContent = Message["content"];
 
@@ -175,6 +175,7 @@ export type RenderItem =
       kind: "ai";
       content: string;
       isStreaming?: boolean;
+      isInterrupted?: boolean;
     }
   | {
       id: string;
@@ -265,7 +266,9 @@ function findLastMessageIndex(
 export function buildRenderItems(
   messages: Message[],
   isLoading: boolean,
+  interruptedMessageIds: string[] = [],
 ): RenderItem[] {
+  const interrupted = new Set(interruptedMessageIds);
   const items: RenderItem[] = [];
   const lastHumanIndex = findLastMessageIndex(messages, "human");
   const lastAiMessageIndex = findLastMessageIndex(messages, "ai");
@@ -287,7 +290,7 @@ export function buildRenderItems(
     }
 
     if (message.type === "system") {
-      if (isInternalBriefModeSystemMessage(message)) continue;
+      if (isInternalOpeningModeSystemMessage(message)) continue;
       const content = messageContentToText(message.content);
       if (content) {
         items.push({
@@ -325,12 +328,13 @@ export function buildRenderItems(
         index === lastAiMessageIndex &&
         index > lastHumanIndex;
 
-      if (text || isStreamingAi) {
+      if (text || isStreamingAi || interrupted.has(messageId)) {
         items.push({
           id: messageId,
           kind: "ai",
           content: text,
           isStreaming: isStreamingAi,
+          isInterrupted: interrupted.has(messageId),
         });
       }
     }

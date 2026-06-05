@@ -90,7 +90,7 @@ cp apps/web/.env.local.example apps/web/.env.local
 **本地开发最少需要：**
 
 - `apps/api/.env`：`DATABASE_URL`、`JWT_SECRET`
-- `apps/agent/.env`：`POSTGRES_URI`、`DASHSCOPE_API_KEY`（百炼 OpenAI 兼容端点，必填方可调用 LLM）
+- `apps/agent/.env`：`POSTGRES_URI`、`DASHSCOPE_API_KEY`（百炼 OpenAI 兼容端点，必填方可调用 LLM）；可选 `LANGSMITH_*` 开启 trace
 - `apps/web/.env.local`：默认指向 `http://localhost:4000` 即可
 
 ### 3. 初始化数据库

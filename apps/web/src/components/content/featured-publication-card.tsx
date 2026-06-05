@@ -105,9 +105,9 @@ export function FeaturedPublicationCard({
               {topicCategoryLabel(publication.topicCategory)}
             </span>
           ) : null}
-          {mediaTypeLabel(publication.mediaType) ? (
+          {mediaTypeLabel(publication.mediaTypes) ? (
             <span className="rounded-md bg-card/90 px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/80">
-              {mediaTypeLabel(publication.mediaType)}
+              {mediaTypeLabel(publication.mediaTypes)}
             </span>
           ) : null}
         </div>

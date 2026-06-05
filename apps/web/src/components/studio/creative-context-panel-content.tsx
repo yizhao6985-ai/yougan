@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 
-import { BlueprintPanel } from "@/components/blueprint-panel";
+import { ProfilePanel } from "@/components/profile-panel";
 import { ContentPreview } from "@/components/content-preview";
 import { ReferencePanel } from "@/components/reference-panel";
 import { WorkHistoryPanel } from "@/components/studio/work-history-panel";
@@ -10,11 +10,11 @@ import {
   type CreativeContextTabId,
 } from "@/lib/site-copy";
 import { readStoredString, writeStoredString } from "@/lib/storage-value";
-import type { Work, WorkBlueprint, WorkDraft, WorkProfile } from "@/lib/types";
+import type { ReferenceItem, Work, WorkPreview, WorkProfile } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const TAB_ORDER: CreativeContextTabId[] = [
-  "blueprint",
+  "profile",
   "preview",
   "references",
   "history",
@@ -24,18 +24,19 @@ const TAB_STORAGE_KEY = "yougan:creative-context-tab";
 
 function readStoredTab(): CreativeContextTabId {
   const raw = readStoredString(TAB_STORAGE_KEY);
-  if (raw === "inspiration" || raw === "outline") return "blueprint";
   if (raw && TAB_ORDER.includes(raw as CreativeContextTabId)) {
     return raw as CreativeContextTabId;
   }
-  return "blueprint";
+  return "profile";
 }
 
 type CreativeContextPanelContentProps = {
   activeWork: Work | null;
+  references?: ReferenceItem[];
+  /** 创作轮廓（含 references） */
   profile?: WorkProfile;
-  blueprint?: WorkBlueprint;
-  draft?: WorkDraft | null;
+  preview?: WorkPreview | null;
+  previewUnsaved?: boolean;
   onDuplicated?: (workId: string) => void;
   onUpdateConstraint?: (constraintId: string, description: string) => void;
   onDeleteConstraint?: (constraintId: string) => void;
@@ -47,9 +48,10 @@ type CreativeContextPanelContentProps = {
 
 export function CreativeContextPanelContent({
   activeWork,
+  references,
   profile,
-  blueprint,
-  draft,
+  preview,
+  previewUnsaved,
   onDuplicated,
   onUpdateConstraint,
   onDeleteConstraint,
@@ -95,14 +97,14 @@ export function CreativeContextPanelContent({
       </div>
 
       <div className={creativeContextPanelClassNames.tabPanel}>
-        {activeTab === "blueprint" ? (
+        {activeTab === "profile" ? (
           <div
             role="tabpanel"
-            id="creative-context-panel-blueprint"
-            aria-labelledby="creative-context-tab-blueprint"
+            id="creative-context-panel-profile"
+            aria-labelledby="creative-context-tab-profile"
           >
-            <BlueprintPanel
-              blueprint={blueprint}
+            <ProfilePanel
+              profile={profile}
               editable={Boolean(activeWork)}
               compact
               onUpdateConstraint={onUpdateConstraint}
@@ -123,7 +125,8 @@ export function CreativeContextPanelContent({
           >
             <ContentPreview
               workId={activeWork?.id}
-              draft={draft}
+              preview={preview}
+              unsaved={previewUnsaved}
               compact
             />
           </div>
@@ -135,7 +138,7 @@ export function CreativeContextPanelContent({
             id="creative-context-panel-references"
             aria-labelledby="creative-context-tab-references"
           >
-            <ReferencePanel references={profile?.references} compact />
+            <ReferencePanel references={references} compact />
           </div>
         ) : null}
 

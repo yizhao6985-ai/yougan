@@ -8,8 +8,8 @@ import {
 
 import { SiteHeader } from "@/components/site-header";
 import {
-  CREATION_FORMS,
-  CREATION_MODES,
+  PRODUCTION_FORMS,
+  STUDIO_CAPABILITY_MODES,
   EXTRA_CAPABILITIES,
   STUDIO_PANELS,
   WORKFLOW_STEPS,
@@ -22,7 +22,7 @@ function ModeSection({
   mode,
   index,
 }: {
-  mode: (typeof CREATION_MODES)[number];
+  mode: (typeof STUDIO_CAPABILITY_MODES)[number];
   index: number;
 }) {
   const Icon = mode.icon;
@@ -131,7 +131,7 @@ export function FeaturesPage() {
             {FEATURES_PAGE.platformsIntro}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
-          {CREATION_FORMS.map((form) => (
+          {PRODUCTION_FORMS.map((form) => (
             <span
               key={form}
               className="rounded-md border border-border/80 bg-card/90 px-4 py-1.5 text-sm text-foreground/90 shadow-sm"
@@ -199,7 +199,7 @@ export function FeaturesPage() {
             {FEATURES_PAGE.modesSubtitle}
           </p>
           <div className="mt-8 space-y-8">
-            {CREATION_MODES.map((mode, index) => (
+            {STUDIO_CAPABILITY_MODES.map((mode, index) => (
               <ModeSection key={mode.id} mode={mode} index={index} />
             ))}
           </div>

@@ -21,10 +21,13 @@ import {
   DISCOVER_MEDIA_TYPES,
   DISCOVER_PLATFORMS,
   DISCOVER_TOPIC_CATEGORIES,
+  sortMediaModalities,
+  type MediaModalityId,
   type PublicationMetadataOverrides,
   type PublicationMetadataPreview,
 } from "@/lib/discover-taxonomy";
 import { PUBLISH } from "@/lib/site-copy";
+import { cn } from "@/lib/utils";
 
 type PublishConfirmDialogProps = {
   open: boolean;
@@ -68,6 +71,53 @@ function MetadataSelect({
   );
 }
 
+function MediaTypesPicker({
+  value,
+  onChange,
+}: {
+  value: MediaModalityId[];
+  onChange: (value: MediaModalityId[]) => void;
+}) {
+  const toggle = (id: MediaModalityId) => {
+    const next = new Set(value);
+    if (next.has(id)) {
+      if (next.size === 1) return;
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    onChange(sortMediaModalities(next));
+  };
+
+  return (
+    <div className="space-y-1.5 sm:col-span-2">
+      <label className="text-xs font-medium text-muted-foreground">
+        {PUBLISH.fieldMedia}
+      </label>
+      <div className="flex flex-wrap gap-2">
+        {DISCOVER_MEDIA_TYPES.map((option) => {
+          const active = value.includes(option.id as MediaModalityId);
+          return (
+            <button
+              key={option.id}
+              type="button"
+              onClick={() => toggle(option.id as MediaModalityId)}
+              className={cn(
+                "rounded-md border px-2.5 py-1.5 text-xs font-medium transition",
+                active
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-background text-muted-foreground hover:bg-muted",
+              )}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function PublishMetadataForm({
   preview,
   onConfirm,
@@ -83,14 +133,14 @@ function PublishMetadataForm({
     platform: preview.metadata.platform,
     contentFormat: preview.metadata.contentFormat,
     topicCategory: preview.metadata.topicCategory,
-    mediaType: preview.metadata.mediaType,
+    mediaTypes: preview.metadata.mediaTypes,
   }));
 
   const previewTags = preview.labels
     ? [
         preview.labels.contentFormat,
         preview.labels.topicCategory,
-        preview.labels.mediaType,
+        preview.labels.mediaTypes,
       ].filter(Boolean)
     : [];
 
@@ -133,19 +183,17 @@ function PublishMetadataForm({
             }
           />
           <MetadataSelect
-            label={PUBLISH.fieldMedia}
-            value={draft.mediaType ?? ""}
-            options={DISCOVER_MEDIA_TYPES}
-            onChange={(value) =>
-              setDraft((current) => ({ ...current, mediaType: value }))
-            }
-          />
-          <MetadataSelect
             label={PUBLISH.fieldPlatform}
             value={draft.platform ?? ""}
             options={DISCOVER_PLATFORMS}
             onChange={(value) =>
               setDraft((current) => ({ ...current, platform: value }))
+            }
+          />
+          <MediaTypesPicker
+            value={(draft.mediaTypes ?? ["text"]) as MediaModalityId[]}
+            onChange={(mediaTypes) =>
+              setDraft((current) => ({ ...current, mediaTypes }))
             }
           />
         </div>
@@ -186,7 +234,7 @@ export function PublishConfirmDialog({
         preview.metadata.platform,
         preview.metadata.contentFormat,
         preview.metadata.topicCategory,
-        preview.metadata.mediaType,
+        preview.metadata.mediaTypes.join(","),
       ].join("\u0000")
     : "loading";
 

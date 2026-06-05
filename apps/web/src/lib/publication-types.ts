@@ -21,7 +21,7 @@ export interface Publication {
   topicCategory: string | null;
   contentTopic: string | null;
   contentType: string | null;
-  mediaType: string | null;
+  mediaTypes: string[];
   hashtags: string[];
   images: Array<Record<string, unknown>>;
   status: PublicationStatus;

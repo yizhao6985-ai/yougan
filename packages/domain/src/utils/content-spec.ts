@@ -1,36 +1,63 @@
 import {
   CONTENT_FORMATS,
-  MEDIA_MODALITIES,
   type ContentFormatId,
   type MediaModalityId,
 } from "../models/content/catalog.js";
 import type { WorkProfile } from "../models/work/profile.js";
+import {
+  inferMediaModalities,
+  mediaModalitiesLabel,
+  mediaModalityLabel,
+  normalizeMediaModalities,
+  routeProductionPipeline,
+  sortMediaModalities,
+  type ProductionPipelineId,
+} from "./media-modalities.js";
 
 const FORMAT_IDS = new Set<string>(CONTENT_FORMATS.map((item) => item.id));
-const MODALITY_IDS = new Set<string>(MEDIA_MODALITIES.map((item) => item.id));
 
 const FORMAT_LABELS = Object.fromEntries(
   CONTENT_FORMATS.map((item) => [item.id, item.label]),
 ) as Record<ContentFormatId, string>;
 
-const MODALITY_LABELS = Object.fromEntries(
-  MEDIA_MODALITIES.map((item) => [item.id, item.label]),
-) as Record<MediaModalityId, string>;
+export type FlatContentSpec = {
+  platform?: string | null;
+  content_topic?: string | null;
+  content_type?: string | null;
+  content_format?: string | null;
+  media_modalities?: MediaModalityId[];
+};
+
+export { type ProductionPipelineId, routeProductionPipeline };
+
+export function flattenWorkProfile(profile: WorkProfile): FlatContentSpec {
+  return {
+    platform: profile.spec.platform,
+    content_topic: profile.spec.content_topic,
+    content_type: profile.spec.content_type,
+    content_format: profile.spec.content_format,
+    media_modalities: profile.spec.media_modalities,
+  };
+}
 
 export function contentFormatLabel(id: string | null | undefined) {
   if (!id) return null;
   return FORMAT_LABELS[id as ContentFormatId] ?? id;
 }
 
-export function mediaModalityLabel(id: string | null | undefined) {
-  if (!id) return null;
-  return MODALITY_LABELS[id as MediaModalityId] ?? id;
-}
+export {
+  mediaModalityLabel,
+  mediaModalitiesLabel,
+  normalizeMediaModalities,
+  sortMediaModalities,
+};
 
 function normalizeContentFormatFromType(contentType: string | null | undefined) {
   const value = contentType?.trim();
   if (!value) return null;
 
+  if (/绘画|插画|概念图|AI绘画|艺术作品|绘本|海报设计|封面设计/.test(value))
+    return "illustration";
   if (/小说|短篇|连载|言情|科幻小说/.test(value)) return "novel";
   if (/博客|Blog|blog/.test(value)) return "blog";
   if (/笔记|种草|图文笔记/.test(value)) return "note";
@@ -44,11 +71,20 @@ function normalizeContentFormatFromType(contentType: string | null | undefined) 
   return null;
 }
 
-function inferContentFormat(profile: WorkProfile) {
-  const fromType = normalizeContentFormatFromType(profile.content_type);
+function inferContentFormat(spec: FlatContentSpec) {
+  const fromType = normalizeContentFormatFromType(spec.content_type);
   if (fromType) return fromType as ContentFormatId;
 
-  const platform = profile.platform ?? "yougan";
+  const modalities = spec.media_modalities ?? [];
+  if (
+    modalities.length === 1 &&
+    modalities[0] === "image" &&
+    !spec.content_format
+  ) {
+    return "illustration";
+  }
+
+  const platform = spec.platform ?? "yougan";
   switch (platform) {
     case "xiaohongshu":
       return "note";
@@ -66,77 +102,51 @@ function inferContentFormat(profile: WorkProfile) {
   }
 }
 
-function inferMediaModality(profile: WorkProfile) {
-  const contentType = profile.content_type?.trim() ?? "";
-  if (/音频|播客|音乐|BGM|歌曲|语音/.test(contentType)) return "audio";
-  if (/视频|口播|短视频|Vlog|vlog|分镜/.test(contentType)) return "video";
-  if (/图文|配图|种草|笔记/.test(contentType)) return "mixed";
-  if (/图片|封面|海报/.test(contentType)) return "image";
-  return "text";
-}
-
 export function isValidContentFormat(
   value: string | null | undefined,
 ): value is ContentFormatId {
   return Boolean(value && FORMAT_IDS.has(value));
 }
 
-export function isValidMediaModality(
-  value: string | null | undefined,
-): value is MediaModalityId {
-  return Boolean(value && MODALITY_IDS.has(value));
-}
-
-/** 补齐 profile 中缺失或无效的 content_format / media_modality */
-export function resolveContentSpec(profile: WorkProfile): WorkProfile {
-  const content_format = isValidContentFormat(profile.content_format)
-    ? profile.content_format
-    : inferContentFormat(profile);
-  const media_modality = isValidMediaModality(profile.media_modality)
-    ? profile.media_modality
-    : inferMediaModality(profile);
+/** 补齐缺失或无效的 content_format / media_modalities */
+export function resolveContentSpec(spec: FlatContentSpec): FlatContentSpec {
+  const content_format = isValidContentFormat(spec.content_format)
+    ? spec.content_format
+    : inferContentFormat(spec);
+  const media_modalities = spec.media_modalities?.length
+    ? sortMediaModalities(spec.media_modalities)
+    : inferMediaModalities({
+        contentType: spec.content_type,
+        contentFormat: content_format,
+      });
 
   if (
-    profile.content_format === content_format &&
-    profile.media_modality === media_modality
+    spec.content_format === content_format &&
+    JSON.stringify(spec.media_modalities ?? []) ===
+      JSON.stringify(media_modalities)
   ) {
-    return profile;
+    return spec;
   }
 
   return {
-    ...profile,
+    ...spec,
     content_format,
-    media_modality,
+    media_modalities,
   };
 }
 
-export function contentSpecSummary(profile: WorkProfile) {
-  const resolved = resolveContentSpec(profile);
+export function resolveContentSpecFromProfile(profile: WorkProfile): FlatContentSpec {
+  return resolveContentSpec(flattenWorkProfile(profile));
+}
+
+export function contentSpecSummary(spec: FlatContentSpec) {
+  const resolved = resolveContentSpec(spec);
   const format = contentFormatLabel(resolved.content_format);
-  const modality = mediaModalityLabel(resolved.media_modality);
+  const modalities = mediaModalitiesLabel(resolved.media_modalities);
   const parts = [
     format ? `体裁：${format}` : null,
-    modality ? `形式：${modality}` : null,
+    modalities ? `形式：${modalities}` : null,
     resolved.content_type ? `类型描述：${resolved.content_type}` : null,
   ].filter(Boolean);
   return parts.length ? parts.join("；") : "尚未确定体裁与形式";
-}
-
-export type CreationPipelineId = "text" | "image" | "audio" | "video";
-
-/** 按媒介形式路由创作 pipeline（当前 image/audio/video 仍走文字出稿，预留独立节点） */
-export function routeCreationPipeline(
-  mediaModality: MediaModalityId | null | undefined,
-): CreationPipelineId {
-  switch (mediaModality) {
-    case "image":
-    case "mixed":
-      return "image";
-    case "audio":
-      return "audio";
-    case "video":
-      return "video";
-    default:
-      return "text";
-  }
 }

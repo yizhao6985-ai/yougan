@@ -1,69 +1,75 @@
-import { creativeContextPanelClassNames } from "@/components/studio/creative-context/shared";
 import { CreativeContextDrawer } from "@/components/studio/creative-context-drawer";
 import { CreativeContextPanelContent } from "@/components/studio/creative-context-panel-content";
 import { WorksAside } from "@/components/studio/works-aside";
 import { YouganChat } from "@/components/studio/yougan-chat";
 import { useYouganStreamContext } from "@/components/studio/yougan-stream-provider";
-import { mergeBlueprintForDisplay } from "@/lib/blueprint-merge";
-import { CREATIVE_CONTEXT_PANEL } from "@/lib/site-copy";
-
+import { mergeProfileForDisplay } from "@yougan/domain";
 export function StudioCreateView() {
   const {
     activeWork,
     stream,
     selectWork,
-    updateBlueprintConstraint,
-    deleteBlueprintConstraint,
-    clearWorkBlueprintConstraints,
-    updateBlueprintBeat,
-    deleteBlueprintBeat,
-    clearWorkBlueprintBeats,
+    updateProfileConstraint,
+    deleteProfileConstraint,
+    clearWorkProfileConstraints,
+    updateProfileBeat,
+    deleteProfileBeat,
+    clearWorkProfileBeats,
   } = useYouganStreamContext();
 
-  const profile = stream.values?.profile ?? activeWork?.profile;
-  const blueprint = mergeBlueprintForDisplay(
-    activeWork?.blueprint,
-    stream.values?.blueprint,
+  const staging = stream.values?.staging;
+  const profile = mergeProfileForDisplay(
+    activeWork?.profile,
+    staging?.profile ?? stream.values?.profile,
   );
-  const draft = activeWork?.draft ?? stream.values?.draft ?? null;
+  const references = profile?.references ?? [];
+  const preview =
+    staging?.preview ??
+    stream.values?.preview ??
+    activeWork?.preview ??
+    null;
+  const previewUnsaved = Boolean(
+    staging && stream.values?.turnCommitted !== true,
+  );
 
   const panelContent = (
     <CreativeContextPanelContent
       activeWork={activeWork}
+      references={references}
       profile={profile}
-      blueprint={blueprint}
-      draft={draft}
+      preview={preview}
+      previewUnsaved={previewUnsaved}
       onDuplicated={selectWork}
       onUpdateConstraint={
         activeWork
           ? (constraintId, description) =>
-              updateBlueprintConstraint(activeWork.id, constraintId, description)
+              updateProfileConstraint(activeWork.id, constraintId, description)
           : undefined
       }
       onDeleteConstraint={
         activeWork
           ? (constraintId) =>
-              deleteBlueprintConstraint(activeWork.id, constraintId)
+              deleteProfileConstraint(activeWork.id, constraintId)
           : undefined
       }
       onClearConstraints={
         activeWork
-          ? () => clearWorkBlueprintConstraints(activeWork.id)
+          ? () => clearWorkProfileConstraints(activeWork.id)
           : undefined
       }
       onUpdateBeat={
         activeWork
           ? (beatId, description) =>
-              updateBlueprintBeat(activeWork.id, beatId, description)
+              updateProfileBeat(activeWork.id, beatId, description)
           : undefined
       }
       onDeleteBeat={
         activeWork
-          ? (beatId) => deleteBlueprintBeat(activeWork.id, beatId)
+          ? (beatId) => deleteProfileBeat(activeWork.id, beatId)
           : undefined
       }
       onClearBeats={
-        activeWork ? () => clearWorkBlueprintBeats(activeWork.id) : undefined
+        activeWork ? () => clearWorkProfileBeats(activeWork.id) : undefined
       }
     />
   );
@@ -78,23 +84,7 @@ export function StudioCreateView() {
         <YouganChat />
       </div>
 
-      <CreativeContextDrawer className="hidden min-h-0 overflow-visible lg:flex">
-        {panelContent}
-      </CreativeContextDrawer>
-
-      <aside className="flex max-h-[min(42vh,400px)] min-h-0 flex-col border-t border-border/80 bg-card/95 lg:hidden">
-        <div className={creativeContextPanelClassNames.asideHeader}>
-          <p className={creativeContextPanelClassNames.asideTitle}>
-            {CREATIVE_CONTEXT_PANEL.title}
-          </p>
-          <p className={creativeContextPanelClassNames.asideHint}>
-            {CREATIVE_CONTEXT_PANEL.hint}
-          </p>
-        </div>
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          {panelContent}
-        </div>
-      </aside>
+      <CreativeContextDrawer>{panelContent}</CreativeContextDrawer>
     </div>
   );
 }

@@ -132,14 +132,12 @@ model Work {
   /// 若由另存为新作品创建，记录来源
   sourceWorkId       String?
   sourceRevisionId   String?
-  /// 物化视图：跨模式 profile（参考素材）
+  /// 物化视图：创作轮廓（含 references / spec / beats 等）
   profile            Json                @default("{}")
-  /// 物化视图：作品方案（用户可见）
-  blueprint          Json                @default("{}")
-  /// 物化视图：内部创作计划（不对用户展示）
-  plan               Json                @default("{}")
-  /// 物化视图：最新成稿
-  draft              Json?
+  /// 物化视图：内部制作计划（不对用户展示）
+  productionPlan     Json                @default("{}")
+  /// 物化视图：最新作品预览
+  preview            Json?
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   publications       Publication[]
@@ -194,7 +192,7 @@ model Publication {
   topicCategory String?
   contentTopic  String?
   contentType   String?
-  mediaType     String?
+  mediaTypes    String[]  @default([])
   hashtags      Json      @default("[]")
   images        Json      @default("[]")
   status        String    @default("draft")
@@ -208,5 +206,5 @@ model Publication {
   @@index([status, platform, publishedAt(sort: Desc)])
   @@index([status, contentFormat, publishedAt(sort: Desc)])
   @@index([status, topicCategory, publishedAt(sort: Desc)])
-  @@index([status, mediaType, publishedAt(sort: Desc)])
+  @@index([status, mediaTypes, publishedAt(sort: Desc)])
 }

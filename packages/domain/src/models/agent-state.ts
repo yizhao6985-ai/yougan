@@ -1,32 +1,36 @@
-import type { WorkBlueprint } from "./work/blueprint.js";
-import type { WorkDraft } from "./work/draft.js";
-import type { WorkProductionPlan } from "./work/plan.js";
 import type { WorkProfile } from "./work/profile.js";
-import type { BriefSuggestions } from "./suggestions.js";
+import type { WorkPreview } from "./work/preview.js";
+import type { WorkProductionPlan } from "./work/plan.js";
+import type { TurnStaging } from "./work/staging.js";
+import type { NextStepSuggestions } from "./suggestions.js";
 import type { TurnQueueKind } from "./chat/turn-queue.js";
 
 export interface YouganAgentState {
   workId?: string;
   workTitle?: string;
   conversationTitle?: string;
-  /** 参考素材等跨模式字段 */
+  /** canonical：已提交作品方案 */
   profile: WorkProfile;
-  blueprint: WorkBlueprint;
-  /** 创作总监计划，仅 Agent 内部使用 */
-  plan: WorkProductionPlan;
-  draft: WorkDraft | null;
+  /** canonical：已提交制作计划（内部） */
+  productionPlan: WorkProductionPlan;
+  /** canonical：已提交作品预览 */
+  preview: WorkPreview | null;
+  /** 本轮工作区；TurnRunner 只写 staging */
+  staging?: TurnStaging | null;
+  /** turn.commit 成功后为 true，API 据此物化 Work */
+  turnCommitted?: boolean;
+  /** 用户取消本轮：作品 state 不落库 */
+  turnCancelled?: boolean;
+  /** 被用户中断的 assistant 消息 id */
+  interruptedMessageIds?: string[];
   turnQueue?: TurnQueueKind[];
   activeTurnKind?: TurnQueueKind | null;
   completedTurnKinds?: TurnQueueKind[];
-  /** 空 thread 开屏选题建议 */
-  openingNextStepSuggestions: BriefSuggestions | null;
-  /** 回合结束后下一步工作建议 */
-  turnNextStepSuggestions: BriefSuggestions | null;
-  /** 首条用户消息后生成的对话标题建议（由 API 写入 WorkConversation） */
+  nextStepSuggestions: NextStepSuggestions | null;
   suggestedConversationTitle?: string;
 }
 
-/** 推送到前端的 stream 字段（不含内部 plan） */
+/** 推送到前端的 stream 字段（含 staging 供预览，不含 productionPlan） */
 export type YouganStreamValues = Partial<
   Pick<
     YouganAgentState,
@@ -34,21 +38,22 @@ export type YouganStreamValues = Partial<
     | "workTitle"
     | "conversationTitle"
     | "profile"
-    | "blueprint"
-    | "draft"
+    | "preview"
+    | "staging"
+    | "turnCommitted"
+    | "turnCancelled"
+    | "interruptedMessageIds"
     | "turnQueue"
     | "activeTurnKind"
     | "completedTurnKinds"
-    | "openingNextStepSuggestions"
-    | "turnNextStepSuggestions"
+    | "nextStepSuggestions"
     | "suggestedConversationTitle"
   >
 > & {
-  /** LangGraph checkpoint messages（仅 stream 运行时） */
   messages?: unknown[];
   modelTemperature?: number;
 };
 
-/** 前端 submit / agent-proxy 注入的完整运行时输入（含内部 plan） */
+/** 前端 submit / agent-proxy 注入的完整运行时输入 */
 export type YouganAgentSubmitInput = YouganStreamValues &
-  Pick<YouganAgentState, "plan">;
+  Pick<YouganAgentState, "productionPlan">;

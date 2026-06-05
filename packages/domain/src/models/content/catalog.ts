@@ -9,15 +9,15 @@ export const CONTENT_FORMATS = [
   { id: "short_video", label: "短视频" },
   { id: "podcast", label: "播客" },
   { id: "music", label: "音乐音频" },
+  { id: "illustration", label: "绘画创作" },
 ] as const;
 
-/** 媒介形式（与发现页 DISCOVER_MEDIA_TYPES 同 id/label） */
+/** 媒介原子（混合场景用数组组合，如 ["text", "image"]） */
 export const MEDIA_MODALITIES = [
-  { id: "text", label: "纯文字" },
-  { id: "image", label: "图文" },
+  { id: "text", label: "文字" },
+  { id: "image", label: "图片" },
   { id: "audio", label: "音频" },
   { id: "video", label: "视频" },
-  { id: "mixed", label: "混合" },
 ] as const;
 
 export type ContentFormatId = (typeof CONTENT_FORMATS)[number]["id"];

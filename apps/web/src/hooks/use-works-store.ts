@@ -17,15 +17,15 @@ import {
 import { queryKeys } from "@/hooks/queries/keys";
 import { normalizeWork } from "@/lib/normalize-work";
 import {
-  clearBlueprintBeats,
-  clearBlueprintConstraints,
-  deleteBlueprintBeat,
-  deleteBlueprintConstraint,
-  mergeBlueprintForDisplay,
-  updateBlueprintBeat,
-  updateBlueprintConstraint,
-} from "@/lib/blueprint-merge";
-import type { YouganValues, Work, WorkBlueprint } from "@/lib/types";
+  clearProfileBeats,
+  clearProfileConstraints,
+  deleteProfileBeat,
+  deleteProfileConstraint,
+  mergeProfileForDisplay,
+  updateProfileBeat,
+  updateProfileConstraint,
+} from "@yougan/domain";
+import type { YouganValues, Work, WorkProfile } from "@/lib/types";
 import { useAuthToken } from "@/store/auth";
 import { activeWorkIdAtom } from "@/store/studio";
 
@@ -125,10 +125,11 @@ export function useWorksStore() {
 
   const applyStreamValuesToCache = useCallback(
     (workId: string, values: YouganValues) => {
+      if (values.turnCommitted !== true || values.turnCancelled === true) return;
+
       const patch: Partial<Work> = {};
       if (values.profile !== undefined) patch.profile = values.profile;
-      if (values.blueprint !== undefined) patch.blueprint = values.blueprint;
-      if (values.draft !== undefined) patch.draft = values.draft;
+      if (values.preview !== undefined) patch.preview = values.preview;
       if (!Object.keys(patch).length) return;
 
       patchWorksCache(queryClient, (works) =>
@@ -140,15 +141,15 @@ export function useWorksStore() {
     [queryClient],
   );
 
-  const patchBlueprint = useCallback(
-    (workId: string, blueprint: WorkBlueprint) => {
+  const patchProfile = useCallback(
+    (workId: string, profile: WorkProfile) => {
       patchWorksCache(queryClient, (works) =>
         works.map((work) =>
-          work.id === workId ? { ...work, blueprint } : work,
+          work.id === workId ? { ...work, profile } : work,
         ),
       );
       void updateWorkMutation
-        .mutateAsync({ workId, patch: { blueprint } })
+        .mutateAsync({ workId, patch: { profile } })
         .catch(() => {
           void queryClient.invalidateQueries({ queryKey: queryKeys.works.list });
         });
@@ -156,78 +157,78 @@ export function useWorksStore() {
     [queryClient, updateWorkMutation],
   );
 
-  const updateBlueprintConstraintItem = useCallback(
+  const updateProfileConstraintItem = useCallback(
     (workId: string, constraintId: string, description: string) => {
       const current = queryClient
         .getQueryData<Work[]>(queryKeys.works.list)
         ?.find((work) => work.id === workId);
       if (!current) return;
-      const next = updateBlueprintConstraint(
-        current.blueprint,
+      const next = updateProfileConstraint(
+        current.profile,
         constraintId,
         description,
       );
-      patchBlueprint(workId, next);
+      patchProfile(workId, next);
     },
-    [patchBlueprint, queryClient],
+    [patchProfile, queryClient],
   );
 
-  const deleteBlueprintConstraintItem = useCallback(
+  const deleteProfileConstraintItem = useCallback(
     (workId: string, constraintId: string) => {
       const current = queryClient
         .getQueryData<Work[]>(queryKeys.works.list)
         ?.find((work) => work.id === workId);
       if (!current) return;
-      const next = deleteBlueprintConstraint(current.blueprint, constraintId);
-      patchBlueprint(workId, next);
+      const next = deleteProfileConstraint(current.profile, constraintId);
+      patchProfile(workId, next);
     },
-    [patchBlueprint, queryClient],
+    [patchProfile, queryClient],
   );
 
-  const clearWorkBlueprintConstraints = useCallback(
+  const clearWorkProfileConstraints = useCallback(
     (workId: string) => {
       const current = queryClient
         .getQueryData<Work[]>(queryKeys.works.list)
         ?.find((work) => work.id === workId);
       if (!current) return;
-      patchBlueprint(workId, clearBlueprintConstraints(current.blueprint));
+      patchProfile(workId, clearProfileConstraints(current.profile));
     },
-    [patchBlueprint, queryClient],
+    [patchProfile, queryClient],
   );
 
-  const updateBlueprintBeatItem = useCallback(
+  const updateProfileBeatItem = useCallback(
     (workId: string, beatId: string, description: string) => {
       const current = queryClient
         .getQueryData<Work[]>(queryKeys.works.list)
         ?.find((work) => work.id === workId);
       if (!current) return;
-      const next = updateBlueprintBeat(current.blueprint, beatId, description);
-      patchBlueprint(workId, next);
+      const next = updateProfileBeat(current.profile, beatId, description);
+      patchProfile(workId, next);
     },
-    [patchBlueprint, queryClient],
+    [patchProfile, queryClient],
   );
 
-  const deleteBlueprintBeatItem = useCallback(
+  const deleteProfileBeatItem = useCallback(
     (workId: string, beatId: string) => {
       const current = queryClient
         .getQueryData<Work[]>(queryKeys.works.list)
         ?.find((work) => work.id === workId);
       if (!current) return;
-      const next = deleteBlueprintBeat(current.blueprint, beatId);
-      patchBlueprint(workId, next);
+      const next = deleteProfileBeat(current.profile, beatId);
+      patchProfile(workId, next);
     },
-    [patchBlueprint, queryClient],
+    [patchProfile, queryClient],
   );
 
-  const clearWorkBlueprintBeats = useCallback(
+  const clearWorkProfileBeats = useCallback(
     (workId: string) => {
       const current = queryClient
         .getQueryData<Work[]>(queryKeys.works.list)
         ?.find((work) => work.id === workId);
       if (!current) return;
-      patchBlueprint(workId, clearBlueprintBeats(current.blueprint));
+      patchProfile(workId, clearProfileBeats(current.profile));
     },
-    [patchBlueprint, queryClient],
+    [patchProfile, queryClient],
   );
 
   const renameWork = useCallback(
@@ -263,15 +264,15 @@ export function useWorksStore() {
     deleteWork,
     selectWork,
     applyStreamValuesToCache,
-    updateBlueprintConstraint: updateBlueprintConstraintItem,
-    deleteBlueprintConstraint: deleteBlueprintConstraintItem,
-    clearWorkBlueprintConstraints,
-    updateBlueprintBeat: updateBlueprintBeatItem,
-    deleteBlueprintBeat: deleteBlueprintBeatItem,
-    clearWorkBlueprintBeats,
+    updateProfileConstraint: updateProfileConstraintItem,
+    deleteProfileConstraint: deleteProfileConstraintItem,
+    clearWorkProfileConstraints,
+    updateProfileBeat: updateProfileBeatItem,
+    deleteProfileBeat: deleteProfileBeatItem,
+    clearWorkProfileBeats,
     renameWork,
     moveWorkToGroup,
-    mergeBlueprintForDisplay,
+    mergeProfileForDisplay,
   };
 }
 

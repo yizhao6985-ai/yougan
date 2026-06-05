@@ -13,9 +13,9 @@ import {
 } from "@/components/studio/chat-stream-block";
 import { ComposerAttachmentsProvider } from "@/components/studio/composer-attachments-context";
 import { ChatToolActivity } from "@/components/studio/chat-tool-activity";
-import { BriefSuggestionOptions } from "@/components/studio/inspiration-generative-ui";
+import { NextStepSuggestionOptions } from "@/components/studio/next-step-suggestion-options";
 import { OpeningNextStepSuggestions } from "@/components/studio/opening-next-step-suggestions";
-import { normalizeBriefSuggestions } from "@/lib/brief-ui-spec";
+import { normalizeNextStepSuggestions } from "@yougan/domain";
 import { useTurnNextStepSuggestions } from "@/hooks/use-turn-next-step-suggestions";
 import { StudioChatComposer } from "@/components/studio/studio-chat-composer";
 import { Shimmer } from "@/components/ai-elements/shimmer";
@@ -32,6 +32,7 @@ export function YouganChat() {
   const {
     stream,
     sendMessage,
+    cancelActiveTurn,
     canChat,
     isBootstrappingOpening,
     activeWork,
@@ -48,9 +49,16 @@ export function YouganChat() {
 
   const activeKind = streamValues?.activeTurnKind as TurnQueueKind | undefined;
 
+  const interruptedMessageIds = streamValues?.interruptedMessageIds ?? [];
+
   const items = useMemo(
-    () => buildRenderItems(stream.messages, stream.isLoading),
-    [stream.messages, stream.isLoading],
+    () =>
+      buildRenderItems(
+        stream.messages,
+        stream.isLoading,
+        interruptedMessageIds,
+      ),
+    [stream.messages, stream.isLoading, interruptedMessageIds],
   );
 
   const { activeSuggestions } = useTurnNextStepSuggestions({
@@ -61,9 +69,9 @@ export function YouganChat() {
   const openingSuggestions = useMemo(
     () =>
       items.length === 0
-        ? normalizeBriefSuggestions(streamValues?.openingNextStepSuggestions)
+        ? normalizeNextStepSuggestions(streamValues?.nextStepSuggestions)
         : null,
-    [items.length, streamValues?.openingNextStepSuggestions],
+    [items.length, streamValues?.nextStepSuggestions],
   );
 
   const openingSuggestionsKey = useMemo(
@@ -122,21 +130,24 @@ export function YouganChat() {
     );
   }
 
-  const blueprint = stream.values?.blueprint ?? activeWork.blueprint;
-  const beatCount = blueprint.beats?.length ?? 0;
-  const constraintCount = blueprint.constraints?.length ?? 0;
+  const profile =
+    stream.values?.staging?.profile ??
+    stream.values?.profile ??
+    activeWork.profile;
+  const beatCount = profile.beats?.length ?? 0;
+  const constraintCount = profile.constraints?.length ?? 0;
 
   const statusHint = (() => {
     switch (activeKind) {
-      case "creation":
-        return CHAT_COPY.status.creationExecuting;
+      case "production":
+        return CHAT_COPY.status.productionExecuting;
       case "ask":
         return CHAT_COPY.status.askExploring;
-      case "blueprint":
+      case "profile":
       default:
         return beatCount > 0 || constraintCount > 0
-          ? CHAT_COPY.status.blueprintEditing(beatCount, constraintCount)
-          : CHAT_COPY.status.blueprintExploring;
+          ? CHAT_COPY.status.profileEditing(beatCount, constraintCount)
+          : CHAT_COPY.status.profileExploring;
     }
   })();
 
@@ -262,8 +273,13 @@ export function YouganChat() {
                         content={item.content}
                         isStreaming={item.isStreaming}
                       />
+                      {item.isInterrupted ? (
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          {CHAT_COPY.interrupted}
+                        </p>
+                      ) : null}
                       {showTurnSuggestions && activeSuggestions && (
-                        <BriefSuggestionOptions
+                        <NextStepSuggestionOptions
                           suggestions={activeSuggestions.suggestions}
                           hint={activeSuggestions.hint}
                           disabled={stream.isLoading || !canChat}
@@ -301,6 +317,7 @@ export function YouganChat() {
                 input={input}
                 onInputChange={setInput}
                 onSend={handleSend}
+                onStop={cancelActiveTurn}
                 chatStatus={chatStatus}
               />
             </ComposerAttachmentsProvider>

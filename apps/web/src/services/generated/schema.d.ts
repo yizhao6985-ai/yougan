@@ -1256,29 +1256,14 @@ export interface components {
             url?: string | null;
             title?: string | null;
         };
+        WorkReferences: components["schemas"]["ReferenceItem"][];
         WorkProfile: {
-            platform?: string | null;
-            content_topic?: string | null;
-            content_type?: string | null;
-            content_format?: string | null;
-            media_modality?: string | null;
-            content_points?: string[];
-            style?: string | null;
-            tone?: string | null;
-            persona?: string | null;
-            audience?: string | null;
-            goals?: string[];
-            style_constraints?: string[];
-            notes?: string | null;
-            references?: components["schemas"]["ReferenceItem"][];
-        };
-        WorkBlueprint: {
             spec: {
                 platform?: string | null;
                 content_topic?: string | null;
                 content_type?: string | null;
                 content_format?: string | null;
-                media_modality?: string | null;
+                media_modalities?: string[];
             };
             voice: {
                 audience?: string | null;
@@ -1288,6 +1273,7 @@ export interface components {
                 goals?: string[];
             };
             premise: string;
+            references: components["schemas"]["WorkReferences"];
             constraints: {
                 id: string;
                 description: string;
@@ -1327,13 +1313,19 @@ export interface components {
             industry_context?: string | null;
             director_notes?: string | null;
         };
-        WorkDraft: {
+        WorkPreview: {
             platform: string;
             title?: string | null;
             body: string;
             hashtags?: string[];
             hook?: string | null;
             notes?: string | null;
+            images?: {
+                /** Format: uri */
+                url: string;
+                alt?: string | null;
+                prompt?: string | null;
+            }[];
             publish_ready?: boolean;
         } | null;
         Work: {
@@ -1341,9 +1333,8 @@ export interface components {
             title: string;
             groupId: string | null;
             profile: components["schemas"]["WorkProfile"];
-            blueprint: components["schemas"]["WorkBlueprint"];
-            plan: components["schemas"]["WorkProductionPlan"];
-            draft: components["schemas"]["WorkDraft"];
+            productionPlan: components["schemas"]["WorkProductionPlan"];
+            preview: components["schemas"]["WorkPreview"];
             headRevisionId: string | null;
             sourceWorkId: string | null;
             sourceRevisionId: string | null;
@@ -1353,9 +1344,8 @@ export interface components {
         SyncWorkState: {
             groupId?: string | null;
             profile?: components["schemas"]["WorkProfile"];
-            blueprint?: components["schemas"]["WorkBlueprint"];
-            plan?: components["schemas"]["WorkProductionPlan"];
-            draft?: components["schemas"]["WorkDraft"];
+            productionPlan?: components["schemas"]["WorkProductionPlan"];
+            preview?: components["schemas"]["WorkPreview"];
             title?: string;
         };
         AgentContext: {
@@ -1363,18 +1353,16 @@ export interface components {
             conversationId?: string;
             headRevisionId?: string | null;
             profile: components["schemas"]["WorkProfile"];
-            blueprint: components["schemas"]["WorkBlueprint"];
-            plan: components["schemas"]["WorkProductionPlan"];
-            draft: components["schemas"]["WorkDraft"];
+            productionPlan: components["schemas"]["WorkProductionPlan"];
+            preview: components["schemas"]["WorkPreview"];
             threadId?: string | null;
             workTitle?: string;
             conversationTitle?: string;
         };
         WorkRevisionSnapshot: {
             profile: components["schemas"]["WorkProfile"];
-            blueprint: components["schemas"]["WorkBlueprint"];
-            plan: components["schemas"]["WorkProductionPlan"];
-            draft: components["schemas"]["WorkDraft"];
+            productionPlan: components["schemas"]["WorkProductionPlan"];
+            preview: components["schemas"]["WorkPreview"];
         };
         WorkRevision: {
             id: string;
@@ -1382,9 +1370,9 @@ export interface components {
             parentRevisionId: string | null;
             conversationId: string | null;
             /** @enum {string} */
-            kind: "work_created" | "work_duplicated" | "work_restored" | "profile_updated" | "blueprint_constraint_added" | "blueprint_constraint_updated" | "blueprint_constraint_removed" | "blueprint_beat_added" | "blueprint_beat_updated" | "blueprint_beat_removed" | "blueprint_revised" | "plan_ready" | "plan_revised" | "execution_complete";
+            kind: "work_created" | "work_duplicated" | "work_restored" | "references_updated" | "profile_constraint_added" | "profile_constraint_updated" | "profile_constraint_removed" | "profile_beat_added" | "profile_beat_updated" | "profile_beat_removed" | "profile_revised" | "production_plan_ready" | "production_plan_revised" | "execution_complete";
             /** @enum {string} */
-            phase: "draft";
+            phase: "preview";
             summary: string;
             snapshot: components["schemas"]["WorkRevisionSnapshot"];
             createdAt: string;

@@ -8,14 +8,13 @@ import {
 } from "@langchain/langgraph";
 import type { BaseMessage } from "@langchain/core/messages";
 import {
-  EMPTY_WORK_BLUEPRINT,
-  EMPTY_WORK_PRODUCTION_PLAN,
   EMPTY_WORK_PROFILE,
-  mergeBlueprintState,
-  type BriefSuggestions,
+  EMPTY_WORK_PRODUCTION_PLAN,
+  mergeProfileState,
+  type NextStepSuggestions,
   type TurnQueueKind,
-  type WorkBlueprint,
-  type WorkDraft,
+  type TurnStaging,
+  type WorkPreview,
   type WorkProductionPlan,
   type WorkProfile,
 } from "@yougan/domain";
@@ -28,19 +27,16 @@ export const AgentState = Annotation.Root({
     reducer: messagesStateReducer,
     default: () => [],
   }),
-  /** 本轮待执行队列（队首为当前/下一项） */
   turnQueue: Annotation<TurnQueueKind[]>({
-    reducer: (_prev, next) => (next === undefined ? _prev ?? [] : next),
+    reducer: (_prev, next) => (next === undefined ? (_prev ?? []) : next),
     default: () => [],
   }),
-  /** 当前正在执行的队列项 */
   activeTurnKind: Annotation<TurnQueueKind | null>({
-    reducer: (_prev, next) => (next === undefined ? _prev ?? null : next),
+    reducer: (_prev, next) => (next === undefined ? (_prev ?? null) : next),
     default: () => null,
   }),
-  /** 本轮已完成的队列项（用于回合末建议等） */
   completedTurnKinds: Annotation<TurnQueueKind[]>({
-    reducer: (_prev, next) => (next === undefined ? _prev ?? [] : next),
+    reducer: (_prev, next) => (next === undefined ? (_prev ?? []) : next),
     default: () => [],
   }),
   workId: Annotation<string | undefined>({
@@ -56,34 +52,53 @@ export const AgentState = Annotation.Root({
     default: () => undefined,
   }),
   suggestedConversationTitle: Annotation<string | null>({
-    reducer: (_prev, next) => (next === undefined ? _prev ?? null : next),
+    reducer: (_prev, next) => (next === undefined ? (_prev ?? null) : next),
     default: () => null,
   }),
+  /** canonical：已提交作品方案 */
   profile: Annotation<WorkProfile>({
-    reducer: (_prev, next) => next ?? EMPTY_WORK_PROFILE,
+    reducer: (prev, next) => {
+      if (next === undefined) return prev ?? EMPTY_WORK_PROFILE;
+      return mergeProfileState(prev, next);
+    },
     default: () => EMPTY_WORK_PROFILE,
   }),
-  blueprint: Annotation<WorkBlueprint>({
-    reducer: (prev, next) => {
-      if (next === undefined) return prev ?? EMPTY_WORK_BLUEPRINT;
-      return mergeBlueprintState(prev, next);
-    },
-    default: () => EMPTY_WORK_BLUEPRINT,
-  }),
-  plan: Annotation<WorkProductionPlan>({
+  /** canonical：已提交制作计划 */
+  productionPlan: Annotation<WorkProductionPlan>({
     reducer: (_prev, next) => next ?? EMPTY_WORK_PRODUCTION_PLAN,
     default: () => EMPTY_WORK_PRODUCTION_PLAN,
   }),
-  openingNextStepSuggestions: Annotation<BriefSuggestions | null>({
-    reducer: (_prev, next) => (next === undefined ? _prev : next),
-    default: () => null,
-  }),
-  turnNextStepSuggestions: Annotation<BriefSuggestions | null>({
-    reducer: (_prev, next) => (next === undefined ? _prev : next),
-    default: () => null,
-  }),
-  draft: Annotation<WorkDraft | null>({
+  /** canonical：已提交作品预览 */
+  preview: Annotation<WorkPreview | null>({
     reducer: (_prev, next) => (next === undefined ? null : next),
+    default: () => null,
+  }),
+  /** 本轮工作区 */
+  staging: Annotation<TurnStaging | null>({
+    reducer: (_prev, next) => (next === undefined ? (_prev ?? null) : next),
+    default: () => null,
+  }),
+  /** turn.commit 成功后为 true，API 据此物化 Work */
+  turnCommitted: Annotation<boolean>({
+    reducer: (_prev, next) => (next === undefined ? (_prev ?? false) : next),
+    default: () => false,
+  }),
+  /** 用户取消本轮：commit 跳过，staging 回滚 */
+  turnCancelled: Annotation<boolean>({
+    reducer: (_prev, next) => (next === undefined ? (_prev ?? false) : next),
+    default: () => false,
+  }),
+  /** 被用户中断的 assistant 消息 id（前端 stop 写入） */
+  interruptedMessageIds: Annotation<string[]>({
+    reducer: (prev, next) => {
+      if (next === undefined) return prev ?? [];
+      return [...new Set([...(prev ?? []), ...next])];
+    },
+    default: () => [],
+  }),
+  /** 验收通过后生成的下一步可点击建议（开屏 7 条 / 对话流 4 条） */
+  nextStepSuggestions: Annotation<NextStepSuggestions | null>({
+    reducer: (_prev, next) => (next === undefined ? _prev : next),
     default: () => null,
   }),
   modelTemperature: Annotation<number>({

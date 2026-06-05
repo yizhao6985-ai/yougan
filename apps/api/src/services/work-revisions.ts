@@ -11,11 +11,11 @@ import {
   detectRevisionKind,
   emptySnapshot,
   materializeWorkColumns,
-  parseDraft,
-  parsePlan,
-  parseProfile,
+  parsePreview,
+  parseProductionPlanJson as parsePlan,
+  parseProfileJson,
   parseSnapshot,
-  resolveBlueprintFromWork,
+  resolveProfileFromWork,
   revisionSummary,
   snapshotsEqual,
   snapshotFromAgentValues,
@@ -23,19 +23,13 @@ import {
 
 function snapshotFromWorkColumns(work: {
   profile: unknown;
-  blueprint: unknown;
-  plan: unknown;
-  draft: unknown;
+  productionPlan: unknown;
+  preview: unknown;
 }): WorkRevisionSnapshot {
-  const profile = parseProfile(work.profile);
   return {
-    profile,
-    blueprint: resolveBlueprintFromWork({
-      blueprint: work.blueprint,
-      profile,
-    }),
-    plan: parsePlan(work.plan),
-    draft: parseDraft(work.draft),
+    profile: resolveProfileFromWork({ profile: work.profile }),
+    productionPlan: parsePlan(work.productionPlan),
+    preview: parsePreview(work.preview),
   };
 }
 
@@ -59,7 +53,7 @@ async function updateWorkMaterializedState(
     where: { id: workId },
     data: {
       ...columns,
-      draft: columns.draft ?? undefined,
+      preview: columns.preview ?? undefined,
     },
   });
 }
@@ -100,7 +94,7 @@ export async function appendWorkRevision(input: {
       where: { id: input.workId },
       data: {
         ...columns,
-        draft: columns.draft ?? undefined,
+        preview: columns.preview ?? undefined,
         headRevisionId: created.id,
       },
     });
@@ -177,7 +171,7 @@ export async function restoreWorkToRevision(
     where: { id: workId },
     data: {
       ...columns,
-      draft: columns.draft ?? undefined,
+      preview: columns.preview ?? undefined,
       headRevisionId: revision.id,
     },
   });
@@ -299,9 +293,9 @@ export async function duplicateWorkFromRevision(
         sourceWorkId,
         sourceRevisionId,
         profile: columns.profile as object,
-        blueprint: columns.blueprint as object,
-        plan: columns.plan as object,
-        draft: columns.draft ?? undefined,
+        productionPlan: columns.productionPlan as object,
+        preview: columns.preview ?? undefined,
+        preview: columns.preview ?? undefined,
       },
     });
 

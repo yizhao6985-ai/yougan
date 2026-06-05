@@ -1,10 +1,9 @@
 import { Prisma, type Work } from "../db.js";
 import {
-  EMPTY_WORK_BLUEPRINT,
-  EMPTY_WORK_PRODUCTION_PLAN,
   EMPTY_WORK_PROFILE,
+  EMPTY_WORK_PRODUCTION_PLAN,
   normalizeWorkDto,
-  resolveBlueprintFromWork,
+  resolveProfileFromWork,
 } from "@yougan/domain";
 
 import { prisma } from "../db.js";
@@ -17,9 +16,9 @@ import {
 } from "./work-revisions.js";
 import {
   materializeWorkColumns,
-  parseDraft,
-  parsePlan,
-  parseProfile,
+  parsePreview,
+  parseProductionPlanJson as parsePlan,
+  parseProfileJson,
 } from "./revisions.js";
 import {
   hasMaterializedAgentFields,
@@ -32,13 +31,9 @@ function toWorkDTO(work: Work): WorkDTO {
     id: work.id,
     title: work.title,
     groupId: work.groupId,
-    profile: parseProfile(work.profile),
-    blueprint: resolveBlueprintFromWork({
-      blueprint: work.blueprint,
-      profile: parseProfile(work.profile),
-    }),
-    plan: parsePlan(work.plan),
-    draft: parseDraft(work.draft),
+    profile: resolveProfileFromWork({ profile: work.profile }),
+    productionPlan: parsePlan(work.productionPlan),
+    preview: parsePreview(work.preview),
     headRevisionId: work.headRevisionId,
     sourceWorkId: work.sourceWorkId,
     sourceRevisionId: work.sourceRevisionId,
@@ -74,8 +69,7 @@ export async function createWork(
         groupId: groupId ?? null,
         title: title?.trim() || "未命名作品",
         profile: EMPTY_WORK_PROFILE as unknown as Prisma.InputJsonValue,
-        blueprint: EMPTY_WORK_BLUEPRINT as unknown as Prisma.InputJsonValue,
-        plan: EMPTY_WORK_PRODUCTION_PLAN as unknown as Prisma.InputJsonValue,
+        productionPlan: EMPTY_WORK_PRODUCTION_PLAN as unknown as Prisma.InputJsonValue,
       },
     });
 
@@ -122,9 +116,8 @@ export async function updateWork(
     title: string;
     groupId: string | null;
     profile: unknown;
-    blueprint: unknown;
-    plan: unknown;
-    draft: unknown | null;
+    productionPlan: unknown;
+    preview: unknown | null;
   }>,
   options?: { conversationId?: string },
 ) {
@@ -147,19 +140,18 @@ export async function updateWork(
         : { connect: { id: data.groupId } };
   }
   if (data.profile !== undefined) {
-    updateData.profile = data.profile as Prisma.InputJsonValue;
+    updateData.profile = parseProfileJson(
+      data.profile,
+    ) as unknown as Prisma.InputJsonValue;
   }
-  if (data.blueprint !== undefined) {
-    updateData.blueprint = data.blueprint as Prisma.InputJsonValue;
+  if (data.productionPlan !== undefined) {
+    updateData.productionPlan = data.productionPlan as Prisma.InputJsonValue;
   }
-  if (data.plan !== undefined) {
-    updateData.plan = data.plan as Prisma.InputJsonValue;
-  }
-  if (data.draft !== undefined) {
-    updateData.draft =
-      data.draft === null
+  if (data.preview !== undefined) {
+    updateData.preview =
+      data.preview === null
         ? Prisma.JsonNull
-        : (data.draft as Prisma.InputJsonValue);
+        : (data.preview as Prisma.InputJsonValue);
   }
 
   const work = await prisma.work.update({
@@ -172,8 +164,7 @@ export async function updateWork(
   if (hasMaterializedAgentFields(agentFields)) {
     const syncFields: typeof agentFields = {};
     if (agentFields.profile !== undefined) syncFields.profile = dto.profile;
-    if (agentFields.blueprint !== undefined) syncFields.blueprint = dto.blueprint;
-    if (agentFields.draft !== undefined) syncFields.draft = dto.draft;
+    if (agentFields.preview !== undefined) syncFields.preview = dto.preview;
     await syncMaterializedStateToAgentThreads(workId, syncFields, {
       conversationId: options?.conversationId,
     });
@@ -214,17 +205,15 @@ export async function getAgentContext(
     }
   }
 
+  const dto = toWorkDTO(work);
+
   return {
     workId: work.id,
     conversationId: resolvedConversationId,
     headRevisionId: work.headRevisionId,
-    profile: parseProfile(work.profile),
-    blueprint: resolveBlueprintFromWork({
-      blueprint: work.blueprint,
-      profile: parseProfile(work.profile),
-    }),
-    plan: parsePlan(work.plan),
-    draft: parseDraft(work.draft),
+    profile: dto.profile,
+    productionPlan: dto.productionPlan,
+    preview: dto.preview,
     threadId,
     workTitle: work.title,
     conversationTitle,

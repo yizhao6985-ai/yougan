@@ -1,6 +1,7 @@
 import {
   CONTENT_FORMATS,
   MEDIA_MODALITIES,
+  type MediaModalityId,
 } from "../content/catalog.js";
 
 export { CONTENT_FORMATS as DISCOVER_FORMATS };
@@ -58,6 +59,12 @@ export const DISCOVER_INTENT_ENTRIES = [
     description: "短视频与口播",
     filters: { mediaType: "video" },
   },
+  {
+    id: "visual",
+    label: "看绘画",
+    description: "插画、海报与视觉艺术",
+    filters: { contentFormat: "illustration" },
+  },
 ] as const;
 
 export type DiscoverFormatId = (typeof CONTENT_FORMATS)[number]["id"];
@@ -70,14 +77,17 @@ export type PublicationMetadataOverrides = {
   platform?: string;
   contentFormat?: string;
   topicCategory?: string;
-  mediaType?: string;
+  /** 单原子筛选（发现页 URL 兼容） */
+  mediaType?: MediaModalityId;
+  mediaTypes?: MediaModalityId[];
 };
 
 export type DiscoverFilters = {
   platform?: string;
   contentFormat?: string;
   topicCategory?: string;
-  mediaType?: string;
+  /** 筛选包含该媒介原子的内容 */
+  mediaType?: MediaModalityId;
 };
 
 export type DiscoverFacetOption = {
@@ -99,7 +109,7 @@ export type PublicationMetadata = {
   topicCategory: DiscoverTopicCategoryId;
   contentTopic: string | null;
   contentType: string | null;
-  mediaType: string;
+  mediaTypes: MediaModalityId[];
 };
 
 export type PublicationMetadataPreview = {
@@ -108,7 +118,7 @@ export type PublicationMetadataPreview = {
     platform: string | null;
     contentFormat: string | null;
     topicCategory: string | null;
-    mediaType: string | null;
+    mediaTypes: string | null;
   };
 };
 

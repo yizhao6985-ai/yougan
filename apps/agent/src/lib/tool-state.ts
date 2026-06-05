@@ -3,27 +3,20 @@
  */
 import { getCurrentTaskInput } from "@langchain/langgraph";
 
-import { parseProfile } from "./parse-agent-state.js";
+import { appendProfileReferences } from "@yougan/domain";
+
+import { parseProfile, parseReferences } from "./parse-agent-state.js";
 import type { AgentStateType } from "#agent/state.js";
+import type { ReferenceItem } from "#agent/schema.js";
 import type { WorkProfile } from "#agent/schema.js";
 
 export function getState(): AgentStateType {
   return getCurrentTaskInput() as AgentStateType;
 }
 
-export function updateProfile(
+export function appendReferences(
   state: AgentStateType,
-  updates: Partial<WorkProfile>,
+  refs: ReferenceItem[],
 ): WorkProfile {
-  return { ...parseProfile(state), ...updates };
-}
-
-export function mergeProfileReferences(
-  profile: WorkProfile,
-  refs: WorkProfile["references"],
-): WorkProfile {
-  return {
-    ...profile,
-    references: [...(profile.references ?? []), ...(refs ?? [])],
-  };
+  return appendProfileReferences(parseProfile(state), refs);
 }

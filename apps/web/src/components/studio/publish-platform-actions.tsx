@@ -12,14 +12,14 @@ import {
 import { DISCOVER_SECTION } from "@/lib/content-section";
 import type { PublicationMetadataOverrides } from "@/lib/discover-taxonomy";
 import { PUBLISH, STUDIO } from "@/lib/site-copy";
-import type { WorkDraft } from "@/lib/types";
+import type { WorkPreview } from "@/lib/types";
 
 export function PublishPlatformActions({
   workId,
-  draft,
+  preview,
 }: {
   workId: string;
-  draft?: WorkDraft | null;
+  preview?: WorkPreview | null;
 }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { data: publications = [], isLoading } = useMyPublicationsQuery();
@@ -42,7 +42,7 @@ export function PublishPlatformActions({
     setDialogOpen(false);
   };
 
-  if (!draft?.body) return null;
+  if (!preview?.body) return null;
   if (isLoading) {
     return (
       <p className="text-xs text-muted-foreground/70">{PUBLISH.checking}</p>
@@ -70,7 +70,7 @@ export function PublishPlatformActions({
       <div className="flex flex-wrap items-center gap-2">
         {publication?.status === "draft" ? (
           <span className="rounded-md bg-accent px-2.5 py-1 text-xs text-primary">
-            {PUBLISH.draftBadge}
+            {PUBLISH.previewSavedBadge}
           </span>
         ) : null}
         <Button

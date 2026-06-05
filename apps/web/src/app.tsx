@@ -22,7 +22,7 @@ import { SettingsPublicationsPage } from "@/pages/settings/settings-publications
 import { SettingsAccountPage } from "@/pages/settings/settings-account-page";
 import { SettingsProfilePage } from "@/pages/settings/settings-profile-page";
 import { SettingsWorksPage } from "@/pages/settings/settings-works-page";
-import { MyProfilePage, UserProfilePage } from "@/pages/user/user-profile-page";
+import { AccountPage, MyAccountPage } from "@/pages/user/account-page";
 
 export function App() {
   return (
@@ -35,8 +35,8 @@ export function App() {
         <Route path="/mobile" element={<MobileAppPage />} />
         <Route path="/content" element={<ContentFeedPage />} />
         <Route path="/content/:slug" element={<ContentDetailPage />} />
-        <Route path="/user/:userId" element={<UserProfilePage />} />
-        <Route path="/profile" element={<MyProfilePage />} />
+        <Route path="/user/:userId" element={<AccountPage />} />
+        <Route path="/profile" element={<MyAccountPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />

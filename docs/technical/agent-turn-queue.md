@@ -15,24 +15,34 @@
 
 ```text
 START
-  ├─ 空 thread → updateNextStepSuggestions → END
-  └─ 有消息 → resolveTurnQueue（planTurnQueue → 写入 turnQueue）
+  ├─ 空 thread → verifyTurn（开屏选题建议 7 条）→ END
+  └─ 有消息 → orchestrateTurn（planTurnQueue → turnQueue）
          → dispatchTurnQueue（设置 activeTurnKind）
          → 路由到对话子图
          → advanceTurnQueue（出队 → completedTurnKinds）
          → 队列非空？回到 dispatchTurnQueue
-         → 队列已空？updateNextStepSuggestions → END
+         → 队列已空？verifyTurn（对话流建议 4 条）→ commitTurn → END
 ```
 
-## 模块划分
+## 两层三分（模块划分）
 
-| 目录 / 节点 | 职责 |
-|-------------|------|
-| `nodes/resolve-turn-queue/` | 解析用户消息 → `turnQueue[]`；首条用户消息且占位标题时另输出 `suggestedConversationTitle` |
-| `nodes/next-step-suggestions/` | 开屏选题（`openingNextStepSuggestions`）+ 回合末下一步（`turnNextStepSuggestions`） |
-| `nodes/turn-queue/` | **流程**：`dispatchTurnQueue`、`advanceTurnQueue` |
-| `nodes/inspiration\|outline\|creation\|ask/` | **业务**：对话子图 + 工具改状态 |
-| `lib/outline/` | 大纲 bootstrap / 全量修订（子图与 prepare-turn 复用） |
+### 外层 turn
+
+| 角色 | 目录 | 职责 |
+|------|------|------|
+| 计划者 | `nodes/planner/` | 解析用户消息 → `turnQueue[]` |
+| 执行者 | `nodes/executor/` | `dispatch` / `advance` + 子图 `profile` / `production` / `ask` |
+| 验收者 | `nodes/verifier/` | `verifyTurn` 生成 `nextStepSuggestions`（开屏 7 / 对话流 4）与 `suggestedConversationTitle`（首条用户消息）→ `commitTurn` |
+
+路由：`nodes/edges/`
+
+### 内层 production
+
+| 角色 | 目录 | 职责 |
+|------|------|------|
+| 计划者 | `executor/subgraphs/production/planner/` | 准备回合、解析规格、制定制作计划 |
+| 创作者 | `.../creator/` | llmCall / designLlmCall ⇄ tools |
+| 验收者 | `.../inspector/` | 单任务质检 `inspectProduction` |
 
 ## 队列项类型（TurnQueueKind）
 
@@ -40,12 +50,11 @@ START
 
 | kind | 主图节点 | 行为 |
 |------|----------|------|
-| `outline` | `outlineGraph` | 大纲对话；`prepare-turn` 可同步参考图、bootstrap 空大纲 |
-| `inspiration` | `inspirationGraph` | 灵感对话；改 brief 等 |
-| `creation` | `creationGraph` | 创作子图 |
-| `ask` | `askGraph` | 提问子图 |
+| `profile` | `profileGraph` | 作品方案对话 |
+| `production` | `productionGraph` | 制作子图（内层三分） |
+| `ask` | `askGraph` | 提问答疑 |
 
-排序：`sortTurnQueue` → `outline` → `inspiration` → `creation` → `ask`。
+排序：`sortTurnQueue` → `profile` → `production` → `ask`。
 
 ## 运行时 state 字段
 
@@ -57,19 +66,20 @@ START
 
 ## 路由
 
-- `conditional-edges/route-by-turn-queue.ts`：`dispatchTurnQueue` 之后按 `activeTurnKind` 路由
-- `conditional-edges/route-after-turn-queue.ts`：`advanceTurnQueue` 之后继续调度或结束
+- `nodes/edges/route-by-turn-queue.ts`：`dispatchTurnQueue` 之后按 `activeTurnKind` 路由
+- `nodes/edges/route-after-turn-queue.ts`：`advanceTurnQueue` 之后继续调度或 `verifyTurn`
+- `nodes/edges/route-after-verify.ts`：开屏结束或进入 `commitTurn`
 
 ## API 线程同步
 
 `apps/api/src/services/agent-thread-sync.ts`：在 `updateWork` 更新 profile/brief/outline/draft 后，对作品下所有（或指定 `?conversationId=`）`threadId` 调用 LangGraph `threads.updateState`。
 
-LangGraph stream 结束后（`agent-proxy`）：`applyAgentRunRevision` 之后，`conversation-auto-title.ts` 在对话标题仍为「对话 N」且 thread 内仅 1 条 human 时，将 `suggestedConversationTitle` 写入 `WorkConversation.title`。
+LangGraph stream 结束后（`agent-proxy`）：`verifyTurn` 写入的 `suggestedConversationTitle` 经 `conversation-auto-title.ts` 落库（对话标题仍为「对话 N」且 thread 内仅 1 条 human）。
 
 ## 相关代码
 
 - `packages/domain/src/models/chat/turn-queue.ts`
 - `packages/domain/src/utils/turn-queue.ts`
 - `apps/agent/src/graph.ts`
-- `apps/agent/src/nodes/turn-queue/`
+- `apps/agent/src/nodes/`（`planner` / `executor` / `verifier` / `edges`）
 - `apps/api/src/services/agent-thread-sync.ts`

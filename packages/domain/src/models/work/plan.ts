@@ -28,7 +28,7 @@ export interface ExecutedPlanTask {
   assignee?: string | null;
 }
 
-/** 创意总监创作计划，对应 Work.plan（内部物化，用户不可见） */
+/** 制作统筹计划，对应 Work.productionPlan（内部物化，用户不可见） */
 export interface WorkProductionPlan {
   pending_tasks: ProductionPlanTask[];
   executed_tasks: ExecutedPlanTask[];

@@ -1,9 +1,9 @@
 import { useMemo } from "react";
 
-import { normalizeBriefSuggestions } from "@/lib/brief-ui-spec";
+import { normalizeNextStepSuggestions } from "@yougan/domain";
 import type { YouganValues } from "@/lib/types";
 
-/** 回合末下一步工作建议（有消息后展示） */
+/** 验收通过后生成的下一步建议（开屏或回合末） */
 export function useTurnNextStepSuggestions(input: {
   values?: YouganValues | null;
   isLoading: boolean;
@@ -12,8 +12,8 @@ export function useTurnNextStepSuggestions(input: {
     if (input.isLoading) {
       return null;
     }
-    return normalizeBriefSuggestions(input.values?.turnNextStepSuggestions);
-  }, [input.isLoading, input.values?.turnNextStepSuggestions]);
+    return normalizeNextStepSuggestions(input.values?.nextStepSuggestions);
+  }, [input.isLoading, input.values?.nextStepSuggestions]);
 
   return { activeSuggestions };
 }

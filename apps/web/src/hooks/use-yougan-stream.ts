@@ -1,10 +1,11 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 import type { Message } from "@langchain/langgraph-sdk";
 import { useStream } from "@langchain/langgraph-sdk/react";
 
 import { useOpeningBootstrapQuery } from "@/hooks/queries/opening-bootstrap";
 import { buildHumanMessageContent } from "@/lib/build-human-message-content";
+import { buildTurnCancelPatch } from "@/lib/cancel-turn";
 import { applyGraphUpdatesToValues } from "@/lib/message-utils";
 import { YOUGAN_ASSISTANT_ID } from "@/lib/yougan-chat-api";
 import { LANGGRAPH_API_URL } from "@/lib/env";
@@ -34,11 +35,9 @@ function buildStreamSubmitInput(
     workTitle: work.title,
     conversationTitle: conversation.title,
     profile: work.profile,
-    blueprint: work.blueprint,
-    plan: work.plan,
-    openingNextStepSuggestions: null,
-    turnNextStepSuggestions: null,
-    draft: work.draft,
+    productionPlan: work.productionPlan,
+    nextStepSuggestions: null,
+    preview: work.preview,
     modelTemperature,
   };
 }
@@ -57,6 +56,10 @@ export function useYouganStream({
 
   const onRunCompleteRef = useRef(onRunComplete);
   onRunCompleteRef.current = onRunComplete;
+
+  const [valuesOverlay, setValuesOverlay] = useState<Partial<YouganValues> | null>(
+    null,
+  );
 
   const defaultHeaders = useMemo(
     () => ({
@@ -84,6 +87,7 @@ export function useYouganStream({
         "values" in state && state.values
           ? (state.values as YouganValues)
           : (state as unknown as YouganValues);
+      if (values.turnCancelled === true || values.turnCommitted !== true) return;
       onRunCompleteRef.current?.(workId, values);
     },
     onUpdateEvent: (update, { mutate }) => {
@@ -117,12 +121,37 @@ export function useYouganStream({
     submitOpeningBootstrap,
   });
 
+  const cancelActiveTurn = useCallback(async () => {
+    if (!stream.isLoading) return;
+
+    const cancelPatch = buildTurnCancelPatch(
+      { ...stream.values, ...valuesOverlay } as YouganValues,
+      stream.messages,
+    );
+
+    await stream.stop();
+
+    setValuesOverlay(cancelPatch);
+
+    if (threadId) {
+      try {
+        await stream.client.threads.updateState(threadId, {
+          values: cancelPatch,
+        });
+      } catch (error) {
+        console.error("[yougan] cancel turn updateState failed", error);
+      }
+    }
+  }, [stream, threadId, valuesOverlay]);
+
   const sendMessage = useCallback(
     async (text: string, imageUrls: string[] = []) => {
       const content = buildHumanMessageContent(text, imageUrls);
       const hasText =
         typeof content === "string" ? Boolean(content.trim()) : content.length > 0;
       if (!hasText || !work || !conversation) return;
+
+      setValuesOverlay(null);
 
       await stream.submit(
         buildStreamSubmitInput(work, conversation, modelTemperature, [
@@ -144,10 +173,22 @@ export function useYouganStream({
       stream.isThreadLoading ||
       stream.isLoading);
 
+  const streamWithOverlay = useMemo(
+    () => ({
+      ...stream,
+      values: {
+        ...(stream.values ?? {}),
+        ...(valuesOverlay ?? {}),
+      } as YouganValues,
+    }),
+    [stream, valuesOverlay],
+  );
+
   return {
-    stream,
+    stream: streamWithOverlay,
     threadId,
     sendMessage,
+    cancelActiveTurn,
     isBootstrappingOpening,
     canChat: Boolean(work && conversation && token),
   };

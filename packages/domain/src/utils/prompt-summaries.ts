@@ -1,36 +1,36 @@
-import type { WorkBlueprint } from "../models/work/blueprint.js";
-import type { WorkProductionPlan } from "../models/work/plan.js";
 import type { WorkProfile } from "../models/work/profile.js";
-import { getBlueprintPremise } from "./work/blueprint.js";
+import type { WorkProductionPlan } from "../models/work/plan.js";
+import type { ReferenceItem } from "../models/work/reference.js";
+import { getProfilePremise } from "./work/profile.js";
 import { getPlanSummary, isPlanReady } from "./work/plan.js";
 import {
   contentFormatLabel,
   contentSpecSummary,
-  mediaModalityLabel,
+  mediaModalitiesLabel,
 } from "./content-spec.js";
 
-export function referencesSummary(profile: WorkProfile): string {
-  const count = profile.references?.length ?? 0;
+export function referencesSummary(references: ReferenceItem[] | undefined): string {
+  const count = references?.length ?? 0;
   return count ? `参考素材：${count} 条` : "尚无参考素材";
 }
 
-export function blueprintSpecSummary(blueprint: WorkBlueprint): string {
-  const { spec } = blueprint;
+export function profileSpecSummary(profile: WorkProfile): string {
+  const { spec } = profile;
   const parts = [
     spec.content_topic ? `主题：${spec.content_topic}` : null,
     spec.content_type ? `类型：${spec.content_type}` : null,
     spec.content_format
       ? `体裁：${contentFormatLabel(spec.content_format) ?? spec.content_format}`
       : null,
-    spec.media_modality
-      ? `形式：${mediaModalityLabel(spec.media_modality) ?? spec.media_modality}`
+    spec.media_modalities?.length
+      ? `形式：${mediaModalitiesLabel(spec.media_modalities) ?? spec.media_modalities.join(",")}`
       : null,
   ].filter(Boolean);
   return parts.length ? parts.join("；") : "尚未确定创作规格";
 }
 
-export function blueprintVoiceSummary(blueprint: WorkBlueprint): string {
-  const { voice } = blueprint;
+export function profileVoiceSummary(profile: WorkProfile): string {
+  const { voice } = profile;
   const parts = [
     voice.audience ? `受众：${voice.audience}` : null,
     voice.tone ? `语气：${voice.tone}` : null,
@@ -41,53 +41,34 @@ export function blueprintVoiceSummary(blueprint: WorkBlueprint): string {
   return parts.length ? parts.join("；") : "尚未确定表达设定";
 }
 
-export function blueprintSummary(blueprint: WorkBlueprint): string {
-  const premise = getBlueprintPremise(blueprint);
-  const lines: string[] = ["作品方案"];
+export function profileSummary(profile: WorkProfile): string {
+  const premise = getProfilePremise(profile);
+  const lines: string[] = ["创作轮廓"];
   if (premise) lines.push(`定位：${premise}`);
-  lines.push(blueprintSpecSummary(blueprint));
-  lines.push(blueprintVoiceSummary(blueprint));
-  if (blueprint.constraints.length) {
+  lines.push(profileSpecSummary(profile));
+  lines.push(profileVoiceSummary(profile));
+  if (profile.references.length) {
+    lines.push(referencesSummary(profile.references));
+  }
+  if (profile.constraints.length) {
     lines.push(
-      `要求（${blueprint.constraints.length} 条）：${blueprint.constraints.map((c) => c.description).join("；")}`,
+      `要求（${profile.constraints.length} 条）：${profile.constraints.map((c) => c.description).join("；")}`,
     );
   }
-  if (blueprint.beats.length) {
+  if (profile.beats.length) {
     lines.push(
-      `结构（${blueprint.beats.length} 节）：${blueprint.beats.map((b, i) => `${i + 1}. ${b.description}`).join("；")}`,
+      `结构（${profile.beats.length} 节）：${profile.beats.map((b, i) => `${i + 1}. ${b.description}`).join("；")}`,
     );
   }
   if (
     !premise &&
-    !blueprint.constraints.length &&
-    !blueprint.beats.length &&
-    !blueprint.spec.content_topic
+    !profile.constraints.length &&
+    !profile.beats.length &&
+    !profile.spec.content_topic
   ) {
     return "尚无作品方案";
   }
   return lines.join("\n");
-}
-
-/** @deprecated 使用 blueprintSummary */
-export function outlineSummary(blueprint: WorkBlueprint): string {
-  return blueprintSummary(blueprint);
-}
-
-/** @deprecated 使用 blueprintSummary */
-export function briefSummary(blueprint: WorkBlueprint): string {
-  if (!blueprint.constraints.length && !blueprint.premise.trim()) {
-    return "尚无作品方案";
-  }
-  const parts = [];
-  if (blueprint.premise.trim()) parts.push(blueprint.premise.trim());
-  if (blueprint.constraints.length) {
-    parts.push(blueprint.constraints.map((c) => c.description).join("；"));
-  }
-  return `作品方案：${parts.join("；")}`;
-}
-
-export function profileSummary(profile: WorkProfile): string {
-  return referencesSummary(profile);
 }
 
 export function productionPlanSummary(plan: WorkProductionPlan): string {
@@ -131,8 +112,8 @@ export function productionPlanSummary(plan: WorkProductionPlan): string {
   return lines.join("\n");
 }
 
-export function profileContext(profile: WorkProfile): string {
-  return referencesSummary(profile);
+export function profileContext(references: ReferenceItem[] | undefined): string {
+  return referencesSummary(references);
 }
 
 export { contentSpecSummary };

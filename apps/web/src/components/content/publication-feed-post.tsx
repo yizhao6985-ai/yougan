@@ -22,7 +22,7 @@ function DiscoverBadges({
   const badges = [
     formatLabel(publication.contentFormat),
     topicCategoryLabel(publication.topicCategory),
-    mediaTypeLabel(publication.mediaType),
+    mediaTypeLabel(publication.mediaTypes),
     publication.contentTopic,
   ].filter(Boolean);
 

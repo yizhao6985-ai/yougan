@@ -192,7 +192,7 @@ function RevisionRow({
             <span
               className={cn(
                 chatStreamBlock.headerMeta,
-                revision.phase === "draft" &&
+                revision.phase === "preview" &&
                   "text-primary",
               )}
             >

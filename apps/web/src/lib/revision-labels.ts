@@ -1,7 +1,7 @@
 import type { UserRevisionPhase } from "@/lib/types";
 
 export const REVISION_PHASE_LABELS: Record<UserRevisionPhase, string> = {
-  draft: "预览",
+  preview: "预览",
 };
 
 export function revisionPhaseLabel(phase: UserRevisionPhase): string {

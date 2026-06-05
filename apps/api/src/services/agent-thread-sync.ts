@@ -1,10 +1,9 @@
 import { Client } from "@langchain/langgraph-sdk";
-import type { WorkBlueprint, WorkDraft, WorkProfile } from "@yougan/domain";
+import type { WorkPreview, WorkProfile } from "@yougan/domain";
 
 import { env } from "../env.js";
 import { prisma } from "../db.js";
-import { parseDraft, parseProfile } from "./revisions.js";
-import { parseBlueprintJson } from "@yougan/domain";
+import { parsePreview, parseProfileJson } from "./revisions.js";
 
 let client: Client | null = null;
 
@@ -15,8 +14,7 @@ function getLangGraphClient() {
 
 export type MaterializedAgentFields = {
   profile?: WorkProfile;
-  blueprint?: WorkBlueprint;
-  draft?: WorkDraft | null;
+  preview?: WorkPreview | null;
 };
 
 function buildThreadValuesPatch(
@@ -24,8 +22,7 @@ function buildThreadValuesPatch(
 ): Record<string, unknown> {
   const values: Record<string, unknown> = {};
   if (fields.profile !== undefined) values.profile = fields.profile;
-  if (fields.blueprint !== undefined) values.blueprint = fields.blueprint;
-  if (fields.draft !== undefined) values.draft = fields.draft;
+  if (fields.preview !== undefined) values.preview = fields.preview;
   return values;
 }
 
@@ -77,18 +74,14 @@ export async function syncMaterializedStateToAgentThreads(
 
 export function materializedFieldsFromWorkUpdate(data: {
   profile?: unknown;
-  blueprint?: unknown;
-  draft?: unknown | null;
+  preview?: unknown | null;
 }): MaterializedAgentFields {
   const fields: MaterializedAgentFields = {};
   if (data.profile !== undefined) {
-    fields.profile = parseProfile(data.profile);
+    fields.profile = parseProfileJson(data.profile);
   }
-  if (data.blueprint !== undefined) {
-    fields.blueprint = parseBlueprintJson(data.blueprint);
-  }
-  if (data.draft !== undefined) {
-    fields.draft = data.draft === null ? null : parseDraft(data.draft);
+  if (data.preview !== undefined) {
+    fields.preview = data.preview === null ? null : parsePreview(data.preview);
   }
   return fields;
 }

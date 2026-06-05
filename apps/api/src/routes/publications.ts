@@ -42,6 +42,7 @@ const MetadataOverridesSchema = z.object({
   contentFormat: z.enum(formatIds as [string, ...string[]]).optional(),
   topicCategory: z.enum(topicIds as [string, ...string[]]).optional(),
   mediaType: z.enum(mediaIds as [string, ...string[]]).optional(),
+  mediaTypes: z.array(z.enum(mediaIds as [string, ...string[]])).optional(),
 });
 
 publicationsRouter.get("/feed", async (req, res) => {

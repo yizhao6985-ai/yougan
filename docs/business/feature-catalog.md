@@ -28,7 +28,7 @@
 | 四模式对话 | 灵感/大纲/创作/提问 | 已实现 | LangGraph 子图 + 任务队列 |
 | 侧栏直改状态 | 改 brief/大纲/profile/draft | 已实现 | `PATCH Work` + `agent-thread-sync`，见 `agent-turn-queue.md` |
 | 创作脉络侧栏 | 状态可视化 | 已实现 | 灵感、大纲、预览、参考、版本 |
-| 灵感可点击建议 | 回合内 AI 生成选项 | 已实现 | 主 graph `updateNextStepSuggestions`（开屏选题 + 灵感/大纲回合末下一步；提问/创作不出建议） |
+| 可点击建议 | 回合内 AI 生成选项 | 已实现 | `verifyTurn` 统一生成 `nextStepSuggestions`（开屏 7 条 / 对话流 4 条） |
 | 结构化灵感选项 | 点选即发送 | 已实现 | `inspirationChoices`（当轮有效） |
 | 创意度滑杆 | 控制 AI 新颖度 | 已实现 | `modelTemperature` 0.1–1.0 |
 | 流式对话 | 实时反馈 | 已实现 | LangGraph SDK `useStream` |
