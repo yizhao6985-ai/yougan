@@ -1,0 +1,43 @@
+import { tool } from "@langchain/core/tools";
+import { z } from "zod";
+
+import { appendBlueprintConstraint } from "@yougan/domain";
+import { parseActiveTurnKind, parseBlueprint } from "#agent/lib/parse-agent-state.js";
+import { getState } from "#agent/lib/tool-state.js";
+import { toolCommand } from "#agent/lib/tool-command.js";
+
+export const addBlueprintConstraintFromAsk = tool(
+  async ({ description }, config) => {
+    if (parseActiveTurnKind(getState()) !== "ask") {
+      return toolCommand(
+        config,
+        "add_blueprint_constraint_from_ask 仅在提问模式可用。",
+      );
+    }
+    const trimmed = description.trim();
+    if (!trimmed) return toolCommand(config, "描述不能为空。");
+
+    const blueprint = parseBlueprint(getState());
+    const next = appendBlueprintConstraint(blueprint, trimmed);
+    if (!next) {
+      return toolCommand(config, "该要求已存在于作品方案中。", { blueprint });
+    }
+
+    return toolCommand(
+      config,
+      `已将问答结论记入作品方案（共 ${next.constraints.length} 条要求）。`,
+      { blueprint: next },
+    );
+  },
+  {
+    name: "add_blueprint_constraint_from_ask",
+    description:
+      "客户明确要求将某条问答结论记入作品方案时调用。普通问答不要调用。",
+    schema: z.object({
+      description: z.string().describe("要记入方案的要求描述"),
+    }),
+  },
+);
+
+/** @deprecated */
+export const addBriefFromAsk = addBlueprintConstraintFromAsk;

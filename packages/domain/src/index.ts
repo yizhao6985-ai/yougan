@@ -11,14 +11,11 @@ export * from "./models/content/catalog.js";
 export * from "./models/discover/taxonomy.js";
 
 // —— 工具函数 ——
-export * from "./utils/work/brief.js";
-export * from "./utils/work/outline.js";
+export * from "./utils/work/blueprint.js";
 export * from "./utils/work/plan.js";
-export * from "./utils/work/brief-mutations.js";
-export * from "./utils/work/outline-mutations.js";
+export * from "./utils/work/blueprint-mutations.js";
 export * from "./utils/work/normalize-dto.js";
-export * from "./utils/brief-merge.js";
-export * from "./utils/outline-merge.js";
+export * from "./utils/blueprint-merge.js";
 export * from "./utils/revision.js";
 export * from "./utils/revision-snapshot.js";
 export * from "./utils/suggestions.js";

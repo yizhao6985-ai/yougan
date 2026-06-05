@@ -8,7 +8,7 @@ export const TurnQueueDecisionSchema = z.object({
     .min(1)
     .max(8)
     .describe(
-      "本轮按顺序执行的对话子图队列。例：记需求+改大纲 → inspiration, outline",
+      "本轮按顺序执行的对话子图队列。例：改方案+出稿 → blueprint, creation；改宾语是成稿 → creation；改宾语是方案 → blueprint",
     ),
   reason: z.string().describe("一句话说明队列拆分依据"),
   conversationTitle: z

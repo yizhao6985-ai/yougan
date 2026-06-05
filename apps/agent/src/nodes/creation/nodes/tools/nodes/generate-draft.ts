@@ -5,7 +5,6 @@ import { z } from "zod";
 import { createChatModel } from "#agent/llm/dashscope.js"
 import { env } from "#agent/env.js"
 import {
-  resolveContentSpec,
   type ContentFormatId,
   type MediaModalityId,
 } from "#agent/lib/content-spec.js";
@@ -15,12 +14,15 @@ import {
   streamStructuredOutput,
 } from "#agent/lib/structured-output.js";
 import {
-  getOutlineSummary,
+  getBlueprintPremise,
   getPlanSummary,
   hasOutlineContent,
+  isBlueprintActionable,
   isPlanReady,
   type WorkDraft,
-} from "#agent/schema.js";
+} from "@yougan/domain";
+import { blueprintToContentProfile } from "#agent/lib/blueprint/content-profile.js";
+import { blueprintSummary } from "#agent/prompt/context.js";
 import { buildFormatGenerationGuidance } from "../../llm-call/prompt-format.js";
 import {
   WorkDraftPayloadSchema,
@@ -28,14 +30,13 @@ import {
 } from "./schema.js";
 import {
   parseActiveTurnKind,
+  parseBlueprint,
   parseModelTemperature,
-  parseOutline,
   parseProductionPlan,
   parseProfile,
 } from "#agent/lib/parse-agent-state.js";
 import { getState } from "#agent/lib/tool-state.js"
 import { toolCommand } from "#agent/lib/tool-command.js"
-import { profileReady } from "./shared.js";
 
 export const generateDraft = tool(
   async (_input, config) => {
@@ -43,12 +44,13 @@ export const generateDraft = tool(
     if (parseActiveTurnKind(state) !== "creation") {
       return toolCommand(config, "generate_draft 仅在创作模式可用。");
     }
-    const profile = resolveContentSpec(parseProfile(state));
-    const outline = parseOutline(state);
+    const profile = parseProfile(state);
+    const blueprint = parseBlueprint(state);
+    const contentProfile = blueprintToContentProfile(blueprint);
     const plan = parseProductionPlan(state);
 
-    if (!hasOutlineContent(outline)) {
-      return toolCommand(config, "生成被阻止：尚无内容大纲条目。");
+    if (!hasOutlineContent(blueprint)) {
+      return toolCommand(config, "生成被阻止：尚无作品方案节拍。");
     }
     if (!plan.pending_tasks.length) {
       return toolCommand(
@@ -59,10 +61,10 @@ export const generateDraft = tool(
     if (!isPlanReady(plan)) {
       return toolCommand(config, "生成被阻止：创作计划尚未就绪。");
     }
-    if (!profileReady(profile)) {
+    if (!isBlueprintActionable(blueprint)) {
       return toolCommand(
         config,
-        "生成被阻止：请先通过 update_work_profile 确认至少 platform 与 content_topic。",
+        "生成被阻止：请先在作品方案中确认创作主题与内容节拍。",
       );
     }
 
@@ -77,31 +79,30 @@ export const generateDraft = tool(
     const industry = plan.industry_context ?? "";
 
     const formatGuidance = buildFormatGenerationGuidance(
-      profile.content_format as ContentFormatId | null,
-      profile.media_modality as MediaModalityId | null,
+      contentProfile.content_format as ContentFormatId | null,
+      contentProfile.media_modality as MediaModalityId | null,
     );
 
-    const prompt = `为 ${profile.platform} 生成发布文案（文案总监执行）。
+    const prompt = `生成创作成稿（文案总监执行）。
 
-内容大纲：${getOutlineSummary(outline) ?? "无"}
+作品方案：${getBlueprintPremise(blueprint) ?? blueprintSummary(blueprint)}
 创作计划摘要：${getPlanSummary(plan) ?? "无"}
 
 待执行任务（必须全部体现）：
 ${pending}
 
-主题：${profile.content_topic}
-体裁：${profile.content_format ?? "未指定"}
-媒介形式：${profile.media_modality ?? "未指定"}
-要点：${profile.content_points?.join(", ") || "无"}
-风格：${profile.style ?? "未指定"}；语气：${profile.tone ?? "未指定"}
-受众：${profile.audience ?? "未指定"}
+主题：${contentProfile.content_topic}
+体裁：${contentProfile.content_format ?? "未指定"}
+媒介形式：${contentProfile.media_modality ?? "未指定"}
+风格：${contentProfile.style ?? "未指定"}；语气：${contentProfile.tone ?? "未指定"}
+受众：${contentProfile.audience ?? "未指定"}
 行业背景：${industry || "无"}
 参考：${refSummaries || "无"}
 
 写作要求：
 ${formatGuidance}
 
-请生成完整发布文案，包含 title、body、hashtags、hook、notes 字段。`;
+请生成完整成稿，包含 title、body、hashtags、hook、notes 字段。`;
 
     let payload: WorkDraftPayload;
     try {
@@ -131,14 +132,14 @@ ${formatGuidance}
       }
     } catch {
       payload = {
-        title: profile.content_topic,
+        title: contentProfile.content_topic,
         body: "文案生成失败，请重试。",
         hashtags: [],
       };
     }
 
     const draft: WorkDraft = {
-      platform: profile.platform ?? "unknown",
+      platform: contentProfile.platform ?? "yougan",
       title: payload.title ?? null,
       body: payload.body,
       hashtags: payload.hashtags ?? [],

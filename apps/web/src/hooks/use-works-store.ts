@@ -11,22 +11,21 @@ import {
   useInvalidateWorksQueries,
   useUpdateWorkGroupMutation,
   useUpdateWorkMutation,
-  useWorkGroupsQuery,
   useWorksQuery,
+  useWorkGroupsQuery,
 } from "@/hooks/queries/works";
 import { queryKeys } from "@/hooks/queries/keys";
 import { normalizeWork } from "@/lib/normalize-work";
 import {
-  clearBrief,
-  deleteBriefRequirement as removeBriefRequirement,
-  updateBriefRequirement as replaceBriefRequirement,
-} from "@/lib/brief-merge";
-import {
-  clearOutline,
-  deleteOutlineSection as removeOutlineSection,
-  updateOutlineSection as replaceOutlineSection,
-} from "@/lib/outline-merge";
-import type { YouganValues, Work, WorkBrief, WorkOutline } from "@/lib/types";
+  clearBlueprintBeats,
+  clearBlueprintConstraints,
+  deleteBlueprintBeat,
+  deleteBlueprintConstraint,
+  mergeBlueprintForDisplay,
+  updateBlueprintBeat,
+  updateBlueprintConstraint,
+} from "@/lib/blueprint-merge";
+import type { YouganValues, Work, WorkBlueprint } from "@/lib/types";
 import { useAuthToken } from "@/store/auth";
 import { activeWorkIdAtom } from "@/store/studio";
 
@@ -128,8 +127,7 @@ export function useWorksStore() {
     (workId: string, values: YouganValues) => {
       const patch: Partial<Work> = {};
       if (values.profile !== undefined) patch.profile = values.profile;
-      if (values.outline !== undefined) patch.outline = values.outline;
-      if (values.brief !== undefined) patch.brief = values.brief;
+      if (values.blueprint !== undefined) patch.blueprint = values.blueprint;
       if (values.draft !== undefined) patch.draft = values.draft;
       if (!Object.keys(patch).length) return;
 
@@ -142,13 +140,15 @@ export function useWorksStore() {
     [queryClient],
   );
 
-  const patchBrief = useCallback(
-    (workId: string, brief: WorkBrief) => {
+  const patchBlueprint = useCallback(
+    (workId: string, blueprint: WorkBlueprint) => {
       patchWorksCache(queryClient, (works) =>
-        works.map((work) => (work.id === workId ? { ...work, brief } : work)),
+        works.map((work) =>
+          work.id === workId ? { ...work, blueprint } : work,
+        ),
       );
       void updateWorkMutation
-        .mutateAsync({ workId, patch: { brief } })
+        .mutateAsync({ workId, patch: { blueprint } })
         .catch(() => {
           void queryClient.invalidateQueries({ queryKey: queryKeys.works.list });
         });
@@ -156,88 +156,78 @@ export function useWorksStore() {
     [queryClient, updateWorkMutation],
   );
 
-  const patchOutline = useCallback(
-    (workId: string, outline: WorkOutline) => {
-      patchWorksCache(queryClient, (works) =>
-        works.map((work) => (work.id === workId ? { ...work, outline } : work)),
-      );
-      void updateWorkMutation
-        .mutateAsync({ workId, patch: { outline } })
-        .catch(() => {
-          void queryClient.invalidateQueries({ queryKey: queryKeys.works.list });
-        });
-    },
-    [queryClient, updateWorkMutation],
-  );
-
-  const updateBriefRequirement = useCallback(
-    (workId: string, requirementId: string, description: string) => {
+  const updateBlueprintConstraintItem = useCallback(
+    (workId: string, constraintId: string, description: string) => {
       const current = queryClient
         .getQueryData<Work[]>(queryKeys.works.list)
         ?.find((work) => work.id === workId);
       if (!current) return;
-      const next = replaceBriefRequirement(
-        current.brief,
-        requirementId,
+      const next = updateBlueprintConstraint(
+        current.blueprint,
+        constraintId,
         description,
       );
-      patchBrief(workId, next);
+      patchBlueprint(workId, next);
     },
-    [patchBrief, queryClient],
+    [patchBlueprint, queryClient],
   );
 
-  const deleteBriefRequirement = useCallback(
-    (workId: string, requirementId: string) => {
+  const deleteBlueprintConstraintItem = useCallback(
+    (workId: string, constraintId: string) => {
       const current = queryClient
         .getQueryData<Work[]>(queryKeys.works.list)
         ?.find((work) => work.id === workId);
       if (!current) return;
-      const next = removeBriefRequirement(current.brief, requirementId);
-      patchBrief(workId, next);
+      const next = deleteBlueprintConstraint(current.blueprint, constraintId);
+      patchBlueprint(workId, next);
     },
-    [patchBrief, queryClient],
+    [patchBlueprint, queryClient],
   );
 
-  const clearWorkBrief = useCallback(
+  const clearWorkBlueprintConstraints = useCallback(
     (workId: string) => {
-      patchBrief(workId, clearBrief(undefined));
-    },
-    [patchBrief],
-  );
-
-  const updateOutlineSection = useCallback(
-    (workId: string, sectionId: string, description: string) => {
       const current = queryClient
         .getQueryData<Work[]>(queryKeys.works.list)
         ?.find((work) => work.id === workId);
       if (!current) return;
-      const next = replaceOutlineSection(
-        current.outline,
-        sectionId,
-        description,
-      );
-      patchOutline(workId, next);
+      patchBlueprint(workId, clearBlueprintConstraints(current.blueprint));
     },
-    [patchOutline, queryClient],
+    [patchBlueprint, queryClient],
   );
 
-  const deleteOutlineSection = useCallback(
-    (workId: string, sectionId: string) => {
+  const updateBlueprintBeatItem = useCallback(
+    (workId: string, beatId: string, description: string) => {
       const current = queryClient
         .getQueryData<Work[]>(queryKeys.works.list)
         ?.find((work) => work.id === workId);
       if (!current) return;
-      const next = removeOutlineSection(current.outline, sectionId);
-      patchOutline(workId, next);
+      const next = updateBlueprintBeat(current.blueprint, beatId, description);
+      patchBlueprint(workId, next);
     },
-    [patchOutline, queryClient],
+    [patchBlueprint, queryClient],
   );
 
-  const clearWorkOutline = useCallback(
+  const deleteBlueprintBeatItem = useCallback(
+    (workId: string, beatId: string) => {
+      const current = queryClient
+        .getQueryData<Work[]>(queryKeys.works.list)
+        ?.find((work) => work.id === workId);
+      if (!current) return;
+      const next = deleteBlueprintBeat(current.blueprint, beatId);
+      patchBlueprint(workId, next);
+    },
+    [patchBlueprint, queryClient],
+  );
+
+  const clearWorkBlueprintBeats = useCallback(
     (workId: string) => {
-      patchOutline(workId, clearOutline(undefined));
+      const current = queryClient
+        .getQueryData<Work[]>(queryKeys.works.list)
+        ?.find((work) => work.id === workId);
+      if (!current) return;
+      patchBlueprint(workId, clearBlueprintBeats(current.blueprint));
     },
-    [patchOutline],
+    [patchBlueprint, queryClient],
   );
 
   const renameWork = useCallback(
@@ -273,14 +263,15 @@ export function useWorksStore() {
     deleteWork,
     selectWork,
     applyStreamValuesToCache,
-    updateBriefRequirement,
-    deleteBriefRequirement,
-    clearWorkBrief,
-    updateOutlineSection,
-    deleteOutlineSection,
-    clearWorkOutline,
+    updateBlueprintConstraint: updateBlueprintConstraintItem,
+    deleteBlueprintConstraint: deleteBlueprintConstraintItem,
+    clearWorkBlueprintConstraints,
+    updateBlueprintBeat: updateBlueprintBeatItem,
+    deleteBlueprintBeat: deleteBlueprintBeatItem,
+    clearWorkBlueprintBeats,
     renameWork,
     moveWorkToGroup,
+    mergeBlueprintForDisplay,
   };
 }
 

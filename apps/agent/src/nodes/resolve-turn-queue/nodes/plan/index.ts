@@ -19,7 +19,7 @@ import type { AgentStateType } from "#agent/state.js";
 import { buildTurnQueuePrompt } from "../../prompt.js";
 import { TurnQueueDecisionSchema } from "../../schema.js";
 
-const DEFAULT_QUEUE: TurnQueueKind[] = ["inspiration"];
+const DEFAULT_QUEUE: TurnQueueKind[] = ["blueprint"];
 
 export type PlanTurnQueueResult = {
   turnQueue: TurnQueueKind[];

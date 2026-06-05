@@ -122,10 +122,9 @@ export function YouganChat() {
     );
   }
 
-  const brief = stream.values?.brief ?? activeWork.brief;
-  const outline = stream.values?.outline ?? activeWork.outline;
-  const briefCount = brief.requirements?.length ?? 0;
-  const outlineCount = outline.sections?.length ?? 0;
+  const blueprint = stream.values?.blueprint ?? activeWork.blueprint;
+  const beatCount = blueprint.beats?.length ?? 0;
+  const constraintCount = blueprint.constraints?.length ?? 0;
 
   const statusHint = (() => {
     switch (activeKind) {
@@ -133,15 +132,11 @@ export function YouganChat() {
         return CHAT_COPY.status.creationExecuting;
       case "ask":
         return CHAT_COPY.status.askExploring;
-      case "outline":
-        return outlineCount > 0
-          ? CHAT_COPY.status.outlineEditing(outlineCount)
-          : CHAT_COPY.status.outlineGenerating;
-      case "inspiration":
+      case "blueprint":
       default:
-        return briefCount > 0
-          ? CHAT_COPY.status.inspirationConfirmed(briefCount)
-          : CHAT_COPY.status.inspirationExploring;
+        return beatCount > 0 || constraintCount > 0
+          ? CHAT_COPY.status.blueprintEditing(beatCount, constraintCount)
+          : CHAT_COPY.status.blueprintExploring;
     }
   })();
 

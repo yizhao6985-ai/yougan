@@ -132,12 +132,10 @@ model Work {
   /// 若由另存为新作品创建，记录来源
   sourceWorkId       String?
   sourceRevisionId   String?
-  /// 物化视图：跨模式 profile
+  /// 物化视图：跨模式 profile（参考素材）
   profile            Json                @default("{}")
-  /// 物化视图：已确认 brief
-  brief              Json                @default("{}")
-  /// 物化视图：作品大纲（用户可见）
-  outline            Json                @default("{}")
+  /// 物化视图：作品方案（用户可见）
+  blueprint          Json                @default("{}")
   /// 物化视图：内部创作计划（不对用户展示）
   plan               Json                @default("{}")
   /// 物化视图：最新成稿

@@ -8,11 +8,11 @@
 export const BRAND = {
   full: "有感 · Yougan",
   en: "Yougan",
-  taglineLanding: "AI 自媒体创作助手",
+  taglineLanding: "AI 创作助手",
   taglineApp: "灵感 · 创作 · 提问",
   metaDescription:
-    "有感 Yougan — AI 自媒体创作助手。帮你找灵感、理清选题，AI 团队按计划精良制作图文内容，支持小红书、公众号等平台。",
-  documentTitle: "有感 · Yougan — AI 自媒体创作助手",
+    "有感 Yougan — AI 创作助手。帮你找灵感、理清选题，AI 团队按计划精良制作内容，从方案到成稿全程可确认、可回溯。",
+  documentTitle: "有感 · Yougan — AI 创作助手",
 } as const;
 
 export const THEME = {
@@ -74,10 +74,10 @@ export const ABOUT_PAGE = {
   eyebrow: "关于有感",
   title: "找灵感，让 AI 团队帮你精做内容",
   subtitle:
-    "很多工具问一句就出一篇，选题偏了就要整篇重写。有感先帮你找灵感、对齐平台和写法，再由 AI 团队制定计划、精良制作成稿。每一步可确认、可回溯，少返工。",
+    "很多工具问一句就出一篇，选题偏了就要整篇重写。有感先帮你找灵感、对齐写法，再由 AI 团队制定计划、精良制作成稿。每一步可确认、可回溯，少返工。",
   missionTitle: "我们在做什么",
   missionBody:
-    "有感（Yougan）是一款面向自媒体创作者的 AI 创作助手。好内容不是一次 Prompt 碰运气——先找灵感、再按计划精做、成稿可反复改。产品以 Web 创作台为核心，配合「发现灵感」社区与多平台发布，帮你稳定周更、少折腾。",
+    "有感（Yougan）是一款面向创作者的 AI 创作助手。好内容不是一次 Prompt 碰运气——先找灵感、再按计划精做、成稿可反复改。产品以 Web 创作台为核心，配合「发现灵感」社区与可选的外部发布集成，帮你稳定产出、少折腾。",
   valuesTitle: "我们坚持的原则",
   values: [
     {
@@ -90,7 +90,7 @@ export const ABOUT_PAGE = {
     },
     {
       title: "为真实工作流设计",
-      body: "面向小红书、公众号等日常更新；支持作品分组、云端同步，以及图文、音视频等多形态制作任务。",
+      body: "面向日常写作与内容更新；支持作品分组、云端同步，以及图文、音视频等多形态制作任务。",
     },
     {
       title: "坦诚的产品边界",
@@ -99,7 +99,7 @@ export const ABOUT_PAGE = {
   ] as const,
   productTitle: "我们的产品",
   productBody:
-    "创作台围绕一件作品的一段持续对话；系统会按消息自动推进灵感、大纲、创作与提问等环节，侧栏同步灵感与成稿，制作计划在对话中以任务列表展示。内容可发布到「发现灵感」供他人参考，Pro 会员可绑定主流平台账号，少一道复制粘贴。",
+    "创作台围绕一件作品的一段持续对话；系统会按消息自动推进方案、创作与提问等环节，侧栏同步方案与成稿，制作计划在对话中以任务列表展示。内容可发布到「发现灵感」供他人参考，需要时也可绑定外部账号直接分发。",
   productLink: "了解产品能力",
   contactTitle: "联系我们",
   contactBody:
@@ -112,9 +112,9 @@ export const ABOUT_PAGE = {
 export const HOME = {
   eyebrow: BRAND.en,
   title: "有感",
-  titleSuffix: "AI 自媒体创作助手",
+  titleSuffix: "AI 创作助手",
   subtitle:
-    "帮你找灵感、理清平台和选题；AI 团队制定制作计划，文案/设计/音视频按计划精良出稿。适合小红书、公众号等日常更新。",
+    "帮你找灵感、理清选题与写法；AI 团队制定制作计划，文案/设计/音视频按计划精良出稿。专注创作本身，从方案到成稿一路可改。",
   ctaStudio: "开始创作",
   ctaFeatures: "了解产品能力",
   capabilitiesTitle: "四个阶段，一件作品走完全流程",
@@ -127,7 +127,7 @@ export const FEATURES_PAGE = {
   title: "从找灵感到 AI 团队出稿",
   subtitle:
     "很多 AI 工具问一句就出一篇，选题偏了就要整篇重写。有感先帮你找灵感、对齐写法，再由 AI 团队定计划、精良制作；中间随时提问、改计划。系统会根据对话意图自动推进各阶段。",
-  platformsIntro: "支持这些平台的内容形态",
+  platformsIntro: "常见创作形态",
   workflowTitle: "推荐使用方式",
   workflowSubtitle: "从新建作品到可以发布，一般这样走（不必手动切换阶段）",
   modesTitle: "创作流程里的四个阶段",
@@ -326,12 +326,11 @@ export const CHAT_COPY = {
   /** 开屏空态：单行标题（选题气泡上方不再另起提示） */
   emptyTitle: "从一句话开始，选选题或直接输入",
   status: {
-    inspirationExploring: "正在帮你找灵感、理清选题和写法",
-    inspirationConfirmed: (n: number) => `已记录 ${n} 条灵感`,
-    outlineGenerating: "正在根据 brief 生成内容大纲…",
-    outlineEditing: (n: number) => `大纲 ${n} 条，可在右侧随时修改`,
+    blueprintExploring: "正在帮你整理作品方案",
+    blueprintEditing: (beats: number, constraints: number) =>
+      `方案 ${beats} 节 · ${constraints} 条要求，可在右侧随时修改`,
     askExploring: "有问题随时问：优化、学习、行业背景都可以",
-    creationExecuting: "AI 团队正在按大纲精良制作",
+    creationExecuting: "AI 团队正在按方案精良制作",
   },
   replying: "正在回复…",
   attachmentDrawer: {
@@ -349,13 +348,12 @@ export const CHAT_COPY = {
 /** 创作台右侧栏 */
 export const CREATIVE_CONTEXT_PANEL = {
   title: "作品面板",
-  hint: "灵感、大纲、成稿预览、参考素材与版本记录集中在这里",
+  hint: "作品方案、作品预览、参考素材与版本记录集中在这里",
   expand: "展开作品面板",
   collapse: "收起作品面板",
   tabs: {
-    inspiration: "灵感",
-    outline: "大纲",
-    preview: "内容预览",
+    blueprint: "作品方案",
+    preview: "作品预览",
     references: "参考素材",
     history: "版本",
   },
@@ -368,13 +366,13 @@ export const WORK_HISTORY_PANEL = {
   loading: "加载版本记录…",
   duplicateTitle: "另存为新作品",
   duplicateHint:
-    "适合换平台、换选题：从当前进度复制一件新作品，不会影响这件作品。",
+    "适合换选题、换写法：从当前进度复制一件新作品，不会影响这件作品。",
   duplicateAction: "另存为新作品",
   duplicating: "正在创建…",
   duplicateFromHere: "从此版本复制",
   timelineTitle: "版本记录",
-  timelineHint: "创作阶段生成内容预览后会记一条；可回到任意一版继续编辑。",
-  empty: "还没有版本记录。创作阶段产出内容预览后会出现。",
+  timelineHint: "创作阶段生成作品预览后会记一条；可回到任意一版继续编辑。",
+  empty: "还没有版本记录。创作阶段产出作品预览后会出现。",
   headBadge: "当前",
   restore: "回到这一版",
   restoreTitle: "回到这一版？",
@@ -385,29 +383,22 @@ export const WORK_HISTORY_PANEL = {
   cancel: "取消",
 } as const;
 
-/** 作品面板 · 灵感 */
-export const CONTENT_SETTINGS_PANEL = {
-  title: "灵感",
-  hint: "灵感阶段确认的需求会写入 brief；可补充、修改或删除",
-  confirmedLabel: "brief 需求",
-  clearAll: "清空",
-  empty: "还没有 brief 需求。在对话里确认方向后，Agent 会通过工具写入这里。",
+/** 作品面板 · 作品方案 */
+export const BLUEPRINT_PANEL = {
+  title: "作品方案",
+  hint: "创作主题、体裁形式、表达设定、写作要求与内容节拍；对话中确认后 Agent 会写入这里",
+  premiseLabel: "定位",
+  constraintsLabel: "写作要求",
+  beatsLabel: "内容节拍",
+  clearConstraints: "清空要求",
+  clearBeats: "清空节拍",
+  empty: "还没有作品方案。在对话里讨论方向后，Agent 会通过工具写入这里。",
 } as const;
 
-/** 作品面板 · 大纲 */
-export const OUTLINE_PANEL = {
-  title: "大纲",
-  hint: "大纲阶段维护内容结构；可随时在对话或侧栏修改",
-  sectionsLabel: "大纲条目",
-  completedLabel: (n: number) => `共 ${n} 条`,
-  clearAll: "清空",
-  empty: "进入大纲阶段后，会根据 brief 自动生成；也可在对话里补充、修改。",
-} as const;
-
-/** 对话流 · 大纲进度（已移除，大纲仅在侧栏展示） */
+/** 对话流 · 大纲进度（已移除，方案仅在侧栏展示） */
 
 export const PREVIEW_PANEL = {
-  title: "内容预览",
+  title: "作品预览",
   hint: "AI 团队交付的标题和正文显示在这里",
   empty: "AI 团队生成文案后，会显示在这里。",
 } as const;
@@ -430,9 +421,9 @@ export const REFERENCE_PANEL = {
 } as const;
 
 export const INTEGRATIONS = {
-  title: "平台集成发布",
+  title: "外部发布集成",
   intro:
-    "绑定账号后，在有感生成的内容可直接发到小红书、公众号等平台，少一道复制粘贴。",
+    "绑定账号后，在有感生成的内容可直接发到已连接的外部渠道，少一道复制粘贴。",
   oauthSuccess: (label: string) =>
     `${label} 已连接，内容可从有感直接发布。`,
   oauthDocsLink: "查看 OAuth 配置文档",
@@ -459,7 +450,7 @@ export const PUBLISH = {
   fieldFormat: "内容体裁",
   fieldTopic: "主题类别",
   fieldMedia: "媒介形态",
-  fieldPlatform: "目标平台",
+  fieldPlatform: "发布渠道（可选）",
   cancel: "取消",
   confirmPublish: "确认发布",
   goPublish: "去创作台写内容",

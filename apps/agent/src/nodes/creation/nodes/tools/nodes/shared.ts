@@ -8,8 +8,7 @@ export const DEPARTMENT_LABELS: Record<ProductionDepartment, string> = {
 };
 
 export function profileReady(profile: {
-  platform?: string | null;
   content_topic?: string | null;
 }) {
-  return Boolean(profile.platform && profile.content_topic);
+  return Boolean(profile.content_topic?.trim());
 }

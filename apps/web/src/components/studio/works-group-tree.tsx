@@ -20,8 +20,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import type { Work } from "@/lib/types";
 import { organizeWorksByGroup } from "@/lib/works-organize";
 import { STUDIO } from "@/lib/site-copy";
+import { workSubtitle } from "@/lib/work-display";
 import { cn } from "@/lib/utils";
 import { useYouganStreamContext } from "@/components/studio/yougan-stream-provider";
 import { WorkSidebarItem } from "@/components/studio/work-sidebar-item";
@@ -42,7 +44,7 @@ function WorkRow({
   onDelete,
   onRename,
 }: {
-  work: { id: string; title: string; profile: { platform?: string | null } };
+  work: { id: string; title: string; blueprint: Work["blueprint"] };
   isActive: boolean;
   mode: WorksGroupTreeProps["mode"];
   onSelect: () => void;
@@ -68,9 +70,9 @@ function WorkRow({
             <span className="block truncate text-sm font-medium leading-5 text-foreground">
               {work.title}
             </span>
-            {work.profile.platform ? (
+            {workSubtitle(work) ? (
               <span className="mt-0.5 block truncate text-xs leading-4 text-muted-foreground">
-                {work.profile.platform}
+                {workSubtitle(work)}
               </span>
             ) : null}
           </span>
@@ -116,9 +118,9 @@ function WorkRow({
         <span className="block truncate font-medium leading-5 text-foreground/90">
           {work.title}
         </span>
-        {work.profile.platform ? (
+        {workSubtitle(work) ? (
           <span className="mt-0.5 block truncate text-xs leading-4 text-muted-foreground">
-            {work.profile.platform}
+            {workSubtitle(work)}
           </span>
         ) : null}
       </button>

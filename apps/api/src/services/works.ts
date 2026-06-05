@@ -1,9 +1,10 @@
 import { Prisma, type Work } from "../db.js";
 import {
-  EMPTY_WORK_BRIEF,
-  EMPTY_WORK_OUTLINE,
+  EMPTY_WORK_BLUEPRINT,
   EMPTY_WORK_PRODUCTION_PLAN,
   EMPTY_WORK_PROFILE,
+  normalizeWorkDto,
+  resolveBlueprintFromWork,
 } from "@yougan/domain";
 
 import { prisma } from "../db.js";
@@ -16,9 +17,7 @@ import {
 } from "./work-revisions.js";
 import {
   materializeWorkColumns,
-  parseBrief,
   parseDraft,
-  parseOutline,
   parsePlan,
   parseProfile,
 } from "./revisions.js";
@@ -29,13 +28,15 @@ import {
 } from "./agent-thread-sync.js";
 
 function toWorkDTO(work: Work): WorkDTO {
-  return {
+  return normalizeWorkDto({
     id: work.id,
     title: work.title,
     groupId: work.groupId,
     profile: parseProfile(work.profile),
-    brief: parseBrief(work.brief),
-    outline: parseOutline(work.outline),
+    blueprint: resolveBlueprintFromWork({
+      blueprint: work.blueprint,
+      profile: parseProfile(work.profile),
+    }),
     plan: parsePlan(work.plan),
     draft: parseDraft(work.draft),
     headRevisionId: work.headRevisionId,
@@ -43,7 +44,7 @@ function toWorkDTO(work: Work): WorkDTO {
     sourceRevisionId: work.sourceRevisionId,
     createdAt: work.createdAt.toISOString(),
     updatedAt: work.updatedAt.toISOString(),
-  };
+  }) as WorkDTO;
 }
 
 export async function listWorks(userId: string) {
@@ -73,8 +74,7 @@ export async function createWork(
         groupId: groupId ?? null,
         title: title?.trim() || "未命名作品",
         profile: EMPTY_WORK_PROFILE as unknown as Prisma.InputJsonValue,
-        brief: EMPTY_WORK_BRIEF as unknown as Prisma.InputJsonValue,
-        outline: EMPTY_WORK_OUTLINE as unknown as Prisma.InputJsonValue,
+        blueprint: EMPTY_WORK_BLUEPRINT as unknown as Prisma.InputJsonValue,
         plan: EMPTY_WORK_PRODUCTION_PLAN as unknown as Prisma.InputJsonValue,
       },
     });
@@ -122,9 +122,8 @@ export async function updateWork(
     title: string;
     groupId: string | null;
     profile: unknown;
-    outline: unknown;
+    blueprint: unknown;
     plan: unknown;
-    brief: unknown;
     draft: unknown | null;
   }>,
   options?: { conversationId?: string },
@@ -150,14 +149,11 @@ export async function updateWork(
   if (data.profile !== undefined) {
     updateData.profile = data.profile as Prisma.InputJsonValue;
   }
-  if (data.outline !== undefined) {
-    updateData.outline = data.outline as Prisma.InputJsonValue;
+  if (data.blueprint !== undefined) {
+    updateData.blueprint = data.blueprint as Prisma.InputJsonValue;
   }
   if (data.plan !== undefined) {
     updateData.plan = data.plan as Prisma.InputJsonValue;
-  }
-  if (data.brief !== undefined) {
-    updateData.brief = data.brief as Prisma.InputJsonValue;
   }
   if (data.draft !== undefined) {
     updateData.draft =
@@ -176,8 +172,7 @@ export async function updateWork(
   if (hasMaterializedAgentFields(agentFields)) {
     const syncFields: typeof agentFields = {};
     if (agentFields.profile !== undefined) syncFields.profile = dto.profile;
-    if (agentFields.brief !== undefined) syncFields.brief = dto.brief;
-    if (agentFields.outline !== undefined) syncFields.outline = dto.outline;
+    if (agentFields.blueprint !== undefined) syncFields.blueprint = dto.blueprint;
     if (agentFields.draft !== undefined) syncFields.draft = dto.draft;
     await syncMaterializedStateToAgentThreads(workId, syncFields, {
       conversationId: options?.conversationId,
@@ -224,8 +219,10 @@ export async function getAgentContext(
     conversationId: resolvedConversationId,
     headRevisionId: work.headRevisionId,
     profile: parseProfile(work.profile),
-    brief: parseBrief(work.brief),
-    outline: parseOutline(work.outline),
+    blueprint: resolveBlueprintFromWork({
+      blueprint: work.blueprint,
+      profile: parseProfile(work.profile),
+    }),
     plan: parsePlan(work.plan),
     draft: parseDraft(work.draft),
     threadId,

@@ -1,14 +1,10 @@
 import { Client } from "@langchain/langgraph-sdk";
-import type { WorkBrief, WorkDraft, WorkOutline, WorkProfile } from "@yougan/domain";
+import type { WorkBlueprint, WorkDraft, WorkProfile } from "@yougan/domain";
 
 import { env } from "../env.js";
 import { prisma } from "../db.js";
-import {
-  parseBrief,
-  parseDraft,
-  parseOutline,
-  parseProfile,
-} from "./revisions.js";
+import { parseDraft, parseProfile } from "./revisions.js";
+import { parseBlueprintJson } from "@yougan/domain";
 
 let client: Client | null = null;
 
@@ -19,8 +15,7 @@ function getLangGraphClient() {
 
 export type MaterializedAgentFields = {
   profile?: WorkProfile;
-  brief?: WorkBrief;
-  outline?: WorkOutline;
+  blueprint?: WorkBlueprint;
   draft?: WorkDraft | null;
 };
 
@@ -29,8 +24,7 @@ function buildThreadValuesPatch(
 ): Record<string, unknown> {
   const values: Record<string, unknown> = {};
   if (fields.profile !== undefined) values.profile = fields.profile;
-  if (fields.brief !== undefined) values.brief = fields.brief;
-  if (fields.outline !== undefined) values.outline = fields.outline;
+  if (fields.blueprint !== undefined) values.blueprint = fields.blueprint;
   if (fields.draft !== undefined) values.draft = fields.draft;
   return values;
 }
@@ -83,19 +77,15 @@ export async function syncMaterializedStateToAgentThreads(
 
 export function materializedFieldsFromWorkUpdate(data: {
   profile?: unknown;
-  brief?: unknown;
-  outline?: unknown;
+  blueprint?: unknown;
   draft?: unknown | null;
 }): MaterializedAgentFields {
   const fields: MaterializedAgentFields = {};
   if (data.profile !== undefined) {
     fields.profile = parseProfile(data.profile);
   }
-  if (data.brief !== undefined) {
-    fields.brief = parseBrief(data.brief);
-  }
-  if (data.outline !== undefined) {
-    fields.outline = parseOutline(data.outline);
+  if (data.blueprint !== undefined) {
+    fields.blueprint = parseBlueprintJson(data.blueprint);
   }
   if (data.draft !== undefined) {
     fields.draft = data.draft === null ? null : parseDraft(data.draft);

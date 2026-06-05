@@ -11,12 +11,11 @@ import {
   detectRevisionKind,
   emptySnapshot,
   materializeWorkColumns,
-  parseBrief,
   parseDraft,
-  parseOutline,
   parsePlan,
   parseProfile,
   parseSnapshot,
+  resolveBlueprintFromWork,
   revisionSummary,
   snapshotsEqual,
   snapshotFromAgentValues,
@@ -24,15 +23,17 @@ import {
 
 function snapshotFromWorkColumns(work: {
   profile: unknown;
-  brief: unknown;
-  outline: unknown;
+  blueprint: unknown;
   plan: unknown;
   draft: unknown;
 }): WorkRevisionSnapshot {
+  const profile = parseProfile(work.profile);
   return {
-    profile: parseProfile(work.profile),
-    brief: parseBrief(work.brief),
-    outline: parseOutline(work.outline),
+    profile,
+    blueprint: resolveBlueprintFromWork({
+      blueprint: work.blueprint,
+      profile,
+    }),
     plan: parsePlan(work.plan),
     draft: parseDraft(work.draft),
   };
@@ -298,8 +299,7 @@ export async function duplicateWorkFromRevision(
         sourceWorkId,
         sourceRevisionId,
         profile: columns.profile as object,
-        brief: columns.brief as object,
-        outline: columns.outline as object,
+        blueprint: columns.blueprint as object,
         plan: columns.plan as object,
         draft: columns.draft ?? undefined,
       },

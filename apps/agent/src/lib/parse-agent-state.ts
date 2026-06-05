@@ -4,31 +4,25 @@
 import { env } from "#agent/env.js";
 import type { AgentStateType } from "#agent/state.js";
 import {
-  EMPTY_WORK_BRIEF,
-  EMPTY_WORK_OUTLINE,
+  EMPTY_WORK_BLUEPRINT,
   EMPTY_WORK_PRODUCTION_PLAN,
   EMPTY_WORK_PROFILE,
   type TurnQueueKind,
-  type WorkBrief,
-  type WorkOutline,
+  type WorkBlueprint,
   type WorkProductionPlan,
   type WorkProfile,
-} from "#agent/schema.js";
+} from "@yougan/domain";
 
 export function parseProfile(state: AgentStateType): WorkProfile {
   return state.profile ?? EMPTY_WORK_PROFILE;
 }
 
-export function parseOutline(state: AgentStateType): WorkOutline {
-  return state.outline ?? EMPTY_WORK_OUTLINE;
+export function parseBlueprint(state: AgentStateType): WorkBlueprint {
+  return state.blueprint ?? EMPTY_WORK_BLUEPRINT;
 }
 
 export function parseProductionPlan(state: AgentStateType): WorkProductionPlan {
   return state.plan ?? EMPTY_WORK_PRODUCTION_PLAN;
-}
-
-export function parseBrief(state: AgentStateType): WorkBrief {
-  return state.brief ?? EMPTY_WORK_BRIEF;
 }
 
 export function parseTurnQueue(state: AgentStateType): TurnQueueKind[] {
@@ -52,3 +46,8 @@ export function parseModelTemperature(state: AgentStateType): number {
   }
   return Math.min(1, Math.max(0.1, Math.round(value * 10) / 10));
 }
+
+/** @deprecated */
+export const parseBrief = parseBlueprint;
+/** @deprecated */
+export const parseOutline = parseBlueprint;

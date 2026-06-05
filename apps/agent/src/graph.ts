@@ -8,9 +8,8 @@ import * as routeByEntry from "./conditional-edges/route-by-entry.js";
 import * as routeAfterTurnQueue from "./conditional-edges/route-after-turn-queue.js";
 import * as routeByTurnQueue from "./conditional-edges/route-by-turn-queue.js";
 import { askGraph } from "./nodes/ask/graph.js";
+import { blueprintGraph } from "./nodes/blueprint/graph.js";
 import { creationGraph } from "./nodes/creation/graph.js";
-import { inspirationGraph } from "./nodes/inspiration/graph.js";
-import { outlineGraph } from "./nodes/outline/graph.js";
 import { resolveTurnQueueNode } from "./nodes/resolve-turn-queue/index.js";
 import { advanceTurnQueueNode } from "./nodes/turn-queue/advance.js";
 import { dispatchTurnQueueNode } from "./nodes/turn-queue/dispatch.js";
@@ -22,8 +21,7 @@ const workflow = new StateGraph(AgentState)
   .addNode("resolveTurnQueue", resolveTurnQueueNode)
   .addNode("dispatchTurnQueue", dispatchTurnQueueNode)
   .addNode("advanceTurnQueue", advanceTurnQueueNode)
-  .addNode("inspirationGraph", inspirationGraph)
-  .addNode("outlineGraph", outlineGraph)
+  .addNode("blueprintGraph", blueprintGraph)
   .addNode("creationGraph", creationGraph)
   .addNode("askGraph", askGraph)
   .addConditionalEdges(START, routeByEntry.routeByEntry, routeByEntry.paths)
@@ -33,8 +31,7 @@ const workflow = new StateGraph(AgentState)
     routeByTurnQueue.routeByTurnQueue,
     routeByTurnQueue.paths,
   )
-  .addEdge("inspirationGraph", "advanceTurnQueue")
-  .addEdge("outlineGraph", "advanceTurnQueue")
+  .addEdge("blueprintGraph", "advanceTurnQueue")
   .addEdge("creationGraph", "advanceTurnQueue")
   .addEdge("askGraph", "advanceTurnQueue")
   .addConditionalEdges(

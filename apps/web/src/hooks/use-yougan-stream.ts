@@ -8,7 +8,7 @@ import { buildHumanMessageContent } from "@/lib/build-human-message-content";
 import { applyGraphUpdatesToValues } from "@/lib/message-utils";
 import { YOUGAN_ASSISTANT_ID } from "@/lib/yougan-chat-api";
 import { LANGGRAPH_API_URL } from "@/lib/env";
-import type { YouganValues, Work, WorkConversation } from "@/lib/types";
+import type { YouganValues, YouganSubmitInput, Work, WorkConversation } from "@/lib/types";
 import { useAuthToken } from "@/store/auth";
 
 /** LangGraph run 的 streamMode：values（每步全量 state）。节点内 token 增量走 updates，由 onUpdateEvent 合并。 */
@@ -27,16 +27,15 @@ function buildStreamSubmitInput(
   conversation: WorkConversation,
   modelTemperature: number,
   messages?: Message[],
-): YouganValues & { messages?: Message[] } {
+): YouganSubmitInput & { messages?: Message[] } {
   return {
     ...(messages ? { messages } : {}),
     workId: work.id,
     workTitle: work.title,
     conversationTitle: conversation.title,
     profile: work.profile,
-    outline: work.outline,
+    blueprint: work.blueprint,
     plan: work.plan,
-    brief: work.brief,
     openingNextStepSuggestions: null,
     turnNextStepSuggestions: null,
     draft: work.draft,

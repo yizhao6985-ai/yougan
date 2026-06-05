@@ -5,7 +5,7 @@ import { HumanMessage } from "@langchain/core/messages";
 
 import { createStructuredModel } from "#agent/llm/dashscope.js";
 import { invokeStructuredOutput } from "#agent/lib/structured-output.js";
-import { parseBrief, parseProfile } from "#agent/lib/parse-agent-state.js";
+import { parseBlueprint, parseProfile } from "#agent/lib/parse-agent-state.js";
 import { newBriefSuggestion, type BriefSuggestions } from "#agent/schema.js";
 import type { AgentStateType } from "#agent/state.js";
 import { buildOpeningTopicSuggestionsPrompt } from "./prompt.js";
@@ -14,12 +14,7 @@ import { sanitizeNextStepSuggestions } from "../shared/sanitize-suggestions.js";
 
 const OPENING_HINT = "";
 
-function platformClause(platform: string | undefined): string {
-  const p = platform?.trim();
-  return p ? `在${p}上` : "";
-}
-
-function audienceClause(audience: string | undefined): string {
+function audienceClause(audience: string | null | undefined): string {
   const a = audience?.trim();
   return a ? `，主要面向${a}` : "";
 }
@@ -27,10 +22,8 @@ function audienceClause(audience: string | undefined): string {
 function fallbackOpeningTopicSuggestions(
   state: AgentStateType,
 ): BriefSuggestions {
-  const profile = parseProfile(state);
   const topic = state.workTitle?.trim() || "这个主题";
-  const onPlatform = platformClause(profile.platform);
-  const forAudience = audienceClause(profile.audience);
+  const forAudience = audienceClause(parseProfile(state).audience);
 
   return {
     hint: OPENING_HINT,
@@ -38,51 +31,55 @@ function fallbackOpeningTopicSuggestions(
       newBriefSuggestion(
         "explore",
         "新手入门帖",
-        `我想${onPlatform}写一篇「${topic}」的新手入门选题，给一个具体标题角度${forAudience}`,
+        `我想写一篇「${topic}」的新手入门选题，给一个具体标题角度${forAudience}`,
       ),
       newBriefSuggestion(
         "explore",
         "踩坑避坑",
-        `我想${onPlatform}写「${topic}」里最容易踩的 3 个坑和解决办法${forAudience}`,
+        `我想写「${topic}」里最容易踩的 3 个坑和解决办法${forAudience}`,
       ),
       newBriefSuggestion(
         "explore",
         "对比二选一",
-        `我想${onPlatform}做一篇「${topic}」的 A/B 对比选题（两种做法或两条路径）${forAudience}`,
+        `我想做一篇「${topic}」的 A/B 对比选题（两种做法或两条路径）${forAudience}`,
       ),
       newBriefSuggestion(
         "explore",
         "真实案例",
-        `我想${onPlatform}用真实案例讲透「${topic}」里的一个转折点${forAudience}`,
+        `我想用真实案例讲透「${topic}」里的一个转折点${forAudience}`,
       ),
       newBriefSuggestion(
         "explore",
         "工具清单",
-        `我想${onPlatform}做「${topic}」相关的工具/步骤清单，帮读者直接照着做${forAudience}`,
+        `我想做「${topic}」相关的工具/步骤清单，帮读者直接照着做${forAudience}`,
       ),
       newBriefSuggestion(
         "explore",
         "趋势变化",
-        `我想${onPlatform}写「${topic}」最近 1 个明显变化，以及普通人该怎么应对${forAudience}`,
+        `我想写「${topic}」最近 1 个明显变化，以及普通人该怎么应对${forAudience}`,
       ),
       newBriefSuggestion(
         "explore",
         "反常识观点",
-        `我想${onPlatform}写一篇挑战常识的「${topic}」观点稿，标题要能引发讨论${forAudience}`,
+        `我想写一篇挑战常识的「${topic}」观点稿，标题要能引发讨论${forAudience}`,
       ),
     ]),
   };
 }
 
-function fallbackOpeningTopicSuggestionsWithBrief(
+function fallbackOpeningTopicSuggestionsWithBlueprint(
   state: AgentStateType,
 ): BriefSuggestions {
-  const brief = parseBrief(state);
+  const blueprint = parseBlueprint(state);
   const profile = parseProfile(state);
   const workTitle = state.workTitle?.trim() || "未命名作品";
-  const onPlatform = platformClause(profile.platform);
-  const forAudience = audienceClause(profile.audience);
-  const leadReq = brief.requirements[0]?.description?.trim();
+  const forAudience = audienceClause(
+    blueprint.voice.audience ?? profile.audience,
+  );
+  const lead =
+    blueprint.premise.trim() ||
+    blueprint.constraints[0]?.description?.trim() ||
+    blueprint.beats[0]?.description?.trim();
 
   return {
     hint: OPENING_HINT,
@@ -90,39 +87,39 @@ function fallbackOpeningTopicSuggestionsWithBrief(
       newBriefSuggestion(
         "explore",
         "深化子题",
-        leadReq
-          ? `在「${workTitle}」下，我想把「${leadReq}」深化成一个能直接开写的具体选题${forAudience}`
+        lead
+          ? `在「${workTitle}」下，我想把「${lead}」深化成一个能直接开写的具体选题${forAudience}`
           : `在「${workTitle}」下我想深化一个能直接开写的子选题${forAudience}`,
       ),
       newBriefSuggestion(
         "explore",
         "相邻切口",
-        `我想${onPlatform}换一个相邻切口写「${workTitle}」，和现有 brief 相关但不重复${forAudience}`,
+        `我想换一个相邻切口写「${workTitle}」，和现有方案相关但不重复${forAudience}`,
       ),
       newBriefSuggestion(
         "explore",
         "踩坑清单",
-        `我想${onPlatform}写「${workTitle}」读者最容易踩的 3 个坑${forAudience}`,
+        `我想写「${workTitle}」读者最容易踩的 3 个坑${forAudience}`,
       ),
       newBriefSuggestion(
         "explore",
         "案例拆解",
-        `我想${onPlatform}用一个具体案例拆解「${workTitle}」的关键一步${forAudience}`,
+        `我想用一个具体案例拆解「${workTitle}」的关键一步${forAudience}`,
       ),
       newBriefSuggestion(
         "explore",
         "对比选题",
-        `我想${onPlatform}做「${workTitle}」的对比型选题（两种方案/两条路径）${forAudience}`,
+        `我想做「${workTitle}」的对比型选题（两种方案/两条路径）${forAudience}`,
       ),
       newBriefSuggestion(
         "confirm",
-        "对齐 brief",
-        `基于「${workTitle}」已有 brief，帮我把下一个要写的具体选题定下来${forAudience}`,
+        "对齐方案",
+        `基于「${workTitle}」已有方案，帮我把下一个要写的具体选题定下来${forAudience}`,
       ),
       newBriefSuggestion(
         "navigate",
-        "整理大纲",
-        `「${workTitle}」选题差不多了，帮我把内容结构整理成可写的大纲`,
+        "整理节拍",
+        `「${workTitle}」选题差不多了，帮我把内容结构整理成可写的节拍`,
       ),
     ]),
   };
@@ -131,7 +128,7 @@ function fallbackOpeningTopicSuggestionsWithBrief(
 export async function generateOpeningTopicSuggestions(
   state: AgentStateType,
 ): Promise<BriefSuggestions> {
-  const brief = parseBrief(state);
+  const blueprint = parseBlueprint(state);
   const llm = createStructuredModel({ temperature: 0.55 });
   const prompt = buildOpeningTopicSuggestionsPrompt(state);
 
@@ -151,8 +148,12 @@ export async function generateOpeningTopicSuggestions(
       ),
     };
   } catch {
-    if (brief.requirements.length > 0) {
-      return fallbackOpeningTopicSuggestionsWithBrief(state);
+    if (
+      blueprint.beats.length > 0 ||
+      blueprint.constraints.length > 0 ||
+      blueprint.premise.trim()
+    ) {
+      return fallbackOpeningTopicSuggestionsWithBlueprint(state);
     }
     return fallbackOpeningTopicSuggestions(state);
   }

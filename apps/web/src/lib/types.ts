@@ -1,45 +1,42 @@
 export type {
-  BriefRequirement,
+  BlueprintBeat,
+  BlueprintConstraint,
   BriefSuggestion,
   BriefSuggestions,
   ChatMode,
   ExecutedPlanTask,
-  OutlineSection,
   ProductionDepartment,
   ProductionPlanTask,
   ReferenceItem,
   RevisionKind,
   UserRevisionPhase,
-  WorkBrief,
+  WorkBlueprint,
   WorkDraft,
   WorkDTO,
-  WorkOutline,
   WorkProductionPlan,
   WorkProfile,
   WorkRevisionDTO,
   WorkRevisionSnapshot,
   YouganAgentState,
   YouganStreamValues,
+  YouganAgentSubmitInput,
   TurnQueueKind,
 } from "@yougan/domain";
 
 export {
   CHAT_MODES,
   DEFAULT_BRIEF_SUGGESTIONS_HINT,
-  EMPTY_WORK_BRIEF,
-  EMPTY_WORK_OUTLINE,
+  EMPTY_WORK_BLUEPRINT,
   EMPTY_WORK_PRODUCTION_PLAN,
   EMPTY_WORK_PROFILE,
-  getOutlineSummary,
+  getBlueprintPremise,
   getPlanSummary,
-  hasBriefContent,
+  hasBlueprintContent,
   hasOutlineContent,
+  isBlueprintActionable,
   isPlanReady,
-  mergeBriefState,
-  mergeOutlineState,
-  newBriefRequirement,
-  parseBriefJson,
-  parseOutlineJson,
+  mergeBlueprintState,
+  parseBlueprintJson,
   parsePlanJson,
   REVISION_KINDS,
   USER_REVISION_PHASES,
@@ -58,8 +55,7 @@ export interface Work {
   title: string;
   groupId: string | null;
   profile: import("@yougan/domain").WorkProfile;
-  brief: import("@yougan/domain").WorkBrief;
-  outline: import("@yougan/domain").WorkOutline;
+  blueprint: import("@yougan/domain").WorkBlueprint;
   plan: import("@yougan/domain").WorkProductionPlan;
   draft: import("@yougan/domain").WorkDraft | null;
   headRevisionId: string | null;
@@ -78,6 +74,5 @@ export interface WorkConversation {
   updatedAt: string;
 }
 
-export interface YouganValues
-  extends Partial<import("@yougan/domain").YouganStreamValues>,
-    Record<string, unknown> {}
+export type YouganValues = import("@yougan/domain").YouganStreamValues;
+export type YouganSubmitInput = import("@yougan/domain").YouganAgentSubmitInput;

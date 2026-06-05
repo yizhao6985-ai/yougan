@@ -73,7 +73,7 @@ Agent 每条用户消息先经 **回合队列**（`turnQueue`）编排（见 [ag
 
 ## 版本与另存
 
-- **版本记录**：仅 `draft`（内容预览）里程碑进入 `WorkRevision` 时间轴
+- **版本记录**：仅 `draft`（作品预览）里程碑进入 `WorkRevision` 时间轴
 - **brief / outline / plan**：更新物化列，不单独占版本节点
 - **回到这一版**：restore
 - **另存为新作品**：`POST /api/works/:id/duplicate`（平行探索）

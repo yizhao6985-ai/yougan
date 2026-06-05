@@ -102,9 +102,8 @@ export async function injectWorkContext(
         workTitle: context.workTitle,
         conversationTitle: context.conversationTitle,
         profile: context.profile,
-        outline: context.outline,
+        blueprint: context.blueprint,
         plan: context.plan,
-        brief: context.brief,
         draft: context.draft,
       },
     };

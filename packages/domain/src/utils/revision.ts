@@ -3,7 +3,7 @@ import type {
   UserRevisionPhase,
 } from "../models/revision.js";
 
-/** 创作执行产出内容预览（draft）时记入版本时间轴 */
+/** 创作执行产出作品预览（draft）时记入版本时间轴 */
 const DRAFT_REVISION_KINDS = new Set<RevisionKind>(["execution_complete"]);
 
 /** plan、灵感、大纲与操作类 revision 不对用户展示 */

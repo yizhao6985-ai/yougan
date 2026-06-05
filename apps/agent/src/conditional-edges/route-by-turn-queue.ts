@@ -9,33 +9,29 @@ import type { AgentStateType } from "#agent/state.js";
 export const from = "dispatchTurnQueue" as const;
 
 export type TurnQueueRouteTarget =
-  | "inspirationGraph"
-  | "outlineGraph"
+  | "blueprintGraph"
   | "creationGraph"
   | "askGraph";
 
 function routeTargetForKind(kind: TurnQueueKind): TurnQueueRouteTarget {
   switch (kind) {
-    case "outline":
-      return "outlineGraph";
+    case "blueprint":
+      return "blueprintGraph";
     case "creation":
       return "creationGraph";
     case "ask":
       return "askGraph";
-    case "inspiration":
-      return "inspirationGraph";
   }
 }
 
 export function routeByTurnQueue(state: AgentStateType): TurnQueueRouteTarget {
   const kind: TurnQueueKind | undefined =
     parseActiveTurnKind(state) ?? parseTurnQueue(state)[0];
-  return routeTargetForKind(kind ?? "inspiration");
+  return routeTargetForKind(kind ?? "blueprint");
 }
 
 export const paths: TurnQueueRouteTarget[] = [
-  "inspirationGraph",
-  "outlineGraph",
+  "blueprintGraph",
   "creationGraph",
   "askGraph",
 ];

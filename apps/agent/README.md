@@ -16,6 +16,7 @@ Checkpoint：**Agent 专用 Postgres**（`POSTGRES_URI`，默认 `:5433`）。
 
 ```bash
 cp apps/agent/.env.example apps/agent/.env
+# 填写 DASHSCOPE_API_KEY（阿里百炼 OpenAI 兼容端点）
 docker compose up -d
 pnpm dev:agent
 ```
@@ -72,13 +73,17 @@ resolveTurnQueue → dispatchTurnQueue → [*Graph] → advanceTurnQueue → …
 
 详见 [docs/technical/agent-turn-queue.md](../../docs/technical/agent-turn-queue.md)。
 
+## LLM 接入
+
+全部经 **阿里百炼 DashScope**（`DASHSCOPE_API_KEY`，OpenAI 兼容 `compatible-mode/v1`）。默认模型见 `src/llm/models.ts`，可用 `LLM_MODEL_*` 覆盖。
+
 ## 模型分工
 
-| 场景 | 位置 | 模型 |
-|------|------|------|
-| 对话子图 | `llm/dashscope.ts` | qwen3.7-max |
-| 队列解析 | `resolve-turn-queue/` | deepseek-v4-pro |
-| 下一步建议 | `next-step-suggestions/` | deepseek-v4-pro |
+| 场景 | 位置 | 默认模型 |
+|------|------|----------|
+| 对话子图、参考解析 | `llm/dashscope.ts` `createChatModel` | qwen3.7-max |
+| 队列解析、下一步建议、创意总监 | `createStructuredModel` | deepseek-v4-pro |
+| 文生图 | `llm/dashscope-image.ts` | qwen-image-2.0-pro |
 
 ## 与 API
 

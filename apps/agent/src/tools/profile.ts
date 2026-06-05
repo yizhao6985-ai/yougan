@@ -1,6 +1,5 @@
 /**
- * 更新作品 profile（平台/主题/风格等）。
- * 灵感模式禁止直接写 profile；客户文字消息会自动记入灵感列表。
+ * 更新作品 profile（参考素材等；创作规格请用 blueprint 工具）。
  */
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
@@ -33,10 +32,10 @@ const profileSchema = z.object({
 
 export const updateWorkProfile = tool(
   async (input, config) => {
-    if (parseActiveTurnKind(getState()) === "inspiration") {
+    if (parseActiveTurnKind(getState()) === "blueprint") {
       return toolCommand(
         config,
-        "灵感模式不直接更新特征。客户消息会自动记入灵感，请通过对话帮用户理清需求。",
+        "作品方案模式请用 update_blueprint_spec / update_blueprint_voice 更新规格与表达设定；本工具仅用于参考素材等 profile 字段。",
       );
     }
 

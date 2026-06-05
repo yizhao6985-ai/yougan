@@ -1272,20 +1272,33 @@ export interface components {
             notes?: string | null;
             references?: components["schemas"]["ReferenceItem"][];
         };
-        WorkBrief: {
-            requirements: {
+        WorkBlueprint: {
+            spec: {
+                platform?: string | null;
+                content_topic?: string | null;
+                content_type?: string | null;
+                content_format?: string | null;
+                media_modality?: string | null;
+            };
+            voice: {
+                audience?: string | null;
+                tone?: string | null;
+                style?: string | null;
+                persona?: string | null;
+                goals?: string[];
+            };
+            premise: string;
+            constraints: {
                 id: string;
                 description: string;
                 confirmed_at: string;
             }[];
-        };
-        WorkOutline: {
-            sections: {
+            beats: {
                 id: string;
                 description: string;
+                intent?: string | null;
                 confirmed_at: string;
             }[];
-            summary?: string | null;
         };
         WorkProductionPlan: {
             pending_tasks: {
@@ -1328,8 +1341,7 @@ export interface components {
             title: string;
             groupId: string | null;
             profile: components["schemas"]["WorkProfile"];
-            brief: components["schemas"]["WorkBrief"];
-            outline: components["schemas"]["WorkOutline"];
+            blueprint: components["schemas"]["WorkBlueprint"];
             plan: components["schemas"]["WorkProductionPlan"];
             draft: components["schemas"]["WorkDraft"];
             headRevisionId: string | null;
@@ -1341,9 +1353,8 @@ export interface components {
         SyncWorkState: {
             groupId?: string | null;
             profile?: components["schemas"]["WorkProfile"];
-            outline?: components["schemas"]["WorkOutline"];
+            blueprint?: components["schemas"]["WorkBlueprint"];
             plan?: components["schemas"]["WorkProductionPlan"];
-            brief?: components["schemas"]["WorkBrief"];
             draft?: components["schemas"]["WorkDraft"];
             title?: string;
         };
@@ -1352,8 +1363,7 @@ export interface components {
             conversationId?: string;
             headRevisionId?: string | null;
             profile: components["schemas"]["WorkProfile"];
-            brief: components["schemas"]["WorkBrief"];
-            outline: components["schemas"]["WorkOutline"];
+            blueprint: components["schemas"]["WorkBlueprint"];
             plan: components["schemas"]["WorkProductionPlan"];
             draft: components["schemas"]["WorkDraft"];
             threadId?: string | null;
@@ -1362,8 +1372,7 @@ export interface components {
         };
         WorkRevisionSnapshot: {
             profile: components["schemas"]["WorkProfile"];
-            brief: components["schemas"]["WorkBrief"];
-            outline: components["schemas"]["WorkOutline"];
+            blueprint: components["schemas"]["WorkBlueprint"];
             plan: components["schemas"]["WorkProductionPlan"];
             draft: components["schemas"]["WorkDraft"];
         };
@@ -1373,7 +1382,7 @@ export interface components {
             parentRevisionId: string | null;
             conversationId: string | null;
             /** @enum {string} */
-            kind: "work_created" | "work_duplicated" | "work_restored" | "brief_requirement_added" | "brief_requirement_updated" | "brief_requirement_removed" | "brief_ready" | "profile_updated" | "outline_section_added" | "outline_section_updated" | "outline_section_removed" | "outline_ready" | "outline_revised" | "plan_ready" | "plan_revised" | "execution_complete";
+            kind: "work_created" | "work_duplicated" | "work_restored" | "profile_updated" | "blueprint_constraint_added" | "blueprint_constraint_updated" | "blueprint_constraint_removed" | "blueprint_beat_added" | "blueprint_beat_updated" | "blueprint_beat_removed" | "blueprint_revised" | "plan_ready" | "plan_revised" | "execution_complete";
             /** @enum {string} */
             phase: "draft";
             summary: string;

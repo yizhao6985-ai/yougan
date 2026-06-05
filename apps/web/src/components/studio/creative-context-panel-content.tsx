@@ -1,8 +1,7 @@
 import { useCallback, useState } from "react";
 
+import { BlueprintPanel } from "@/components/blueprint-panel";
 import { ContentPreview } from "@/components/content-preview";
-import { ContentSettingsPanel } from "@/components/content-settings-panel";
-import { OutlinePanel } from "@/components/outline-panel";
 import { ReferencePanel } from "@/components/reference-panel";
 import { WorkHistoryPanel } from "@/components/studio/work-history-panel";
 import { creativeContextPanelClassNames } from "@/components/studio/creative-context/shared";
@@ -11,12 +10,11 @@ import {
   type CreativeContextTabId,
 } from "@/lib/site-copy";
 import { readStoredString, writeStoredString } from "@/lib/storage-value";
-import type { Work, WorkBrief, WorkDraft, WorkOutline, WorkProfile } from "@/lib/types";
+import type { Work, WorkBlueprint, WorkDraft, WorkProfile } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const TAB_ORDER: CreativeContextTabId[] = [
-  "inspiration",
-  "outline",
+  "blueprint",
   "preview",
   "references",
   "history",
@@ -26,40 +24,39 @@ const TAB_STORAGE_KEY = "yougan:creative-context-tab";
 
 function readStoredTab(): CreativeContextTabId {
   const raw = readStoredString(TAB_STORAGE_KEY);
+  if (raw === "inspiration" || raw === "outline") return "blueprint";
   if (raw && TAB_ORDER.includes(raw as CreativeContextTabId)) {
     return raw as CreativeContextTabId;
   }
-  return "inspiration";
+  return "blueprint";
 }
 
 type CreativeContextPanelContentProps = {
   activeWork: Work | null;
   profile?: WorkProfile;
-  brief?: WorkBrief;
-  outline?: WorkOutline;
+  blueprint?: WorkBlueprint;
   draft?: WorkDraft | null;
   onDuplicated?: (workId: string) => void;
-  onUpdateRequirement?: (requirementId: string, description: string) => void;
-  onDeleteRequirement?: (requirementId: string) => void;
-  onClearBrief?: () => void;
-  onUpdateSection?: (sectionId: string, description: string) => void;
-  onDeleteSection?: (sectionId: string) => void;
-  onClearOutline?: () => void;
+  onUpdateConstraint?: (constraintId: string, description: string) => void;
+  onDeleteConstraint?: (constraintId: string) => void;
+  onClearConstraints?: () => void;
+  onUpdateBeat?: (beatId: string, description: string) => void;
+  onDeleteBeat?: (beatId: string) => void;
+  onClearBeats?: () => void;
 };
 
 export function CreativeContextPanelContent({
   activeWork,
   profile,
-  brief,
-  outline,
+  blueprint,
   draft,
   onDuplicated,
-  onUpdateRequirement,
-  onDeleteRequirement,
-  onClearBrief,
-  onUpdateSection,
-  onDeleteSection,
-  onClearOutline,
+  onUpdateConstraint,
+  onDeleteConstraint,
+  onClearConstraints,
+  onUpdateBeat,
+  onDeleteBeat,
+  onClearBeats,
 }: CreativeContextPanelContentProps) {
   const [activeTab, setActiveTab] = useState<CreativeContextTabId>(readStoredTab);
 
@@ -98,37 +95,22 @@ export function CreativeContextPanelContent({
       </div>
 
       <div className={creativeContextPanelClassNames.tabPanel}>
-        {activeTab === "inspiration" ? (
+        {activeTab === "blueprint" ? (
           <div
             role="tabpanel"
-            id="creative-context-panel-inspiration"
-            aria-labelledby="creative-context-tab-inspiration"
+            id="creative-context-panel-blueprint"
+            aria-labelledby="creative-context-tab-blueprint"
           >
-            <ContentSettingsPanel
-              brief={brief}
-              profile={profile}
+            <BlueprintPanel
+              blueprint={blueprint}
               editable={Boolean(activeWork)}
               compact
-              onUpdateRequirement={onUpdateRequirement}
-              onDeleteRequirement={onDeleteRequirement}
-              onClearBrief={onClearBrief}
-            />
-          </div>
-        ) : null}
-
-        {activeTab === "outline" ? (
-          <div
-            role="tabpanel"
-            id="creative-context-panel-outline"
-            aria-labelledby="creative-context-tab-outline"
-          >
-            <OutlinePanel
-              outline={outline}
-              editable={Boolean(activeWork)}
-              compact
-              onUpdateSection={onUpdateSection}
-              onDeleteSection={onDeleteSection}
-              onClearOutline={onClearOutline}
+              onUpdateConstraint={onUpdateConstraint}
+              onDeleteConstraint={onDeleteConstraint}
+              onClearConstraints={onClearConstraints}
+              onUpdateBeat={onUpdateBeat}
+              onDeleteBeat={onDeleteBeat}
+              onClearBeats={onClearBeats}
             />
           </div>
         ) : null}
@@ -165,8 +147,8 @@ export function CreativeContextPanelContent({
           >
             <WorkHistoryPanel
               workId={activeWork.id}
-              compact
               onDuplicated={onDuplicated}
+              compact
             />
           </div>
         ) : null}

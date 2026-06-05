@@ -8,17 +8,14 @@ import {
 } from "@langchain/langgraph";
 import type { BaseMessage } from "@langchain/core/messages";
 import {
-  EMPTY_WORK_BRIEF,
-  EMPTY_WORK_OUTLINE,
+  EMPTY_WORK_BLUEPRINT,
   EMPTY_WORK_PRODUCTION_PLAN,
   EMPTY_WORK_PROFILE,
-  mergeBriefState,
-  mergeOutlineState,
+  mergeBlueprintState,
   type BriefSuggestions,
   type TurnQueueKind,
-  type WorkBrief,
+  type WorkBlueprint,
   type WorkDraft,
-  type WorkOutline,
   type WorkProductionPlan,
   type WorkProfile,
 } from "@yougan/domain";
@@ -66,19 +63,12 @@ export const AgentState = Annotation.Root({
     reducer: (_prev, next) => next ?? EMPTY_WORK_PROFILE,
     default: () => EMPTY_WORK_PROFILE,
   }),
-  brief: Annotation<WorkBrief>({
+  blueprint: Annotation<WorkBlueprint>({
     reducer: (prev, next) => {
-      if (next === undefined) return prev ?? EMPTY_WORK_BRIEF;
-      return mergeBriefState(prev, next);
+      if (next === undefined) return prev ?? EMPTY_WORK_BLUEPRINT;
+      return mergeBlueprintState(prev, next);
     },
-    default: () => EMPTY_WORK_BRIEF,
-  }),
-  outline: Annotation<WorkOutline>({
-    reducer: (prev, next) => {
-      if (next === undefined) return prev ?? EMPTY_WORK_OUTLINE;
-      return mergeOutlineState(prev, next);
-    },
-    default: () => EMPTY_WORK_OUTLINE,
+    default: () => EMPTY_WORK_BLUEPRINT,
   }),
   plan: Annotation<WorkProductionPlan>({
     reducer: (_prev, next) => next ?? EMPTY_WORK_PRODUCTION_PLAN,

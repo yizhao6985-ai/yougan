@@ -1,18 +1,15 @@
 import type { RevisionKind, WorkRevisionSnapshot } from "../models/revision.js";
-import { EMPTY_WORK_BRIEF } from "../models/work/brief.js";
+import { EMPTY_WORK_BLUEPRINT } from "../models/work/blueprint.js";
 import type { WorkDraft } from "../models/work/draft.js";
-import { EMPTY_WORK_OUTLINE } from "../models/work/outline.js";
 import { EMPTY_WORK_PRODUCTION_PLAN } from "../models/work/plan.js";
 import { EMPTY_WORK_PROFILE, type WorkProfile } from "../models/work/profile.js";
-import { parseBriefJson } from "./work/brief.js";
-import { parseOutlineJson } from "./work/outline.js";
+import { parseBlueprintJson, resolveBlueprintFromWork } from "./work/blueprint.js";
 import { parsePlanJson } from "./work/plan.js";
 
 export function emptySnapshot(): WorkRevisionSnapshot {
   return {
     profile: { ...EMPTY_WORK_PROFILE, references: [] },
-    brief: { ...EMPTY_WORK_BRIEF },
-    outline: { ...EMPTY_WORK_OUTLINE },
+    blueprint: { ...EMPTY_WORK_BLUEPRINT },
     plan: { ...EMPTY_WORK_PRODUCTION_PLAN },
     draft: null,
   };
@@ -43,10 +40,15 @@ export function parseWorkDraft(raw: unknown): WorkDraft | null {
 export function parseSnapshot(raw: unknown): WorkRevisionSnapshot {
   if (!raw || typeof raw !== "object") return emptySnapshot();
   const value = raw as Record<string, unknown>;
+  const profile = parseWorkProfile(value.profile);
   return {
-    profile: parseWorkProfile(value.profile),
-    brief: parseBriefJson(value.brief),
-    outline: parseOutlineJson(value.outline),
+    profile,
+    blueprint: resolveBlueprintFromWork({
+      blueprint: value.blueprint,
+      brief: value.brief as import("../models/work/brief.js").WorkBrief | undefined,
+      outline: value.outline as import("../models/work/outline.js").WorkOutline | undefined,
+      profile,
+    }),
     plan: parsePlanJson(value.plan),
     draft: parseWorkDraft(value.draft),
   };
@@ -55,10 +57,16 @@ export function parseSnapshot(raw: unknown): WorkRevisionSnapshot {
 export function snapshotFromAgentValues(
   values: Record<string, unknown>,
 ): WorkRevisionSnapshot {
+  const profile = parseWorkProfile(values.profile);
   return {
-    profile: parseWorkProfile(values.profile),
-    brief: parseBriefJson(values.brief),
-    outline: parseOutlineJson(values.outline),
+    profile,
+    blueprint: values.blueprint
+      ? parseBlueprintJson(values.blueprint)
+      : resolveBlueprintFromWork({
+          brief: values.brief as import("../models/work/brief.js").WorkBrief | undefined,
+          outline: values.outline as import("../models/work/outline.js").WorkOutline | undefined,
+          profile,
+        }),
     plan: parsePlanJson(values.plan),
     draft: parseWorkDraft(values.draft),
   };
@@ -86,32 +94,39 @@ export function detectRevisionKind(
     return "execution_complete";
   }
 
-  if (stableJson(previous.brief.requirements) !== stableJson(next.brief.requirements)) {
-    if (next.brief.requirements.length > previous.brief.requirements.length) {
-      return "brief_requirement_added";
+  if (
+    stableJson(previous.blueprint.constraints) !==
+    stableJson(next.blueprint.constraints)
+  ) {
+    if (
+      next.blueprint.constraints.length > previous.blueprint.constraints.length
+    ) {
+      return "blueprint_constraint_added";
     }
-    if (next.brief.requirements.length < previous.brief.requirements.length) {
-      return "brief_requirement_removed";
+    if (
+      next.blueprint.constraints.length < previous.blueprint.constraints.length
+    ) {
+      return "blueprint_constraint_removed";
     }
-    return "brief_requirement_updated";
+    return "blueprint_constraint_updated";
   }
 
-  if (stableJson(previous.outline.sections) !== stableJson(next.outline.sections)) {
-    if (next.outline.sections.length > previous.outline.sections.length) {
-      return "outline_section_added";
+  if (stableJson(previous.blueprint.beats) !== stableJson(next.blueprint.beats)) {
+    if (next.blueprint.beats.length > previous.blueprint.beats.length) {
+      return "blueprint_beat_added";
     }
-    if (next.outline.sections.length < previous.outline.sections.length) {
-      return "outline_section_removed";
+    if (next.blueprint.beats.length < previous.blueprint.beats.length) {
+      return "blueprint_beat_removed";
     }
-    return "outline_section_updated";
+    return "blueprint_beat_updated";
+  }
+
+  if (stableJson(previous.blueprint) !== stableJson(next.blueprint)) {
+    return "blueprint_revised";
   }
 
   if (stableJson(previous.profile) !== stableJson(next.profile)) {
     return "profile_updated";
-  }
-
-  if (stableJson(previous.outline) !== stableJson(next.outline)) {
-    return "outline_revised";
   }
 
   if (previous.plan.ready !== next.plan.ready && next.plan.ready) {
@@ -135,32 +150,28 @@ export function revisionSummary(
       return (
         next.plan.last_execution_summary?.trim() ||
         next.draft?.body?.trim().slice(0, 80) ||
-        "生成内容预览"
+        "生成作品预览"
       );
-    case "outline_ready":
-      return next.outline.summary?.trim() || "内容大纲已定稿";
-    case "outline_revised":
-      return "更新内容大纲";
-    case "outline_section_added":
-      return "新增大纲条目";
-    case "outline_section_updated":
-      return "更新大纲条目";
-    case "outline_section_removed":
-      return "删除大纲条目";
+    case "blueprint_revised":
+      return next.blueprint.premise.trim() || "更新作品方案";
+    case "blueprint_beat_added":
+      return "新增内容节拍";
+    case "blueprint_beat_updated":
+      return "更新内容节拍";
+    case "blueprint_beat_removed":
+      return "删除内容节拍";
+    case "blueprint_constraint_added":
+      return "新增写作要求";
+    case "blueprint_constraint_updated":
+      return "更新写作要求";
+    case "blueprint_constraint_removed":
+      return "删除写作要求";
     case "plan_ready":
       return next.plan.summary?.trim() || "创作计划已定稿";
     case "plan_revised":
       return "更新创作计划";
-    case "brief_ready":
-      return "创作 brief 已定稿";
-    case "brief_requirement_added":
-      return "新增 brief 需求";
-    case "brief_requirement_removed":
-      return "删除 brief 需求";
-    case "brief_requirement_updated":
-      return "更新 brief 需求";
     case "profile_updated":
-      return "更新作品特征";
+      return "更新参考素材";
     case "work_duplicated":
       return "另存为新作品";
     case "work_restored":
@@ -175,8 +186,7 @@ export function revisionSummary(
 export function materializeWorkColumns(snapshot: WorkRevisionSnapshot) {
   return {
     profile: snapshot.profile as object,
-    brief: snapshot.brief as object,
-    outline: snapshot.outline as object,
+    blueprint: snapshot.blueprint as object,
     plan: snapshot.plan as object,
     draft: snapshot.draft ? (snapshot.draft as object) : null,
   };

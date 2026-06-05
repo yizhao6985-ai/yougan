@@ -15,7 +15,7 @@ export type AfterTurnQueueTarget =
 
 function shouldOfferTurnNextStepSuggestions(state: AgentStateType): boolean {
   const completed = parseCompletedTurnKinds(state);
-  return completed.some((kind) => ["inspiration", "outline"].includes(kind));
+  return completed.includes("blueprint");
 }
 
 /** 队列非空继续下一项；否则按需生成回合末下一步建议或结束 */

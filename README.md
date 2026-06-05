@@ -1,6 +1,6 @@
 # 有感 Yougan
 
-AI 自媒体创作助手：帮你收集灵感、制定制作计划，再按计划生成图文内容。
+AI 创作助手：帮你收集灵感、制定制作计划，再按计划生成内容。
 
 Monorepo 采用 **pnpm workspace** + **Turborepo**，三服务协作：前端、Express 中间层、LangGraph Agent。
 
@@ -90,7 +90,7 @@ cp apps/web/.env.local.example apps/web/.env.local
 **本地开发最少需要：**
 
 - `apps/api/.env`：`DATABASE_URL`、`JWT_SECRET`
-- `apps/agent/.env`：`POSTGRES_URI`、`MINIMAX_API_KEY`（主对话）；建议同时配置 `DEEPSEEK_API_KEY`（结构化轮）
+- `apps/agent/.env`：`POSTGRES_URI`、`DASHSCOPE_API_KEY`（百炼 OpenAI 兼容端点，必填方可调用 LLM）
 - `apps/web/.env.local`：默认指向 `http://localhost:4000` 即可
 
 ### 3. 初始化数据库
@@ -169,7 +169,7 @@ pnpm generate:api       # 生成 apps/web/src/services/generated/schema.d.ts
 | Monorepo | pnpm + Turborepo                                                                            |
 | 前端     | Vite、React 19、React Router、TanStack Query、Jotai、Tailwind v4、LangGraph SDK `useStream` |
 | 中间层   | Express 5、Prisma、JWT、Zod + OpenAPI、http-proxy-middleware、ioredis                       |
-| Agent    | LangGraph JS、MiniMax（主对话）、DeepSeek（结构化）                                         |
+| Agent    | LangGraph JS、百炼 DashScope（qwen3.7-max 对话、deepseek-v4-pro 结构化、Qwen-Image 文生图） |
 | 存储     | PostgreSQL × 2、Redis（可选）、本地目录 / S3 兼容 OSS                                       |
 
 ## 故障排查
@@ -178,7 +178,7 @@ pnpm generate:api       # 生成 apps/web/src/services/generated/schema.d.ts
 | -------------------- | ------------------------------------------------ |
 | `pnpm install` 超时  | 使用 npmmirror 或检查代理                        |
 | API 启动报数据库错误 | `docker compose up -d` 后执行 `pnpm db:push`     |
-| Studio 对话无响应    | 确认 `dev:agent` 已启动且 `MINIMAX_API_KEY` 有效 |
+| Studio 对话无响应    | 确认 `dev:agent` 已启动且 `DASHSCOPE_API_KEY` 有效 |
 | `/docs` 503          | 在 `apps/api` 执行 `pnpm openapi:generate`       |
 | LangGraph 401        | 前端未登录或 JWT 过期；代理路径应为 `/langgraph` |
 

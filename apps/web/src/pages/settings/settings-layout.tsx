@@ -85,8 +85,8 @@ const NAV_GROUPS: Array<{ label: string; items: SettingsNavItem[] }> = [
     items: [
       {
         to: "/settings/integrations",
-        label: "平台集成",
-        description: "第三方平台授权",
+        label: "外部发布",
+        description: "连接外部渠道授权",
         icon: Share2Icon,
       },
     ],

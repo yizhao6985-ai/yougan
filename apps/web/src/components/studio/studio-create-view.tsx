@@ -4,8 +4,7 @@ import { CreativeContextPanelContent } from "@/components/studio/creative-contex
 import { WorksAside } from "@/components/studio/works-aside";
 import { YouganChat } from "@/components/studio/yougan-chat";
 import { useYouganStreamContext } from "@/components/studio/yougan-stream-provider";
-import { mergeBriefForDisplay } from "@/lib/brief-merge";
-import { mergeOutlineForDisplay } from "@/lib/outline-merge";
+import { mergeBlueprintForDisplay } from "@/lib/blueprint-merge";
 import { CREATIVE_CONTEXT_PANEL } from "@/lib/site-copy";
 
 export function StudioCreateView() {
@@ -13,19 +12,18 @@ export function StudioCreateView() {
     activeWork,
     stream,
     selectWork,
-    updateBriefRequirement,
-    deleteBriefRequirement,
-    clearWorkBrief,
-    updateOutlineSection,
-    deleteOutlineSection,
-    clearWorkOutline,
+    updateBlueprintConstraint,
+    deleteBlueprintConstraint,
+    clearWorkBlueprintConstraints,
+    updateBlueprintBeat,
+    deleteBlueprintBeat,
+    clearWorkBlueprintBeats,
   } = useYouganStreamContext();
 
   const profile = stream.values?.profile ?? activeWork?.profile;
-  const brief = mergeBriefForDisplay(activeWork?.brief, stream.values?.brief);
-  const outline = mergeOutlineForDisplay(
-    activeWork?.outline,
-    stream.values?.outline,
+  const blueprint = mergeBlueprintForDisplay(
+    activeWork?.blueprint,
+    stream.values?.blueprint,
   );
   const draft = activeWork?.draft ?? stream.values?.draft ?? null;
 
@@ -33,38 +31,39 @@ export function StudioCreateView() {
     <CreativeContextPanelContent
       activeWork={activeWork}
       profile={profile}
-      brief={brief}
-      outline={outline}
+      blueprint={blueprint}
       draft={draft}
       onDuplicated={selectWork}
-      onUpdateRequirement={
+      onUpdateConstraint={
         activeWork
-          ? (requirementId, description) =>
-              updateBriefRequirement(activeWork.id, requirementId, description)
+          ? (constraintId, description) =>
+              updateBlueprintConstraint(activeWork.id, constraintId, description)
           : undefined
       }
-      onDeleteRequirement={
+      onDeleteConstraint={
         activeWork
-          ? (requirementId) =>
-              deleteBriefRequirement(activeWork.id, requirementId)
+          ? (constraintId) =>
+              deleteBlueprintConstraint(activeWork.id, constraintId)
           : undefined
       }
-      onClearBrief={
-        activeWork ? () => clearWorkBrief(activeWork.id) : undefined
-      }
-      onUpdateSection={
+      onClearConstraints={
         activeWork
-          ? (sectionId, description) =>
-              updateOutlineSection(activeWork.id, sectionId, description)
+          ? () => clearWorkBlueprintConstraints(activeWork.id)
           : undefined
       }
-      onDeleteSection={
+      onUpdateBeat={
         activeWork
-          ? (sectionId) => deleteOutlineSection(activeWork.id, sectionId)
+          ? (beatId, description) =>
+              updateBlueprintBeat(activeWork.id, beatId, description)
           : undefined
       }
-      onClearOutline={
-        activeWork ? () => clearWorkOutline(activeWork.id) : undefined
+      onDeleteBeat={
+        activeWork
+          ? (beatId) => deleteBlueprintBeat(activeWork.id, beatId)
+          : undefined
+      }
+      onClearBeats={
+        activeWork ? () => clearWorkBlueprintBeats(activeWork.id) : undefined
       }
     />
   );

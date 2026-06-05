@@ -8,9 +8,9 @@ import {
 
 import { SiteHeader } from "@/components/site-header";
 import {
+  CREATION_FORMS,
   CREATION_MODES,
   EXTRA_CAPABILITIES,
-  SUPPORTED_PLATFORMS,
   STUDIO_PANELS,
   WORKFLOW_STEPS,
 } from "@/lib/product-capabilities";
@@ -126,15 +126,20 @@ export function FeaturesPage() {
           {FEATURES_PAGE.subtitle}
         </p>
 
-        <section className="mt-12 flex flex-wrap gap-2">
-          {SUPPORTED_PLATFORMS.map((platform) => (
+        <section className="mt-12">
+          <p className="text-sm font-medium text-muted-foreground">
+            {FEATURES_PAGE.platformsIntro}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+          {CREATION_FORMS.map((form) => (
             <span
-              key={platform}
+              key={form}
               className="rounded-md border border-border/80 bg-card/90 px-4 py-1.5 text-sm text-foreground/90 shadow-sm"
             >
-              {platform}
+              {form}
             </span>
           ))}
+          </div>
         </section>
 
         <section className="mt-16" aria-labelledby="workflow-heading">

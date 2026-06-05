@@ -4,17 +4,12 @@ import {
 } from "@yougan/domain";
 
 import {
-  briefSummary,
-  outlineSummary,
-  profileSummary,
+  blueprintSummary,
+  referencesSummary,
 } from "#agent/prompt/context.js";
 import { YOUGAN_USER_LABEL } from "#agent/prompt/persona.js";
 import type { AgentStateType } from "#agent/state.js";
-import {
-  parseBrief,
-  parseOutline,
-  parseProfile,
-} from "#agent/lib/parse-agent-state.js";
+import { parseBlueprint, parseProfile } from "#agent/lib/parse-agent-state.js";
 import { getLatestHumanMessageImageUrls } from "#agent/lib/human-message/index.js";
 import { shouldSuggestConversationTitle } from "#agent/lib/conversation-title/should-suggest-conversation-title.js";
 
@@ -23,9 +18,9 @@ export function buildTurnQueuePrompt(
   userMessage: string,
   options?: { requestConversationTitle?: boolean },
 ): string {
-  const brief = parseBrief(state);
-  const outline = parseOutline(state);
+  const blueprint = parseBlueprint(state);
   const profile = parseProfile(state);
+  const hasDraft = Boolean(state.draft?.body?.trim());
   const imageCount = getLatestHumanMessageImageUrls(state.messages).length;
   const conversationTitle = state.conversationTitle?.trim() || "（未命名）";
   const requestTitle =
@@ -48,25 +43,23 @@ export function buildTurnQueuePrompt(
 ${titleSection}
 
 ## 可选队列项（按推荐执行顺序）
-- **outline**：改内容结构、增删改大纲条目、讨论章节安排（走大纲对话与工具）
-- **inspiration**：探索方向、对齐选题/受众/平台；记/改/删 brief 需求（走灵感对话与 brief 工具）
-- **creation**：明确要求出稿、改稿、按大纲制作交付
-- **ask**：主要在提问、要建议、要分析（答疑，不改稿）
+- **blueprint**：修改**作品方案**（创作主题、体裁形式、受众语气、定位、写作要求、内容节拍/结构）
+- **creation**：修改**作品成稿**（标题、正文、语气润色、出稿、改稿、按方案制作交付）
+- **ask**：主要在提问、要建议、要分析（答疑，不改方案与成稿）
 
-## 规则
-- **所有状态变更均通过对话子图完成**（会有 assistant 回复）；UI 侧栏直改不走本队列
-- 一条消息可含多项（例：先 inspiration 记需求，再 outline 改第二节 → inspiration, outline）
-- 传图并说明素材用法 → 通常含 inspiration（参考图在子图 prepare 阶段同步）
-- 删/改 brief 条目 → inspiration；改大纲 → outline
-- 只使用上述四种 kind；队列至少 1 项
+## 意图判定（看用户描述的修改对象 / 宾语）
+- 宾语是**方案 / 蓝图 / 结构 / 节拍 / 章节 / 体裁 / 主题 / 受众 / 定位 / 要求** → blueprint
+- 宾语是**作品 / 成稿 / 正文 / 标题 / 段落 / 文案 / 预览** → creation
+- 已有成稿（has_draft=${hasDraft}）且未明确动方案时，**默认 creation**（当成稿修订）
+- 复合意图：先 blueprint 后 creation（例：「第二节改讲性价比，正文也一起改」→ blueprint, creation）
+- 只讨论方案、无出稿/改稿动词 → 不要 creation
+- 传图并说明素材用法 → 通常含 blueprint
+- 只使用上述三种 kind；队列至少 1 项
 
-当前 brief（${brief.requirements.length} 条）：
-${briefSummary(brief)}
+当前作品方案：
+${blueprintSummary(blueprint)}
 
-${profileSummary(profile)}
-
-当前大纲（${outline.sections.length} 条）：
-${outlineSummary(outline)}
+${referencesSummary(profile)}
 
 ${YOUGAN_USER_LABEL}最新一条消息：
 ${userMessage || (imageCount > 0 ? "（仅上传图片，无文字说明）" : "（空）")}`;

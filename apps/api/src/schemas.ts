@@ -38,6 +38,53 @@ export const WorkProfileSchema = z
   })
   .openapi("WorkProfile");
 
+export const WorkBlueprintSchema = z
+  .object({
+    spec: z.object({
+      platform: z.string().nullable().optional(),
+      content_topic: z.string().nullable().optional(),
+      content_type: z.string().nullable().optional(),
+      content_format: z.string().nullable().optional(),
+      media_modality: z.string().nullable().optional(),
+    }),
+    voice: z.object({
+      audience: z.string().nullable().optional(),
+      tone: z.string().nullable().optional(),
+      style: z.string().nullable().optional(),
+      persona: z.string().nullable().optional(),
+      goals: z.array(z.string()).optional(),
+    }),
+    premise: z.string(),
+    constraints: z.array(
+      z.object({
+        id: z.string(),
+        description: z.string(),
+        confirmed_at: z.string(),
+      }),
+    ),
+    beats: z.array(
+      z.object({
+        id: z.string(),
+        description: z.string(),
+        intent: z.string().nullable().optional(),
+        confirmed_at: z.string(),
+      }),
+    ),
+  })
+  .openapi("WorkBlueprint");
+
+export const WorkBriefSchema = z
+  .object({
+    requirements: z.array(
+      z.object({
+        id: z.string(),
+        description: z.string(),
+        confirmed_at: z.string(),
+      }),
+    ),
+  })
+  .openapi("WorkBrief");
+
 export const WorkOutlineSchema = z
   .object({
     sections: z.array(
@@ -84,18 +131,6 @@ export const WorkProductionPlanSchema = z
   })
   .openapi("WorkProductionPlan");
 
-export const WorkBriefSchema = z
-  .object({
-    requirements: z.array(
-      z.object({
-        id: z.string(),
-        description: z.string(),
-        confirmed_at: z.string(),
-      }),
-    ),
-  })
-  .openapi("WorkBrief");
-
 export const WorkDraftSchema = z
   .object({
     platform: z.string(),
@@ -111,8 +146,7 @@ export const WorkDraftSchema = z
 export const WorkRevisionSnapshotSchema = z
   .object({
     profile: WorkProfileSchema,
-    brief: WorkBriefSchema,
-    outline: WorkOutlineSchema,
+    blueprint: WorkBlueprintSchema,
     plan: WorkProductionPlanSchema,
     draft: WorkDraftSchema.nullable(),
   })
@@ -147,8 +181,7 @@ export const WorkSchema = z
     title: z.string(),
     groupId: z.string().nullable(),
     profile: WorkProfileSchema,
-    brief: WorkBriefSchema,
-    outline: WorkOutlineSchema,
+    blueprint: WorkBlueprintSchema,
     plan: WorkProductionPlanSchema,
     draft: WorkDraftSchema.nullable(),
     headRevisionId: z.string().nullable(),
@@ -225,9 +258,8 @@ export const SyncWorkStateSchema = z
   .object({
     groupId: z.string().nullable().optional(),
     profile: WorkProfileSchema.optional(),
-    outline: WorkOutlineSchema.optional(),
+    blueprint: WorkBlueprintSchema.optional(),
     plan: WorkProductionPlanSchema.optional(),
-    brief: WorkBriefSchema.optional(),
     draft: WorkDraftSchema.nullable().optional(),
     title: z.string().optional(),
   })
@@ -246,8 +278,7 @@ export const AgentContextSchema = z
     conversationId: z.string().optional(),
     headRevisionId: z.string().nullable().optional(),
     profile: WorkProfileSchema,
-    brief: WorkBriefSchema,
-    outline: WorkOutlineSchema,
+    blueprint: WorkBlueprintSchema,
     plan: WorkProductionPlanSchema,
     draft: WorkDraftSchema.nullable(),
     threadId: z.string().nullable().optional(),

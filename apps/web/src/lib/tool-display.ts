@@ -1,39 +1,25 @@
 export const TOOL_LABELS: Record<string, string> = {
-  add_brief_requirement: "确认 brief 需求",
-  add_brief_from_ask: "记入 brief",
-  confirm_content_spec: "确认内容规格",
-  update_brief_requirement: "修改 brief",
-  delete_brief_requirement: "删除 brief",
-  clear_brief: "清空 brief",
-  add_outline_section: "添加大纲条目",
-  update_outline_section: "修改大纲条目",
-  delete_outline_section: "删除大纲条目",
-  clear_outline: "清空大纲",
-  revise_outline: "调整大纲",
+  update_blueprint_spec: "更新创作规格",
+  update_blueprint_voice: "更新表达设定",
+  set_blueprint_premise: "更新方案定位",
+  add_blueprint_constraint: "添加写作要求",
+  update_blueprint_constraint: "修改写作要求",
+  delete_blueprint_constraint: "删除写作要求",
+  clear_blueprint_constraints: "清空写作要求",
+  add_blueprint_beat: "添加内容节拍",
+  update_blueprint_beat: "修改内容节拍",
+  delete_blueprint_beat: "删除内容节拍",
+  clear_blueprint_beats: "清空内容节拍",
+  revise_blueprint: "重做作品方案",
+  add_blueprint_constraint_from_ask: "记入作品方案",
   add_plan_task: "添加制作任务",
   complete_execution: "完成执行",
-  update_work_profile: "更新作品特征",
+  update_work_profile: "更新参考素材",
   parse_reference_text: "解析参考文案",
   parse_reference_image: "解析参考图片",
   generate_draft: "AI 团队出稿",
   spawn_specialist: "调度专员",
   revise_production_plan: "调整创作计划",
-};
-
-const PROFILE_FIELD_LABELS: Record<string, string> = {
-  platform: "平台",
-  content_topic: "主题",
-  content_type: "类型描述",
-  content_format: "体裁",
-  media_modality: "媒介形式",
-  content_points: "内容要点",
-  style: "风格",
-  tone: "语气",
-  persona: "人设",
-  audience: "受众",
-  goals: "目标",
-  style_constraints: "风格约束",
-  notes: "备注",
 };
 
 export type ToolActivityState =
@@ -79,41 +65,41 @@ export function getToolInputSummary(
   toolInput: Record<string, unknown>,
 ) {
   switch (toolName) {
-    case "add_outline_section":
-    case "add_brief_requirement":
-    case "add_brief_from_ask":
-    case "update_brief_requirement":
-    case "update_outline_section":
+    case "add_blueprint_beat":
+    case "add_blueprint_constraint":
+    case "add_blueprint_constraint_from_ask":
+    case "update_blueprint_constraint":
+    case "update_blueprint_beat":
     case "add_plan_task":
       return readString(toolInput.description);
+    case "set_blueprint_premise":
+      return readString(toolInput.premise);
     case "spawn_specialist":
       return readString(toolInput.brief) || readString(toolInput.department);
-    case "revise_outline":
+    case "revise_blueprint":
     case "revise_production_plan":
       return readString(toolInput.reason);
-    case "delete_brief_requirement":
-      return readString(toolInput.requirement_id) || "删除 brief 条目";
-    case "delete_outline_section":
-      return readString(toolInput.section_id) || "删除大纲条目";
+    case "delete_blueprint_constraint":
+      return readString(toolInput.constraint_id) || "删除写作要求";
+    case "delete_blueprint_beat":
+      return readString(toolInput.beat_id) || "删除内容节拍";
     case "complete_execution":
       return readString(toolInput.summary);
-    case "update_work_profile": {
-      const fields = Object.keys(toolInput).filter(
-        (key) => toolInput[key] != null && key in PROFILE_FIELD_LABELS,
-      );
-      if (!fields.length) return "";
-      return fields.map((key) => PROFILE_FIELD_LABELS[key]).join("、");
-    }
+    case "update_blueprint_spec":
+    case "update_blueprint_voice":
+      return Object.keys(toolInput)
+        .filter((key) => toolInput[key] != null)
+        .join("、");
     case "parse_reference_text":
       return truncate(readString(toolInput.reference_text), 80);
     case "parse_reference_image":
       return readString(toolInput.hint) || "解析参考图片风格";
     case "generate_draft":
       return "AI 团队按创作计划出稿";
-    case "clear_brief":
-      return "清空 brief";
-    case "clear_outline":
-      return "清空大纲";
+    case "clear_blueprint_constraints":
+      return "清空写作要求";
+    case "clear_blueprint_beats":
+      return "清空内容节拍";
     default:
       return "";
   }

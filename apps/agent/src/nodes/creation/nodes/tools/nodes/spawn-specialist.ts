@@ -3,19 +3,18 @@ import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
 import { createChatModel } from "#agent/llm/dashscope.js"
-import { resolveContentSpec } from "#agent/lib/content-spec.js"
+import { blueprintToContentProfile } from "#agent/lib/blueprint/content-profile.js";
 import { departmentBrief } from "#agent/lib/industry-prompts.js"
 import { getPlanSummary, type WorkDraft } from "#agent/schema.js"
 import {
   parseActiveTurnKind,
+  parseBlueprint,
   parseModelTemperature,
-  parseOutline,
   parseProductionPlan,
-  parseProfile,
 } from "#agent/lib/parse-agent-state.js";
 import { getState } from "#agent/lib/tool-state.js"
 import { toolCommand } from "#agent/lib/tool-command.js"
-import { outlineSummary } from "#agent/prompt/context.js"
+import { blueprintSummary } from "#agent/prompt/context.js"
 
 import { DEPARTMENT_LABELS } from "./shared.js";
 
@@ -26,9 +25,9 @@ export const spawnSpecialist = tool(
       return toolCommand(config, "spawn_specialist 仅在创作模式可用。");
     }
 
-    const profile = resolveContentSpec(parseProfile(state));
+    const blueprint = parseBlueprint(state);
+    const contentProfile = blueprintToContentProfile(blueprint);
     const plan = parseProductionPlan(state);
-    const outline = parseOutline(state);
     const label = DEPARTMENT_LABELS[department];
     const name = specialist_name?.trim() || label;
     const industry = plan.industry_context ?? "";
@@ -41,9 +40,9 @@ export const spawnSpecialist = tool(
 
 任务说明：${brief}
 
-作品主题：${profile.content_topic ?? "未指定"}
-平台：${profile.platform ?? "未指定"}
-内容大纲：${outlineSummary(outline)}
+作品主题：${contentProfile.content_topic ?? "未指定"}
+体裁：${contentProfile.content_format ?? "未指定"}
+作品方案：${blueprintSummary(blueprint)}
 创作计划：${getPlanSummary(plan) ?? "无"}
 行业背景：${industry}
 
@@ -68,8 +67,8 @@ export const spawnSpecialist = tool(
           notes: (existing.notes ?? "") + section,
         }
       : {
-          platform: profile.platform ?? "unknown",
-          title: profile.content_topic ?? null,
+          platform: contentProfile.platform ?? "yougan",
+          title: contentProfile.content_topic ?? null,
           body: output,
           notes: section,
           publish_ready: false,

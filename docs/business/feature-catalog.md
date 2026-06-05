@@ -34,7 +34,7 @@
 | 流式对话 | 实时反馈 | 已实现 | LangGraph SDK `useStream` |
 | 参考素材汇总 | 对标与引用 | 已实现 | `ReferenceItem`，text/image/web |
 | 发布到有感 | 进入公域 | 已实现 | `PublishConfirmDialog` 确认分类后发布 |
-| 参考文案/图片解析 | 上传或粘贴参考素材 | 已实现 | MiniMax |
+| 参考文案/图片解析 | 上传或粘贴参考素材 | 已实现 | 百炼 qwen3.7-max |
 
 ---
 
@@ -42,13 +42,13 @@
 
 | 功能 | 用户价值 | 状态 | 模型 |
 |------|----------|------|------|
-| 灵感探索对话 | 定选题、平台、受众 | 已实现 | MiniMax |
+| 灵感探索对话 | 定选题、平台、受众 | 已实现 | 百炼 qwen3.7-max |
 | 大纲推敲对话 | 内容结构条目 | 已实现 | `outline` 子图 + 大纲工具 |
 | 聊天改状态 | 删改 brief/大纲、profile 等 | 已实现 | inspiration / outline 对话子图 + 工具 |
 | 灵感需求 CRUD 工具 | 侧栏即时更新（对话内） | 已实现 | inspiration 子图工具 |
-| 制作计划与出稿 | 创意总监 + 制作团队 | 已实现 | MiniMax / DeepSeek |
+| 制作计划与出稿 | 创意总监 + 制作团队 | 已实现 | qwen3.7-max / deepseek-v4-pro |
 | 灵感→计划自动衔接 | 减少手工搬运 | 已实现 | 创作模式 `creative-director` |
-| 按计划出稿与修改 | 可控正文生成 | 已实现 | MiniMax |
+| 按计划出稿与修改 | 可控正文生成 | 已实现 | 百炼 qwen3.7-max |
 | 执行摘要 | 版本对比可追溯 | 已实现 | `complete_execution` |
 | 会话持久化 | 断点续聊 | 已实现 | Postgres checkpoint |
 

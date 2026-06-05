@@ -10,7 +10,7 @@ export type OpenAiCompatibleProviderConfig = {
   temperature: number;
   streaming: boolean;
   maxTokens?: number;
-  /** 透传到请求体的额外字段，如 MiniMax reasoning_split */
+  /** 透传到请求体的额外厂商字段（按需） */
   modelKwargs?: Record<string, unknown>;
 };
 

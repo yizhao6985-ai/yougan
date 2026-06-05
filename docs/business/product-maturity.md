@@ -71,7 +71,7 @@
 
 | 风险 | 描述 | 缓解 |
 |------|------|------|
-| LLM 供应商依赖 | MiniMax + DeepSeek | 抽象 `llm/` 工厂，预留切换 |
+| LLM 供应商依赖 | 阿里百炼 DashScope | `llm/dashscope.ts` 工厂；对话/结构化/文生图模型 ID 可 env 覆盖 |
 | 按次计费 vs token 成本波动 | 毛利波动 | 监控单次对话 token；调价机制 |
 | 模拟支付误导测试数据 | 演示与真实环境分离 | 生产关闭 instant-paid |
 | Agent 与 API 双库 | 运维复杂度 | 托管 Postgres、备份策略 |

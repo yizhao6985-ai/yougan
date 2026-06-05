@@ -1,46 +1,93 @@
-import type { WorkBrief } from "../models/work/brief.js";
-import type { WorkOutline } from "../models/work/outline.js";
+import type { WorkBlueprint } from "../models/work/blueprint.js";
 import type { WorkProductionPlan } from "../models/work/plan.js";
 import type { WorkProfile } from "../models/work/profile.js";
-import { getOutlineSummary } from "./work/outline.js";
+import { getBlueprintPremise } from "./work/blueprint.js";
 import { getPlanSummary, isPlanReady } from "./work/plan.js";
-import { contentSpecSummary } from "./content-spec.js";
+import {
+  contentFormatLabel,
+  contentSpecSummary,
+  mediaModalityLabel,
+} from "./content-spec.js";
 
-export function profileSummary(profile: WorkProfile): string {
-  const parts: string[] = [];
-  if (profile.platform) parts.push(`平台：${profile.platform}`);
-  if (profile.content_topic) parts.push(`主题：${profile.content_topic}`);
-  if (profile.content_type) parts.push(`类型：${profile.content_type}`);
-  parts.push(contentSpecSummary(profile));
-  if (profile.content_points?.length)
-    parts.push(`要点：${profile.content_points.join(", ")}`);
-  if (profile.style) parts.push(`风格：${profile.style}`);
-  if (profile.tone) parts.push(`语气：${profile.tone}`);
-  if (profile.persona) parts.push(`人设：${profile.persona}`);
-  if (profile.audience) parts.push(`受众：${profile.audience}`);
-  if (profile.goals?.length) parts.push(`目标：${profile.goals.join(", ")}`);
-  if (profile.style_constraints?.length)
-    parts.push(`约束：${profile.style_constraints.join(", ")}`);
-  if (profile.notes) parts.push(`备注：${profile.notes}`);
-  parts.push(`参考素材：${profile.references?.length ?? 0} 条`);
-  return parts.length ? parts.join("；") : "尚无已执行特征";
+export function referencesSummary(profile: WorkProfile): string {
+  const count = profile.references?.length ?? 0;
+  return count ? `参考素材：${count} 条` : "尚无参考素材";
 }
 
-export function outlineSummary(outline: WorkOutline): string {
-  const summary = getOutlineSummary(outline);
-  if (!outline.sections.length && !summary) {
-    return "尚无内容大纲";
-  }
-  const lines: string[] = [`内容大纲（${outline.sections.length} 条）`];
-  if (summary) {
-    lines.push(`摘要：${summary}`);
-  }
-  if (outline.sections.length) {
+export function blueprintSpecSummary(blueprint: WorkBlueprint): string {
+  const { spec } = blueprint;
+  const parts = [
+    spec.content_topic ? `主题：${spec.content_topic}` : null,
+    spec.content_type ? `类型：${spec.content_type}` : null,
+    spec.content_format
+      ? `体裁：${contentFormatLabel(spec.content_format) ?? spec.content_format}`
+      : null,
+    spec.media_modality
+      ? `形式：${mediaModalityLabel(spec.media_modality) ?? spec.media_modality}`
+      : null,
+  ].filter(Boolean);
+  return parts.length ? parts.join("；") : "尚未确定创作规格";
+}
+
+export function blueprintVoiceSummary(blueprint: WorkBlueprint): string {
+  const { voice } = blueprint;
+  const parts = [
+    voice.audience ? `受众：${voice.audience}` : null,
+    voice.tone ? `语气：${voice.tone}` : null,
+    voice.style ? `风格：${voice.style}` : null,
+    voice.persona ? `人设：${voice.persona}` : null,
+    voice.goals?.length ? `目标：${voice.goals.join("、")}` : null,
+  ].filter(Boolean);
+  return parts.length ? parts.join("；") : "尚未确定表达设定";
+}
+
+export function blueprintSummary(blueprint: WorkBlueprint): string {
+  const premise = getBlueprintPremise(blueprint);
+  const lines: string[] = ["作品方案"];
+  if (premise) lines.push(`定位：${premise}`);
+  lines.push(blueprintSpecSummary(blueprint));
+  lines.push(blueprintVoiceSummary(blueprint));
+  if (blueprint.constraints.length) {
     lines.push(
-      `条目：${outline.sections.map((s) => s.description).join("；")}`,
+      `要求（${blueprint.constraints.length} 条）：${blueprint.constraints.map((c) => c.description).join("；")}`,
     );
   }
+  if (blueprint.beats.length) {
+    lines.push(
+      `结构（${blueprint.beats.length} 节）：${blueprint.beats.map((b, i) => `${i + 1}. ${b.description}`).join("；")}`,
+    );
+  }
+  if (
+    !premise &&
+    !blueprint.constraints.length &&
+    !blueprint.beats.length &&
+    !blueprint.spec.content_topic
+  ) {
+    return "尚无作品方案";
+  }
   return lines.join("\n");
+}
+
+/** @deprecated 使用 blueprintSummary */
+export function outlineSummary(blueprint: WorkBlueprint): string {
+  return blueprintSummary(blueprint);
+}
+
+/** @deprecated 使用 blueprintSummary */
+export function briefSummary(blueprint: WorkBlueprint): string {
+  if (!blueprint.constraints.length && !blueprint.premise.trim()) {
+    return "尚无作品方案";
+  }
+  const parts = [];
+  if (blueprint.premise.trim()) parts.push(blueprint.premise.trim());
+  if (blueprint.constraints.length) {
+    parts.push(blueprint.constraints.map((c) => c.description).join("；"));
+  }
+  return `作品方案：${parts.join("；")}`;
+}
+
+export function profileSummary(profile: WorkProfile): string {
+  return referencesSummary(profile);
 }
 
 export function productionPlanSummary(plan: WorkProductionPlan): string {
@@ -84,22 +131,8 @@ export function productionPlanSummary(plan: WorkProductionPlan): string {
   return lines.join("\n");
 }
 
-export function briefSummary(brief: WorkBrief): string {
-  if (!brief.requirements.length) return "尚无 brief 需求";
-  return `Brief 需求（${brief.requirements.length} 条）：${brief.requirements.map((r) => r.description).join("；")}`;
-}
-
 export function profileContext(profile: WorkProfile): string {
-  const parts: string[] = [];
-  if (profile.platform) parts.push(`平台：${profile.platform}`);
-  if (profile.content_topic) parts.push(`主题：${profile.content_topic}`);
-  if (profile.content_type) parts.push(`类型：${profile.content_type}`);
-  if (profile.audience) parts.push(`受众：${profile.audience}`);
-  if (profile.style) parts.push(`风格：${profile.style}`);
-  if (profile.tone) parts.push(`语气：${profile.tone}`);
-  if (profile.goals?.length) parts.push(`目标：${profile.goals.join("、")}`);
-  return parts.length ? parts.join("；") : "暂无";
+  return referencesSummary(profile);
 }
 
-// Re-export for agent prompt layer convenience
 export { contentSpecSummary };

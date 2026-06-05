@@ -1,46 +1,42 @@
 /**
- * 创意总监节点：根据当前 brief + 大纲制定内部创作计划。
+ * 创意总监节点：根据作品方案制定内部创作计划。
  */
 import { HumanMessage } from "@langchain/core/messages";
 
-import { createStructuredModel } from "#agent/llm/dashscope.js"
-import { invokeStructuredOutput } from "#agent/lib/structured-output.js"
+import { createStructuredModel } from "#agent/llm/dashscope.js";
+import { invokeStructuredOutput } from "#agent/lib/structured-output.js";
 import {
-  briefSummary,
-  outlineSummary,
+  blueprintSummary,
   productionPlanSummary,
-  profileSummary,
+  referencesSummary,
 } from "#agent/prompt/context.js";
-import { YOUGAN_USER_LABEL } from "#agent/prompt/persona.js"
+import { YOUGAN_USER_LABEL } from "#agent/prompt/persona.js";
 import {
   departmentsBrief,
   resolveIndustryContext,
 } from "#agent/lib/industry-prompts.js";
 import {
-  hasBriefContent,
-  hasOutlineContent,
+  isBlueprintActionable,
   isPlanReady,
   newProductionPlanTask,
   type ProductionDepartment,
   type WorkProductionPlan,
 } from "#agent/schema.js";
 import {
-  parseBrief,
-  parseOutline,
+  parseBlueprint,
   parseProductionPlan,
   parseProfile,
 } from "#agent/lib/parse-agent-state.js";
-import type { AgentStateType } from "#agent/state.js"
+import type { AgentStateType } from "#agent/state.js";
 import { ProductionPlanResponseSchema } from "./schema.js";
-import { resolveContentSpec } from "#agent/lib/content-spec.js"
+import { blueprintToContentProfile } from "#agent/lib/blueprint/content-profile.js";
 
 function shouldRunCreativeDirector(
   state: AgentStateType,
   force = false,
 ): boolean {
-  const brief = parseBrief(state);
-  const outline = parseOutline(state);
-  if (!hasBriefContent(brief) || !hasOutlineContent(outline)) return false;
+  const blueprint = parseBlueprint(state);
+  if (!isBlueprintActionable(blueprint)) return false;
 
   if (force) return true;
   const plan = parseProductionPlan(state);
@@ -53,22 +49,18 @@ function shouldRunCreativeDirector(
 }
 
 function buildCreativeDirectorPrompt(state: AgentStateType): string {
-  const profile = resolveContentSpec(parseProfile(state));
-  const brief = parseBrief(state);
-  const outline = parseOutline(state);
+  const blueprint = parseBlueprint(state);
+  const profile = parseProfile(state);
   const plan = parseProductionPlan(state);
-  const industry = resolveIndustryContext(profile);
+  const contentProfile = blueprintToContentProfile(blueprint);
+  const industry = resolveIndustryContext(contentProfile);
 
-  return `你是创意总监（内部角色，不对${YOUGAN_USER_LABEL}直接说话），负责将已定稿的内容大纲转化为可执行的**制作计划**。
+  return `你是创意总监（内部角色，不对${YOUGAN_USER_LABEL}直接说话），负责将已定稿的作品方案转化为可执行的**制作计划**。
 
-${YOUGAN_USER_LABEL}已确认 brief：
-${briefSummary(brief)}
+${YOUGAN_USER_LABEL}已确认作品方案：
+${blueprintSummary(blueprint)}
 
-已定稿内容大纲：
-${outlineSummary(outline)}
-
-作品特征：
-${profileSummary(profile)}
+${referencesSummary(profile)}
 
 当前计划（如有）：
 ${productionPlanSummary(plan)}
@@ -78,7 +70,7 @@ ${industry}
 
 请制定内部制作计划：
 1. 根据 content_format / media_modality 决定制作部门
-2. 将大纲条目拆分为具体执行任务，每条指定 department
+2. 将方案节拍拆分为具体执行任务，每条指定 department
 3. 任务覆盖从创意到交付的完整流程
 
 只输出结构化计划，不生成正文。`;
@@ -112,8 +104,8 @@ export async function runCreativeDirector(
   options?: { force?: boolean },
 ): Promise<Partial<AgentStateType>> {
   if (!shouldRunCreativeDirector(state, options?.force)) {
-    const profile = resolveContentSpec(parseProfile(state));
-    const industry = resolveIndustryContext(profile);
+    const blueprint = parseBlueprint(state);
+    const industry = resolveIndustryContext(blueprintToContentProfile(blueprint));
     const plan = parseProductionPlan(state);
     if (plan.industry_context === industry) {
       return {};
@@ -123,8 +115,8 @@ export async function runCreativeDirector(
     };
   }
 
-  const profile = resolveContentSpec(parseProfile(state));
-  const industry = resolveIndustryContext(profile);
+  const blueprint = parseBlueprint(state);
+  const industry = resolveIndustryContext(blueprintToContentProfile(blueprint));
   const existing = parseProductionPlan(state);
   const llm = createStructuredModel({ temperature: 0.5 });
 
@@ -139,7 +131,7 @@ export async function runCreativeDirector(
     const plan = applyProductionPlan(existing, parsed);
     plan.industry_context = industry;
 
-    return { plan, profile };
+    return { plan };
   } catch {
     const fallbackTasks = [
       newProductionPlanTask("撰写标题与正文", "writing"),
@@ -155,7 +147,6 @@ export async function runCreativeDirector(
         industry_context: industry,
         director_notes: departmentsBrief(["writing"]),
       },
-      profile,
     };
   }
 }

@@ -113,7 +113,7 @@ apps/api/
 
 - **User** — 账号、资料、头像/封面
 - **Work** — 物化视图：`profile`、`brief`、`plan`、`draft`（JSON），`headRevisionId`
-- **WorkRevision** — 单线版本快照 event log（仅 `execution_complete` / 内容预览）
+- **WorkRevision** — 单线版本快照 event log（仅 `execution_complete` / 作品预览）
 - **WorkConversation** — 多轮对话（共享作品状态）：`threadId`
 - **WorkGroup** — 作品分组
 - **Publication** — 对外发布的内容（草稿/已发布、阅读统计）

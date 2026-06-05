@@ -3,15 +3,10 @@
  */
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 
-import { confirmContentSpec } from "#agent/tools/content-spec.js"
-import { REFERENCE_TOOLS } from "#agent/tools/references.js"
+import { REFERENCE_TOOLS } from "#agent/tools/references.js";
 
-import { addBriefFromAsk } from "./nodes/add-brief-from-ask.js";
+import { addBlueprintConstraintFromAsk } from "./nodes/add-blueprint-from-ask.js";
 
-export const ASK_TOOLS = [
-  confirmContentSpec,
-  addBriefFromAsk,
-  ...REFERENCE_TOOLS,
-];
+export const ASK_TOOLS = [addBlueprintConstraintFromAsk, ...REFERENCE_TOOLS];
 
 export const toolNode = new ToolNode(ASK_TOOLS);

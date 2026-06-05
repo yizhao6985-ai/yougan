@@ -13,6 +13,7 @@ import {
 import { useYouganStreamContext } from "@/components/studio/yougan-stream-provider";
 import type { Work } from "@/lib/types";
 import { STUDIO } from "@/lib/site-copy";
+import { workSubtitle } from "@/lib/work-display";
 import { cn } from "@/lib/utils";
 
 export function WorkSidebarItem({
@@ -61,9 +62,9 @@ export function WorkSidebarItem({
             <span className="block truncate text-sm font-medium leading-5 text-foreground/90">
               {work.title}
             </span>
-            {work.profile.platform ? (
+            {workSubtitle(work) ? (
               <span className="mt-0.5 block truncate text-xs leading-4 text-muted-foreground">
-                {work.profile.platform}
+                {workSubtitle(work)}
               </span>
             ) : null}
           </span>
