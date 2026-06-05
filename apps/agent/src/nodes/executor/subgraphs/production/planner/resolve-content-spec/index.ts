@@ -1,3 +1,4 @@
+/** 从 profile 推导并写回 content_format / media_modalities 等规格 */
 import { resolveContentSpecFromProfile, type WorkProfile } from "@yougan/domain";
 
 import { parseProfile } from "#agent/lib/parse-agent-state.js";

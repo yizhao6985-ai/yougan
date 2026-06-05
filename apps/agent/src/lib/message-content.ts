@@ -1,3 +1,4 @@
+/** LangChain Message content → 纯文本（多模态 block 取 text 字段） */
 function contentPartToText(part: unknown): string {
   if (typeof part === "string") return part;
   if (!part || typeof part !== "object") return "";

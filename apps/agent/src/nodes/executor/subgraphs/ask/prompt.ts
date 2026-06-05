@@ -1,3 +1,4 @@
+/** ask 子图 LLM 系统提示词（答疑，不改方案结构工具） */
 import {
   profileSummary,
   referencesSummary,

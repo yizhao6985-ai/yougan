@@ -11,11 +11,12 @@ export async function orchestrateTurnNode(
 
   return {
     turnQueue,
+    /** 新回合开始：清掉上一轮 verifyTurn 产出的建议与标题建议 */
     suggestedConversationTitle: null,
+    nextStepSuggestions: null,
     completedTurnKinds: [],
     activeTurnKind: null,
     staging,
-    nextStepSuggestions: null,
     turnCancelled: false,
     turnCommitted: false,
   };

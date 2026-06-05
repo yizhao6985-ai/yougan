@@ -1,5 +1,6 @@
 import { END } from "@langchain/langgraph";
 
+/** inspectProduction 之后：通过则继续队列，失败则回创作者重试 */
 import type { AgentStateType } from "#agent/state.js";
 
 export const from = "inspectProduction" as const;

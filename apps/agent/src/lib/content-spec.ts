@@ -1,3 +1,4 @@
+/** 体裁 / 媒介与制作管线判定，复用 domain */
 export {
   CONTENT_FORMATS,
   MEDIA_MODALITIES,

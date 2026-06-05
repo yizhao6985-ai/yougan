@@ -1,3 +1,4 @@
+/** verifyTurn 自动对话标题结构化输出 */
 import { z } from "zod";
 
 import { MAX_CONVERSATION_TITLE_LENGTH } from "@yougan/domain";

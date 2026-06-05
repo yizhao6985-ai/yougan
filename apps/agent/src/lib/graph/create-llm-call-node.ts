@@ -1,3 +1,7 @@
+/**
+ * 单轮 LLM 节点工厂：buildPrompt + bindTools + 流式 AIMessage。
+ * profile / ask / production 子图共用。
+ */
 import { SystemMessage } from "@langchain/core/messages";
 import type { StructuredToolInterface } from "@langchain/core/tools";
 import type { GraphNode } from "@langchain/langgraph";

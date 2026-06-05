@@ -1,3 +1,4 @@
+/** 开屏 7 条选题建议 prompt */
 import {
   profileSummary,
   referencesSummary,

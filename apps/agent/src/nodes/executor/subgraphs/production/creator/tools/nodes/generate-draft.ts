@@ -1,3 +1,4 @@
+/** 文案部出稿：structured output 写入 preview，并标记待质检 */
 import { HumanMessage } from "@langchain/core/messages";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";

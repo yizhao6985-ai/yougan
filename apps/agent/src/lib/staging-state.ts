@@ -13,6 +13,7 @@ import {
 
 import type { AgentStateType } from "#agent/state.js";
 
+/** 无 staging 时从 canonical fork（工具中途写入前的兜底） */
 export function requireStaging(state: AgentStateType): TurnStaging {
   if (state.staging) return state.staging;
   return forkTurnStaging({
@@ -23,6 +24,7 @@ export function requireStaging(state: AgentStateType): TurnStaging {
   });
 }
 
+/** orchestrateTurn：从 canonical fork 新回合 staging */
 export function initStagingForTurn(
   state: AgentStateType,
   turnQueue: AgentStateType["turnQueue"],

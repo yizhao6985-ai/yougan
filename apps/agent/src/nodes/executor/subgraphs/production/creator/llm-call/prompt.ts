@@ -1,3 +1,4 @@
+/** production 文案管线 LLM 系统提示词 */
 import {
   departmentsBrief,
   resolveIndustryContext,

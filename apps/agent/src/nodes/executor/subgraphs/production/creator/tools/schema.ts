@@ -1,3 +1,4 @@
+/** generate_draft 等 structured output 的 preview payload */
 import { z } from "zod";
 
 export const WorkPreviewPayloadSchema = z.object({

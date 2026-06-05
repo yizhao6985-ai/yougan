@@ -1,3 +1,4 @@
+/** 取最新一条 human 消息的纯文本 */
 import type { BaseMessage } from "@langchain/core/messages";
 
 import { messageContentToText } from "../message-content.js";

@@ -1,3 +1,4 @@
+/** production 设计管线 LLM 系统提示词 */
 import { profileSummary } from "#agent/prompt/context.js";
 import { YOUGAN_USER_LABEL } from "#agent/prompt/persona.js";
 import { composeSystemPrompt } from "#agent/prompt/system.js";

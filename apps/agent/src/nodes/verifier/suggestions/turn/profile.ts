@@ -1,6 +1,7 @@
 /**
  * profile 回合结束后：根据 AI 回复生成下一步可点击建议。
  */
+/** 仅完成 profile 子图时的专用下一步建议（4 条） */
 import { HumanMessage } from "@langchain/core/messages";
 
 import {

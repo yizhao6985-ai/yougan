@@ -1,3 +1,6 @@
+/**
+ * 参考图 URL 解析与去重（profile reference-tools 使用）。
+ */
 import type { ReferenceItem } from "#agent/schema.js";
 
 export function listKnownReferenceImageUrls(references: ReferenceItem[]): string[] {

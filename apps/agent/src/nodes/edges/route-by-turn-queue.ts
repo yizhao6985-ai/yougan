@@ -1,3 +1,4 @@
+/** dispatchTurnQueue 之后：按 activeTurnKind / 队首路由到对话子图 */
 import type { TurnQueueKind } from "@yougan/domain";
 
 import {

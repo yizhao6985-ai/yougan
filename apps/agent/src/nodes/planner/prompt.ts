@@ -1,3 +1,4 @@
+/** planTurnQueue 用：根据用户最新消息判定 turnQueue kinds */
 import {
   profileSummary,
   referencesSummary,

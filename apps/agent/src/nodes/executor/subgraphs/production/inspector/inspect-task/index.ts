@@ -1,3 +1,4 @@
+/** 单任务交付物质检；不通过时标记 staging.meta 供 route-after-inspect 重试 */
 import { HumanMessage } from "@langchain/core/messages";
 import { z } from "zod";
 

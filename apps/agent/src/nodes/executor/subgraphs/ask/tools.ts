@@ -1,3 +1,4 @@
+/** ask 子图工具：仅 add_profile_constraint_from_ask */
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 

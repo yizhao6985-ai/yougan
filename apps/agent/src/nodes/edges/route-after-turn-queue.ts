@@ -1,6 +1,5 @@
-import {
-  parseTurnQueue,
-} from "#agent/lib/parse-agent-state.js";
+/** advanceTurnQueue 之后：队列未空则继续 dispatch，否则进入 verifyTurn */
+import { parseTurnQueue } from "#agent/lib/parse-agent-state.js";
 import type { AgentStateType } from "#agent/state.js";
 
 export const from = "advanceTurnQueue" as const;

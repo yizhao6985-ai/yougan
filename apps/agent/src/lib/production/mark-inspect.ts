@@ -1,3 +1,4 @@
+/** 标记 staging.meta.production 待质检及 inspect 管线（design vs writing） */
 import type { ProductionDepartment, ProductionPlanTask } from "@yougan/domain";
 
 import { patchStagingProductionMeta } from "#agent/lib/staging-state.js";

@@ -10,7 +10,8 @@ export const TOOL_LABELS: Record<string, string> = {
   update_profile_beat: "修改内容节拍",
   delete_profile_beat: "删除内容节拍",
   clear_profile_beats: "清空内容节拍",
-  revise_profile: "重做作品方案",
+  add_profile_beats: "批量添加内容节拍",
+  delete_profile_reference: "删除参考素材",
   add_profile_constraint_from_ask: "记入作品方案",
   add_plan_task: "添加制作任务",
   complete_execution: "完成执行",
@@ -76,7 +77,6 @@ export function getToolInputSummary(
       return readString(toolInput.premise);
     case "spawn_specialist":
       return readString(toolInput.brief) || readString(toolInput.department);
-    case "revise_profile":
     case "revise_production_plan":
       return readString(toolInput.reason);
     case "delete_profile_constraint":
@@ -102,6 +102,18 @@ export function getToolInputSummary(
       return "清空写作要求";
     case "clear_profile_beats":
       return "清空内容节拍";
+    case "add_profile_beats": {
+      const beats = toolInput.beats;
+      if (Array.isArray(beats) && beats.length) {
+        const first = beats[0] as Record<string, unknown>;
+        const count = beats.length;
+        const preview = readString(first.description);
+        return count > 1 ? `${preview} 等 ${count} 节` : preview;
+      }
+      return "";
+    }
+    case "delete_profile_reference":
+      return readString(toolInput.image_url) || `删除第 ${toolInput.index ?? "?"} 条参考`;
     default:
       return "";
   }

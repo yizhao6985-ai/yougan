@@ -1,6 +1,4 @@
-/**
- * 质检失败后立即重跑单任务交付物。
- */
+/** 质检不通过时，按反馈重写单任务交付物（preview 片段） */
 import { HumanMessage } from "@langchain/core/messages";
 
 import { createChatModel } from "#agent/llm/dashscope.js";

@@ -1,3 +1,4 @@
+/** chat 子图共用：llmCall 之后有 tool_calls → tools，否则 END */
 import { END, type ConditionalEdgeRouter } from "@langchain/langgraph";
 
 import { AgentState } from "#agent/state.js";

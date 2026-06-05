@@ -1,3 +1,4 @@
+/** production 制作执行工具：排任务、出稿、spawn、complete 等 */
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 
 import { addPlanTask } from "./nodes/add-plan-task.js";

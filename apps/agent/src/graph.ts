@@ -1,7 +1,14 @@
 /**
  * Yougan 主 Graph 入口（langgraph.json 指向此文件）。
  *
- * 外层：planner → executor → verifier
+ * ```text
+ * START
+ *   ├─ 空 thread → verifyTurn（开屏 7 条建议）→ END
+ *   └─ 有消息 → orchestrateTurn → dispatchTurnQueue → [profile|production|ask]
+ *         → advanceTurnQueue → … → verifyTurn（4 条建议）→ commitTurn → END
+ * ```
+ *
+ * 外层三分：planner（编排）→ executor（子图）→ verifier（建议 + 提交）
  */
 import { END, START, StateGraph } from "@langchain/langgraph";
 

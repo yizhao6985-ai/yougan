@@ -14,6 +14,7 @@ import {
   type WorkProfile,
 } from "@yougan/domain";
 
+/** 读取 references（经 parseProfile，staging 优先） */
 export function parseReferences(state: AgentStateType): ReferenceItem[] {
   const profileRefs = parseProfile(state).references;
   return profileRefs?.length ? profileRefs : [...EMPTY_WORK_REFERENCES];
@@ -24,6 +25,7 @@ export function parseProfile(state: AgentStateType): WorkProfile {
   return state.staging?.profile ?? state.profile ?? EMPTY_WORK_PROFILE;
 }
 
+/** 读取 productionPlan：有 staging 时读 staging.productionPlan */
 export function parseProductionPlan(state: AgentStateType): WorkProductionPlan {
   return (
     state.staging?.productionPlan ??
@@ -32,6 +34,7 @@ export function parseProductionPlan(state: AgentStateType): WorkProductionPlan {
   );
 }
 
+/** 读取 preview：有 staging 时读 staging.preview */
 export function parsePreview(state: AgentStateType): WorkPreview | null {
   return state.staging?.preview ?? state.preview ?? null;
 }

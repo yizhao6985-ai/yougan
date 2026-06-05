@@ -1,3 +1,4 @@
+/** ensureProfile 结构化输出：补全 content_topic / premise / beats */
 import { z } from "zod";
 
 import { ProfileBeatSchema } from "#agent/lib/work-profile/response-schema.js";

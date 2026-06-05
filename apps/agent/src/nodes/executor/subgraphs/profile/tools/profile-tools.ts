@@ -1,8 +1,10 @@
+/** 作品方案增量工具：spec / voice / premise / constraints / beats */
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
 import {
   appendProfileBeat,
+  appendProfileBeats,
   appendProfileConstraint,
   clearProfileBeats,
   clearProfileConstraints,
@@ -51,7 +53,7 @@ export const updateProfileSpec = tool(
   {
     name: "update_profile_spec",
     description:
-      "用户明确创作主题、体裁或媒介形式时写入 spec。仅当用户主动提到发布渠道时才写 platform。",
+      "写入或更新创作主题、体裁、媒介形式。换选题/换方向时优先更新 content_topic。仅当用户主动提到发布渠道时才写 platform。",
     schema: z.object({
       platform: z.string().nullable().optional(),
       content_topic: z.string().nullable().optional(),
@@ -105,7 +107,8 @@ export const setProfilePremiseTool = tool(
   },
   {
     name: "set_profile_premise",
-    description: "写入或更新作品方案的一句话定位。",
+    description:
+      "写入或更新一句话定位。换方向后与新 content_topic 对齐；局部调整时也可单独更新。",
     schema: z.object({
       premise: z.string().describe("这篇内容要讲什么"),
     }),
@@ -202,7 +205,8 @@ export const addProfileBeat = tool(
   },
   {
     name: "add_profile_beat",
-    description: "用户确认的一条有序内容结构节拍。",
+    description:
+      "追加单条内容节拍。仅新增一节时用；换方向后一次性写多节请用 add_profile_beats。",
     schema: z.object({
       description: z.string(),
       intent: z.string().nullable().optional(),
@@ -257,6 +261,44 @@ export const deleteProfileBeatTool = tool(
   },
 );
 
+const profileBeatInputSchema = z.object({
+  description: z.string().min(1),
+  intent: z.string().nullable().optional(),
+});
+
+export const addProfileBeats = tool(
+  async ({ beats }, config) => {
+    const gate = requireProfileMode(config);
+    if (gate) return toolCommand(config, gate);
+    if (!beats.length) {
+      return toolCommand(config, "至少提供一条节拍。");
+    }
+
+    const profile = parseProfile(getState());
+    const next = appendProfileBeats(profile, beats);
+    if (next.beats.length === profile.beats.length) {
+      return toolCommand(config, "未添加新节拍（均为空或已存在）。");
+    }
+    return toolCommand(
+      config,
+      `已添加 ${next.beats.length - profile.beats.length} 条内容节拍（共 ${next.beats.length} 节）。`,
+      patchStagingProfile(getState(), next),
+    );
+  },
+  {
+    name: "add_profile_beats",
+    description:
+      "按顺序批量追加多条内容节拍。换方向且已 clear_profile_beats 后，用本工具一次写入新结构。",
+    schema: z.object({
+      beats: z
+        .array(profileBeatInputSchema)
+        .min(1)
+        .max(8)
+        .describe("有序节拍列表，3–8 条为宜"),
+    }),
+  },
+);
+
 export const clearProfileConstraintsTool = tool(
   async (_input, config) => {
     const gate = requireProfileMode(config);
@@ -268,7 +310,8 @@ export const clearProfileConstraintsTool = tool(
   },
   {
     name: "clear_profile_constraints",
-    description: "清空全部写作要求。",
+    description:
+      "清空全部写作要求。换选题/换方向且旧要求不再适用时使用。",
     schema: z.object({}),
   },
 );
@@ -284,7 +327,8 @@ export const clearProfileBeatsTool = tool(
   },
   {
     name: "clear_profile_beats",
-    description: "清空全部内容节拍。",
+    description:
+      "清空全部内容节拍。换选题/换方向、准备重写结构前使用，之后 set_profile_premise + add_profile_beats。",
     schema: z.object({}),
   },
 );

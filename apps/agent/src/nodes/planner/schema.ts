@@ -1,3 +1,4 @@
+/** orchestrateTurn 结构化输出：本轮子图执行队列 */
 import { z } from "zod";
 
 import { TURN_QUEUE_KINDS } from "@yougan/domain";

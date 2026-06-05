@@ -1,3 +1,4 @@
+/** WorkProfile → FlatContentSpec（行业 prompt、制作管线共用） */
 import {
   flattenWorkProfile,
   resolveContentSpecFromProfile,

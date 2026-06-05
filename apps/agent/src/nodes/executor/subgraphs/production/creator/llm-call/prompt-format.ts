@@ -1,3 +1,4 @@
+/** 按体裁生成写作指引片段（generate_draft 等使用） */
 import type { ContentFormatId } from "#agent/lib/content-spec.js";
 
 const FORMAT_GUIDANCE: Record<ContentFormatId, string> = {

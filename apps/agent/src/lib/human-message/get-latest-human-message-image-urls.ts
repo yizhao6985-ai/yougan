@@ -1,3 +1,4 @@
+/** 取最新一条 human 消息附带的图片 URL 列表 */
 import type { BaseMessage } from "@langchain/core/messages";
 
 function extractImageUrlsFromHumanContent(content: unknown): string[] {

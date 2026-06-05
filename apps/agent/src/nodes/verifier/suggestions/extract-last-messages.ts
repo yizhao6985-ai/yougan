@@ -1,3 +1,4 @@
+/** 从 messages 倒序取最近一条 human / ai 全文（建议与标题生成共用） */
 import { messageContentToText } from "#agent/lib/message-content.js";
 import type { AgentStateType } from "#agent/state.js";
 

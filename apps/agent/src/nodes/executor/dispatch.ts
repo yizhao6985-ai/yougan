@@ -9,5 +9,5 @@ export async function dispatchTurnQueueNode(
   if (!head) {
     return { activeTurnKind: null };
   }
-  return { activeTurnKind: head, nextStepSuggestions: null };
+  return { activeTurnKind: head };
 }

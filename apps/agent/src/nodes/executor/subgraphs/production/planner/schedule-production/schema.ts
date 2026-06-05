@@ -1,3 +1,4 @@
+/** scheduleProduction LLM 结构化输出 schema */
 import { z } from "zod";
 
 export const ProductionPlanTaskSchema = z.object({

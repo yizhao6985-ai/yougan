@@ -1,3 +1,4 @@
+/** tools 之后：回创作者 / 进质检 / 按 design 管线分支 */
 import type { AgentStateType } from "#agent/state.js";
 
 export const from = "tools" as const;

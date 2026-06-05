@@ -1,3 +1,4 @@
+/** 按部门 spawn 专员执行单任务（设计/音频/视频等） */
 import { HumanMessage } from "@langchain/core/messages";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";

@@ -1,10 +1,15 @@
+/** 参考素材：parse_reference_text / parse_reference_image / delete_profile_reference */
 import { HumanMessage } from "@langchain/core/messages";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
 import { createChatModel } from "#agent/llm/dashscope.js";
 import type { ReferenceItem } from "#agent/schema.js";
-import { parseProfile, parseReferences } from "#agent/lib/parse-agent-state.js";
+import {
+  parseActiveTurnKind,
+  parseProfile,
+  parseReferences,
+} from "#agent/lib/parse-agent-state.js";
 import { truncateMessageContent } from "#agent/lib/message-content.js";
 import { getLatestHumanMessageImageUrls } from "#agent/lib/human-message/index.js";
 import {
@@ -13,6 +18,7 @@ import {
   upsertImageReference,
 } from "#agent/lib/reference-images.js";
 import { patchStagingProfile } from "#agent/lib/staging-state.js";
+import { deleteProfileReference } from "@yougan/domain";
 import { appendReferences, getState } from "#agent/lib/tool-state.js";
 import { toolCommand } from "#agent/lib/tool-command.js";
 
@@ -106,4 +112,51 @@ export const parseReferenceImage = tool(
   },
 );
 
-export const REFERENCE_TOOLS = [parseReferenceText, parseReferenceImage];
+function requireProfileMode(config: object): string | null {
+  if (parseActiveTurnKind(getState()) !== "profile") {
+    return "作品方案工具仅在 profile 模式可用。";
+  }
+  return null;
+}
+
+export const deleteProfileReferenceTool = tool(
+  async ({ image_url, index }, config) => {
+    const gate = requireProfileMode(config);
+    if (gate) return toolCommand(config, gate);
+    if (image_url == null && index == null) {
+      return toolCommand(config, "请提供 image_url 或 index。");
+    }
+
+    const state = getState();
+    const profile = parseProfile(state);
+    const refs = profile.references ?? [];
+    if (!refs.length) {
+      return toolCommand(config, "当前方案尚无参考素材。");
+    }
+
+    const next = deleteProfileReference(profile, { image_url, index });
+    if (!next) {
+      return toolCommand(config, "未找到要删除的参考素材。");
+    }
+    return toolCommand(
+      config,
+      `已删除参考素材（剩余 ${next.references?.length ?? 0} 条）。`,
+      patchStagingProfile(state, next),
+    );
+  },
+  {
+    name: "delete_profile_reference",
+    description:
+      "删除一条参考素材。按列表下标 index（从 0 起）或参考图 image_url 定位；用户说某条参考不再适用时使用。",
+    schema: z.object({
+      image_url: z.string().optional(),
+      index: z.number().int().min(0).optional(),
+    }),
+  },
+);
+
+export const REFERENCE_TOOLS = [
+  parseReferenceText,
+  parseReferenceImage,
+  deleteProfileReferenceTool,
+];

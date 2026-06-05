@@ -1,3 +1,4 @@
+/** 统计 thread 内 human 消息条数（开屏 / 自动标题等门禁） */
 import type { BaseMessage } from "@langchain/core/messages";
 
 export function countHumanMessages(

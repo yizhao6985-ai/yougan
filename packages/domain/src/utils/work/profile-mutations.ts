@@ -6,6 +6,7 @@ import {
   type ProfileVoice,
   type WorkProfile,
 } from "../../models/work/profile.js";
+import type { ReferenceItem } from "../../models/work/reference.js";
 import { newProfileBeat, newProfileConstraint } from "./profile.js";
 
 export function patchProfileSpec(
@@ -101,6 +102,19 @@ export function appendProfileBeat(
   };
 }
 
+/** 按顺序批量追加节拍（跳过空描述与重复描述） */
+export function appendProfileBeats(
+  profile: WorkProfile,
+  beats: Array<{ description: string; intent?: string | null }>,
+): WorkProfile {
+  let next = profile;
+  for (const beat of beats) {
+    const patched = appendProfileBeat(next, beat.description, beat.intent);
+    if (patched) next = patched;
+  }
+  return next;
+}
+
 export function updateProfileBeat(
   profile: WorkProfile | undefined,
   beatId: string,
@@ -151,4 +165,28 @@ export function findProfileBeatIndex(profile: WorkProfile, beatId: string): numb
   return profile.beats.findIndex((item) => item.id === beatId);
 }
 
-export type { ProfileBeat, ProfileConstraint };
+/** 按 image_url 或列表下标删除一条参考素材 */
+export function deleteProfileReference(
+  profile: WorkProfile,
+  target: { image_url?: string; index?: number },
+): WorkProfile | null {
+  const { image_url, index } = target;
+  const refs = profile.references ?? [];
+  if (!refs.length) return null;
+
+  let removeAt = -1;
+  if (typeof index === "number" && index >= 0 && index < refs.length) {
+    removeAt = index;
+  } else if (image_url?.trim()) {
+    const url = image_url.trim();
+    removeAt = refs.findIndex(
+      (item) => item.source_type === "image" && item.image_url === url,
+    );
+  }
+  if (removeAt < 0) return null;
+
+  const nextRefs = refs.filter((_, i) => i !== removeAt);
+  return { ...profile, references: nextRefs };
+}
+
+export type { ProfileBeat, ProfileConstraint, ReferenceItem };

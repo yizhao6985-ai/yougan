@@ -1,5 +1,7 @@
+/** profile 子图 ToolNode 工具列表 */
 import {
   addProfileBeat,
+  addProfileBeats,
   addProfileConstraint,
   clearProfileBeatsTool,
   clearProfileConstraintsTool,
@@ -12,7 +14,6 @@ import {
   updateProfileVoice,
 } from "./profile-tools.js";
 import { REFERENCE_TOOLS } from "./reference-tools.js";
-import { reviseProfile } from "./revise-profile.js";
 
 export const PROFILE_TOOLS = [
   updateProfileSpec,
@@ -23,9 +24,9 @@ export const PROFILE_TOOLS = [
   deleteProfileConstraintTool,
   clearProfileConstraintsTool,
   addProfileBeat,
+  addProfileBeats,
   updateProfileBeatTool,
   deleteProfileBeatTool,
   clearProfileBeatsTool,
-  reviseProfile,
   ...REFERENCE_TOOLS,
 ];

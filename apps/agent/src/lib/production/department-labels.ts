@@ -1,3 +1,4 @@
+/** 制作部门中文展示名 */
 import type { ProductionDepartment } from "@yougan/domain";
 
 export const DEPARTMENT_LABELS: Record<ProductionDepartment, string> = {
