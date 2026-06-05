@@ -10,11 +10,12 @@
     "outDir": "dist",
     "baseUrl": ".",
     "paths": {
-      "#agent/lib/*": ["./src/lib/*"],
+      "#agent/runtime/*": ["./src/runtime/*"],
+      "#agent/messages/*": ["./src/messages/*"],
+      "#agent/model/*": ["./src/model/*"],
       "#agent/llm/*": ["./src/llm/*"],
-      "#agent/prompt/*": ["./src/prompt/*"],
+      "#agent/system-prompt.js": ["./src/system-prompt.ts"],
       "#agent/state.js": ["./src/state.ts"],
-      "#agent/schema.js": ["./src/schema.ts"],
       "#agent/env.js": ["./src/env.ts"]
     }
   },

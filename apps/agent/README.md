@@ -18,47 +18,37 @@ Checkpoint：**Agent 专用 Postgres**（`POSTGRES_URI`，默认 `:5433`）。
 
 | 角色 | 目录 | 节点 | 职责 |
 |------|------|------|------|
-| 计划者 | `nodes/planner/` | `orchestrateTurn` | 解析用户意图 → `turnQueue[]`，fork `staging` |
-| 执行者 | `nodes/executor/` | `dispatchTurnQueue` / `advanceTurnQueue` + 子图 | 按队列路由并执行 profile / production / ask |
-| 验收者 | `nodes/verifier/` | `verifyTurn` / `commitTurn` | 验收通过 → 生成 `nextStepSuggestions` → 提交 canonical |
+| 计划者 | `nodes/orchestrateTurn/` | `orchestrateTurn` | 解析用户意图 → `turnQueue[]`，fork `staging` |
+| 执行者 | `state-graph/` | `dispatchTurnQueue` / `advanceTurnQueue` + 子图 | 按队列路由并执行 profile / production / ask |
+| 验收者 | `nodes/verifyTurn/` | `verifyTurn` / `commitTurn` | 验收通过 → 生成 `nextStepSuggestions` → 提交 canonical |
 
-路由边：`nodes/edges/`
+图接线：`src/graph.ts`；`state-graph/` 含 `nodes/`、`conditional-edges/`、`subgraphs/*/graph.ts`
 
-### 内层 production（制作子图）
+### 内层子图（`state-graph/subgraphs/`）
 
-| 角色 | 目录 | 节点 | 职责 |
-|------|------|------|------|
-| 计划者 | `planner/` | ensureProfile / resolveContentSpec / scheduleProduction | 补全方案、解析规格、制定制作计划 |
-| 创作者 | `creator/` | llmCall / designLlmCall ⇄ tools | 按任务产出文案、设计、预览 |
-| 验收者 | `inspector/` | inspectProduction | 单任务质检，不通过则重试 |
+**production**：`ensureProfile` → `resolveContentSpec` → `scheduleProduction` → `llmCall` / `designLlmCall` ⇄ `tools` →（work）`generateDraft` / `spawnSpecialist` → `inspectProduction`。tool 仅入队或改 state，LLM 重活在 work node。
 
-profile / ask 子图由 `createChatLoopGraph` 生成（直连 llm ⇄ tools）；方案缺口由 production 的 ensureProfile 在进入制作时补全。
+**profile**：`llmCall` ⇄ `tools` →（work）`parseReferenceText` / `parseReferenceImage` → 回 `llmCall`。
 
-共享工厂见 `lib/graph/`：`createLlmCallNode`、`createChatLoopGraph`、`after-llm`。
+**ask**：`llmCall` ⇄ `runTools`（`ToolNode` + `toolsCondition`）。
+
+LLM 环：`nodes/llmCall/node.ts`（bindTools + stream）+ `nodes/runTools/node.ts`（`ToolNode`）+ `conditional-edges/llm-tool-calls.ts`（`toolsCondition`）。
 
 ## 目录结构
 
 ```
 src/
-├── graph.ts
-├── nodes/
-│   ├── edges/                        # 主图条件路由
-│   ├── planner/                      # 外层·计划者
-│   ├── executor/                     # 外层·执行者
-│   │   ├── dispatch.ts
-│   │   ├── advance.ts
-│   │   └── subgraphs/
-│   │       ├── profile/
-│   │       ├── ask/
-│   │       └── production/           # 内层 planner / creator / inspector
-│   └── verifier/                     # 外层·验收者
-│       ├── index.ts                  # verifyTurn
-│       ├── commit.ts
-│       └── suggestions/
-├── lib/
-├── prompt/
+├── graph.ts                          # langgraph 注册入口
+├── state-graph/                      # 主图 + subgraphs/
+├── runtime/                          # state-readers / staging-writes
+├── messages/
+├── model/                            # 模型工厂、provider
+├── llm/                              # invoke / stream / structured-output
+├── system-prompt.ts                  # 全局系统提示词 + composeSystemPrompt
 └── state.ts
 ```
+
+详见 [AGENTS.md](./AGENTS.md)。
 
 ## 路径别名
 
@@ -66,14 +56,15 @@ src/
 
 | 别名 | 指向 |
 |------|------|
-| `#agent/lib/*` | `src/lib/*` |
+| `#agent/runtime/*` | `src/runtime/*` |
+| `#agent/messages/*` | `src/messages/*` |
+| `#agent/model/*` | `src/model/*` |
 | `#agent/llm/*` | `src/llm/*` |
-| `#agent/prompt/*` | `src/prompt/*` |
+| `#agent/system-prompt.js` | `src/system-prompt.ts` |
 | `#agent/state.js` | `src/state.ts` |
-| `#agent/schema.js` | `src/schema.ts` |
 | `#agent/env.js` | `src/env.ts` |
 
-profile 子图：`graph.ts`、`prompt.ts`、`tools/`（`index.ts` 聚合 profile-tools / reference-tools / revise-profile）；ask 为 `graph.ts`、`prompt.ts`、`tools.ts`。
+类型与领域逻辑统一 `import from "@yougan/domain"`。主图接线在 `src/graph.ts`，子图在 `state-graph/subgraphs/*/graph.ts`。
 
 ## 主图流程
 
@@ -94,15 +85,15 @@ START
 
 ## LLM 接入
 
-全部经 **阿里百炼 DashScope**（`DASHSCOPE_API_KEY`，OpenAI 兼容 `compatible-mode/v1`）。默认模型见 `src/llm/models.ts`，可用 `LLM_MODEL_*` 覆盖。
+全部经 **阿里百炼 DashScope**（`DASHSCOPE_API_KEY`，OpenAI 兼容 `compatible-mode/v1`）。默认模型见 `src/model/models.ts`，可用 `LLM_MODEL_*` 覆盖。
 
 ## 模型分工
 
 | 场景 | 位置 | 默认模型 |
 |------|------|----------|
-| 对话子图、参考解析 | `llm/dashscope.ts` `createChatModel` | qwen3.7-max |
+| 对话子图、参考解析 | `model/dashscope.ts` `createChatModel` | qwen3.7-max |
 | 队列解析、下一步建议、创意总监 | `createStructuredModel` | deepseek-v4-pro |
-| 文生图 | `llm/dashscope-image.ts` | qwen-image-2.0-pro |
+| 文生图 | `model/dashscope-image.ts` | qwen-image-2.0-pro |
 
 ## 相关文档
 

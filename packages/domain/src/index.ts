@@ -13,7 +13,7 @@ export * from "./models/discover/taxonomy.js";
 // —— 工具函数 ——
 export * from "./utils/work/profile.js";
 export * from "./utils/work/plan.js";
-export * from "./utils/work/staging.js";
+export * from "./utils/work/turn-staging.js";
 export * from "./utils/work/profile-mutations.js";
 export * from "./utils/work/normalize-dto.js";
 export * from "./utils/profile-merge.js";
@@ -30,3 +30,4 @@ export * from "./utils/media-modalities.js";
 export * from "./utils/discover/taxonomy.js";
 export * from "./utils/discover/filters.js";
 export * from "./utils/prompt-summaries.js";
+export * from "./utils/message-content.js";

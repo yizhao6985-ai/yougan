@@ -1,5 +1,5 @@
 import type { Thread } from "@langchain/langgraph-sdk";
-import { truncateAtMaxLength } from "@yougan/domain";
+import { messageContentToText, truncateAtMaxLength } from "@yougan/domain";
 
 import { YOUGAN_ASSISTANT_ID } from "@/lib/yougan-chat-api";
 import { getLangGraphClient } from "@/lib/langgraph-client";
@@ -14,22 +14,6 @@ export type YouganThreadItem = {
   title: string;
   updatedAt: string;
 };
-
-function messageContentToText(content: unknown): string {
-  if (typeof content === "string") return content;
-  if (Array.isArray(content)) {
-    return content
-      .map((part) => {
-        if (typeof part === "string") return part;
-        if (part && typeof part === "object" && "text" in part) {
-          return String((part as { text?: unknown }).text ?? "");
-        }
-        return "";
-      })
-      .join("");
-  }
-  return "";
-}
 
 function formatThreadTitle(thread: Thread): string {
   const metadataTitle = thread.metadata?.[METADATA_TITLE];

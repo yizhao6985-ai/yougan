@@ -1,0 +1,25 @@
+import { END } from "@langchain/langgraph";
+
+import type { AgentStateType } from "#agent/state.js";
+
+/** inspectProduction：质检未通过且未超重试上限则回创作者，否则结束 */
+export const from = "inspectProduction" as const;
+
+const MAX_INSPECT_RETRIES = 2;
+
+export type DeliverableRetryTarget = "llmCall" | "designLlmCall" | typeof END;
+
+export function retryDeliverableOrEnd(
+  state: AgentStateType,
+): DeliverableRetryTarget {
+  const meta = state.staging?.meta.production;
+  if (!meta?.pendingInspect) {
+    return END;
+  }
+  if ((meta.inspectRetryCount ?? 0) > MAX_INSPECT_RETRIES) {
+    return END;
+  }
+  return meta.inspectPipeline === "design" ? "designLlmCall" : "llmCall";
+}
+
+export const paths: DeliverableRetryTarget[] = ["llmCall", "designLlmCall", END];

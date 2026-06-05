@@ -1,5 +1,5 @@
 import type { TurnQueueKind } from "../chat/turn-queue.js";
-import type { WorkProductionPlan } from "./plan.js";
+import type { ProductionDepartment, WorkProductionPlan } from "./plan.js";
 import type { WorkPreview } from "./preview.js";
 import type { WorkProfile } from "./profile.js";
 
@@ -24,6 +24,23 @@ export interface ProductionStagingMeta {
   pendingInspect?: boolean;
   /** 重试时回到的管线：writing → llmCall，design → designLlmCall */
   inspectPipeline?: "writing" | "design" | null;
+  /** tool 请求后由 generateDraft work node 消费 */
+  pendingGenerateDraft?: boolean;
+  /** tool 请求后由 spawnSpecialist work node 消费 */
+  pendingSpawnSpecialist?: {
+    department: ProductionDepartment;
+    brief: string;
+    specialist_name?: string | null;
+  } | null;
+}
+
+/** profile 子图 work 队列（staging 内） */
+export interface ProfileStagingMeta {
+  pendingParseReferenceText?: string | null;
+  pendingParseReferenceImage?: {
+    image_url: string;
+    hint?: string | null;
+  } | null;
 }
 
 export interface TurnStagingMeta {
@@ -31,6 +48,7 @@ export interface TurnStagingMeta {
   completedTurns: TurnQueueKind[];
   outcome: TurnStagingOutcome;
   gaps?: string[];
+  profile?: ProfileStagingMeta;
   production?: ProductionStagingMeta;
 }
 

@@ -10,7 +10,7 @@ import { z } from "zod";
 import {
   DASHSCOPE_IMAGE_MODELS,
   DASHSCOPE_TEXT_MODELS,
-} from "./llm/models.js";
+} from "./model/models.js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 loadEnv({ path: resolve(root, ".env") });

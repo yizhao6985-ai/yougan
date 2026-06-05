@@ -1,30 +1,21 @@
 /**
- * Yougan 主 Graph 入口（langgraph.json 指向此文件）。
- *
- * ```text
- * START
- *   ├─ 空 thread → verifyTurn（开屏 7 条建议）→ END
- *   └─ 有消息 → orchestrateTurn → dispatchTurnQueue → [profile|production|ask]
- *         → advanceTurnQueue → … → verifyTurn（4 条建议）→ commitTurn → END
- * ```
- *
- * 外层三分：planner（编排）→ executor（子图）→ verifier（建议 + 提交）
+ * yougan 主图（langgraph.json 入口）
  */
 import { END, START, StateGraph } from "@langchain/langgraph";
 
 import { checkpointer } from "./checkpointer.js";
-import * as routeAfterTurnQueue from "./nodes/edges/route-after-turn-queue.js";
-import * as routeAfterVerify from "./nodes/edges/route-after-verify.js";
-import * as routeByEntry from "./nodes/edges/route-by-entry.js";
-import * as routeByTurnQueue from "./nodes/edges/route-by-turn-queue.js";
-import { advanceTurnQueueNode } from "./nodes/executor/advance.js";
-import { dispatchTurnQueueNode } from "./nodes/executor/dispatch.js";
-import { askGraph } from "./nodes/executor/subgraphs/ask/graph.js";
-import { productionGraph } from "./nodes/executor/subgraphs/production/graph.js";
-import { profileGraph } from "./nodes/executor/subgraphs/profile/graph.js";
-import { orchestrateTurnNode } from "./nodes/planner/index.js";
-import { commitTurnNode } from "./nodes/verifier/commit.js";
-import { verifyTurnNode } from "./nodes/verifier/index.js";
+import * as commitOrEnd from "./state-graph/conditional-edges/commit-or-end.js";
+import * as drainTurnQueue from "./state-graph/conditional-edges/drain-turn-queue.js";
+import * as openingOrOrchestrate from "./state-graph/conditional-edges/opening-or-orchestrate.js";
+import * as subgraphByTurnKind from "./state-graph/conditional-edges/subgraph-by-turn-kind.js";
+import { advanceTurnQueueNode } from "./state-graph/nodes/advanceTurnQueue/node.js";
+import { commitTurnNode } from "./state-graph/nodes/commitTurn/node.js";
+import { dispatchTurnQueueNode } from "./state-graph/nodes/dispatchTurnQueue/node.js";
+import { orchestrateTurnNode } from "./state-graph/nodes/orchestrateTurn/node.js";
+import { verifyTurnNode } from "./state-graph/nodes/verifyTurn/node.js";
+import { askGraph } from "./state-graph/subgraphs/ask/graph.js";
+import { productionGraph } from "./state-graph/subgraphs/production/graph.js";
+import { profileGraph } from "./state-graph/subgraphs/profile/graph.js";
 import { AgentState } from "./state.js";
 
 const workflow = new StateGraph(AgentState)
@@ -36,25 +27,29 @@ const workflow = new StateGraph(AgentState)
   .addNode("profileGraph", profileGraph)
   .addNode("productionGraph", productionGraph)
   .addNode("askGraph", askGraph)
-  .addConditionalEdges(START, routeByEntry.routeByEntry, routeByEntry.paths)
+  .addConditionalEdges(
+    START,
+    openingOrOrchestrate.selectOpeningOrOrchestrate,
+    openingOrOrchestrate.paths,
+  )
   .addEdge("orchestrateTurn", "dispatchTurnQueue")
   .addConditionalEdges(
-    "dispatchTurnQueue",
-    routeByTurnQueue.routeByTurnQueue,
-    routeByTurnQueue.paths,
+    subgraphByTurnKind.from,
+    subgraphByTurnKind.selectSubgraphByTurnKind,
+    subgraphByTurnKind.paths,
   )
   .addEdge("profileGraph", "advanceTurnQueue")
   .addEdge("productionGraph", "advanceTurnQueue")
   .addEdge("askGraph", "advanceTurnQueue")
   .addConditionalEdges(
-    "advanceTurnQueue",
-    routeAfterTurnQueue.routeAfterTurnQueue,
-    routeAfterTurnQueue.paths,
+    drainTurnQueue.from,
+    drainTurnQueue.drainTurnQueueOrVerify,
+    drainTurnQueue.paths,
   )
   .addConditionalEdges(
-    "verifyTurn",
-    routeAfterVerify.routeAfterVerify,
-    routeAfterVerify.paths,
+    commitOrEnd.from,
+    commitOrEnd.commitTurnOrEnd,
+    commitOrEnd.paths,
   )
   .addEdge("commitTurn", END);
 

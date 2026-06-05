@@ -1,5 +1,6 @@
 import { AIMessage } from "@langchain/core/messages";
 import type { Message } from "@langchain/langgraph-sdk";
+import { messageContentToText as coreMessageContentToText } from "@yougan/domain";
 
 import { isInternalOpeningModeSystemMessage } from "@/lib/opening-mode-internal";
 
@@ -52,33 +53,7 @@ export function extractAIMessageText(message: MessageWithBlocks): string {
     if (text) return text;
   }
 
-  const content = message.content;
-  if (typeof content === "string") {
-    return content;
-  }
-
-  if (!Array.isArray(content)) {
-    return "";
-  }
-
-  let text = "";
-
-  for (const part of content) {
-    if (typeof part === "string") {
-      text += part;
-      continue;
-    }
-    const block = part as ContentBlockLike & Record<string, unknown>;
-    if (block.type === "text") {
-      text += block.text ?? "";
-    } else if (typeof block.text === "string") {
-      text += block.text;
-    } else if (typeof block.content === "string") {
-      text += block.content;
-    }
-  }
-
-  return text;
+  return coreMessageContentToText(message.content);
 }
 
 type ToolCallLike = {

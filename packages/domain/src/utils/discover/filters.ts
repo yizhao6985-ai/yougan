@@ -35,8 +35,9 @@ export function parseDiscoverFilters(
   ) {
     filters.topicCategory = topicCategory;
   }
-  if (mediaType && MEDIA_MODALITIES.some((item) => item.id === mediaType)) {
-    filters.mediaType = mediaType;
+  const modality = MEDIA_MODALITIES.find((item) => item.id === mediaType);
+  if (modality) {
+    filters.mediaType = modality.id;
   }
 
   return filters;
