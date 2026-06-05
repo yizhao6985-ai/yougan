@@ -1,11 +1,11 @@
-/** runTools：按 staging 待办进入 work 节点或回创作者 */
+/** tool-node：按 staging 待办进入 work 节点或回创作者 */
 import type { AgentStateType } from "#agent/state.js";
 
-export const from = "runTools" as const;
+export const from = "tool-node" as const;
 
 export type PendingProductionWorkTarget =
-  | "llmCall"
-  | "designLlmCall"
+  | "llm-call"
+  | "design-llm-call"
   | "generateDraft"
   | "spawnSpecialist"
   | "inspectProduction";
@@ -24,14 +24,14 @@ export function dispatchPendingProductionWork(
     return "spawnSpecialist";
   }
   if (meta?.inspectPipeline === "design") {
-    return "designLlmCall";
+    return "design-llm-call";
   }
-  return "llmCall";
+  return "llm-call";
 }
 
 export const paths: PendingProductionWorkTarget[] = [
-  "llmCall",
-  "designLlmCall",
+  "llm-call",
+  "design-llm-call",
   "generateDraft",
   "spawnSpecialist",
   "inspectProduction",

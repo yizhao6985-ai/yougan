@@ -7,23 +7,23 @@ import * as creatorPipelineByModality from "./conditional-edges/creator-pipeline
 import * as dispatchPendingWork from "./conditional-edges/dispatch-pending-work.js";
 import * as llmToolCalls from "./conditional-edges/llm-tool-calls.js";
 import * as retryDeliverableOrEnd from "./conditional-edges/retry-deliverable-or-end.js";
-import { designLlmCall } from "./nodes/designLlmCall/node.js";
-import { ensureProfileNode } from "./nodes/ensureProfile/node.js";
-import { generateDraftNode } from "./nodes/generateDraft/node.js";
-import { inspectProductionNode } from "./nodes/inspectProduction/node.js";
-import { llmCall } from "./nodes/llmCall/node.js";
-import { resolveContentSpecNode } from "./nodes/resolveContentSpec/node.js";
-import { runTools } from "./nodes/runTools/node.js";
-import { scheduleProductionNode } from "./nodes/scheduleProduction/node.js";
-import { spawnSpecialistNode } from "./nodes/spawnSpecialist/node.js";
+import { designLlmCall } from "./nodes/design-llm-call/node.js";
+import { ensureProfileNode } from "./nodes/ensure-profile/node.js";
+import { generateDraftNode } from "./nodes/generate-draft/node.js";
+import { inspectProductionNode } from "./nodes/inspect-production/node.js";
+import { llmCall } from "./nodes/llm-call/node.js";
+import { resolveContentSpecNode } from "./nodes/resolve-content-spec/node.js";
+import { scheduleProductionNode } from "./nodes/schedule-production/node.js";
+import { spawnSpecialistNode } from "./nodes/spawn-specialist/node.js";
+import { toolNode } from "./nodes/tool-node/node.js";
 
 export const productionGraph = new StateGraph(AgentState)
   .addNode("ensureProfile", ensureProfileNode)
   .addNode("resolveContentSpec", resolveContentSpecNode)
   .addNode("scheduleProduction", scheduleProductionNode)
-  .addNode("llmCall", llmCall)
-  .addNode("designLlmCall", designLlmCall)
-  .addNode("runTools", runTools)
+  .addNode("llm-call", llmCall)
+  .addNode("design-llm-call", designLlmCall)
+  .addNode("tool-node", toolNode)
   .addNode("generateDraft", generateDraftNode)
   .addNode("spawnSpecialist", spawnSpecialistNode)
   .addNode("inspectProduction", inspectProductionNode)

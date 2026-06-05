@@ -22,14 +22,16 @@ src/
 
 主图接线在 `src/graph.ts`；各子图接线在 `state-graph/subgraphs/<name>/graph.ts`。
 
+**目录命名**：`nodes/`、`conditional-edges/` 下文件夹统一用 kebab-case（如 `llm-call`、`ensure-profile`）；LangGraph 节点 ID 仍可用 camelCase 字符串。
+
 ## graphNode kind
 
 | kind | 目录内容 |
 |------|----------|
 | **plain** | `node.ts` |
-| **llm-chat** | `node.ts` + `prompt.ts` + `tools/` |
+| **llm-chat** | `node.ts` + `prompt.ts` |
 | **llm-work** | `node.ts` + `prompt.ts`（+ `schema.ts`） |
-| **tool-runner** | `node.ts`（`runTools`） |
+| **tool-node** | `node.ts` + `tools/` |
 | **subgraph** | `subgraphs/<name>/graph.ts` compile → 主图 addNode |
 
 ## 路径别名

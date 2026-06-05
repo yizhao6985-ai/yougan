@@ -5,7 +5,7 @@ import { z } from "zod";
 import { parseActiveTurnKind } from "#agent/runtime/state-readers.js";
 import { getState } from "#agent/runtime/tool-context.js";
 import { toolCommand } from "#agent/runtime/tool-context.js";
-import { rescheduleProductionPlan } from "../../scheduleProduction/node.js";
+import { rescheduleProductionPlan } from "../../schedule-production/node.js";
 
 export const reviseProductionPlan = tool(
   async ({ reason }, config) => {

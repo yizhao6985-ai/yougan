@@ -8,7 +8,7 @@ import {
   type WorkProfile,
 } from "@yougan/domain";
 
-import { buildFormatGenerationGuidance } from "../llmCall/format-guidance.js";
+import { buildFormatGenerationGuidance } from "../llm-call/format-guidance.js";
 
 export function buildGenerateDraftPrompt(input: {
   profile: WorkProfile;

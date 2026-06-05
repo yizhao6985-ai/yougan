@@ -1,10 +1,10 @@
-/** runTools：参考素材解析入队则进 work 节点，否则回 llmCall */
+/** tool-node：参考素材解析入队则进 work 节点，否则回 llm-call */
 import type { AgentStateType } from "#agent/state.js";
 
-export const from = "runTools" as const;
+export const from = "tool-node" as const;
 
 export type ReferenceParseTarget =
-  | "llmCall"
+  | "llm-call"
   | "parseReferenceText"
   | "parseReferenceImage";
 
@@ -18,11 +18,11 @@ export function dispatchReferenceParse(
   if (meta?.pendingParseReferenceImage?.image_url) {
     return "parseReferenceImage";
   }
-  return "llmCall";
+  return "llm-call";
 }
 
 export const paths: ReferenceParseTarget[] = [
-  "llmCall",
+  "llm-call",
   "parseReferenceText",
   "parseReferenceImage",
 ];

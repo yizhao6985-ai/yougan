@@ -4,10 +4,10 @@ import {
   referencesSummary,
   resolveContentSpecFromProfile,
 } from "@yougan/domain";
-import { resolveIndustryContext } from "./industry.js";
 import { composeSystemPrompt } from "#agent/system-prompt.js";
 import { parseProfile } from "#agent/runtime/state-readers.js";
 import type { AgentStateType } from "#agent/state.js";
+import { resolveIndustryContext } from "../../../production/nodes/llm-call/prompt.js";
 
 export function buildAskPrompt(state: AgentStateType): string {
   const profile = parseProfile(state);

@@ -41,7 +41,7 @@ START
 | 角色 | 目录 | 职责 |
 |------|------|------|
 | 计划者 | `executor/subgraphs/production/planner/` | 准备回合、解析规格、制定制作计划 |
-| 创作者 | `.../creator/` | llmCall / designLlmCall ⇄ tools |
+| 创作者 | `.../creator/` | llm-call / design-llm-call ⇄ tool-node |
 | 验收者 | `.../inspector/` | 单任务质检 `inspectProduction` |
 
 ## 队列项类型（TurnQueueKind）

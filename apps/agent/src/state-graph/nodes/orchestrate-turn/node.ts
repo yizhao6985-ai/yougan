@@ -30,7 +30,11 @@ async function resolveTurnQueue(
     return DEFAULT_QUEUE;
   }
 
-  const llm = createStructuredModel({ temperature: 0.1 });
+  const llm = createStructuredModel({
+    temperature: 0.1,
+    // functionCalling 结构化输出需强制 tool_choice，thinking mode 下百炼不支持
+    modelKwargs: { enable_thinking: false },
+  });
   const prompt = buildTurnQueuePrompt(state, userMessage);
 
   try {

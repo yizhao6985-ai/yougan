@@ -17,12 +17,19 @@ export type OpenAiCompatibleProviderConfig = {
 export type OpenAiCompatibleChatModelOptions = {
   temperature?: number;
   streaming?: boolean;
+  /** 与 provider config 合并后透传到请求体（百炼 enable_thinking 等） */
+  modelKwargs?: Record<string, unknown>;
 };
 
 export function createOpenAiCompatibleChatModel(
   config: OpenAiCompatibleProviderConfig,
   options?: OpenAiCompatibleChatModelOptions,
 ) {
+  const modelKwargs = {
+    ...config.modelKwargs,
+    ...options?.modelKwargs,
+  };
+
   return new ChatOpenAI({
     model: config.model,
     apiKey: config.apiKey,
@@ -32,6 +39,6 @@ export function createOpenAiCompatibleChatModel(
     configuration: {
       baseURL: config.baseURL,
     },
-    modelKwargs: config.modelKwargs,
+    ...(Object.keys(modelKwargs).length > 0 ? { modelKwargs } : {}),
   });
 }

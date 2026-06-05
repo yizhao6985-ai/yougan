@@ -17,7 +17,7 @@ import {
   getLatestHumanMessageImageUrls,
   getLatestHumanMessageText,
 } from "#agent/messages/human.js";
-import { resolveIndustryContext } from "../../../ask/nodes/llmCall/industry.js";
+import { resolveIndustryContext } from "../llm-call/prompt.js";
 import {
   profileSummary,
   referencesSummary,

@@ -9,7 +9,7 @@ import type { AgentStateType } from "#agent/state.js";
 /** scheduleProduction：按 media_modality 选文案或设计管线 */
 export const from = "scheduleProduction" as const;
 
-export type CreatorPipelineTarget = "llmCall" | "designLlmCall";
+export type CreatorPipelineTarget = "llm-call" | "design-llm-call";
 
 export function selectCreatorPipelineByModality(
   state: AgentStateType,
@@ -19,10 +19,10 @@ export function selectCreatorPipelineByModality(
     resolved.media_modalities,
     resolved.content_format,
   );
-  return pipeline === "design" ? "designLlmCall" : "llmCall";
+  return pipeline === "design" ? "design-llm-call" : "llm-call";
 }
 
 export const paths = {
-  llmCall: "llmCall",
-  designLlmCall: "designLlmCall",
+  "llm-call": "llm-call",
+  "design-llm-call": "design-llm-call",
 } as const;

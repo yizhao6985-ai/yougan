@@ -1,4 +1,4 @@
-/** llm-chat：作品方案对话 LLM */
+/** llm-chat：提问答疑 LLM */
 import { SystemMessage } from "@langchain/core/messages";
 import type { RunnableConfig } from "@langchain/core/runnables";
 
@@ -7,12 +7,12 @@ import { streamChatModelToAIMessage } from "#agent/llm/stream-chat-model.js";
 import { createChatModel } from "#agent/model/dashscope.js";
 import type { AgentStateType } from "#agent/state.js";
 
-import { buildProfilePrompt } from "./prompt.js";
-import { PROFILE_TOOLS } from "./tools/index.js";
+import { buildAskPrompt } from "./prompt.js";
+import { ASK_TOOLS } from "../tool-node/tools/index.js";
 
 const llmWithTools = createChatModel({
   temperature: env.llmTemperature,
-}).bindTools(PROFILE_TOOLS);
+}).bindTools(ASK_TOOLS);
 
 export async function llmCall(
   state: AgentStateType,
@@ -20,7 +20,7 @@ export async function llmCall(
 ): Promise<Partial<AgentStateType>> {
   const response = await streamChatModelToAIMessage(
     llmWithTools,
-    [new SystemMessage(buildProfilePrompt(state)), ...(state.messages ?? [])],
+    [new SystemMessage(buildAskPrompt(state)), ...(state.messages ?? [])],
     config,
   );
   return { messages: [response] };

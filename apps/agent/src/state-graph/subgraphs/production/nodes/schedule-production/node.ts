@@ -15,7 +15,7 @@ import { YOUGAN_USER_LABEL } from "#agent/system-prompt.js";
 import {
   departmentsBrief,
 } from "../../helpers/department-brief.js";
-import { resolveIndustryContext } from "../../../ask/nodes/llmCall/industry.js";
+import { resolveIndustryContext } from "../llm-call/prompt.js";
 import {
   isPlanReady,
   isProfileActionable,

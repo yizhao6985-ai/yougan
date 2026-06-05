@@ -8,7 +8,7 @@ import { createChatModel } from "#agent/model/dashscope.js";
 import type { AgentStateType } from "#agent/state.js";
 
 import { buildProductionLlmPrompt } from "./prompt.js";
-import { PRODUCTION_TOOLS } from "./tools/index.js";
+import { PRODUCTION_TOOLS } from "../tool-node/tools/index.js";
 
 const llmWithTools = createChatModel({
   temperature: env.llmTemperature,
