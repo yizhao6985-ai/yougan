@@ -5,12 +5,12 @@ import {
   resolveContentSpecFromProfile,
 } from "@yougan/domain";
 import { composeSystemPrompt } from "#agent/system-prompt.js";
-import { parseProfile } from "#agent/runtime/state-readers.js";
+import { getProfile } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 import { resolveIndustryContext } from "../../../production/nodes/llm-call/prompt.js";
 
 export function buildAskPrompt(state: AgentStateType): string {
-  const profile = parseProfile(state);
+  const profile = getProfile(state);
   const industry = resolveIndustryContext(resolveContentSpecFromProfile(profile));
 
   const modePrompt = `当前任务：提问答疑（不执行制作）

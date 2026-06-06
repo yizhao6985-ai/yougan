@@ -11,7 +11,7 @@ import {
   composeSystemPrompt,
   YOUGAN_USER_LABEL,
 } from "#agent/system-prompt.js";
-import { parseProfile } from "#agent/runtime/state-readers.js";
+import { getProfile } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 
 function buildProfileActionPrompt(profile: WorkProfile): string {
@@ -65,6 +65,6 @@ ${referencesSummary(profile.references)}`;
 }
 
 export function buildProfilePrompt(state: AgentStateType): string {
-  const profile = parseProfile(state);
+  const profile = getProfile(state);
   return composeSystemPrompt(buildProfileActionPrompt(profile));
 }

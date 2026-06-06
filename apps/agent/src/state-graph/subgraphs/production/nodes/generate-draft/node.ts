@@ -16,29 +16,26 @@ import {
   type WorkPreview,
 } from "@yougan/domain";
 import {
-  mergeStagingPatches,
-  patchStagingPreview,
-  patchStagingProductionMeta,
-} from "#agent/runtime/staging-writes.js";
+  patchPendingBatch,
+  patchPendingPreview,
+  patchPendingProductionMeta,
+} from "#agent/state-io/index.js";
 import {
-  parseModelTemperature,
-  parseProductionPlan,
-  parseProfile,
-} from "#agent/runtime/state-readers.js";
+  getModelTemperature,
+  getProductionPlan,
+  getProfile,
+} from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 
-import { markDepartmentTaskPendingInspect } from "../../helpers/set-pending-inspect.js";
+import { markDepartmentTaskPendingInspect } from "../inspect-production/helpers/set-pending-inspect.js";
 import { buildGenerateDraftPrompt } from "./prompt.js";
-import {
-  WorkPreviewPayloadSchema,
-  type WorkPreviewPayload,
-} from "./schema.js";
+import { WorkPreviewPayloadSchema, type WorkPreviewPayload } from "./schema.js";
 
 export async function generateDraftNode(
   state: AgentStateType,
 ): Promise<Partial<AgentStateType>> {
-  const profile = parseProfile(state);
-  const plan = parseProductionPlan(state);
+  const profile = getProfile(state);
+  const plan = getProductionPlan(state);
   const contentProfile = resolveContentSpecFromProfile(profile);
 
   if (
@@ -47,13 +44,13 @@ export async function generateDraftNode(
     !isPlanReady(plan) ||
     !isProfileActionable(profile)
   ) {
-    return patchStagingProductionMeta(state, {
+    return patchPendingProductionMeta(state, {
       pendingGenerateDraft: false,
     });
   }
 
   const llm = createChatModel({
-    temperature: parseModelTemperature(state),
+    temperature: getModelTemperature(state),
   });
   const prompt = buildGenerateDraftPrompt({ profile, plan });
 
@@ -109,9 +106,9 @@ export async function generateDraftNode(
       "writing",
     ) ?? {};
 
-  return mergeStagingPatches(
-    patchStagingPreview(state, preview),
+  return patchPendingBatch(
+    patchPendingPreview(state, preview),
     inspectPatch,
-    patchStagingProductionMeta(state, { pendingGenerateDraft: false }),
+    patchPendingProductionMeta(state, { pendingGenerateDraft: false }),
   );
 }

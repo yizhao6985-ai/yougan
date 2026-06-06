@@ -5,15 +5,15 @@ import {
 } from "@yougan/domain";
 import { YOUGAN_USER_LABEL } from "#agent/system-prompt.js";
 import type { AgentStateType } from "#agent/state.js";
-import { parsePreview, parseProfile } from "#agent/runtime/state-readers.js";
+import { getPreview, getProfile } from "#agent/state-io/index.js";
 import { getLatestHumanMessageImageUrls } from "#agent/messages/human.js";
 
 export function buildTurnQueuePrompt(
   state: AgentStateType,
   userMessage: string,
 ): string {
-  const profile = parseProfile(state);
-  const hasPreview = Boolean(parsePreview(state)?.body?.trim());
+  const profile = getProfile(state);
+  const hasPreview = Boolean(getPreview(state)?.body?.trim());
   const imageCount = getLatestHumanMessageImageUrls(state.messages).length;
 
   return `你是回合编排助手。根据${YOUGAN_USER_LABEL}**最新一条消息**，输出本轮**有序队列 kinds**（每项对应一次对话子图，会有可见回复与工具调用）。

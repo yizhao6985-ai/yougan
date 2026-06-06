@@ -19,15 +19,16 @@ import {
   updateProfileConstraint,
 } from "@yougan/domain";
 import {
-  parseActiveTurnKind,
-  parseProfile,
-} from "#agent/runtime/state-readers.js";
-import { patchStagingProfile } from "#agent/runtime/staging-writes.js";
-import { getState } from "#agent/runtime/tool-context.js";
-import { toolCommand } from "#agent/runtime/tool-context.js";
+  getActiveTurnKind,
+  getProfile,
+  getState,
+  patchPendingProfile,
+} from "#agent/state-io/index.js";
+
+import { commandWithUpdate } from "../command-with-update.js";
 
 function requireProfileMode(config: object): string | null {
-  if (parseActiveTurnKind(getState()) !== "profile") {
+  if (getActiveTurnKind(getState()) !== "profile") {
     return "作品方案工具仅在 profile 模式可用。";
   }
   return null;
@@ -36,18 +37,18 @@ function requireProfileMode(config: object): string | null {
 export const updateProfileSpec = tool(
   async (input, config) => {
     const gate = requireProfileMode(config);
-    if (gate) return toolCommand(config, gate);
+    if (gate) return commandWithUpdate(config, gate);
 
     const updates = Object.fromEntries(
       Object.entries(input).filter(([, v]) => v !== undefined),
     );
     if (!Object.keys(updates).length) {
-      return toolCommand(config, "未提供需要更新的创作规格。");
+      return commandWithUpdate(config, "未提供需要更新的创作规格。");
     }
 
-    const profile = parseProfile(getState());
-    return toolCommand(config, "已更新作品方案创作规格。", {
-      ...patchStagingProfile(getState(), patchProfileSpec(profile, updates)),
+    const profile = getProfile(getState());
+    return commandWithUpdate(config, "已更新作品方案创作规格。", {
+      ...patchPendingProfile(getState(), patchProfileSpec(profile, updates)),
     });
   },
   {
@@ -67,18 +68,18 @@ export const updateProfileSpec = tool(
 export const updateProfileVoice = tool(
   async (input, config) => {
     const gate = requireProfileMode(config);
-    if (gate) return toolCommand(config, gate);
+    if (gate) return commandWithUpdate(config, gate);
 
     const updates = Object.fromEntries(
       Object.entries(input).filter(([, v]) => v !== undefined),
     );
     if (!Object.keys(updates).length) {
-      return toolCommand(config, "未提供需要更新的表达设定。");
+      return commandWithUpdate(config, "未提供需要更新的表达设定。");
     }
 
-    const profile = parseProfile(getState());
-    return toolCommand(config, "已更新作品方案表达设定。", {
-      ...patchStagingProfile(getState(), patchProfileVoice(profile, updates)),
+    const profile = getProfile(getState());
+    return commandWithUpdate(config, "已更新作品方案表达设定。", {
+      ...patchPendingProfile(getState(), patchProfileVoice(profile, updates)),
     });
   },
   {
@@ -97,12 +98,12 @@ export const updateProfileVoice = tool(
 export const setProfilePremiseTool = tool(
   async ({ premise }, config) => {
     const gate = requireProfileMode(config);
-    if (gate) return toolCommand(config, gate);
+    if (gate) return commandWithUpdate(config, gate);
     const trimmed = premise.trim();
-    if (!trimmed) return toolCommand(config, "定位描述不能为空。");
-    const profile = parseProfile(getState());
-    return toolCommand(config, "已更新作品方案定位。", {
-      ...patchStagingProfile(getState(), setProfilePremise(profile, trimmed)),
+    if (!trimmed) return commandWithUpdate(config, "定位描述不能为空。");
+    const profile = getProfile(getState());
+    return commandWithUpdate(config, "已更新作品方案定位。", {
+      ...patchPendingProfile(getState(), setProfilePremise(profile, trimmed)),
     });
   },
   {
@@ -118,16 +119,16 @@ export const setProfilePremiseTool = tool(
 export const addProfileConstraint = tool(
   async ({ description }, config) => {
     const gate = requireProfileMode(config);
-    if (gate) return toolCommand(config, gate);
+    if (gate) return commandWithUpdate(config, gate);
     const trimmed = description.trim();
-    if (!trimmed) return toolCommand(config, "写作要求不能为空。");
-    const profile = parseProfile(getState());
+    if (!trimmed) return commandWithUpdate(config, "写作要求不能为空。");
+    const profile = getProfile(getState());
     const next = appendProfileConstraint(profile, trimmed);
-    if (!next) return toolCommand(config, "该要求已在方案中。");
-    return toolCommand(
+    if (!next) return commandWithUpdate(config, "该要求已在方案中。");
+    return commandWithUpdate(
       config,
       `已添加写作要求（共 ${next.constraints.length} 条）。`,
-      patchStagingProfile(getState(), next),
+      patchPendingProfile(getState(), next),
     );
   },
   {
@@ -142,15 +143,15 @@ export const addProfileConstraint = tool(
 export const updateProfileConstraintTool = tool(
   async ({ constraint_id, description }, config) => {
     const gate = requireProfileMode(config);
-    if (gate) return toolCommand(config, gate);
+    if (gate) return commandWithUpdate(config, gate);
     const trimmed = description.trim();
-    if (!trimmed) return toolCommand(config, "写作要求不能为空。");
-    const profile = parseProfile(getState());
+    if (!trimmed) return commandWithUpdate(config, "写作要求不能为空。");
+    const profile = getProfile(getState());
     if (findProfileConstraintIndex(profile, constraint_id) < 0) {
-      return toolCommand(config, `未找到要求 ${constraint_id}。`);
+      return commandWithUpdate(config, `未找到要求 ${constraint_id}。`);
     }
-    return toolCommand(config, "已更新写作要求。", {
-      ...patchStagingProfile(
+    return commandWithUpdate(config, "已更新写作要求。", {
+      ...patchPendingProfile(
         getState(),
         updateProfileConstraint(profile, constraint_id, trimmed),
       ),
@@ -169,13 +170,13 @@ export const updateProfileConstraintTool = tool(
 export const deleteProfileConstraintTool = tool(
   async ({ constraint_id }, config) => {
     const gate = requireProfileMode(config);
-    if (gate) return toolCommand(config, gate);
-    const profile = parseProfile(getState());
+    if (gate) return commandWithUpdate(config, gate);
+    const profile = getProfile(getState());
     if (findProfileConstraintIndex(profile, constraint_id) < 0) {
-      return toolCommand(config, `未找到要求 ${constraint_id}。`);
+      return commandWithUpdate(config, `未找到要求 ${constraint_id}。`);
     }
-    return toolCommand(config, "已删除写作要求。", {
-      ...patchStagingProfile(
+    return commandWithUpdate(config, "已删除写作要求。", {
+      ...patchPendingProfile(
         getState(),
         deleteProfileConstraint(profile, constraint_id),
       ),
@@ -191,16 +192,16 @@ export const deleteProfileConstraintTool = tool(
 export const addProfileBeat = tool(
   async ({ description, intent }, config) => {
     const gate = requireProfileMode(config);
-    if (gate) return toolCommand(config, gate);
+    if (gate) return commandWithUpdate(config, gate);
     const trimmed = description.trim();
-    if (!trimmed) return toolCommand(config, "节拍描述不能为空。");
-    const profile = parseProfile(getState());
+    if (!trimmed) return commandWithUpdate(config, "节拍描述不能为空。");
+    const profile = getProfile(getState());
     const next = appendProfileBeat(profile, trimmed, intent);
-    if (!next) return toolCommand(config, "该节拍已在方案中。");
-    return toolCommand(
+    if (!next) return commandWithUpdate(config, "该节拍已在方案中。");
+    return commandWithUpdate(
       config,
       `已添加内容节拍（共 ${next.beats.length} 节）。`,
-      patchStagingProfile(getState(), next),
+      patchPendingProfile(getState(), next),
     );
   },
   {
@@ -217,15 +218,15 @@ export const addProfileBeat = tool(
 export const updateProfileBeatTool = tool(
   async ({ beat_id, description, intent }, config) => {
     const gate = requireProfileMode(config);
-    if (gate) return toolCommand(config, gate);
+    if (gate) return commandWithUpdate(config, gate);
     const trimmed = description.trim();
-    if (!trimmed) return toolCommand(config, "节拍描述不能为空。");
-    const profile = parseProfile(getState());
+    if (!trimmed) return commandWithUpdate(config, "节拍描述不能为空。");
+    const profile = getProfile(getState());
     if (findProfileBeatIndex(profile, beat_id) < 0) {
-      return toolCommand(config, `未找到节拍 ${beat_id}。`);
+      return commandWithUpdate(config, `未找到节拍 ${beat_id}。`);
     }
-    return toolCommand(config, "已更新内容节拍。", {
-      ...patchStagingProfile(
+    return commandWithUpdate(config, "已更新内容节拍。", {
+      ...patchPendingProfile(
         getState(),
         updateProfileBeat(profile, beat_id, trimmed, intent),
       ),
@@ -245,13 +246,13 @@ export const updateProfileBeatTool = tool(
 export const deleteProfileBeatTool = tool(
   async ({ beat_id }, config) => {
     const gate = requireProfileMode(config);
-    if (gate) return toolCommand(config, gate);
-    const profile = parseProfile(getState());
+    if (gate) return commandWithUpdate(config, gate);
+    const profile = getProfile(getState());
     if (findProfileBeatIndex(profile, beat_id) < 0) {
-      return toolCommand(config, `未找到节拍 ${beat_id}。`);
+      return commandWithUpdate(config, `未找到节拍 ${beat_id}。`);
     }
-    return toolCommand(config, "已删除内容节拍。", {
-      ...patchStagingProfile(getState(), deleteProfileBeat(profile, beat_id)),
+    return commandWithUpdate(config, "已删除内容节拍。", {
+      ...patchPendingProfile(getState(), deleteProfileBeat(profile, beat_id)),
     });
   },
   {
@@ -269,20 +270,20 @@ const profileBeatInputSchema = z.object({
 export const addProfileBeats = tool(
   async ({ beats }, config) => {
     const gate = requireProfileMode(config);
-    if (gate) return toolCommand(config, gate);
+    if (gate) return commandWithUpdate(config, gate);
     if (!beats.length) {
-      return toolCommand(config, "至少提供一条节拍。");
+      return commandWithUpdate(config, "至少提供一条节拍。");
     }
 
-    const profile = parseProfile(getState());
+    const profile = getProfile(getState());
     const next = appendProfileBeats(profile, beats);
     if (next.beats.length === profile.beats.length) {
-      return toolCommand(config, "未添加新节拍（均为空或已存在）。");
+      return commandWithUpdate(config, "未添加新节拍（均为空或已存在）。");
     }
-    return toolCommand(
+    return commandWithUpdate(
       config,
       `已添加 ${next.beats.length - profile.beats.length} 条内容节拍（共 ${next.beats.length} 节）。`,
-      patchStagingProfile(getState(), next),
+      patchPendingProfile(getState(), next),
     );
   },
   {
@@ -302,10 +303,10 @@ export const addProfileBeats = tool(
 export const clearProfileConstraintsTool = tool(
   async (_input, config) => {
     const gate = requireProfileMode(config);
-    if (gate) return toolCommand(config, gate);
-    const profile = parseProfile(getState());
-    return toolCommand(config, "已清空写作要求。", {
-      ...patchStagingProfile(getState(), clearProfileConstraints(profile)),
+    if (gate) return commandWithUpdate(config, gate);
+    const profile = getProfile(getState());
+    return commandWithUpdate(config, "已清空写作要求。", {
+      ...patchPendingProfile(getState(), clearProfileConstraints(profile)),
     });
   },
   {
@@ -319,10 +320,10 @@ export const clearProfileConstraintsTool = tool(
 export const clearProfileBeatsTool = tool(
   async (_input, config) => {
     const gate = requireProfileMode(config);
-    if (gate) return toolCommand(config, gate);
-    const profile = parseProfile(getState());
-    return toolCommand(config, "已清空内容节拍。", {
-      ...patchStagingProfile(getState(), clearProfileBeats(profile)),
+    if (gate) return commandWithUpdate(config, gate);
+    const profile = getProfile(getState());
+    return commandWithUpdate(config, "已清空内容节拍。", {
+      ...patchPendingProfile(getState(), clearProfileBeats(profile)),
     });
   },
   {

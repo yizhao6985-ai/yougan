@@ -3,25 +3,26 @@ import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
 import {
-  parseActiveTurnKind,
-  parseProductionPlan,
-} from "#agent/runtime/state-readers.js";
-import { patchStagingProductionPlan } from "#agent/runtime/staging-writes.js";
-import { getState } from "#agent/runtime/tool-context.js";
-import { toolCommand } from "#agent/runtime/tool-context.js";
+  getActiveTurnKind,
+  getProductionPlan,
+  getState,
+  patchPendingProductionPlan,
+} from "#agent/state-io/index.js";
+
+import { commandWithUpdate } from "../command-with-update.js";
 
 export const completeExecution = tool(
   async ({ summary }, config) => {
-    if (parseActiveTurnKind(getState()) !== "production") {
-      return toolCommand(config, "complete_execution 仅在制作模式可用。");
+    if (getActiveTurnKind(getState()) !== "production") {
+      return commandWithUpdate(config, "complete_execution 仅在制作模式可用。");
     }
     const trimmed = summary.trim();
-    if (!trimmed) return toolCommand(config, "执行摘要不能为空。");
+    if (!trimmed) return commandWithUpdate(config, "执行摘要不能为空。");
 
     const state = getState();
-    const plan = parseProductionPlan(state);
+    const plan = getProductionPlan(state);
     if (!plan.pending_tasks.length) {
-      return toolCommand(config, "当前没有待执行任务，无需完成执行。");
+      return commandWithUpdate(config, "当前没有待执行任务，无需完成执行。");
     }
 
     const executedAt = new Date().toISOString();
@@ -38,10 +39,10 @@ export const completeExecution = tool(
     ];
     const count = plan.pending_tasks.length;
 
-    return toolCommand(
+    return commandWithUpdate(
       config,
       `执行完成，已合并 ${count} 项任务。摘要：${trimmed}`,
-      patchStagingProductionPlan(state, {
+      patchPendingProductionPlan(state, {
         ...plan,
         pending_tasks: [],
         executed_tasks: executed,

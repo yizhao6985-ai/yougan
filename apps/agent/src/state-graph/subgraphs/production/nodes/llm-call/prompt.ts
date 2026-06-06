@@ -1,7 +1,5 @@
 /** production 文案管线 LLM 系统提示词 */
-import {
-  departmentsBrief,
-} from "../../helpers/department-brief.js";
+import { departmentsBrief } from "../spawn-specialist/helpers/department-brief.js";
 import {
   getPlanSummary,
   isPlanReady,
@@ -19,9 +17,9 @@ import {
 } from "#agent/system-prompt.js";
 import { buildFormatGenerationGuidance } from "./format-guidance.js";
 import {
-  parseProductionPlan,
-  parseProfile,
-} from "#agent/runtime/state-readers.js";
+  getProductionPlan,
+  getProfile,
+} from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 
 const PLATFORM_INDUSTRY: Record<string, string> = {
@@ -95,9 +93,9 @@ export function resolveIndustryContext(spec: FlatContentSpec): string {
 }
 
 export function buildProductionLlmPrompt(state: AgentStateType): string {
-  const profile = parseProfile(state);
+  const profile = getProfile(state);
   const contentProfile = resolveContentSpecFromProfile(profile);
-  const plan = parseProductionPlan(state);
+  const plan = getProductionPlan(state);
   const industry = plan.industry_context ?? resolveIndustryContext(contentProfile);
   const formatHint = buildFormatGenerationGuidance(
     contentProfile.content_format as ContentFormatId | null,

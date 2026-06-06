@@ -5,13 +5,13 @@ import {
 } from "@yougan/domain";
 import { YOUGAN_USER_LABEL } from "#agent/system-prompt.js";
 import type { AgentStateType } from "#agent/state.js";
-import { parseProfile } from "#agent/runtime/state-readers.js";
+import { getProfile } from "#agent/state-io/index.js";
 import { OPENING_TOPIC_SUGGESTIONS_COUNT } from "../schema.js";
 
 export function buildOpeningTopicSuggestionsPrompt(
   state: AgentStateType,
 ): string {
-  const profile = parseProfile(state);
+  const profile = getProfile(state);
   const workTitle = state.workTitle?.trim() || "（未命名作品）";
 
   const existingWorkContext = [

@@ -1,4 +1,5 @@
 /** tool-node：参考素材解析入队则进 work 节点，否则回 llm-call */
+import { getProfileStagingMeta } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 
 export const from = "tool-node" as const;
@@ -11,7 +12,7 @@ export type ReferenceParseTarget =
 export function dispatchReferenceParse(
   state: AgentStateType,
 ): ReferenceParseTarget {
-  const meta = state.staging?.meta.profile;
+  const meta = getProfileStagingMeta(state);
   if (meta?.pendingParseReferenceText?.trim()) {
     return "parseReferenceText";
   }

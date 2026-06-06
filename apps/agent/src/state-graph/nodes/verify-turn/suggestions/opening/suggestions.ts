@@ -10,7 +10,7 @@ import {
 
 import { createStructuredModel } from "#agent/model/dashscope.js";
 import { invokeStructuredOutput } from "#agent/llm/structured-output.js";
-import { parseProfile } from "#agent/runtime/state-readers.js";
+import { getProfile } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 import { buildOpeningTopicSuggestionsPrompt } from "./prompt.js";
 import { OpeningTopicSuggestionsResponseSchema } from "../schema.js";
@@ -25,7 +25,7 @@ function fallbackOpeningTopicSuggestions(
   state: AgentStateType,
 ): NextStepSuggestions {
   const topic = state.workTitle?.trim() || "这个主题";
-  const forAudience = audienceClause(parseProfile(state).voice.audience);
+  const forAudience = audienceClause(getProfile(state).voice.audience);
 
   return {
     hint: OPENING_HINT,
@@ -72,7 +72,7 @@ function fallbackOpeningTopicSuggestions(
 function fallbackOpeningTopicSuggestionsWithProfile(
   state: AgentStateType,
 ): NextStepSuggestions {
-  const profile = parseProfile(state);
+  const profile = getProfile(state);
   const workTitle = state.workTitle?.trim() || "未命名作品";
   const forAudience = audienceClause(profile.voice.audience);
   const lead =
@@ -127,7 +127,7 @@ function fallbackOpeningTopicSuggestionsWithProfile(
 export async function generateOpeningTopicSuggestions(
   state: AgentStateType,
 ): Promise<NextStepSuggestions> {
-  const profile = parseProfile(state);
+  const profile = getProfile(state);
   const llm = createStructuredModel({ temperature: 0.55 });
   const prompt = buildOpeningTopicSuggestionsPrompt(state);
 

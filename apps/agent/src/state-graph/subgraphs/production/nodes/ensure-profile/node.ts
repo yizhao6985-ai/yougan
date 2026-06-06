@@ -23,8 +23,8 @@ import {
   referencesSummary,
 } from "@yougan/domain";
 import { YOUGAN_USER_LABEL } from "#agent/system-prompt.js";
-import { parseProfile } from "#agent/runtime/state-readers.js";
-import { patchStagingProfile } from "#agent/runtime/staging-writes.js";
+import { getProfile } from "#agent/state-io/index.js";
+import { patchPendingProfile } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 import {
   EnsureProfileResponseSchema,
@@ -34,11 +34,11 @@ import {
 export function shouldEnsureProfileForProduction(
   state: AgentStateType,
 ): boolean {
-  return !isProfileActionable(parseProfile(state));
+  return !isProfileActionable(getProfile(state));
 }
 
 function buildEnsureProfilePrompt(state: AgentStateType): string {
-  const profile = parseProfile(state);
+  const profile = getProfile(state);
   const userMessage = getLatestHumanMessageText(state.messages);
   const hasImages =
     getLatestHumanMessageImageUrls(state.messages).length > 0;
@@ -138,7 +138,7 @@ export async function ensureProfileNode(
     return {};
   }
 
-  const existing = parseProfile(state);
+  const existing = getProfile(state);
   const llm = createStructuredModel({ temperature: 0.5 });
 
   try {
@@ -148,11 +148,11 @@ export async function ensureProfileNode(
       [new HumanMessage(buildEnsureProfilePrompt(state))],
       { name: "production_ensure_profile" },
     )) as EnsureProfileResponse;
-    return patchStagingProfile(
+    return patchPendingProfile(
       state,
       applyEnsureProfileResponse(existing, parsed),
     );
   } catch {
-    return patchStagingProfile(state, fallbackProfile(state, existing));
+    return patchPendingProfile(state, fallbackProfile(state, existing));
   }
 }

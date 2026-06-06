@@ -4,19 +4,19 @@ import { HumanMessage } from "@langchain/core/messages";
 import { createChatModel } from "#agent/model/dashscope.js";
 import { truncateMessageContent, type ReferenceItem } from "@yougan/domain";
 import {
-  patchStagingProfile,
-  patchStagingProfileMeta,
-} from "#agent/runtime/staging-writes.js";
-import { parseProfile } from "#agent/runtime/state-readers.js";
+  patchPendingProfile,
+  patchPendingProfileMeta,
+} from "#agent/state-io/index.js";
+import { getProfile, getProfileStagingMeta } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 
-import { upsertImageReference } from "../../helpers/reference-images.js";
+import { upsertImageReference } from "./helpers/reference-images.js";
 import { buildParseReferenceImagePrompt } from "./prompt.js";
 
 export async function parseReferenceImageNode(
   state: AgentStateType,
 ): Promise<Partial<AgentStateType>> {
-  const pending = state.staging?.meta.profile?.pendingParseReferenceImage;
+  const pending = getProfileStagingMeta(state).pendingParseReferenceImage;
   if (!pending?.image_url) return {};
 
   const llm = createChatModel({ temperature: 0.2 });
@@ -38,10 +38,10 @@ export async function parseReferenceImageNode(
     image_url: pending.image_url,
   };
 
-  const profile = parseProfile(state);
+  const profile = getProfile(state);
   const nextReferences = upsertImageReference(profile.references, item);
   return {
-    ...patchStagingProfile(state, { ...profile, references: nextReferences }),
-    ...patchStagingProfileMeta(state, { pendingParseReferenceImage: null }),
+    ...patchPendingProfile(state, { ...profile, references: nextReferences }),
+    ...patchPendingProfileMeta(state, { pendingParseReferenceImage: null }),
   };
 }

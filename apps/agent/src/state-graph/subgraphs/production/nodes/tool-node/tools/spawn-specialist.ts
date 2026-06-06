@@ -2,21 +2,25 @@
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
-import { patchStagingProductionMeta } from "#agent/runtime/staging-writes.js";
-import { parseActiveTurnKind } from "#agent/runtime/state-readers.js";
-import { getState, toolCommand } from "#agent/runtime/tool-context.js";
+import {
+  getActiveTurnKind,
+  getState,
+  patchPendingProductionMeta,
+} from "#agent/state-io/index.js";
+
+import { commandWithUpdate } from "../command-with-update.js";
 
 export const spawnSpecialist = tool(
   async ({ department, brief, specialist_name }, config) => {
     const state = getState();
-    if (parseActiveTurnKind(state) !== "production") {
-      return toolCommand(config, "spawn_specialist 仅在制作模式可用。");
+    if (getActiveTurnKind(state) !== "production") {
+      return commandWithUpdate(config, "spawn_specialist 仅在制作模式可用。");
     }
 
-    return toolCommand(
+    return commandWithUpdate(
       config,
       `已提交 ${department} 专员任务，即将执行。`,
-      patchStagingProductionMeta(state, {
+      patchPendingProductionMeta(state, {
         pendingSpawnSpecialist: {
           department,
           brief,

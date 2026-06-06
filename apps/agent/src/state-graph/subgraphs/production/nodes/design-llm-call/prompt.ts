@@ -5,16 +5,16 @@ import {
   YOUGAN_USER_LABEL,
 } from "#agent/system-prompt.js";
 import {
-  parsePreview,
-  parseProductionPlan,
-  parseProfile,
-} from "#agent/runtime/state-readers.js";
+  getPreview,
+  getProductionPlan,
+  getProfile,
+} from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 
 export function buildDesignLlmPrompt(state: AgentStateType): string {
-  const profile = parseProfile(state);
-  const plan = parseProductionPlan(state);
-  const preview = parsePreview(state);
+  const profile = getProfile(state);
+  const plan = getProductionPlan(state);
+  const preview = getPreview(state);
 
   return composeSystemPrompt(`当前任务：设计制作（视觉/配图方向）
 

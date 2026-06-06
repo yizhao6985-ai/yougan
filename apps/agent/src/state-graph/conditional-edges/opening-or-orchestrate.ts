@@ -1,4 +1,4 @@
-import { isEmptyThread } from "#agent/runtime/is-empty-thread.js";
+import { isEmptyThread } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 
 export type OpeningOrOrchestrateTarget = "verifyTurn" | "orchestrateTurn";

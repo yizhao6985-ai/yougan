@@ -4,16 +4,17 @@ import { z } from "zod";
 
 import { createStructuredModel } from "#agent/model/dashscope.js";
 import { invokeStructuredOutput } from "#agent/llm/structured-output.js";
-import { retryTaskDeliverable } from "../../helpers/retry-deliverable.js";
+import { retryTaskDeliverable } from "./helpers/retry-deliverable.js";
 import {
-  mergeStagingPatches,
-  patchStagingPreview,
-  patchStagingProductionMeta,
-} from "#agent/runtime/staging-writes.js";
+  patchPendingBatch,
+  patchPendingPreview,
+  patchPendingProductionMeta,
+} from "#agent/state-io/index.js";
 import {
-  parsePreview,
-  parseProductionPlan,
-} from "#agent/runtime/state-readers.js";
+  getPreview,
+  getProductionPlan,
+  getProductionStagingMeta,
+} from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 
 const MAX_INSPECT_RETRIES = 2;
@@ -26,18 +27,18 @@ const InspectResultSchema = z.object({
 export async function inspectProductionNode(
   state: AgentStateType,
 ): Promise<Partial<AgentStateType>> {
-  const meta = state.staging?.meta.production;
-  if (!meta?.pendingInspect || !meta.inspectTaskId) {
+  const meta = getProductionStagingMeta(state);
+  if (!meta.pendingInspect || !meta.inspectTaskId) {
     return {};
   }
 
-  const plan = parseProductionPlan(state);
+  const plan = getProductionPlan(state);
   const task = plan.pending_tasks.find((t) => t.id === meta.inspectTaskId)
     ?? plan.executed_tasks.find((t) => t.id === meta.inspectTaskId);
-  const preview = parsePreview(state);
+  const preview = getPreview(state);
 
   if (!task || !preview?.body?.trim()) {
-    return patchStagingProductionMeta(state, {
+    return patchPendingProductionMeta(state, {
       pendingInspect: false,
       inspectTaskId: null,
       inspectPipeline: null,
@@ -73,7 +74,7 @@ ${preview.notes ? `\n备注：${preview.notes.slice(0, 800)}` : ""}
   }
 
   if (passed) {
-    return patchStagingProductionMeta(state, {
+    return patchPendingProductionMeta(state, {
       pendingInspect: false,
       inspectTaskId: null,
       inspectPipeline: null,
@@ -84,7 +85,7 @@ ${preview.notes ? `\n备注：${preview.notes.slice(0, 800)}` : ""}
 
   const retryCount = (meta.inspectRetryCount ?? 0) + 1;
   if (retryCount > MAX_INSPECT_RETRIES) {
-    return patchStagingProductionMeta(state, {
+    return patchPendingProductionMeta(state, {
       pendingInspect: false,
       inspectTaskId: null,
       inspectPipeline: null,
@@ -94,9 +95,9 @@ ${preview.notes ? `\n备注：${preview.notes.slice(0, 800)}` : ""}
   }
 
   const retried = await retryTaskDeliverable(state, task, feedback);
-  return mergeStagingPatches(
-    retried ? patchStagingPreview(state, retried) : {},
-    patchStagingProductionMeta(state, {
+  return patchPendingBatch(
+    retried ? patchPendingPreview(state, retried) : {},
+    patchPendingProductionMeta(state, {
       pendingInspect: true,
       inspectRetryCount: retryCount,
       lastInspectFeedback: feedback,

@@ -4,23 +4,23 @@ import { z } from "zod";
 
 import { deleteProfileReference } from "@yougan/domain";
 import {
-  parseActiveTurnKind,
-  parseProfile,
-  parseReferences,
-} from "#agent/runtime/state-readers.js";
+  getActiveTurnKind,
+  getProfile,
+  getReferences,
+  getState,
+  patchPendingProfile,
+  patchPendingProfileMeta,
+} from "#agent/state-io/index.js";
 import { getLatestHumanMessageImageUrls } from "#agent/messages/human.js";
 import {
   listKnownReferenceImageUrls,
   resolveReferenceImageUrl,
-} from "../../../helpers/reference-images.js";
-import {
-  patchStagingProfile,
-  patchStagingProfileMeta,
-} from "#agent/runtime/staging-writes.js";
-import { getState, toolCommand } from "#agent/runtime/tool-context.js";
+} from "../../parse-reference-image/helpers/reference-images.js";
+
+import { commandWithUpdate } from "../command-with-update.js";
 
 function requireProfileMode(config: object): string | null {
-  if (parseActiveTurnKind(getState()) !== "profile") {
+  if (getActiveTurnKind(getState()) !== "profile") {
     return "作品方案工具仅在 profile 模式可用。";
   }
   return null;
@@ -29,13 +29,13 @@ function requireProfileMode(config: object): string | null {
 export const parseReferenceText = tool(
   async ({ reference_text }, config) => {
     const gate = requireProfileMode(config);
-    if (gate) return toolCommand(config, gate);
+    if (gate) return commandWithUpdate(config, gate);
 
     const state = getState();
-    return toolCommand(
+    return commandWithUpdate(
       config,
       "已提交参考文案解析任务。",
-      patchStagingProfileMeta(state, {
+      patchPendingProfileMeta(state, {
         pendingParseReferenceText: reference_text,
       }),
     );
@@ -50,10 +50,10 @@ export const parseReferenceText = tool(
 export const parseReferenceImage = tool(
   async ({ image_url, hint }, config) => {
     const gate = requireProfileMode(config);
-    if (gate) return toolCommand(config, gate);
+    if (gate) return commandWithUpdate(config, gate);
 
     const state = getState();
-    const references = parseReferences(state);
+    const references = getReferences(state);
     const messageUrls = getLatestHumanMessageImageUrls(state.messages);
     const knownUrls = listKnownReferenceImageUrls(references);
     const resolvedUrl = resolveReferenceImageUrl(
@@ -63,20 +63,20 @@ export const parseReferenceImage = tool(
     );
 
     if (!resolvedUrl) {
-      return toolCommand(config, "未找到可解析的参考图片 URL。");
+      return commandWithUpdate(config, "未找到可解析的参考图片 URL。");
     }
 
     const existing = references.find(
       (item) => item.source_type === "image" && item.image_url === resolvedUrl,
     );
     if (existing?.summary?.trim() && !hint?.trim()) {
-      return toolCommand(config, "该参考图片已解析并写入 references。");
+      return commandWithUpdate(config, "该参考图片已解析并写入 references。");
     }
 
-    return toolCommand(
+    return commandWithUpdate(
       config,
       "已提交参考图片解析任务。",
-      patchStagingProfileMeta(state, {
+      patchPendingProfileMeta(state, {
         pendingParseReferenceImage: {
           image_url: resolvedUrl,
           hint: hint ?? null,
@@ -98,26 +98,26 @@ export const parseReferenceImage = tool(
 export const deleteProfileReferenceTool = tool(
   async ({ image_url, index }, config) => {
     const gate = requireProfileMode(config);
-    if (gate) return toolCommand(config, gate);
+    if (gate) return commandWithUpdate(config, gate);
     if (image_url == null && index == null) {
-      return toolCommand(config, "请提供 image_url 或 index。");
+      return commandWithUpdate(config, "请提供 image_url 或 index。");
     }
 
     const state = getState();
-    const profile = parseProfile(state);
+    const profile = getProfile(state);
     const refs = profile.references ?? [];
     if (!refs.length) {
-      return toolCommand(config, "当前方案尚无参考素材。");
+      return commandWithUpdate(config, "当前方案尚无参考素材。");
     }
 
     const next = deleteProfileReference(profile, { image_url, index });
     if (!next) {
-      return toolCommand(config, "未找到要删除的参考素材。");
+      return commandWithUpdate(config, "未找到要删除的参考素材。");
     }
-    return toolCommand(
+    return commandWithUpdate(
       config,
       `已删除参考素材（剩余 ${next.references?.length ?? 0} 条）。`,
-      patchStagingProfile(state, next),
+      patchPendingProfile(state, next),
     );
   },
   {

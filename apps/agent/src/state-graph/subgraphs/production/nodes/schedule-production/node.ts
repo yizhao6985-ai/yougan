@@ -12,9 +12,7 @@ import {
   referencesSummary,
 } from "@yougan/domain";
 import { YOUGAN_USER_LABEL } from "#agent/system-prompt.js";
-import {
-  departmentsBrief,
-} from "../../helpers/department-brief.js";
+import { departmentsBrief } from "../spawn-specialist/helpers/department-brief.js";
 import { resolveIndustryContext } from "../llm-call/prompt.js";
 import {
   isPlanReady,
@@ -25,10 +23,10 @@ import {
   type WorkProductionPlan,
 } from "@yougan/domain";
 import {
-  parseProductionPlan,
-  parseProfile,
-} from "#agent/runtime/state-readers.js";
-import { patchStagingProductionPlan } from "#agent/runtime/staging-writes.js";
+  getProductionPlan,
+  getProfile,
+} from "#agent/state-io/index.js";
+import { patchPendingProductionPlan } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 import {
   ProductionPlanResponseSchema,
@@ -39,11 +37,11 @@ function shouldRunScheduleProduction(
   state: AgentStateType,
   force = false,
 ): boolean {
-  const profile = parseProfile(state);
+  const profile = getProfile(state);
   if (!isProfileActionable(profile)) return false;
 
   if (force) return true;
-  const plan = parseProductionPlan(state);
+  const plan = getProductionPlan(state);
   if (isPlanReady(plan) && plan.pending_tasks.length > 0) return false;
   if (!isPlanReady(plan)) return true;
   if (plan.pending_tasks.length === 0 && !plan.executed_tasks.length) {
@@ -53,8 +51,8 @@ function shouldRunScheduleProduction(
 }
 
 function buildScheduleProductionPrompt(state: AgentStateType): string {
-  const profile = parseProfile(state);
-  const plan = parseProductionPlan(state);
+  const profile = getProfile(state);
+  const plan = getProductionPlan(state);
   const contentProfile = resolveContentSpecFromProfile(profile);
   const industry = resolveIndustryContext(contentProfile);
 
@@ -107,21 +105,21 @@ export async function rescheduleProductionPlan(
   options?: { force?: boolean },
 ): Promise<Partial<AgentStateType>> {
   if (!shouldRunScheduleProduction(state, options?.force)) {
-    const profile = parseProfile(state);
+    const profile = getProfile(state);
     const industry = resolveIndustryContext(resolveContentSpecFromProfile(profile));
-    const plan = parseProductionPlan(state);
+    const plan = getProductionPlan(state);
     if (plan.industry_context === industry) {
       return {};
     }
-    return patchStagingProductionPlan(state, {
+    return patchPendingProductionPlan(state, {
       ...plan,
       industry_context: industry,
     });
   }
 
-  const profile = parseProfile(state);
+  const profile = getProfile(state);
   const industry = resolveIndustryContext(resolveContentSpecFromProfile(profile));
-  const existing = parseProductionPlan(state);
+  const existing = getProductionPlan(state);
   const llm = createStructuredModel({ temperature: 0.5 });
 
   try {
@@ -135,13 +133,13 @@ export async function rescheduleProductionPlan(
     const plan = applyProductionPlan(existing, parsed);
     plan.industry_context = industry;
 
-    return patchStagingProductionPlan(state, plan);
+    return patchPendingProductionPlan(state, plan);
   } catch {
     const fallbackTasks = [
       newProductionPlanTask("撰写标题与正文", "writing"),
       newProductionPlanTask("规划话题标签与钩子", "writing"),
     ];
-    return patchStagingProductionPlan(state, {
+    return patchPendingProductionPlan(state, {
       ...existing,
       pending_tasks: fallbackTasks,
       ready: true,

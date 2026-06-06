@@ -20,7 +20,10 @@ export async function llmCall(
 ): Promise<Partial<AgentStateType>> {
   const response = await streamChatModelToAIMessage(
     llmWithTools,
-    [new SystemMessage(buildProductionLlmPrompt(state)), ...(state.messages ?? [])],
+    [
+      new SystemMessage(buildProductionLlmPrompt(state)),
+      ...(state.messages ?? []),
+    ],
     config,
   );
   return { messages: [response] };

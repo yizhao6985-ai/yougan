@@ -2,21 +2,21 @@
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
-import { parseActiveTurnKind } from "#agent/runtime/state-readers.js";
-import { getState } from "#agent/runtime/tool-context.js";
-import { toolCommand } from "#agent/runtime/tool-context.js";
+import { getActiveTurnKind, getState } from "#agent/state-io/index.js";
+
+import { commandWithUpdate } from "../command-with-update.js";
 import { rescheduleProductionPlan } from "../../schedule-production/node.js";
 
 export const reviseProductionPlan = tool(
   async ({ reason }, config) => {
-    if (parseActiveTurnKind(getState()) !== "production") {
-      return toolCommand(config, "revise_production_plan 仅在制作模式可用。");
+    if (getActiveTurnKind(getState()) !== "production") {
+      return commandWithUpdate(config, "revise_production_plan 仅在制作模式可用。");
     }
 
     const state = getState();
     const patch = await rescheduleProductionPlan(state, { force: true });
 
-    return toolCommand(
+    return commandWithUpdate(
       config,
       `制作总监已根据「${reason.trim() || "新要求"}」重新制定创作计划。`,
       patch,

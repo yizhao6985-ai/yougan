@@ -32,7 +32,6 @@ export {
   getPlanSummary,
   hasProfileContent,
   hasProfileBeats,
-  normalizeNextStepSuggestions,
   isProfileActionable,
   isPlanReady,
   mergeProfileState,

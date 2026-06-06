@@ -131,7 +131,7 @@ export const AgentState = Annotation.Root({
     ) => (next === undefined ? prev : next),
     default: () => null,
   }),
-  /** 前端可调；子图 LLM 经 parseModelTemperature 读取 */
+  /** 前端可调；子图 LLM 经 getModelTemperature 读取 */
   modelTemperature: Annotation<number>({
     reducer: (prev: number, next: number | undefined) => {
       if (next === undefined) return prev ?? env.llmTemperature;

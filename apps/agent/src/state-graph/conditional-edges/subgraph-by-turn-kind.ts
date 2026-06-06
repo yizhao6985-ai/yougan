@@ -2,9 +2,9 @@
 import type { TurnQueueKind } from "@yougan/domain";
 
 import {
-  parseActiveTurnKind,
-  parseTurnQueue,
-} from "#agent/runtime/state-readers.js";
+  getActiveTurnKind,
+  getTurnQueue,
+} from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 
 export const from = "dispatchTurnQueue" as const;
@@ -29,7 +29,7 @@ export function selectSubgraphByTurnKind(
   state: AgentStateType,
 ): SubgraphByTurnKindTarget {
   const kind: TurnQueueKind | undefined =
-    parseActiveTurnKind(state) ?? parseTurnQueue(state)[0];
+    getActiveTurnKind(state) ?? getTurnQueue(state)[0];
   return subgraphForKind(kind ?? "profile");
 }
 

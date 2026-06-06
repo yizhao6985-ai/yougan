@@ -1,4 +1,4 @@
-import { isEmptyThread } from "#agent/runtime/is-empty-thread.js";
+import { isEmptyThread } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 import { generateSuggestedConversationTitle } from "./conversation-title/suggest-title-node.js";
 import { generateOpeningTopicSuggestions } from "./suggestions/opening/suggestions.js";

@@ -15,7 +15,7 @@ import {
 import { invokeStructuredOutput } from "#agent/llm/structured-output.js";
 import { profileSummary } from "@yougan/domain";
 import { YOUGAN_USER_LABEL } from "#agent/system-prompt.js";
-import { parseProfile } from "#agent/runtime/state-readers.js";
+import { getProfile } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 import { extractLastMessages } from "../suggestions/extract-last-messages.js";
 import { ConversationTitleResponseSchema } from "./schema.js";
@@ -26,7 +26,7 @@ function buildConversationTitlePrompt(
   lastAssistantReply: string,
   hasImages: boolean,
 ): string {
-  const profile = parseProfile(state);
+  const profile = getProfile(state);
   const conversationTitle = state.conversationTitle?.trim() || "（未命名）";
 
   return `你是「有感 Yougan」对话标题助手。用户在本对话的**首条发言**后，需要把占位标题「${conversationTitle}」替换为简短主题名。

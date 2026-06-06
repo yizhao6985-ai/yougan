@@ -1,4 +1,5 @@
 /** tool-node：按 staging 待办进入 work 节点或回创作者 */
+import { getProductionStagingMeta } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 
 export const from = "tool-node" as const;
@@ -13,7 +14,7 @@ export type PendingProductionWorkTarget =
 export function dispatchPendingProductionWork(
   state: AgentStateType,
 ): PendingProductionWorkTarget {
-  const meta = state.staging?.meta.production;
+  const meta = getProductionStagingMeta(state);
   if (meta?.pendingInspect) {
     return "inspectProduction";
   }

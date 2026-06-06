@@ -9,7 +9,7 @@ import {
   getLatestHumanMessageImageUrls,
   getLatestHumanMessageText,
 } from "#agent/messages/human.js";
-import { initStagingForTurn } from "#agent/runtime/staging-writes.js";
+import { initPendingTurn } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 
 import { buildTurnQueuePrompt } from "./prompt.js";
@@ -56,7 +56,7 @@ export async function orchestrateTurnNode(
   state: AgentStateType,
 ): Promise<Partial<AgentStateType>> {
   const turnQueue = await resolveTurnQueue(state);
-  const staging = initStagingForTurn(state, turnQueue);
+  const staging = initPendingTurn(state, turnQueue);
 
   return {
     turnQueue,

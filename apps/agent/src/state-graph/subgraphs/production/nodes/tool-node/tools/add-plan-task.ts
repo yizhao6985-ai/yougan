@@ -7,28 +7,29 @@ import {
   type ProductionDepartment,
 } from "@yougan/domain";
 import {
-  parseActiveTurnKind,
-  parseProductionPlan,
-} from "#agent/runtime/state-readers.js";
-import { patchStagingProductionPlan } from "#agent/runtime/staging-writes.js";
-import { getState } from "#agent/runtime/tool-context.js";
-import { toolCommand } from "#agent/runtime/tool-context.js";
+  getActiveTurnKind,
+  getProductionPlan,
+  getState,
+  patchPendingProductionPlan,
+} from "#agent/state-io/index.js";
+
+import { commandWithUpdate } from "../command-with-update.js";
 
 export const addPlanTask = tool(
   async ({ description, department }, config) => {
-    if (parseActiveTurnKind(getState()) !== "production") {
-      return toolCommand(config, "add_plan_task 仅在制作模式可用。");
+    if (getActiveTurnKind(getState()) !== "production") {
+      return commandWithUpdate(config, "add_plan_task 仅在制作模式可用。");
     }
     const trimmed = description.trim();
-    if (!trimmed) return toolCommand(config, "任务描述不能为空。");
+    if (!trimmed) return commandWithUpdate(config, "任务描述不能为空。");
 
     const state = getState();
-    const plan = parseProductionPlan(state);
+    const plan = getProductionPlan(state);
     const dept = department as ProductionDepartment | undefined;
     const pending = [...plan.pending_tasks, newProductionPlanTask(trimmed, dept)];
 
-    return toolCommand(config, `已添加制作任务（共 ${pending.length} 项）。`, {
-      ...patchStagingProductionPlan(state, { ...plan, pending_tasks: pending }),
+    return commandWithUpdate(config, `已添加制作任务（共 ${pending.length} 项）。`, {
+      ...patchPendingProductionPlan(state, { ...plan, pending_tasks: pending }),
     });
   },
   {

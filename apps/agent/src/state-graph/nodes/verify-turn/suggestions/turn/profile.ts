@@ -19,7 +19,7 @@ import {
 } from "@yougan/domain";
 import { YOUGAN_USER_LABEL } from "#agent/system-prompt.js";
 import type { AgentStateType } from "#agent/state.js";
-import { parseProfile } from "#agent/runtime/state-readers.js";
+import { getProfile } from "#agent/state-io/index.js";
 import { extractLastMessages } from "../extract-last-messages.js";
 import {
   TurnNextStepSuggestionsResponseSchema,
@@ -31,7 +31,7 @@ function buildAfterProfileTurnSuggestionsPrompt(
   lastAssistantReply: string,
   lastUserMessage: string,
 ): string {
-  const profile = parseProfile(state);
+  const profile = getProfile(state);
 
   return `你是「有感 Yougan」作品方案搭子。profile 模式回合已结束，请根据**上一条 AI 回复**，生成 ${TURN_NEXT_STEP_SUGGESTIONS_COUNT} 条**下一步工作**可点击建议。
 
@@ -55,7 +55,7 @@ ${lastAssistantReply}
 function fallbackAfterProfileTurnSuggestions(
   state: AgentStateType,
 ): NextStepSuggestions {
-  const profile = parseProfile(state);
+  const profile = getProfile(state);
   const actionable = isProfileActionable(profile);
 
   return {

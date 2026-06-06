@@ -7,8 +7,8 @@ import {
   type WorkProfile,
 } from "@yougan/domain";
 
-import { departmentBrief } from "../../helpers/department-brief.js";
-import { DEPARTMENT_LABELS } from "../../helpers/department-labels.js";
+import { departmentBrief } from "./helpers/department-brief.js";
+import { DEPARTMENT_LABELS } from "./helpers/department-labels.js";
 
 export function buildSpawnSpecialistPrompt(input: {
   profile: WorkProfile;

@@ -15,7 +15,6 @@ import { ComposerAttachmentsProvider } from "@/components/studio/composer-attach
 import { ChatToolActivity } from "@/components/studio/chat-tool-activity";
 import { NextStepSuggestionOptions } from "@/components/studio/next-step-suggestion-options";
 import { OpeningNextStepSuggestions } from "@/components/studio/opening-next-step-suggestions";
-import { normalizeNextStepSuggestions } from "@yougan/domain";
 import { useTurnNextStepSuggestions } from "@/hooks/use-turn-next-step-suggestions";
 import { StudioChatComposer } from "@/components/studio/studio-chat-composer";
 import { Shimmer } from "@/components/ai-elements/shimmer";
@@ -69,7 +68,7 @@ export function YouganChat() {
   const openingSuggestions = useMemo(
     () =>
       items.length === 0
-        ? normalizeNextStepSuggestions(streamValues?.nextStepSuggestions)
+        ? (streamValues?.nextStepSuggestions ?? null)
         : null,
     [items.length, streamValues?.nextStepSuggestions],
   );

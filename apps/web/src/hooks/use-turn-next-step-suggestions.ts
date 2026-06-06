@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 
-import { normalizeNextStepSuggestions } from "@yougan/domain";
 import type { YouganValues } from "@/lib/types";
 
 /** 验收通过后生成的下一步建议（开屏或回合末） */
@@ -12,7 +11,7 @@ export function useTurnNextStepSuggestions(input: {
     if (input.isLoading) {
       return null;
     }
-    return normalizeNextStepSuggestions(input.values?.nextStepSuggestions);
+    return input.values?.nextStepSuggestions ?? null;
   }, [input.isLoading, input.values?.nextStepSuggestions]);
 
   return { activeSuggestions };

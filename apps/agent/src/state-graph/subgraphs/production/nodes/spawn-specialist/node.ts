@@ -7,20 +7,21 @@ import {
   type WorkPreview,
 } from "@yougan/domain";
 import {
-  mergeStagingPatches,
-  patchStagingPreview,
-  patchStagingProductionMeta,
-  patchStagingProductionPlan,
-} from "#agent/runtime/staging-writes.js";
+  patchPendingBatch,
+  patchPendingPreview,
+  patchPendingProductionMeta,
+  patchPendingProductionPlan,
+} from "#agent/state-io/index.js";
 import {
-  parseModelTemperature,
-  parsePreview,
-  parseProductionPlan,
-  parseProfile,
-} from "#agent/runtime/state-readers.js";
+  getModelTemperature,
+  getPreview,
+  getProductionPlan,
+  getProductionStagingMeta,
+  getProfile,
+} from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 
-import { markDepartmentTaskPendingInspect } from "../../helpers/set-pending-inspect.js";
+import { markDepartmentTaskPendingInspect } from "../inspect-production/helpers/set-pending-inspect.js";
 import {
   buildSpawnSpecialistPrompt,
   specialistDisplayName,
@@ -29,19 +30,19 @@ import {
 export async function spawnSpecialistNode(
   state: AgentStateType,
 ): Promise<Partial<AgentStateType>> {
-  const pending = state.staging?.meta.production?.pendingSpawnSpecialist;
+  const pending = getProductionStagingMeta(state).pendingSpawnSpecialist;
   if (!pending) {
     return {};
   }
 
-  const profile = parseProfile(state);
-  const plan = parseProductionPlan(state);
+  const profile = getProfile(state);
+  const plan = getProductionPlan(state);
   const contentProfile = resolveContentSpecFromProfile(profile);
   const { department, brief, specialist_name } = pending;
   const name = specialistDisplayName(department, specialist_name);
 
   const llm = createChatModel({
-    temperature: parseModelTemperature(state),
+    temperature: getModelTemperature(state),
   });
   const prompt = buildSpawnSpecialistPrompt({
     profile,
@@ -62,7 +63,7 @@ export async function spawnSpecialistNode(
     output = `${name}暂时无法完成该任务，请稍后重试。`;
   }
 
-  const existing = parsePreview(state);
+  const existing = getPreview(state);
   const section = `\n\n---\n### ${name}（${department}）\n${output}`;
   const preview: WorkPreview = existing
     ? {
@@ -88,13 +89,13 @@ export async function spawnSpecialistNode(
     markDepartmentTaskPendingInspect(state, pendingTasks, department, pipeline) ??
     {};
 
-  return mergeStagingPatches(
-    patchStagingPreview(state, preview),
-    patchStagingProductionPlan(state, {
+  return patchPendingBatch(
+    patchPendingPreview(state, preview),
+    patchPendingProductionPlan(state, {
       ...plan,
       pending_tasks: pendingTasks,
     }),
     inspectPatch,
-    patchStagingProductionMeta(state, { pendingSpawnSpecialist: null }),
+    patchPendingProductionMeta(state, { pendingSpawnSpecialist: null }),
   );
 }

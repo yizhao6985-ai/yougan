@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "imports": {
-    "#agent/runtime/*": "./src/runtime/*",
+    "#agent/state-io/*": "./src/state-io/*",
     "#agent/messages/*": "./src/messages/*",
     "#agent/model/*": "./src/model/*",
     "#agent/llm/*": "./src/llm/*",

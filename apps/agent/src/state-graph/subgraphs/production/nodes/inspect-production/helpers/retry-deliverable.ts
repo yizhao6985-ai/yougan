@@ -2,7 +2,6 @@
 import { HumanMessage } from "@langchain/core/messages";
 
 import { createChatModel } from "#agent/model/dashscope.js";
-import { departmentBrief } from "./department-brief.js";
 import {
   getPlanSummary,
   profileSummary,
@@ -10,32 +9,33 @@ import {
   type ProductionDepartment,
   type WorkPreview,
 } from "@yougan/domain";
+import {
+  getPreview,
+  getProductionPlan,
+  getProfile,
+} from "#agent/state-io/index.js";
+import type { AgentStateType } from "#agent/state.js";
+
+import { departmentBrief } from "../../spawn-specialist/helpers/department-brief.js";
+import { DEPARTMENT_LABELS } from "../../spawn-specialist/helpers/department-labels.js";
 
 type RetryablePlanTask = {
   id: string;
   description: string;
   department?: ProductionDepartment;
 };
-import {
-  parsePreview,
-  parseProductionPlan,
-  parseProfile,
-} from "#agent/runtime/state-readers.js";
-import type { AgentStateType } from "#agent/state.js";
-
-import { DEPARTMENT_LABELS } from "./department-labels.js";
 
 export async function retryTaskDeliverable(
   state: AgentStateType,
   task: RetryablePlanTask,
   feedback: string,
 ): Promise<WorkPreview | null> {
-  const profile = parseProfile(state);
-  const plan = parseProductionPlan(state);
+  const profile = getProfile(state);
+  const plan = getProductionPlan(state);
   const contentProfile = resolveContentSpecFromProfile(profile);
   const department = task.department ?? "writing";
   const label = DEPARTMENT_LABELS[department];
-  const existing = parsePreview(state);
+  const existing = getPreview(state);
 
   const llm = createChatModel({ temperature: 0.4 });
   const prompt = `你是${label}（${departmentBrief(department)}），请根据质检反馈**立即重做**以下任务。

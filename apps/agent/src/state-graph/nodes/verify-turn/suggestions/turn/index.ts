@@ -17,11 +17,11 @@ import {
 } from "@yougan/domain";
 import { YOUGAN_USER_LABEL } from "#agent/system-prompt.js";
 import {
-  parseCompletedTurnKinds,
-  parsePreview,
-  parseProductionPlan,
-  parseProfile,
-} from "#agent/runtime/state-readers.js";
+  getCompletedTurnKinds,
+  getPreview,
+  getProductionPlan,
+  getProfile,
+} from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 import { extractLastMessages } from "../extract-last-messages.js";
 import {
@@ -40,10 +40,10 @@ function buildTurnSuggestionsPrompt(
   lastAssistantReply: string,
   lastUserMessage: string,
 ): string {
-  const profile = parseProfile(state);
-  const plan = parseProductionPlan(state);
-  const preview = parsePreview(state);
-  const completed = parseCompletedTurnKinds(state);
+  const profile = getProfile(state);
+  const plan = getProductionPlan(state);
+  const preview = getPreview(state);
+  const completed = getCompletedTurnKinds(state);
 
   return `你是「有感 Yougan」创作搭子。本轮队列已执行完毕（${completedKindsLabel(completed)}），请根据**回合前后状态与上一条 AI 回复**，生成 ${TURN_NEXT_STEP_SUGGESTIONS_COUNT} 条**下一步工作**可点击建议。
 
@@ -66,8 +66,8 @@ ${lastAssistantReply}
 }
 
 function fallbackTurnSuggestions(state: AgentStateType): NextStepSuggestions {
-  const completed = parseCompletedTurnKinds(state);
-  const hasPreview = Boolean(parsePreview(state)?.body?.trim());
+  const completed = getCompletedTurnKinds(state);
+  const hasPreview = Boolean(getPreview(state)?.body?.trim());
 
   if (completed.includes("production") || hasPreview) {
     return {
@@ -127,7 +127,7 @@ function fallbackTurnSuggestions(state: AgentStateType): NextStepSuggestions {
 export async function generateTurnSuggestions(
   state: AgentStateType,
 ): Promise<NextStepSuggestions | null> {
-  const completed = parseCompletedTurnKinds(state);
+  const completed = getCompletedTurnKinds(state);
 
   if (
     completed.length === 1 &&

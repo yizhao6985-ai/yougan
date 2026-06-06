@@ -7,47 +7,49 @@ import {
   isPlanReady,
   isProfileActionable,
 } from "@yougan/domain";
-import { patchStagingProductionMeta } from "#agent/runtime/staging-writes.js";
 import {
-  parseActiveTurnKind,
-  parseProductionPlan,
-  parseProfile,
-} from "#agent/runtime/state-readers.js";
-import { getState, toolCommand } from "#agent/runtime/tool-context.js";
+  getActiveTurnKind,
+  getProductionPlan,
+  getProfile,
+  getState,
+  patchPendingProductionMeta,
+} from "#agent/state-io/index.js";
+
+import { commandWithUpdate } from "../command-with-update.js";
 
 export const generateDraft = tool(
   async (_input, config) => {
     const state = getState();
-    if (parseActiveTurnKind(state) !== "production") {
-      return toolCommand(config, "generate_draft 仅在制作模式可用。");
+    if (getActiveTurnKind(state) !== "production") {
+      return commandWithUpdate(config, "generate_draft 仅在制作模式可用。");
     }
 
-    const profile = parseProfile(state);
-    const plan = parseProductionPlan(state);
+    const profile = getProfile(state);
+    const plan = getProductionPlan(state);
 
     if (!hasProfileBeats(profile)) {
-      return toolCommand(config, "生成被阻止：尚无作品方案节拍。");
+      return commandWithUpdate(config, "生成被阻止：尚无作品方案节拍。");
     }
     if (!plan.pending_tasks.length) {
-      return toolCommand(
+      return commandWithUpdate(
         config,
         "生成被阻止：内部创作计划尚无待执行任务。",
       );
     }
     if (!isPlanReady(plan)) {
-      return toolCommand(config, "生成被阻止：创作计划尚未就绪。");
+      return commandWithUpdate(config, "生成被阻止：创作计划尚未就绪。");
     }
     if (!isProfileActionable(profile)) {
-      return toolCommand(
+      return commandWithUpdate(
         config,
         "生成被阻止：请先在作品方案中确认创作主题与内容节拍。",
       );
     }
 
-    return toolCommand(
+    return commandWithUpdate(
       config,
       "已提交文案出稿任务，将由文案总监执行。",
-      patchStagingProductionMeta(state, { pendingGenerateDraft: true }),
+      patchPendingProductionMeta(state, { pendingGenerateDraft: true }),
     );
   },
   {

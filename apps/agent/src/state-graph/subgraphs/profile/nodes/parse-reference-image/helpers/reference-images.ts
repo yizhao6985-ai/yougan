@@ -1,5 +1,5 @@
 /**
- * 参考图 URL 解析与去重（profile reference-tools 使用）。
+ * 参考图 URL 解析与去重（parse-reference-image 与 reference-tools 共用）。
  */
 import type { ReferenceItem } from "@yougan/domain";
 
