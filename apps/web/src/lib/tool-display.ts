@@ -64,6 +64,7 @@ function readString(value: unknown) {
 export function getToolInputSummary(
   toolName: string,
   toolInput: Record<string, unknown>,
+  options?: { full?: boolean },
 ) {
   switch (toolName) {
     case "add_profile_beat":
@@ -91,7 +92,9 @@ export function getToolInputSummary(
         .filter((key) => toolInput[key] != null)
         .join("、");
     case "parse_reference_text":
-      return truncate(readString(toolInput.reference_text), 80);
+      return options?.full
+        ? readString(toolInput.reference_text)
+        : truncate(readString(toolInput.reference_text), 80);
     case "parse_reference_image":
       return readString(toolInput.hint) || "解析参考图片风格";
     case "generate_preview":
@@ -146,10 +149,33 @@ export function getToolActivitySummary(input: {
   toolOutput?: unknown;
   toolError?: string;
 }): string {
+  const description = getToolDescription(input);
+  return description || getToolLabel(input.toolName);
+}
+
+/** 工具可读描述（不截断），用于展开展示。 */
+export function getToolDescription(input: {
+  toolName: string;
+  toolInput: Record<string, unknown>;
+  toolOutput?: unknown;
+  toolError?: string;
+}): string {
   if (input.toolError) return input.toolError;
-  const outputMessage = getToolOutputMessage(input.toolOutput);
-  if (outputMessage) return outputMessage;
-  const inputSummary = getToolInputSummary(input.toolName, input.toolInput);
+
+  if (typeof input.toolOutput === "string" && input.toolOutput.trim()) {
+    return input.toolOutput.trim();
+  }
+  if (input.toolOutput && typeof input.toolOutput === "object") {
+    const record = input.toolOutput as Record<string, unknown>;
+    if (typeof record.message === "string" && record.message.trim()) {
+      return record.message.trim();
+    }
+  }
+
+  const inputSummary = getToolInputSummary(input.toolName, input.toolInput, {
+    full: true,
+  });
   if (inputSummary) return inputSummary;
-  return getToolLabel(input.toolName);
+
+  return "";
 }

@@ -12,8 +12,8 @@ import { LANGGRAPH_API_URL } from "@/lib/env";
 import type { YouganValues, YouganSubmitInput, Work, WorkConversation } from "@/lib/types";
 import { useAuthToken } from "@/store/auth";
 
-/** 消息 token 走 messages；其余 state（profile、turnQueue 等）走 updates 合并，避免 values 整表覆盖。 */
-const LANGGRAPH_STREAM_MODE = ["updates", "messages"] as const;
+/** 消息 chunk 走 messages-tuple；其余 state（profile、turnQueue 等）走 updates 合并，避免 values 整表覆盖。 */
+const LANGGRAPH_STREAM_MODE = ["updates", "messages-tuple"] as const;
 
 interface UseYouganStreamOptions {
   work: Work | null;

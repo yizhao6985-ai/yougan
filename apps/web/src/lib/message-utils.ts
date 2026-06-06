@@ -167,6 +167,31 @@ export type RenderItem =
       content: string;
     };
 
+function mergeAiMessageFromUpdate(prev: Message, incoming: Message): Message {
+  const prevAi = prev as AiMessageWithTools;
+  const incomingAi = incoming as AiMessageWithTools;
+  const prevWithBlocks = prev as MessageWithBlocks;
+  const incomingWithBlocks = incoming as MessageWithBlocks;
+  const prevText = extractAIMessageText(prev);
+  const incomingText = extractAIMessageText(incoming);
+  const keepPrevBody = prevText.length >= incomingText.length;
+
+  return {
+    ...prev,
+    ...incoming,
+    content: keepPrevBody ? prev.content : incoming.content,
+    contentBlocks: keepPrevBody
+      ? prevWithBlocks.contentBlocks
+      : incomingWithBlocks.contentBlocks,
+    tool_calls: incomingAi.tool_calls?.length
+      ? incomingAi.tool_calls
+      : prevAi.tool_calls,
+    invalid_tool_calls: incomingAi.invalid_tool_calls?.length
+      ? incomingAi.invalid_tool_calls
+      : prevAi.invalid_tool_calls,
+  } as MessageWithBlocks as Message;
+}
+
 function mergeMessagesFromUpdates(
   existing: Message[],
   incoming: Message[],
@@ -193,22 +218,9 @@ function mergeMessagesFromUpdates(
     }
 
     const prev = merged[index];
-    // messages 通道负责 AI 流式正文；updates 里同 id 的 AI 只补 tool_calls，不覆盖已流式 content。
+    // messages-tuple 负责流式正文；updates 同 id 的 AI 只补 tool_calls，正文取更长的一份。
     if (message.type === "ai" && prev?.type === "ai") {
-      const prevAi = prev as AiMessageWithTools;
-      const incomingAi = message as AiMessageWithTools;
-      const prevText = extractAIMessageText(prev);
-      merged[index] = {
-        ...prev,
-        ...message,
-        content: prevText ? prev.content : message.content,
-        tool_calls: incomingAi.tool_calls?.length
-          ? incomingAi.tool_calls
-          : prevAi.tool_calls,
-        invalid_tool_calls: incomingAi.invalid_tool_calls?.length
-          ? incomingAi.invalid_tool_calls
-          : prevAi.invalid_tool_calls,
-      } as Message;
+      merged[index] = mergeAiMessageFromUpdate(prev, message);
       continue;
     }
 
@@ -220,7 +232,7 @@ function mergeMessagesFromUpdates(
 
 /**
  * 将 LangGraph updates 事件合并进 values。
- * 与 streamMode `messages` 并用：消息 token 走 messages 通道，updates 只合并 tool/human 与 AI 的 tool_calls。
+ * 与 streamMode `messages-tuple` 并用：正文走 messages 通道，updates 只合并 tool/human 与 AI 的 tool_calls。
  */
 export function applyGraphUpdatesToValues<T extends { messages?: Message[] }>(
   prev: T,

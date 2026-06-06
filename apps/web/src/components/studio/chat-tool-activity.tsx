@@ -1,7 +1,6 @@
 import { ChevronDownIcon } from "lucide-react";
 import { useState } from "react";
 
-import { CodeBlock } from "@/components/ai-elements/code-block";
 import {
   ChatStreamBlock,
   chatStreamBlock,
@@ -9,10 +8,8 @@ import {
 import { cn } from "@/lib/utils";
 import {
   getToolActivityState,
-  getToolActivitySummary,
-  getToolInputSummary,
+  getToolDescription,
   getToolLabel,
-  getToolOutputMessage,
   TOOL_STATE_LABELS,
 } from "@/lib/tool-display";
 
@@ -44,17 +41,13 @@ export function ChatToolActivity({
   const [expanded, setExpanded] = useState(false);
   const state = getToolActivityState({ toolError, isStreaming, toolOutput });
   const label = getToolLabel(toolName);
-  const summary = getToolActivitySummary({
+  const description = getToolDescription({
     toolName,
     toolInput,
     toolOutput,
     toolError,
   });
-  const inputSummary = getToolInputSummary(toolName, toolInput);
-  const outputMessage = getToolOutputMessage(toolOutput, toolError);
-  const showDetails =
-    Object.keys(toolInput).length > 0 ||
-    (toolOutput !== undefined && typeof toolOutput !== "string");
+  const canExpand = Boolean(description);
 
   return (
     <ChatStreamBlock>
@@ -70,25 +63,20 @@ export function ChatToolActivity({
               {TOOL_STATE_LABELS[state]}
             </span>
           </div>
-          <p
-            className={cn(
-              "mt-1",
-              chatStreamBlock.muted,
-              toolError && "text-destructive",
-            )}
-          >
-            {summary}
-          </p>
-          {inputSummary &&
-          outputMessage &&
-          inputSummary !== outputMessage &&
-          state === "completed" ? (
-            <p className={cn("mt-1 line-clamp-2", chatStreamBlock.caption)}>
-              {inputSummary}
+          {description ? (
+            <p
+              className={cn(
+                "mt-1 whitespace-pre-wrap wrap-break-word",
+                chatStreamBlock.muted,
+                toolError && "text-destructive",
+                !expanded && "line-clamp-1",
+              )}
+            >
+              {description}
             </p>
           ) : null}
         </div>
-        {showDetails ? (
+        {canExpand ? (
           <button
             type="button"
             aria-expanded={expanded}
@@ -101,37 +89,10 @@ export function ChatToolActivity({
                 expanded && "rotate-180",
               )}
             />
-            <span className="sr-only">{expanded ? "收起详情" : "展开详情"}</span>
+            <span className="sr-only">{expanded ? "收起描述" : "展开描述"}</span>
           </button>
         ) : null}
       </div>
-
-      {expanded && showDetails ? (
-        <div className={cn(chatStreamBlock.divider, "space-y-3")}>
-          {Object.keys(toolInput).length > 0 ? (
-            <div className="space-y-1.5">
-              <p className={chatStreamBlock.sectionLabel}>输入参数</p>
-              <div className={chatStreamBlock.inset}>
-                <CodeBlock
-                  code={JSON.stringify(toolInput, null, 2)}
-                  language="json"
-                />
-              </div>
-            </div>
-          ) : null}
-          {toolOutput !== undefined && typeof toolOutput !== "string" ? (
-            <div className="space-y-1.5">
-              <p className={chatStreamBlock.sectionLabel}>返回结果</p>
-              <div className={chatStreamBlock.inset}>
-                <CodeBlock
-                  code={JSON.stringify(toolOutput, null, 2)}
-                  language="json"
-                />
-              </div>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
     </ChatStreamBlock>
   );
 }

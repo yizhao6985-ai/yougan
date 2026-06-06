@@ -1,4 +1,5 @@
 import { HumanMessage } from "@langchain/core/messages";
+import type { RunnableConfig } from "@langchain/core/runnables";
 
 import { sortTurnQueue, type TurnQueueKind } from "@yougan/domain";
 
@@ -19,6 +20,7 @@ const DEFAULT_QUEUE: TurnQueueKind[] = ["profile"];
 
 async function resolveTurnQueue(
   state: AgentStateType,
+  config?: RunnableConfig,
 ): Promise<TurnQueueKind[]> {
   if (getHumanMessageContents(state.messages).length < 1) {
     return DEFAULT_QUEUE;
@@ -39,6 +41,7 @@ async function resolveTurnQueue(
       TurnQueueDecisionSchema,
       [new HumanMessage(prompt)],
       { name: "turn_queue_decision" },
+      config,
     )) as TurnQueueDecision;
     const queue = sortTurnQueue(parsed.kinds);
     return queue.length ? queue : DEFAULT_QUEUE;
@@ -50,8 +53,9 @@ async function resolveTurnQueue(
 /** 编排本轮：解析 turnQueue 并 fork staging 工作区 */
 export async function orchestrateTurnNode(
   state: AgentStateType,
+  config?: RunnableConfig,
 ): Promise<Partial<AgentStateType>> {
-  const turnQueue = await resolveTurnQueue(state);
+  const turnQueue = await resolveTurnQueue(state, config);
   const staging = initPendingTurn(state, turnQueue);
 
   return {

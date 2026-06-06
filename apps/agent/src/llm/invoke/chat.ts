@@ -10,11 +10,10 @@ import type { Runnable, RunnableConfig } from "@langchain/core/runnables";
 import { pushMessage } from "@langchain/langgraph";
 import { nanoid } from "nanoid";
 
-export type ChatModel = Runnable<
-  BaseMessage[],
-  AIMessageChunk,
-  RunnableConfig
->;
+/** 关闭 LLM callback 自动 messages 流，改由 pushMessage 推增量 chunk。 */
+const NOSTREAM_TAGS = ["nostream"] as const;
+
+export type ChatModel = Runnable<BaseMessage[], AIMessageChunk, RunnableConfig>;
 
 type StreamTextChannel = {
   emitted: string;
@@ -70,10 +69,25 @@ function normalizeChunkForConcat(
   });
 }
 
-function chunkToAIMessage(
-  chunk: AIMessageChunk,
-  messageId: string,
-): AIMessage {
+function withNoStreamTags(config: RunnableConfig): RunnableConfig {
+  const tags = [...new Set([...(config.tags ?? []), ...NOSTREAM_TAGS])];
+  return { ...config, tags };
+}
+
+function hasStreamDelta(chunk: AIMessageChunk): boolean {
+  if (typeof chunk.content === "string" && chunk.content.length > 0) {
+    return true;
+  }
+  if (Array.isArray(chunk.content) && chunk.content.length > 0) {
+    return true;
+  }
+  if (chunk.tool_call_chunks?.length) return true;
+  if (chunk.tool_calls?.length) return true;
+  if (chunk.invalid_tool_calls?.length) return true;
+  return false;
+}
+
+function chunkToAIMessage(chunk: AIMessageChunk, messageId: string): AIMessage {
   return new AIMessage({
     id: messageId,
     content: chunk.content,
@@ -85,25 +99,25 @@ function chunkToAIMessage(
   });
 }
 
-/** 流式调用 Chat 模型，逐 chunk pushMessage。用于 llm-chat 子图节点。 */
+/** 流式调用 Chat 模型，逐增量 chunk pushMessage。用于 llm-chat 子图节点。 */
 export async function streamChat(
   model: ChatModel,
   input: BaseMessage[],
   config: RunnableConfig,
 ): Promise<AIMessage> {
-  const stream = await model.stream(input, config);
+  const stream = await model.stream(input, withNoStreamTags(config));
   let accumulated: AIMessageChunk | undefined;
   let messageId: string | undefined;
   const contentChannel = createStreamTextChannel();
 
   for await (const chunk of stream) {
     const normalized = normalizeChunkForConcat(chunk, contentChannel);
-    accumulated = accumulated
-      ? accumulated.concat(normalized)
-      : normalized;
+    accumulated = accumulated ? accumulated.concat(normalized) : normalized;
     const id = accumulated.id ?? messageId ?? (messageId = nanoid());
     messageId = id;
-    pushMessage(chunkToAIMessage(accumulated, id), config);
+    if (hasStreamDelta(normalized)) {
+      pushMessage(chunkToAIMessage(normalized, id), config);
+    }
   }
 
   if (!accumulated) {
