@@ -58,12 +58,30 @@ import { commandWithUpdate } from "../command-with-update.js";
 return commandWithUpdate(config, "已更新。", patchPendingProfile(state, next));
 ```
 
+## LLM（`src/llm/`）
+
+统一挂在 `llm/` 下，按职责分子目录，避免 `model` 与 `domain` 模型概念混淆。
+
+| 子目录 | 职责 |
+|--------|------|
+| `llm/providers/` | **创建**客户端：`catalog`、`createChatModel`、`generateImage`（文本统一 qwen3.7-max） |
+| `llm/invoke/` | **调用**：`streamChat`（对话）、`invokeStructured`（后台 work） |
+
+```typescript
+import { createChatModel } from "#agent/llm/providers/index.js";
+import { streamChat } from "#agent/llm/invoke/index.js";
+
+const llm = createChatModel({ temperature: 0.7 });
+const message = await streamChat(llm.bindTools(tools), input, config);
+```
+
+节点内禁止直接 `llm.invoke()`，统一走 `llm/invoke/`。
+
 ## 路径别名
 
 | 别名 | 指向 |
 |------|------|
 | `#agent/state-io/*` | `src/state-io/*` |
-| `#agent/model/*` | `src/model/*` |
 | `#agent/llm/*` | `src/llm/*` |
 | `#agent/messages/*` | `src/messages/*` |
 | `#agent/system-prompt.js` | `src/system-prompt.ts` |

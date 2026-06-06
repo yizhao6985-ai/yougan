@@ -1,8 +1,9 @@
 /** work node：解析参考图写入 references */
 import { HumanMessage } from "@langchain/core/messages";
 
-import { createChatModel } from "#agent/model/dashscope.js";
-import { truncateMessageContent, type ReferenceItem } from "@yougan/domain";
+import { invokeStructured } from "#agent/llm/invoke/index.js";
+import { createChatModel } from "#agent/llm/providers/index.js";
+import type { ReferenceItem } from "@yougan/domain";
 import {
   patchPendingProfile,
   patchPendingProfileMeta,
@@ -12,6 +13,7 @@ import type { AgentStateType } from "#agent/state.js";
 
 import { upsertImageReference } from "./helpers/reference-images.js";
 import { buildParseReferenceImagePrompt } from "./prompt.js";
+import { ReferenceImageParseSchema } from "./schema.js";
 
 export async function parseReferenceImageNode(
   state: AgentStateType,
@@ -20,21 +22,28 @@ export async function parseReferenceImageNode(
   if (!pending?.image_url) return {};
 
   const llm = createChatModel({ temperature: 0.2 });
-  const response = await llm.invoke([
-    new HumanMessage({
-      content: [
-        {
-          type: "text",
-          text: buildParseReferenceImagePrompt(pending.hint),
-        },
-        { type: "image_url", image_url: { url: pending.image_url } },
-      ],
-    }),
-  ]);
-  const summary = truncateMessageContent(response.content);
+  const parsed = await invokeStructured(
+    llm,
+    ReferenceImageParseSchema,
+    [
+      new HumanMessage({
+        content: [
+          {
+            type: "text",
+            text: buildParseReferenceImagePrompt(pending.hint),
+          },
+          { type: "image_url", image_url: { url: pending.image_url } },
+        ],
+      }),
+    ],
+    { name: "parse_reference_image" },
+  );
+
   const item: ReferenceItem = {
     source_type: "image",
-    summary,
+    summary: parsed.summary,
+    tone_hints: parsed.tone_hints,
+    structure_hints: parsed.structure_hints,
     image_url: pending.image_url,
   };
 

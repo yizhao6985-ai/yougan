@@ -4,8 +4,8 @@
  */
 import { HumanMessage } from "@langchain/core/messages";
 
-import { createStructuredModel } from "#agent/model/dashscope.js";
-import { invokeStructuredOutput } from "#agent/llm/structured-output.js";
+import { invokeStructured } from "#agent/llm/invoke/index.js";
+import { createChatModel } from "#agent/llm/providers/index.js";
 import {
   profileSummary,
   productionPlanSummary,
@@ -120,10 +120,10 @@ export async function rescheduleProductionPlan(
   const profile = getProfile(state);
   const industry = resolveIndustryContext(resolveContentSpecFromProfile(profile));
   const existing = getProductionPlan(state);
-  const llm = createStructuredModel({ temperature: 0.5 });
+  const llm = createChatModel({ temperature: 0.5 });
 
   try {
-    const parsed = (await invokeStructuredOutput(
+    const parsed = (await invokeStructured(
       llm,
       ProductionPlanResponseSchema,
       [new HumanMessage(buildScheduleProductionPrompt(state))],

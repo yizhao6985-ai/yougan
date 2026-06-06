@@ -11,8 +11,8 @@ import {
   type WorkProfile,
 } from "@yougan/domain";
 
-import { createStructuredModel } from "#agent/model/dashscope.js";
-import { invokeStructuredOutput } from "#agent/llm/structured-output.js";
+import { invokeStructured } from "#agent/llm/invoke/index.js";
+import { createChatModel } from "#agent/llm/providers/index.js";
 import {
   getLatestHumanMessageImageUrls,
   getLatestHumanMessageText,
@@ -139,10 +139,10 @@ export async function ensureProfileNode(
   }
 
   const existing = getProfile(state);
-  const llm = createStructuredModel({ temperature: 0.5 });
+  const llm = createChatModel({ temperature: 0.5 });
 
   try {
-    const parsed = (await invokeStructuredOutput(
+    const parsed = (await invokeStructured(
       llm,
       EnsureProfileResponseSchema,
       [new HumanMessage(buildEnsureProfilePrompt(state))],

@@ -42,8 +42,9 @@ src/
 ├── state-graph/                      # 主图 + subgraphs/
 ├── state-io/                          # state-io (get / patch-pending / lifecycle)
 ├── messages/
-├── model/                            # 模型工厂、provider
-├── llm/                              # invoke / stream / structured-output
+├── llm/
+│   ├── providers/                    # 创建 Chat / 结构化 / 文生图客户端
+│   └── invoke/                       # streamChat / invokeStructured
 ├── system-prompt.ts                  # 全局系统提示词 + composeSystemPrompt
 └── state.ts
 ```
@@ -58,8 +59,8 @@ src/
 |------|------|
 | `#agent/state-io/*` | `src/state-io/*` |
 | `#agent/messages/*` | `src/messages/*` |
-| `#agent/model/*` | `src/model/*` |
-| `#agent/llm/*` | `src/llm/*` |
+| `#agent/llm/providers/index.js` | 模型工厂 |
+| `#agent/llm/invoke/index.js` | LLM 调用 |
 | `#agent/system-prompt.js` | `src/system-prompt.ts` |
 | `#agent/state.js` | `src/state.ts` |
 | `#agent/env.js` | `src/env.ts` |
@@ -85,15 +86,23 @@ START
 
 ## LLM 接入
 
-全部经 **阿里百炼 DashScope**（`DASHSCOPE_API_KEY`，OpenAI 兼容 `compatible-mode/v1`）。默认模型见 `src/model/models.ts`，可用 `LLM_MODEL_*` 覆盖。
+全部经 **阿里百炼 DashScope**（`DASHSCOPE_API_KEY`，OpenAI 兼容 `compatible-mode/v1`）。默认模型见 `src/llm/providers/catalog.ts`，可用 `LLM_MODEL_*` 覆盖。
+
+## llm 分层
+
+| 子目录 | 内容 |
+|--------|------|
+| `llm/providers/` | `createChatModel`、`generateImage` |
+| `llm/invoke/` | `streamChat`、`invokeStructured` |
 
 ## 模型分工
 
-| 场景 | 位置 | 默认模型 |
-|------|------|----------|
-| 对话子图、参考解析 | `model/dashscope.ts` `createChatModel` | qwen3.7-max |
-| 队列解析、下一步建议、创意总监 | `createStructuredModel` | deepseek-v4-pro |
-| 文生图 | `model/dashscope-image.ts` | qwen-image-2.0-pro |
+| 场景 | 工厂 | 调用 | 默认模型 |
+|------|------|------|----------|
+| 对话子图 | `createChatModel` | `streamChat` | qwen3.7-max |
+| 参考解析、专员产出 | `createChatModel` | `invokeStructured` | qwen3.7-max |
+| 队列解析、建议、创意总监 | `createChatModel` | `invokeStructured` | qwen3.7-max |
+| 文生图 | `generateImage` | — | qwen-image-2.0-pro |
 
 ## 相关文档
 

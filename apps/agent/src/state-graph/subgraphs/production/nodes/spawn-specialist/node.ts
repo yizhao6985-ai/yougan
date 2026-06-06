@@ -1,7 +1,8 @@
 /** work node：部门专员产出交付物片段 */
 import { HumanMessage } from "@langchain/core/messages";
 
-import { createChatModel } from "#agent/model/dashscope.js";
+import { invokeStructured } from "#agent/llm/invoke/index.js";
+import { createChatModel } from "#agent/llm/providers/index.js";
 import {
   resolveContentSpecFromProfile,
   type WorkPreview,
@@ -26,6 +27,7 @@ import {
   buildSpawnSpecialistPrompt,
   specialistDisplayName,
 } from "./prompt.js";
+import { MarkdownDeliverableSchema } from "./schema.js";
 
 export async function spawnSpecialistNode(
   state: AgentStateType,
@@ -54,11 +56,13 @@ export async function spawnSpecialistNode(
 
   let output: string;
   try {
-    const response = await llm.invoke([new HumanMessage(prompt)]);
-    output =
-      typeof response.content === "string"
-        ? response.content
-        : JSON.stringify(response.content);
+    const parsed = await invokeStructured(
+      llm,
+      MarkdownDeliverableSchema,
+      [new HumanMessage(prompt)],
+      { name: "spawn_specialist_deliverable" },
+    );
+    output = parsed.body;
   } catch {
     output = `${name}暂时无法完成该任务，请稍后重试。`;
   }

@@ -9,7 +9,6 @@ export {
   getProfileStagingMeta,
   getReferences,
   getTurnQueue,
-  isEmptyThread,
 } from "./get.js";
 export {
   commitPending,

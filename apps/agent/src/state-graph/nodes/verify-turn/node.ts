@@ -1,4 +1,3 @@
-import { isEmptyThread } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 import { generateSuggestedConversationTitle } from "./conversation-title/suggest-title-node.js";
 import { generateOpeningTopicSuggestions } from "./suggestions/opening/suggestions.js";
@@ -12,7 +11,7 @@ export async function verifyTurnNode(
     return { nextStepSuggestions: null, suggestedConversationTitle: null };
   }
 
-  if (isEmptyThread(state)) {
+  if ((state.messages ?? []).length === 0) {
     const nextStepSuggestions = await generateOpeningTopicSuggestions(state);
     return { nextStepSuggestions };
   }

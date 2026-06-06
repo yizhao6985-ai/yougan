@@ -8,8 +8,8 @@ import {
   type TurnQueueKind,
 } from "@yougan/domain";
 
-import { createStructuredModel } from "#agent/model/dashscope.js";
-import { invokeStructuredOutput } from "#agent/llm/structured-output.js";
+import { invokeStructured } from "#agent/llm/invoke/index.js";
+import { createChatModel } from "#agent/llm/providers/index.js";
 import {
   profileSummary,
   productionPlanSummary,
@@ -142,11 +142,11 @@ export async function generateTurnSuggestions(
     return fallbackTurnSuggestions(state);
   }
 
-  const llm = createStructuredModel({ temperature: 0.6 });
+  const llm = createChatModel({ temperature: 0.6 });
   const prompt = buildTurnSuggestionsPrompt(state, lastAssistant, lastUser);
 
   try {
-    const parsed = await invokeStructuredOutput(
+    const parsed = await invokeStructured(
       llm,
       TurnNextStepSuggestionsResponseSchema,
       [new HumanMessage(prompt)],

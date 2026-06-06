@@ -1,6 +1,5 @@
 /**
- * 流式调用 Chat 模型：逐 chunk 通过 pushMessage 写入 graph state。
- * 运行侧以 streamMode=values 推送全量 state；节点内增量经 updates 事件由前端合并进 values。
+ * Chat 模型流式调用（LangGraph pushMessage）。
  */
 import {
   AIMessage,
@@ -11,9 +10,7 @@ import type { Runnable, RunnableConfig } from "@langchain/core/runnables";
 import { pushMessage } from "@langchain/langgraph";
 import { nanoid } from "nanoid";
 
-import { env } from "#agent/env.js";
-
-type StreamableChatModel = Runnable<
+export type ChatModel = Runnable<
   BaseMessage[],
   AIMessageChunk,
   RunnableConfig
@@ -33,19 +30,12 @@ function chunkToAIMessage(
   });
 }
 
-/** 消费模型流并返回最终 AIMessage；流式开启时同步 pushMessage 更新 graph state。 */
-export async function streamChatModelToAIMessage(
-  model: StreamableChatModel,
+/** 流式调用 Chat 模型，逐 chunk pushMessage。用于 llm-chat 子图节点。 */
+export async function streamChat(
+  model: ChatModel,
   input: BaseMessage[],
   config: RunnableConfig,
 ): Promise<AIMessage> {
-  if (!env.llmStreaming) {
-    const response = await model.invoke(input, config);
-    return response instanceof AIMessage
-      ? response
-      : chunkToAIMessage(response, response.id ?? nanoid());
-  }
-
   const stream = await model.stream(input, config);
   let accumulated: AIMessageChunk | undefined;
   let messageId: string | undefined;
@@ -58,7 +48,7 @@ export async function streamChatModelToAIMessage(
   }
 
   if (!accumulated) {
-    throw new Error("LLM stream returned no chunks");
+    throw new Error("Chat stream returned no chunks");
   }
 
   const finalId = accumulated.id ?? messageId ?? nanoid();

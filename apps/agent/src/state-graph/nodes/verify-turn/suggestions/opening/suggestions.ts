@@ -8,8 +8,8 @@ import {
   type NextStepSuggestions,
 } from "@yougan/domain";
 
-import { createStructuredModel } from "#agent/model/dashscope.js";
-import { invokeStructuredOutput } from "#agent/llm/structured-output.js";
+import { invokeStructured } from "#agent/llm/invoke/index.js";
+import { createChatModel } from "#agent/llm/providers/index.js";
 import { getProfile } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 import { buildOpeningTopicSuggestionsPrompt } from "./prompt.js";
@@ -128,11 +128,11 @@ export async function generateOpeningTopicSuggestions(
   state: AgentStateType,
 ): Promise<NextStepSuggestions> {
   const profile = getProfile(state);
-  const llm = createStructuredModel({ temperature: 0.55 });
+  const llm = createChatModel({ temperature: 0.55 });
   const prompt = buildOpeningTopicSuggestionsPrompt(state);
 
   try {
-    const parsed = await invokeStructuredOutput(
+    const parsed = await invokeStructured(
       llm,
       OpeningTopicSuggestionsResponseSchema,
       [new HumanMessage(prompt)],

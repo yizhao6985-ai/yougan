@@ -10,7 +10,7 @@ import { z } from "zod";
 import {
   DASHSCOPE_IMAGE_MODELS,
   DASHSCOPE_TEXT_MODELS,
-} from "./model/models.js";
+} from "./llm/providers/catalog.js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 loadEnv({ path: resolve(root, ".env") });
@@ -31,18 +31,6 @@ const requiredString = z.preprocess(
   (value) => (typeof value === "string" ? value.trim() : value),
   z.string().min(1),
 );
-
-/** 解析布尔环境变量；未设置时返回 defaultValue */
-function envBoolean(defaultValue: boolean) {
-  return z.preprocess((value) => {
-    if (value === undefined || value === "") return defaultValue;
-    if (typeof value !== "string") return value;
-    const lower = value.trim().toLowerCase();
-    if (lower === "false" || lower === "0" || lower === "no") return false;
-    if (lower === "true" || lower === "1" || lower === "yes") return true;
-    return defaultValue;
-  }, z.boolean());
-}
 
 function parseEnv<S extends z.ZodTypeAny>(
   schema: S,
@@ -69,15 +57,8 @@ const AgentEnvSchema = z
     DASHSCOPE_API_KEY: optionalString,
     DASHSCOPE_BASE_URL: optionalString,
     LLM_MAX_TOKENS: z.coerce.number().int().positive().default(8192),
-    LLM_STREAMING: envBoolean(true),
     LLM_TEMPERATURE: z.coerce.number().min(0).max(2).default(0.7),
-    LLM_STRUCTURED_TEMPERATURE: z.coerce
-      .number()
-      .min(0)
-      .max(2)
-      .default(0.3),
-    LLM_MODEL_CHAT: optionalString,
-    LLM_MODEL_STRUCTURED: optionalString,
+    LLM_MODEL: optionalString,
     LLM_MODEL_IMAGE: optionalString,
   })
   .transform((env) => {
@@ -91,12 +72,8 @@ const AgentEnvSchema = z
       dashscopeBaseUrl,
       dashscopeApiBaseUrl: resolveDashScopeApiBaseUrl(dashscopeBaseUrl),
       llmMaxTokens: env.LLM_MAX_TOKENS,
-      llmStreaming: env.LLM_STREAMING,
       llmTemperature: env.LLM_TEMPERATURE,
-      llmStructuredTemperature: env.LLM_STRUCTURED_TEMPERATURE,
-      llmModelChat: env.LLM_MODEL_CHAT ?? DASHSCOPE_TEXT_MODELS.qwen37Max,
-      llmModelStructured:
-        env.LLM_MODEL_STRUCTURED ?? DASHSCOPE_TEXT_MODELS.deepseekV4Pro,
+      llmModel: env.LLM_MODEL ?? DASHSCOPE_TEXT_MODELS.qwen37Max,
       llmModelImage:
         env.LLM_MODEL_IMAGE ?? DASHSCOPE_IMAGE_MODELS.qwenImage20Pro,
     };

@@ -2,8 +2,8 @@ import { HumanMessage } from "@langchain/core/messages";
 
 import { sortTurnQueue, type TurnQueueKind } from "@yougan/domain";
 
-import { createStructuredModel } from "#agent/model/dashscope.js";
-import { invokeStructuredOutput } from "#agent/llm/structured-output.js";
+import { invokeStructured } from "#agent/llm/invoke/index.js";
+import { createChatModel } from "#agent/llm/providers/index.js";
 import {
   countHumanMessages,
   getLatestHumanMessageImageUrls,
@@ -30,7 +30,7 @@ async function resolveTurnQueue(
     return DEFAULT_QUEUE;
   }
 
-  const llm = createStructuredModel({
+  const llm = createChatModel({
     temperature: 0.1,
     // functionCalling 结构化输出需强制 tool_choice，thinking mode 下百炼不支持
     modelKwargs: { enable_thinking: false },
@@ -38,7 +38,7 @@ async function resolveTurnQueue(
   const prompt = buildTurnQueuePrompt(state, userMessage);
 
   try {
-    const parsed = (await invokeStructuredOutput(
+    const parsed = (await invokeStructured(
       llm,
       TurnQueueDecisionSchema,
       [new HumanMessage(prompt)],

@@ -56,12 +56,6 @@ export function getModelTemperature(state: AgentStateType): number {
   }
   return Math.min(1, Math.max(0.1, Math.round(value * 10) / 10));
 }
-
-/** 当前 thread 是否尚无对话内容（无 messages） */
-export function isEmptyThread(state: AgentStateType): boolean {
-  return (state.messages ?? []).length === 0;
-}
-
 export function getProfileStagingMeta(state: AgentStateType): ProfileStagingMeta {
   return {
     pendingParseReferenceText: null,

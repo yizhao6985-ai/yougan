@@ -2,8 +2,8 @@
 import { HumanMessage } from "@langchain/core/messages";
 import { z } from "zod";
 
-import { createStructuredModel } from "#agent/model/dashscope.js";
-import { invokeStructuredOutput } from "#agent/llm/structured-output.js";
+import { invokeStructured } from "#agent/llm/invoke/index.js";
+import { createChatModel } from "#agent/llm/providers/index.js";
 import { retryTaskDeliverable } from "./helpers/retry-deliverable.js";
 import {
   patchPendingBatch,
@@ -45,7 +45,7 @@ export async function inspectProductionNode(
     });
   }
 
-  const llm = createStructuredModel({ temperature: 0.2 });
+  const llm = createChatModel({ temperature: 0.2 });
   const prompt = `你是制作质检员，检查以下任务交付物是否满足任务要求。
 
 任务：${task.description}
@@ -61,7 +61,7 @@ ${preview.notes ? `\n备注：${preview.notes.slice(0, 800)}` : ""}
   let feedback = "";
 
   try {
-    const parsed = await invokeStructuredOutput(
+    const parsed = await invokeStructured(
       llm,
       InspectResultSchema,
       [new HumanMessage(prompt)],

@@ -1,4 +1,3 @@
-import { isEmptyThread } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 
 export type OpeningOrOrchestrateTarget = "verifyTurn" | "orchestrateTurn";
@@ -7,7 +6,7 @@ export type OpeningOrOrchestrateTarget = "verifyTurn" | "orchestrateTurn";
 export function selectOpeningOrOrchestrate(
   state: AgentStateType,
 ): OpeningOrOrchestrateTarget {
-  if (isEmptyThread(state)) {
+  if ((state.messages ?? []).length === 0) {
     return "verifyTurn";
   }
   return "orchestrateTurn";

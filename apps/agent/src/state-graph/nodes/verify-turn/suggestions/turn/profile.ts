@@ -11,8 +11,8 @@ import {
   type NextStepSuggestions,
 } from "@yougan/domain";
 
-import { createStructuredModel } from "#agent/model/dashscope.js";
-import { invokeStructuredOutput } from "#agent/llm/structured-output.js";
+import { invokeStructured } from "#agent/llm/invoke/index.js";
+import { createChatModel } from "#agent/llm/providers/index.js";
 import {
   profileSummary,
   referencesSummary,
@@ -115,7 +115,7 @@ export async function generateAfterProfileTurnSuggestions(
   const { lastAssistant, lastUser } = extractLastMessages(state);
   if (!lastAssistant.trim()) return null;
 
-  const llm = createStructuredModel({ temperature: 0.6 });
+  const llm = createChatModel({ temperature: 0.6 });
   const prompt = buildAfterProfileTurnSuggestionsPrompt(
     state,
     lastAssistant,
@@ -123,7 +123,7 @@ export async function generateAfterProfileTurnSuggestions(
   );
 
   try {
-    const parsed = await invokeStructuredOutput(
+    const parsed = await invokeStructured(
       llm,
       TurnNextStepSuggestionsResponseSchema,
       [new HumanMessage(prompt)],

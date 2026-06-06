@@ -1,7 +1,8 @@
 /** 质检不通过时，按反馈重写单任务交付物（preview 片段） */
 import { HumanMessage } from "@langchain/core/messages";
 
-import { createChatModel } from "#agent/model/dashscope.js";
+import { invokeStructured } from "#agent/llm/invoke/index.js";
+import { createChatModel } from "#agent/llm/providers/index.js";
 import {
   getPlanSummary,
   profileSummary,
@@ -18,6 +19,7 @@ import type { AgentStateType } from "#agent/state.js";
 
 import { departmentBrief } from "../../spawn-specialist/helpers/department-brief.js";
 import { DEPARTMENT_LABELS } from "../../spawn-specialist/helpers/department-labels.js";
+import { MarkdownDeliverableSchema } from "../../spawn-specialist/schema.js";
 
 type RetryablePlanTask = {
   id: string;
@@ -51,11 +53,13 @@ export async function retryTaskDeliverable(
 输出该任务的专业交付物（Markdown）。`;
 
   try {
-    const response = await llm.invoke([new HumanMessage(prompt)]);
-    const output =
-      typeof response.content === "string"
-        ? response.content
-        : JSON.stringify(response.content);
+    const parsed = await invokeStructured(
+      llm,
+      MarkdownDeliverableSchema,
+      [new HumanMessage(prompt)],
+      { name: "retry_deliverable" },
+    );
+    const output = parsed.body;
 
     const section = `\n\n---\n### ${label}（重试 · ${department}）\n${output}`;
     if (existing) {

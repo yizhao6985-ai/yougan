@@ -1,13 +1,8 @@
 /** work node：文案总监 structured output 写入 preview */
 import { HumanMessage } from "@langchain/core/messages";
 
-import { env } from "#agent/env.js";
-import { createChatModel } from "#agent/model/dashscope.js";
-import {
-  consumeStructuredOutputStream,
-  invokeStructuredOutput,
-  streamStructuredOutput,
-} from "#agent/llm/structured-output.js";
+import { invokeStructured } from "#agent/llm/invoke/index.js";
+import { createChatModel } from "#agent/llm/providers/index.js";
 import {
   hasProfileBeats,
   isPlanReady,
@@ -61,25 +56,12 @@ export async function generateDraftNode(
         `你是资深文案总监，根据创作计划生成发布文案。\n\n${prompt}`,
       ),
     ];
-    const structuredOptions = { name: "work_preview" } as const;
-
-    if (env.llmStreaming) {
-      payload = await consumeStructuredOutputStream(
-        await streamStructuredOutput(
-          llm,
-          WorkPreviewPayloadSchema,
-          input,
-          structuredOptions,
-        ),
-      );
-    } else {
-      payload = await invokeStructuredOutput(
-        llm,
-        WorkPreviewPayloadSchema,
-        input,
-        structuredOptions,
-      );
-    }
+    payload = await invokeStructured(
+      llm,
+      WorkPreviewPayloadSchema,
+      input,
+      { name: "work_preview" },
+    );
   } catch {
     payload = {
       title: contentProfile.content_topic,

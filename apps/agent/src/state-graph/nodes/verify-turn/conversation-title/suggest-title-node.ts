@@ -6,13 +6,13 @@ import {
   sanitizeAutoConversationTitle,
 } from "@yougan/domain";
 
-import { createStructuredModel } from "#agent/model/dashscope.js";
+import { createChatModel } from "#agent/llm/providers/index.js";
 import { shouldSuggestConversationTitle } from "./should-suggest-title.js";
 import {
   getLatestHumanMessageImageUrls,
   getLatestHumanMessageText,
 } from "#agent/messages/human.js";
-import { invokeStructuredOutput } from "#agent/llm/structured-output.js";
+import { invokeStructured } from "#agent/llm/invoke/index.js";
 import { profileSummary } from "@yougan/domain";
 import { YOUGAN_USER_LABEL } from "#agent/system-prompt.js";
 import { getProfile } from "#agent/state-io/index.js";
@@ -70,7 +70,7 @@ export async function generateSuggestedConversationTitle(
     getLatestHumanMessageImageUrls(state.messages).length > 0;
   const { lastAssistant } = extractLastMessages(state);
 
-  const llm = createStructuredModel({ temperature: 0.2 });
+  const llm = createChatModel({ temperature: 0.2 });
   const prompt = buildConversationTitlePrompt(
     state,
     userMessage,
@@ -79,7 +79,7 @@ export async function generateSuggestedConversationTitle(
   );
 
   try {
-    const parsed = await invokeStructuredOutput(
+    const parsed = await invokeStructured(
       llm,
       ConversationTitleResponseSchema,
       [new HumanMessage(prompt)],
