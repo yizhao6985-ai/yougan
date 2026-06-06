@@ -13,7 +13,7 @@ function contentPartToText(part: unknown): string {
   return "";
 }
 
-/** 从 LangChain / LangGraph SDK / checkpoint 消息 content 中提取纯文本。 */
+/** 从 LangChain / LangGraph checkpoint 消息 content 中提取纯文本。 */
 export function messageContentToText(content: unknown): string {
   if (typeof content === "string") return content;
   if (content == null) return "";
@@ -27,8 +27,4 @@ export function messageContentToText(content: unknown): string {
   }
 
   return "";
-}
-
-export function truncateMessageContent(content: unknown, maxLength = 500): string {
-  return messageContentToText(content).trim().slice(0, maxLength);
 }

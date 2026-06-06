@@ -1,6 +1,6 @@
 /** 从 messages 倒序取最近一条 human / ai 全文（建议与标题生成共用） */
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
-import { messageContentToText } from "@yougan/domain";
+import { messageContentToText } from "#agent/messages/message-content.js";
 import type { AgentStateType } from "#agent/state.js";
 
 export function extractLastMessages(state: AgentStateType): {

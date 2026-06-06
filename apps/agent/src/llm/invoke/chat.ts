@@ -16,6 +16,60 @@ export type ChatModel = Runnable<
   RunnableConfig
 >;
 
+type StreamTextChannel = {
+  emitted: string;
+  cumulativeMode: boolean;
+};
+
+function createStreamTextChannel(): StreamTextChannel {
+  return { emitted: "", cumulativeMode: false };
+}
+
+/**
+ * 百炼部分路径会以「迄今全文」发 delta；LangChain concat 对字符串做 +=，需先归一成增量后缀。
+ */
+function normalizeStreamingTextDelta(
+  channel: StreamTextChannel,
+  delta: string,
+): string {
+  if (!delta) return "";
+
+  const { emitted } = channel;
+  if (emitted.length > 0 && delta.startsWith(emitted)) {
+    channel.cumulativeMode = true;
+    channel.emitted = delta;
+    return delta.slice(emitted.length);
+  }
+
+  if (channel.cumulativeMode && delta === emitted) {
+    return "";
+  }
+
+  channel.emitted = emitted + delta;
+  return delta;
+}
+
+function normalizeChunkForConcat(
+  chunk: AIMessageChunk,
+  content: StreamTextChannel,
+): AIMessageChunk {
+  let normalizedContent = chunk.content;
+  if (typeof normalizedContent === "string" && normalizedContent) {
+    normalizedContent = normalizeStreamingTextDelta(content, normalizedContent);
+  }
+
+  return new AIMessageChunk({
+    id: chunk.id,
+    content: normalizedContent,
+    tool_call_chunks: chunk.tool_call_chunks,
+    tool_calls: chunk.tool_calls,
+    invalid_tool_calls: chunk.invalid_tool_calls,
+    additional_kwargs: chunk.additional_kwargs,
+    response_metadata: chunk.response_metadata,
+    usage_metadata: chunk.usage_metadata,
+  });
+}
+
 function chunkToAIMessage(
   chunk: AIMessageChunk,
   messageId: string,
@@ -25,6 +79,7 @@ function chunkToAIMessage(
     content: chunk.content,
     tool_calls: chunk.tool_calls,
     invalid_tool_calls: chunk.invalid_tool_calls,
+    additional_kwargs: chunk.additional_kwargs,
     usage_metadata: chunk.usage_metadata,
     response_metadata: chunk.response_metadata,
   });
@@ -39,9 +94,13 @@ export async function streamChat(
   const stream = await model.stream(input, config);
   let accumulated: AIMessageChunk | undefined;
   let messageId: string | undefined;
+  const contentChannel = createStreamTextChannel();
 
   for await (const chunk of stream) {
-    accumulated = accumulated ? accumulated.concat(chunk) : chunk;
+    const normalized = normalizeChunkForConcat(chunk, contentChannel);
+    accumulated = accumulated
+      ? accumulated.concat(normalized)
+      : normalized;
     const id = accumulated.id ?? messageId ?? (messageId = nanoid());
     messageId = id;
     pushMessage(chunkToAIMessage(accumulated, id), config);

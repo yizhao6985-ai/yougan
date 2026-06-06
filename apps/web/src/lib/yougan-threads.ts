@@ -1,5 +1,7 @@
 import type { Thread } from "@langchain/langgraph-sdk";
-import { messageContentToText, truncateAtMaxLength } from "@yougan/domain";
+import { truncateAtMaxLength } from "@yougan/domain";
+
+import { messageContentToText } from "@/lib/message-content";
 
 import { YOUGAN_ASSISTANT_ID } from "@/lib/yougan-chat-api";
 import { getLangGraphClient } from "@/lib/langgraph-client";

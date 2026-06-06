@@ -21,7 +21,6 @@ import {
   clearProfileConstraints,
   deleteProfileBeat,
   deleteProfileConstraint,
-  mergeProfileForDisplay,
   updateProfileBeat,
   updateProfileConstraint,
 } from "@yougan/domain";
@@ -272,7 +271,6 @@ export function useWorksStore() {
     clearWorkProfileBeats,
     renameWork,
     moveWorkToGroup,
-    mergeProfileForDisplay,
   };
 }
 

@@ -1,56 +1,36 @@
-/** LangChain human 消息解析（条数、文本、图片 URL） */
+/** LangChain human 消息解析（条数、文本、图片 content part） */
 import { HumanMessage, type BaseMessage } from "@langchain/core/messages";
-import { messageContentToText } from "@yougan/domain";
+import {
+  extractImagePartsFromContent,
+  type HumanImageContentPart,
+} from "./content-parts.js";
+import { messageContentToText } from "./message-content.js";
 
-export function countHumanMessages(
+/** 按顺序返回全部 human 消息的原始 content；条数用 `.length`。 */
+export function getHumanMessageContents(
   messages: BaseMessage[] | undefined,
-): number {
-  if (!messages?.length) return 0;
-  return messages.filter((message) => HumanMessage.isInstance(message)).length;
+): HumanMessage["content"][] {
+  if (!messages?.length) return [];
+  return messages
+    .filter((message): message is HumanMessage =>
+      HumanMessage.isInstance(message),
+    )
+    .map((message) => message.content);
 }
 
 export function getLatestHumanMessageText(
   messages: BaseMessage[] | undefined,
 ): string {
-  if (!messages?.length) return "";
-
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const message = messages[i];
-    if (HumanMessage.isInstance(message)) {
-      return messageContentToText(message.content).trim();
-    }
-  }
-  return "";
+  const content = getHumanMessageContents(messages).at(-1);
+  if (content === undefined) return "";
+  return messageContentToText(content).trim();
 }
 
-function extractImageUrlsFromHumanContent(content: unknown): string[] {
-  if (!Array.isArray(content)) return [];
-
-  const urls: string[] = [];
-  for (const part of content) {
-    if (!part || typeof part !== "object") continue;
-    const block = part as {
-      type?: string;
-      image_url?: string | { url?: string };
-    };
-    if (block.type !== "image_url") continue;
-
-    const raw = block.image_url;
-    const url = typeof raw === "string" ? raw : raw?.url;
-    if (url) urls.push(url);
-  }
-  return urls;
-}
-
-export function getLatestHumanMessageImageUrls(
+/** 最近一条 human 消息中的全部图片 content part（原始结构）。 */
+export function getLatestHumanMessageImageParts(
   messages: BaseMessage[] | undefined,
-): string[] {
-  if (!messages?.length) return [];
-
-  for (let index = messages.length - 1; index >= 0; index -= 1) {
-    const message = messages[index];
-    if (!HumanMessage.isInstance(message)) continue;
-    return extractImageUrlsFromHumanContent(message.content);
-  }
-  return [];
+): HumanImageContentPart[] {
+  const content = getHumanMessageContents(messages).at(-1);
+  if (content === undefined) return [];
+  return extractImagePartsFromContent(content);
 }

@@ -34,8 +34,6 @@ export {
   hasProfileBeats,
   isProfileActionable,
   isPlanReady,
-  mergeProfileState,
-  mergeProfileForDisplay,
   parseProfileJson,
   parseProductionPlanJson,
   REVISION_KINDS,

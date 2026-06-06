@@ -25,6 +25,10 @@ export function createChatModel(options?: OpenAiCompatibleChatModelOptions) {
       temperature: env.llmTemperature,
       streaming: true,
       maxTokens: env.llmMaxTokens,
+      modelKwargs: {
+        enable_thinking: false,
+        incremental_output: true,
+      },
     },
     options,
   );

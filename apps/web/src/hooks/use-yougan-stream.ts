@@ -12,8 +12,8 @@ import { LANGGRAPH_API_URL } from "@/lib/env";
 import type { YouganValues, YouganSubmitInput, Work, WorkConversation } from "@/lib/types";
 import { useAuthToken } from "@/store/auth";
 
-/** LangGraph run 的 streamMode：values（每步全量 state）。节点内 token 增量走 updates，由 onUpdateEvent 合并。 */
-const LANGGRAPH_STREAM_MODE = ["values"] as const;
+/** 消息 token 走 messages；其余 state（profile、turnQueue 等）走 updates 合并，避免 values 整表覆盖。 */
+const LANGGRAPH_STREAM_MODE = ["updates", "messages"] as const;
 
 interface UseYouganStreamOptions {
   work: Work | null;

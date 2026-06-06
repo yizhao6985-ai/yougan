@@ -5,8 +5,8 @@ import { sortTurnQueue, type TurnQueueKind } from "@yougan/domain";
 import { invokeStructured } from "#agent/llm/invoke/index.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
 import {
-  countHumanMessages,
-  getLatestHumanMessageImageUrls,
+  getHumanMessageContents,
+  getLatestHumanMessageImageParts,
   getLatestHumanMessageText,
 } from "#agent/messages/human.js";
 import { initPendingTurn } from "#agent/state-io/index.js";
@@ -20,21 +20,17 @@ const DEFAULT_QUEUE: TurnQueueKind[] = ["profile"];
 async function resolveTurnQueue(
   state: AgentStateType,
 ): Promise<TurnQueueKind[]> {
-  if (countHumanMessages(state.messages) < 1) {
+  if (getHumanMessageContents(state.messages).length < 1) {
     return DEFAULT_QUEUE;
   }
 
   const userMessage = getLatestHumanMessageText(state.messages);
-  const hasImages = getLatestHumanMessageImageUrls(state.messages).length > 0;
+  const hasImages = getLatestHumanMessageImageParts(state.messages).length > 0;
   if (!userMessage && !hasImages) {
     return DEFAULT_QUEUE;
   }
 
-  const llm = createChatModel({
-    temperature: 0.1,
-    // functionCalling 结构化输出需强制 tool_choice，thinking mode 下百炼不支持
-    modelKwargs: { enable_thinking: false },
-  });
+  const llm = createChatModel({ temperature: 0.1 });
   const prompt = buildTurnQueuePrompt(state, userMessage);
 
   try {

@@ -1,5 +1,8 @@
 /** 参考素材 tools：解析类仅入队 work node；删除类直接改 state */
+import { ToolMessage } from "@langchain/core/messages";
 import { tool } from "@langchain/core/tools";
+import type { ToolRunnableConfig } from "@langchain/core/tools";
+import { Command } from "@langchain/langgraph";
 import { z } from "zod";
 
 import { deleteProfileReference } from "@yougan/domain";
@@ -11,13 +14,12 @@ import {
   patchPendingProfile,
   patchPendingProfileMeta,
 } from "#agent/state-io/index.js";
-import { getLatestHumanMessageImageUrls } from "#agent/messages/human.js";
+import { getLatestHumanMessageImageParts } from "#agent/messages/human.js";
+import { extractImageUrlsFromParts } from "#agent/messages/content-parts.js";
 import {
   listKnownReferenceImageUrls,
   resolveReferenceImageUrl,
 } from "../../parse-reference-image/helpers/reference-images.js";
-
-import { commandWithUpdate } from "../command-with-update.js";
 
 function requireProfileMode(config: object): string | null {
   if (getActiveTurnKind(getState()) !== "profile") {
@@ -28,17 +30,32 @@ function requireProfileMode(config: object): string | null {
 
 export const parseReferenceText = tool(
   async ({ reference_text }, config) => {
+    const toolCallId = (config as ToolRunnableConfig).toolCall?.id ?? "";
     const gate = requireProfileMode(config);
-    if (gate) return commandWithUpdate(config, gate);
+    if (gate) {
+      return new Command({
+        update: {
+          messages: [
+            new ToolMessage({ content: gate, tool_call_id: toolCallId }),
+          ],
+        },
+      });
+    }
 
     const state = getState();
-    return commandWithUpdate(
-      config,
-      "已提交参考文案解析任务。",
-      patchPendingProfileMeta(state, {
-        pendingParseReferenceText: reference_text,
-      }),
-    );
+    return new Command({
+      update: {
+        messages: [
+          new ToolMessage({
+            content: "已提交参考文案解析任务。",
+            tool_call_id: toolCallId,
+          }),
+        ],
+        ...patchPendingProfileMeta(state, {
+          pendingParseReferenceText: reference_text,
+        }),
+      },
+    });
   },
   {
     name: "parse_reference_text",
@@ -49,12 +66,23 @@ export const parseReferenceText = tool(
 
 export const parseReferenceImage = tool(
   async ({ image_url, hint }, config) => {
+    const toolCallId = (config as ToolRunnableConfig).toolCall?.id ?? "";
     const gate = requireProfileMode(config);
-    if (gate) return commandWithUpdate(config, gate);
+    if (gate) {
+      return new Command({
+        update: {
+          messages: [
+            new ToolMessage({ content: gate, tool_call_id: toolCallId }),
+          ],
+        },
+      });
+    }
 
     const state = getState();
     const references = getReferences(state);
-    const messageUrls = getLatestHumanMessageImageUrls(state.messages);
+    const messageUrls = extractImageUrlsFromParts(
+      getLatestHumanMessageImageParts(state.messages),
+    );
     const knownUrls = listKnownReferenceImageUrls(references);
     const resolvedUrl = resolveReferenceImageUrl(
       image_url,
@@ -63,26 +91,50 @@ export const parseReferenceImage = tool(
     );
 
     if (!resolvedUrl) {
-      return commandWithUpdate(config, "未找到可解析的参考图片 URL。");
+      return new Command({
+        update: {
+          messages: [
+            new ToolMessage({
+              content: "未找到可解析的参考图片 URL。",
+              tool_call_id: toolCallId,
+            }),
+          ],
+        },
+      });
     }
 
     const existing = references.find(
       (item) => item.source_type === "image" && item.image_url === resolvedUrl,
     );
     if (existing?.summary?.trim() && !hint?.trim()) {
-      return commandWithUpdate(config, "该参考图片已解析并写入 references。");
+      return new Command({
+        update: {
+          messages: [
+            new ToolMessage({
+              content: "该参考图片已解析并写入 references。",
+              tool_call_id: toolCallId,
+            }),
+          ],
+        },
+      });
     }
 
-    return commandWithUpdate(
-      config,
-      "已提交参考图片解析任务。",
-      patchPendingProfileMeta(state, {
-        pendingParseReferenceImage: {
-          image_url: resolvedUrl,
-          hint: hint ?? null,
-        },
-      }),
-    );
+    return new Command({
+      update: {
+        messages: [
+          new ToolMessage({
+            content: "已提交参考图片解析任务。",
+            tool_call_id: toolCallId,
+          }),
+        ],
+        ...patchPendingProfileMeta(state, {
+          pendingParseReferenceImage: {
+            image_url: resolvedUrl,
+            hint: hint ?? null,
+          },
+        }),
+      },
+    });
   },
   {
     name: "parse_reference_image",
@@ -97,28 +149,70 @@ export const parseReferenceImage = tool(
 
 export const deleteProfileReferenceTool = tool(
   async ({ image_url, index }, config) => {
+    const toolCallId = (config as ToolRunnableConfig).toolCall?.id ?? "";
     const gate = requireProfileMode(config);
-    if (gate) return commandWithUpdate(config, gate);
+    if (gate) {
+      return new Command({
+        update: {
+          messages: [
+            new ToolMessage({ content: gate, tool_call_id: toolCallId }),
+          ],
+        },
+      });
+    }
     if (image_url == null && index == null) {
-      return commandWithUpdate(config, "请提供 image_url 或 index。");
+      return new Command({
+        update: {
+          messages: [
+            new ToolMessage({
+              content: "请提供 image_url 或 index。",
+              tool_call_id: toolCallId,
+            }),
+          ],
+        },
+      });
     }
 
     const state = getState();
     const profile = getProfile(state);
     const refs = profile.references ?? [];
     if (!refs.length) {
-      return commandWithUpdate(config, "当前方案尚无参考素材。");
+      return new Command({
+        update: {
+          messages: [
+            new ToolMessage({
+              content: "当前方案尚无参考素材。",
+              tool_call_id: toolCallId,
+            }),
+          ],
+        },
+      });
     }
 
     const next = deleteProfileReference(profile, { image_url, index });
     if (!next) {
-      return commandWithUpdate(config, "未找到要删除的参考素材。");
+      return new Command({
+        update: {
+          messages: [
+            new ToolMessage({
+              content: "未找到要删除的参考素材。",
+              tool_call_id: toolCallId,
+            }),
+          ],
+        },
+      });
     }
-    return commandWithUpdate(
-      config,
-      `已删除参考素材（剩余 ${next.references?.length ?? 0} 条）。`,
-      patchPendingProfile(state, next),
-    );
+    return new Command({
+      update: {
+        messages: [
+          new ToolMessage({
+            content: `已删除参考素材（剩余 ${next.references?.length ?? 0} 条）。`,
+            tool_call_id: toolCallId,
+          }),
+        ],
+        ...patchPendingProfile(state, next),
+      },
+    });
   },
   {
     name: "delete_profile_reference",

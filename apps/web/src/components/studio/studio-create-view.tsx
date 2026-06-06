@@ -18,10 +18,13 @@ export function StudioCreateView() {
   } = useYouganStreamContext();
 
   const staging = stream.values?.staging;
-  const profile = mergeProfileForDisplay(
-    activeWork?.profile,
-    staging?.profile ?? stream.values?.profile,
+  const hasPendingStaging = Boolean(
+    staging && stream.values?.turnCommitted !== true,
   );
+  // 无进行中的 staging 时以作品缓存为准，避免手动编辑（清空/删除）后被 thread 内陈旧 profile 覆盖。
+  const profile = hasPendingStaging
+    ? mergeProfileForDisplay(activeWork?.profile, staging?.profile)
+    : activeWork?.profile;
   const references = profile?.references ?? [];
   const preview =
     staging?.preview ??

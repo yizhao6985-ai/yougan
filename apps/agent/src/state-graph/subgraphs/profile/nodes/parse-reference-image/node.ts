@@ -1,6 +1,8 @@
 /** work node：解析参考图写入 references */
 import { HumanMessage } from "@langchain/core/messages";
 
+import { humanImageFromUrl } from "#agent/messages/content-parts.js";
+
 import { invokeStructured } from "#agent/llm/invoke/index.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
 import type { ReferenceItem } from "@yougan/domain";
@@ -32,7 +34,7 @@ export async function parseReferenceImageNode(
             type: "text",
             text: buildParseReferenceImagePrompt(pending.hint),
           },
-          { type: "image_url", image_url: { url: pending.image_url } },
+          humanImageFromUrl(pending.image_url),
         ],
       }),
     ],

@@ -49,13 +49,21 @@ src/
 | `lifecycle.ts` | `initPendingTurn`、`requirePending`、`commitPending`、`rollbackPending` | 回合工作区 |
 | `index.ts` | `getState`（`getCurrentTaskInput` 重导出） | LangGraph tool 内读 state |
 
-Tool 返回 `Command` 不在 state-io，各子图 `tool-node/command-with-update.ts` 用 `new Command` + `ToolMessage`：
+Tool 返回 `Command` 不在 state-io，各 tool 内直接 `new Command` + `ToolMessage`：
 
 ```typescript
+import { ToolMessage } from "@langchain/core/messages";
+import type { ToolRunnableConfig } from "@langchain/core/tools";
+import { Command } from "@langchain/langgraph";
 import { getProfile, getState, patchPendingProfile } from "#agent/state-io/index.js";
-import { commandWithUpdate } from "../command-with-update.js";
 
-return commandWithUpdate(config, "已更新。", patchPendingProfile(state, next));
+const toolCallId = (config as ToolRunnableConfig).toolCall?.id ?? "";
+return new Command({
+  update: {
+    messages: [new ToolMessage({ content: "已更新。", tool_call_id: toolCallId })],
+    ...patchPendingProfile(state, next),
+  },
+});
 ```
 
 ## LLM（`src/llm/`）

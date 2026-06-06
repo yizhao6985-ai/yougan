@@ -14,7 +14,7 @@ import {
 import { invokeStructured } from "#agent/llm/invoke/index.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
 import {
-  getLatestHumanMessageImageUrls,
+  getLatestHumanMessageImageParts,
   getLatestHumanMessageText,
 } from "#agent/messages/human.js";
 import { resolveIndustryContext } from "../llm-call/prompt.js";
@@ -41,7 +41,7 @@ function buildEnsureProfilePrompt(state: AgentStateType): string {
   const profile = getProfile(state);
   const userMessage = getLatestHumanMessageText(state.messages);
   const hasImages =
-    getLatestHumanMessageImageUrls(state.messages).length > 0;
+    getLatestHumanMessageImageParts(state.messages).length > 0;
   const industry = resolveIndustryContext(resolveContentSpecFromProfile(profile));
 
   return `你是制作前方案补全助手（内部角色，不对${YOUGAN_USER_LABEL}直接说话）。

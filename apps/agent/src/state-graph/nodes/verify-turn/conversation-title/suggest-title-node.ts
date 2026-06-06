@@ -9,7 +9,7 @@ import {
 import { createChatModel } from "#agent/llm/providers/index.js";
 import { shouldSuggestConversationTitle } from "./should-suggest-title.js";
 import {
-  getLatestHumanMessageImageUrls,
+  getLatestHumanMessageImageParts,
   getLatestHumanMessageText,
 } from "#agent/messages/human.js";
 import { invokeStructured } from "#agent/llm/invoke/index.js";
@@ -67,7 +67,7 @@ export async function generateSuggestedConversationTitle(
 
   const userMessage = getLatestHumanMessageText(state.messages);
   const hasImages =
-    getLatestHumanMessageImageUrls(state.messages).length > 0;
+    getLatestHumanMessageImageParts(state.messages).length > 0;
   const { lastAssistant } = extractLastMessages(state);
 
   const llm = createChatModel({ temperature: 0.2 });

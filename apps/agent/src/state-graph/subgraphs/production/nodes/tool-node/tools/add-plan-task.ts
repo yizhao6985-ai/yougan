@@ -1,5 +1,8 @@
 /** 将用户本条诉求追加为 productionPlan 待执行任务 */
+import { ToolMessage } from "@langchain/core/messages";
 import { tool } from "@langchain/core/tools";
+import type { ToolRunnableConfig } from "@langchain/core/tools";
+import { Command } from "@langchain/langgraph";
 import { z } from "zod";
 
 import {
@@ -13,23 +16,57 @@ import {
   patchPendingProductionPlan,
 } from "#agent/state-io/index.js";
 
-import { commandWithUpdate } from "../command-with-update.js";
-
 export const addPlanTask = tool(
   async ({ description, department }, config) => {
+    const toolCallId = (config as ToolRunnableConfig).toolCall?.id ?? "";
+
     if (getActiveTurnKind(getState()) !== "production") {
-      return commandWithUpdate(config, "add_plan_task 仅在制作模式可用。");
+      return new Command({
+        update: {
+          messages: [
+            new ToolMessage({
+              content: "add_plan_task 仅在制作模式可用。",
+              tool_call_id: toolCallId,
+            }),
+          ],
+        },
+      });
     }
     const trimmed = description.trim();
-    if (!trimmed) return commandWithUpdate(config, "任务描述不能为空。");
+    if (!trimmed) {
+      return new Command({
+        update: {
+          messages: [
+            new ToolMessage({
+              content: "任务描述不能为空。",
+              tool_call_id: toolCallId,
+            }),
+          ],
+        },
+      });
+    }
 
     const state = getState();
     const plan = getProductionPlan(state);
     const dept = department as ProductionDepartment | undefined;
-    const pending = [...plan.pending_tasks, newProductionPlanTask(trimmed, dept)];
+    const pending = [
+      ...plan.pending_tasks,
+      newProductionPlanTask(trimmed, dept),
+    ];
 
-    return commandWithUpdate(config, `已添加制作任务（共 ${pending.length} 项）。`, {
-      ...patchPendingProductionPlan(state, { ...plan, pending_tasks: pending }),
+    return new Command({
+      update: {
+        messages: [
+          new ToolMessage({
+            content: `已添加制作任务（共 ${pending.length} 项）。`,
+            tool_call_id: toolCallId,
+          }),
+        ],
+        ...patchPendingProductionPlan(state, {
+          ...plan,
+          pending_tasks: pending,
+        }),
+      },
     });
   },
   {

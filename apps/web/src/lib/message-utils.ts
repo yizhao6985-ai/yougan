@@ -1,6 +1,6 @@
 import { AIMessage } from "@langchain/core/messages";
 import type { Message } from "@langchain/langgraph-sdk";
-import { messageContentToText as coreMessageContentToText } from "@yougan/domain";
+import { messageContentToText as coreMessageContentToText } from "@/lib/message-content";
 
 import { isInternalOpeningModeSystemMessage } from "@/lib/opening-mode-internal";
 
@@ -19,7 +19,7 @@ function countImageParts(content: MessageContent): number {
   if (!Array.isArray(content)) return 0;
   return content.filter((part) => {
     if (!part || typeof part !== "object") return false;
-    return (part as { type?: string }).type === "image_url";
+    return (part as { type?: string }).type === "image";
   }).length;
 }
 
@@ -167,14 +167,12 @@ export type RenderItem =
       content: string;
     };
 
-/** 按 message id 合并（与 LangGraph messagesStateReducer 一致：同 id 替换）。 */
-export function mergeMessagesById(
+function mergeMessagesFromUpdates(
   existing: Message[],
   incoming: Message[],
 ): Message[] {
   const merged = [...existing];
   const indexById = new Map<string, number>();
-
   for (let i = 0; i < merged.length; i += 1) {
     const id = merged[i]?.id;
     if (id) indexById.set(id, i);
@@ -186,20 +184,43 @@ export function mergeMessagesById(
       merged.push(message);
       continue;
     }
+
     const index = indexById.get(id);
-    if (index !== undefined) {
-      merged[index] = message;
-    } else {
+    if (index === undefined) {
       indexById.set(id, merged.length);
       merged.push(message);
+      continue;
     }
+
+    const prev = merged[index];
+    // messages 通道负责 AI 流式正文；updates 里同 id 的 AI 只补 tool_calls，不覆盖已流式 content。
+    if (message.type === "ai" && prev?.type === "ai") {
+      const prevAi = prev as AiMessageWithTools;
+      const incomingAi = message as AiMessageWithTools;
+      const prevText = extractAIMessageText(prev);
+      merged[index] = {
+        ...prev,
+        ...message,
+        content: prevText ? prev.content : message.content,
+        tool_calls: incomingAi.tool_calls?.length
+          ? incomingAi.tool_calls
+          : prevAi.tool_calls,
+        invalid_tool_calls: incomingAi.invalid_tool_calls?.length
+          ? incomingAi.invalid_tool_calls
+          : prevAi.invalid_tool_calls,
+      } as Message;
+      continue;
+    }
+
+    merged[index] = message;
   }
 
   return merged;
 }
 
 /**
- * 将 LangGraph updates 事件（节点内 pushMessage / 局部写入）合并进 values 形态的全量 state。
+ * 将 LangGraph updates 事件合并进 values。
+ * 与 streamMode `messages` 并用：消息 token 走 messages 通道，updates 只合并 tool/human 与 AI 的 tool_calls。
  */
 export function applyGraphUpdatesToValues<T extends { messages?: Message[] }>(
   prev: T,
@@ -218,7 +239,7 @@ export function applyGraphUpdatesToValues<T extends { messages?: Message[] }>(
       const list = (
         Array.isArray(incoming) ? incoming : incoming != null ? [incoming] : []
       ) as Message[];
-      messages = mergeMessagesById(messages, list);
+      messages = mergeMessagesFromUpdates(messages, list);
       continue;
     }
 
@@ -285,6 +306,12 @@ export function buildRenderItems(
       const aiMessage = message as AiMessageWithTools;
       const messageId = message.id ?? `ai-${index}`;
 
+      const text = extractAIMessageText(message);
+      const isStreamingAi =
+        isLoading &&
+        index === lastAiMessageIndex &&
+        index > lastHumanIndex;
+
       pushToolItems(
         items,
         [...(aiMessage.tool_calls ?? []), ...(aiMessage.invalid_tool_calls ?? [])],
@@ -296,12 +323,6 @@ export function buildRenderItems(
           toolResultsById,
         },
       );
-
-      const text = extractAIMessageText(message);
-      const isStreamingAi =
-        isLoading &&
-        index === lastAiMessageIndex &&
-        index > lastHumanIndex;
 
       if (text || isStreamingAi || interrupted.has(messageId)) {
         items.push({

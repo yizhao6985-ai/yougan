@@ -1,5 +1,30 @@
 import { sanitizeAutoConversationTitle } from "./conversation-title.js";
-import { messageContentToText } from "./message-content.js";
+
+function checkpointMessageContentToText(content: unknown): string {
+  if (typeof content === "string") return content;
+  if (content == null) return "";
+
+  if (Array.isArray(content)) {
+    return content
+      .map((part) => {
+        if (typeof part === "string") return part;
+        if (!part || typeof part !== "object") return "";
+        const block = part as { text?: unknown; content?: unknown };
+        if (typeof block.text === "string") return block.text;
+        if (typeof block.content === "string") return block.content;
+        return "";
+      })
+      .join("");
+  }
+
+  if (typeof content === "object") {
+    const block = content as { text?: unknown; content?: unknown };
+    if (typeof block.text === "string") return block.text;
+    if (typeof block.content === "string") return block.content;
+  }
+
+  return "";
+}
 
 /** LangGraph checkpoint / getState 中的 message 形态（含 SDK 与 LangChain 序列化） */
 
@@ -33,7 +58,7 @@ export function getFirstHumanCheckpointMessageText(
   if (!Array.isArray(messages)) return "";
   for (const message of messages) {
     if (!isHumanCheckpointMessage(message)) continue;
-    const text = messageContentToText(
+    const text = checkpointMessageContentToText(
       (message as { content?: unknown }).content,
     ).trim();
     if (text) return text;

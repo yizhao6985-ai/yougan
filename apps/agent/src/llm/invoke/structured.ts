@@ -12,6 +12,20 @@ export type StructuredInvokeOptions = {
   method?: StructuredOutputMethod;
 };
 
+type ChatModelWithKwargs = BaseChatModel & {
+  modelKwargs?: Record<string, unknown>;
+};
+
+/** 百炼 thinking mode 与 functionCalling 结构化输出不兼容。 */
+function forStructuredInvoke(llm: BaseChatModel): BaseChatModel {
+  const chat = llm as ChatModelWithKwargs;
+  chat.modelKwargs = {
+    ...chat.modelKwargs,
+    enable_thinking: false,
+  };
+  return llm;
+}
+
 /** 同步结构化输出，返回 Zod 校验后的对象。 */
 export async function invokeStructured<T extends Record<string, unknown>>(
   llm: BaseChatModel,
@@ -19,7 +33,7 @@ export async function invokeStructured<T extends Record<string, unknown>>(
   input: BaseLanguageModelInput,
   options?: StructuredInvokeOptions,
 ): Promise<T> {
-  const structured = llm.withStructuredOutput(schema, {
+  const structured = forStructuredInvoke(llm).withStructuredOutput(schema, {
     name: options?.name ?? "structured_output",
     method: options?.method ?? "functionCalling",
   });

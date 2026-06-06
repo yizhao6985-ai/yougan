@@ -1,5 +1,8 @@
 /** tool：仅请求 spawnSpecialist work node，内部不调 LLM */
+import { ToolMessage } from "@langchain/core/messages";
 import { tool } from "@langchain/core/tools";
+import type { ToolRunnableConfig } from "@langchain/core/tools";
+import { Command } from "@langchain/langgraph";
 import { z } from "zod";
 
 import {
@@ -8,26 +11,41 @@ import {
   patchPendingProductionMeta,
 } from "#agent/state-io/index.js";
 
-import { commandWithUpdate } from "../command-with-update.js";
-
 export const spawnSpecialist = tool(
   async ({ department, brief, specialist_name }, config) => {
+    const toolCallId = (config as ToolRunnableConfig).toolCall?.id ?? "";
     const state = getState();
+
     if (getActiveTurnKind(state) !== "production") {
-      return commandWithUpdate(config, "spawn_specialist 仅在制作模式可用。");
+      return new Command({
+        update: {
+          messages: [
+            new ToolMessage({
+              content: "spawn_specialist 仅在制作模式可用。",
+              tool_call_id: toolCallId,
+            }),
+          ],
+        },
+      });
     }
 
-    return commandWithUpdate(
-      config,
-      `已提交 ${department} 专员任务，即将执行。`,
-      patchPendingProductionMeta(state, {
-        pendingSpawnSpecialist: {
-          department,
-          brief,
-          specialist_name: specialist_name ?? null,
-        },
-      }),
-    );
+    return new Command({
+      update: {
+        messages: [
+          new ToolMessage({
+            content: `已提交 ${department} 专员任务，即将执行。`,
+            tool_call_id: toolCallId,
+          }),
+        ],
+        ...patchPendingProductionMeta(state, {
+          pendingSpawnSpecialist: {
+            department,
+            brief,
+            specialist_name: specialist_name ?? null,
+          },
+        }),
+      },
+    });
   },
   {
     name: "spawn_specialist",

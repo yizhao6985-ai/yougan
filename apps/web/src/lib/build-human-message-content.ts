@@ -1,6 +1,42 @@
+/**
+ * LangChain 标准 human message 多模态 content part（与 agent/messages/content-parts 对齐）。
+ *
+ * 图片块：{ type: "image", source_type: "url" | "base64" | "id", ... }
+ */
+
+export type HumanTextContentPart = { type: "text"; text: string };
+
+export type HumanImageUrlContentPart = {
+  type: "image";
+  source_type: "url";
+  url: string;
+};
+
+export type HumanImageBase64ContentPart = {
+  type: "image";
+  source_type: "base64";
+  mime_type: string;
+  data: string;
+};
+
+export type HumanImageIdContentPart = {
+  type: "image";
+  source_type: "id";
+  id: string;
+};
+
+export type HumanImageContentPart =
+  | HumanImageUrlContentPart
+  | HumanImageBase64ContentPart
+  | HumanImageIdContentPart;
+
 export type HumanMessageContentPart =
-  | { type: "text"; text: string }
-  | { type: "image_url"; image_url: { url: string } };
+  | HumanTextContentPart
+  | HumanImageContentPart;
+
+function humanImageFromUrl(url: string): HumanImageUrlContentPart {
+  return { type: "image", source_type: "url", url };
+}
 
 export function buildHumanMessageContent(
   text: string,
@@ -13,17 +49,12 @@ export function buildHumanMessageContent(
     return trimmed;
   }
 
-  const parts: HumanMessageContentPart[] = [];
+  const images = urls.map(humanImageFromUrl);
   const textPart =
     trimmed ||
-    (urls.length === 1
+    (images.length === 1
       ? "请结合我附带的参考图片理解并回复。"
-      : `请结合我附带的 ${urls.length} 张参考图片理解并回复。`);
-  parts.push({ type: "text", text: textPart });
+      : `请结合我附带的 ${images.length} 张参考图片理解并回复。`);
 
-  for (const url of urls) {
-    parts.push({ type: "image_url", image_url: { url } });
-  }
-
-  return parts;
+  return [{ type: "text", text: textPart }, ...images];
 }
