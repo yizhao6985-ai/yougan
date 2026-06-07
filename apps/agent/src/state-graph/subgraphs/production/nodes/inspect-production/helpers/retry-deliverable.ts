@@ -77,7 +77,6 @@ export async function retryTaskDeliverable(
       title: contentProfile.content_topic ?? null,
       body: output,
       notes: section,
-      publish_ready: false,
     };
   } catch {
     return existing;

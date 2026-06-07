@@ -13,5 +13,4 @@ export interface WorkPreview {
   hook?: string | null;
   notes?: string | null;
   images?: WorkPreviewImage[];
-  publish_ready?: boolean;
 }

@@ -109,7 +109,6 @@ export const WorkPreviewSchema = z
         }),
       )
       .optional(),
-    publish_ready: z.boolean().optional(),
   })
   .openapi("WorkPreview");
 

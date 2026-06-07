@@ -73,9 +73,11 @@ export function YouganChat() {
     [items.length, streamValues?.nextStepSuggestions],
   );
 
+  const openingSuggestionItems = openingSuggestions?.suggestions ?? [];
+  const hasOpeningSuggestions = openingSuggestionItems.length > 0;
   const openingSuggestionsKey = useMemo(
-    () => openingSuggestions?.suggestions.map((s) => s.id).join("\u0000") ?? "",
-    [openingSuggestions],
+    () => openingSuggestionItems.map((s) => s.id).join("\u0000"),
+    [openingSuggestionItems],
   );
 
   const lastAiIndex = useMemo(() => {
@@ -175,21 +177,30 @@ export function YouganChat() {
                   {CHAT_COPY.emptyTitle}
                 </p>
                 <div className={scene.openingSuggestionsSlot}>
-                  {!isBootstrappingOpening && openingSuggestions ? (
-                    <OpeningNextStepSuggestions
-                      key={`${activeConversation?.id ?? ""}-${openingSuggestionsKey}`}
-                      animate
-                      suggestions={openingSuggestions.suggestions}
-                      disabled={!canChat}
-                      onSelect={(value) => void sendMessage(value)}
-                    />
-                  ) : isBootstrappingOpening ? (
+                  {isBootstrappingOpening ? (
                     <div className="flex w-full justify-center py-2">
                       <Shimmer className={cn(chatStreamBlock.muted, "text-center")}>
                         {CHAT_COPY.openingSuggestionsLoading}
                       </Shimmer>
                     </div>
-                  ) : null}
+                  ) : hasOpeningSuggestions ? (
+                    <OpeningNextStepSuggestions
+                      key={`${activeConversation?.id ?? ""}-${openingSuggestionsKey}`}
+                      animate
+                      suggestions={openingSuggestionItems}
+                      disabled={!canChat}
+                      onSelect={(value) => void sendMessage(value)}
+                    />
+                  ) : (
+                    <p
+                      className={cn(
+                        chatStreamBlock.muted,
+                        "text-center text-sm leading-6",
+                      )}
+                    >
+                      {CHAT_COPY.openingSuggestionsEmpty}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

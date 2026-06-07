@@ -580,9 +580,6 @@
                 "url"
               ]
             }
-          },
-          "publish_ready": {
-            "type": "boolean"
           }
         },
         "required": [

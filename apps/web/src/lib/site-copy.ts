@@ -322,10 +322,11 @@ export const STUDIO = {
 } as const;
 
 export const CHAT_COPY = {
-  openingSuggestionsLoading: "正在生成选题建议…",
+  openingSuggestionsLoading: "正在生成下一步建议…",
+  openingSuggestionsEmpty: "暂无合适的下一步建议，直接在下方输入你的想法",
   placeholder: "说说想法、提问，或告诉我要改什么…",
-  /** 开屏空态：单行标题（选题气泡上方不再另起提示） */
-  emptyTitle: "从一句话开始，选选题或直接输入",
+  /** 开屏空态：单行标题（建议气泡上方；新对话也可能承接已有作品方案） */
+  emptyTitle: "选一个下一步，或直接输入",
   status: {
     profileExploring: "正在帮你整理作品方案",
     profileEditing: (beats: number, constraints: number) =>

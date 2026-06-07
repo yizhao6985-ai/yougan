@@ -12,7 +12,6 @@ export const TOOL_LABELS: Record<string, string> = {
   clear_profile_beats: "清空内容节拍",
   add_profile_beats: "批量添加内容节拍",
   delete_profile_reference: "删除参考素材",
-  add_profile_constraint_from_ask: "记入作品方案",
   add_plan_task: "添加制作任务",
   complete_execution: "完成执行",
   parse_reference_text: "解析参考文案",
@@ -21,6 +20,7 @@ export const TOOL_LABELS: Record<string, string> = {
   generate_design: "AI 团队绘画",
   spawn_specialist: "调度专员",
   revise_production_plan: "调整制作计划",
+  tavily_search: "联网搜索",
 };
 
 export type ToolActivityState =
@@ -69,7 +69,6 @@ export function getToolInputSummary(
   switch (toolName) {
     case "add_profile_beat":
     case "add_profile_constraint":
-    case "add_profile_constraint_from_ask":
     case "update_profile_constraint":
     case "update_profile_beat":
     case "add_plan_task":
@@ -97,6 +96,8 @@ export function getToolInputSummary(
         : truncate(readString(toolInput.reference_text), 80);
     case "parse_reference_image":
       return readString(toolInput.hint) || "解析参考图片风格";
+    case "tavily_search":
+      return readString(toolInput.query);
     case "generate_preview":
       return "AI 团队按制作计划出稿";
     case "generate_design":

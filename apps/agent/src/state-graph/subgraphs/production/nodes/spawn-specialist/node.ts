@@ -32,13 +32,24 @@ import { MarkdownDeliverableSchema } from "./schema.js";
 export async function spawnSpecialistNode(
   state: AgentStateType,
 ): Promise<Partial<AgentStateType>> {
-  const pending = getProductionStagingMeta(state).pendingSpawnSpecialist;
+  const meta = getProductionStagingMeta(state);
+  let pending = meta.pendingSpawnSpecialist;
+  const plan = getProductionPlan(state);
+
   if (!pending) {
-    return {};
+    const designTask = plan.pending_tasks.find((t) => t.department === "design");
+    if (designTask) {
+      pending = {
+        department: "design",
+        brief: designTask.description,
+        specialist_name: null,
+      };
+    } else {
+      return {};
+    }
   }
 
   const profile = getProfile(state);
-  const plan = getProductionPlan(state);
   const contentProfile = resolveContentSpecFromProfile(profile);
   const { department, brief, specialist_name } = pending;
   const name = specialistDisplayName(department, specialist_name);
@@ -79,7 +90,6 @@ export async function spawnSpecialistNode(
         title: contentProfile.content_topic ?? null,
         body: output,
         notes: section,
-        publish_ready: false,
       };
 
   const pendingTasks = plan.pending_tasks.map((task) =>

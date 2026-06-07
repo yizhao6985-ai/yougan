@@ -7,10 +7,16 @@ import { z } from "zod";
 
 import {
   getActiveTurnKind,
+  getPreview,
   getProductionPlan,
   getState,
   patchPendingProductionPlan,
 } from "#agent/state-io/index.js";
+
+import {
+  formatMissingDeliverableMessage,
+  missingDeliverableDepartments,
+} from "../../../helpers/deliverable.js";
 
 export const completeExecution = tool(
   async ({ summary }, config) => {
@@ -44,6 +50,21 @@ export const completeExecution = tool(
 
     const state = getState();
     const plan = getProductionPlan(state);
+    const preview = getPreview(state);
+    const missing = missingDeliverableDepartments(preview, plan.pending_tasks);
+    if (missing.length) {
+      return new Command({
+        update: {
+          messages: [
+            new ToolMessage({
+              content: formatMissingDeliverableMessage(missing),
+              tool_call_id: toolCallId,
+            }),
+          ],
+        },
+      });
+    }
+
     if (!plan.pending_tasks.length) {
       return new Command({
         update: {

@@ -1,4 +1,4 @@
-/** ask 子图 LLM 系统提示词（答疑，不改方案结构工具） */
+/** ask 子图 LLM 系统提示词（纯答疑，不改方案与成稿） */
 import {
   profileSummary,
   referencesSummary,
@@ -11,16 +11,18 @@ import { resolveIndustryContext } from "../../../production/nodes/llm-call/promp
 
 export function buildAskPrompt(state: AgentStateType): string {
   const profile = getProfile(state);
-  const industry = resolveIndustryContext(resolveContentSpecFromProfile(profile));
+  const industry = resolveIndustryContext(
+    resolveContentSpecFromProfile(profile),
+  );
 
-  const modePrompt = `当前任务：提问答疑（不执行制作）
+  const modePrompt = `当前任务：提问答疑（不执行制作，不修改作品方案）
 
-工具规则：
-1. 明确写入作品方案 → add_profile_constraint_from_ask
-2. 禁止 add_plan_task、generate_draft、complete_execution、revise_production_plan
-3. 禁止直接改方案结构（引导继续输入，编排会安排 profile 任务）
+规则：
+1. 优先基于作品方案与已有知识回答；需要**实时信息、行业数据、外部事实核查**时调用 tavily_search
+2. 若客户明确要求把结论写入作品方案（改主题、节拍、要求、定位等），在回复中说明「可以说清楚要改什么，我会帮你更新方案」，由回合编排进入 profile 处理
+3. 禁止代为修改方案结构或触发制作；除 tavily_search 外不要调用其他工具
 
-作品方案：
+作品方案（只读参考）：
 ${profileSummary(profile)}
 
 ${referencesSummary(profile.references)}

@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { invokeStructured } from "#agent/llm/invoke/index.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
+import { isValidWritingDeliverable } from "../../helpers/deliverable.js";
 import { retryTaskDeliverable } from "./helpers/retry-deliverable.js";
 import {
   patchPendingBatch,
@@ -37,7 +38,7 @@ export async function inspectProductionNode(
     ?? plan.executed_tasks.find((t) => t.id === meta.inspectTaskId);
   const preview = getPreview(state);
 
-  if (!task || !preview?.body?.trim()) {
+  if (!task) {
     return patchPendingProductionMeta(state, {
       pendingInspect: false,
       inspectTaskId: null,
@@ -45,32 +46,40 @@ export async function inspectProductionNode(
     });
   }
 
-  const llm = createChatModel({ temperature: 0.2 });
-  const prompt = `你是制作质检员，检查以下任务交付物是否满足任务要求。
-
-任务：${task.description}
-部门：${task.department ?? "writing"}
-
-交付物正文（节选）：
-${preview.body.slice(0, 1500)}
-${preview.notes ? `\n备注：${preview.notes.slice(0, 800)}` : ""}
-
-标准：内容完整、符合任务描述、无明显跑题或空洞套话。`;
-
   let passed = true;
   let feedback = "";
 
-  try {
-    const parsed = await invokeStructured(
-      llm,
-      InspectResultSchema,
-      [new HumanMessage(prompt)],
-      { name: "production_inspect" },
-    );
-    passed = parsed.passed;
-    feedback = parsed.feedback?.trim() ?? "";
-  } catch {
-    passed = true;
+  const department = task.department ?? "writing";
+  if (department === "writing" && !isValidWritingDeliverable(preview)) {
+    passed = false;
+    feedback =
+      "缺少有效文案正文交付物，需先完成 generate_draft 出稿后再质检。";
+  } else {
+    const llm = createChatModel({ temperature: 0.2 });
+    const prompt = `你是制作质检员，检查以下任务交付物是否满足任务要求。
+
+任务：${task.description}
+部门：${department}
+
+交付物正文（节选）：
+${preview?.body?.trim() ? preview.body.slice(0, 1500) : "（无正文）"}
+${preview?.notes ? `\n备注：${preview.notes.slice(0, 800)}` : ""}
+
+标准：内容完整、符合任务描述、无明显跑题或空洞套话。`;
+
+    try {
+      const parsed = await invokeStructured(
+        llm,
+        InspectResultSchema,
+        [new HumanMessage(prompt)],
+        { name: "production_inspect" },
+      );
+      passed = parsed.passed;
+      feedback = parsed.feedback?.trim() ?? "";
+    } catch {
+      passed = false;
+      feedback = "质检服务暂时不可用，请重新出稿后再检。";
+    }
   }
 
   if (passed) {

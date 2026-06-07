@@ -1,5 +1,4 @@
 import { START, StateGraph } from "@langchain/langgraph";
-import { toolsCondition } from "@langchain/langgraph/prebuilt";
 
 import { AgentState } from "#agent/state.js";
 
@@ -37,13 +36,13 @@ export const productionGraph = new StateGraph(AgentState)
   )
   .addConditionalEdges(
     llmToolCalls.fromLlm,
-    toolsCondition,
-    llmToolCalls.paths,
+    llmToolCalls.routeLlmCall,
+    llmToolCalls.llmPaths,
   )
   .addConditionalEdges(
     llmToolCalls.fromDesign,
-    toolsCondition,
-    llmToolCalls.paths,
+    llmToolCalls.routeDesignLlmCall,
+    llmToolCalls.designPaths,
   )
   .addConditionalEdges(
     dispatchPendingWork.from,

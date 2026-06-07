@@ -1326,7 +1326,6 @@ export interface components {
                 alt?: string | null;
                 prompt?: string | null;
             }[];
-            publish_ready?: boolean;
         } | null;
         Work: {
             id: string;

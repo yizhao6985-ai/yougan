@@ -77,7 +77,6 @@ export async function generateDraftNode(
     hashtags: payload.hashtags ?? [],
     hook: payload.hook ?? null,
     notes: payload.notes ?? null,
-    publish_ready: true,
   };
 
   const inspectPatch =
