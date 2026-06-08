@@ -1,8 +1,9 @@
 /**
  * LangChain human 消息多模态 content part。
  *
- * 图片块：{ type: "image", source_type: "url" | "base64" | "id", ... }
- * 其他附件：{ type: "asset", source_type: "url", url, mime_type, original_name? }
+ * 用户附件：{ url, mime_type, original_name? }（与 HumanAttachmentAsset 同形）
+ *
+ * HumanImage* 类型仅用于 Agent 内部 LLM 视觉调用，不写入用户 human message。
  */
 
 export type HumanTextContentPart = { type: "text"; text: string };
@@ -31,9 +32,8 @@ export type HumanImageContentPart =
   | HumanImageBase64ContentPart
   | HumanImageIdContentPart;
 
-export type HumanAssetUrlContentPart = {
-  type: "asset";
-  source_type: "url";
+/** human message 中的附件块（仅 URL 来源） */
+export type HumanAssetContentPart = {
   url: string;
   mime_type: string;
   original_name?: string | null;
@@ -41,8 +41,7 @@ export type HumanAssetUrlContentPart = {
 
 export type HumanMessageContentPart =
   | HumanTextContentPart
-  | HumanImageContentPart
-  | HumanAssetUrlContentPart;
+  | HumanAssetContentPart;
 
 /** 已上传、可写入 human message 的附件（composer / agent 共用） */
 export type HumanAttachmentAsset = {

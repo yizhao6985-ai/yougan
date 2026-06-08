@@ -1319,15 +1319,7 @@ export interface components {
         };
         WorkReference: {
             id: string;
-            content: {
-                /** @enum {string} */
-                kind: "text";
-                text: string;
-            } | {
-                /** @enum {string} */
-                kind: "asset";
-                asset: components["schemas"]["Asset"];
-            };
+            asset: components["schemas"]["Asset"];
             analysis: {
                 summary: string;
                 keywords?: string[];

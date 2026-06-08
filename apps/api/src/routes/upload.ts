@@ -43,13 +43,16 @@ const PURPOSE_FOLDERS: Record<string, UploadFolder> = {
   cover: "covers",
 };
 
-const REFERENCE_MAX_BYTES: Record<"image" | "audio" | "video" | "file", number> =
-  {
-    image: 8 * 1024 * 1024,
-    audio: 20 * 1024 * 1024,
-    video: 80 * 1024 * 1024,
-    file: 8 * 1024 * 1024,
-  };
+const REFERENCE_MAX_BYTES: Record<
+  "image" | "audio" | "video" | "text" | "file",
+  number
+> = {
+  image: 8 * 1024 * 1024,
+  audio: 20 * 1024 * 1024,
+  video: 80 * 1024 * 1024,
+  text: 8 * 1024 * 1024,
+  file: 8 * 1024 * 1024,
+};
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -57,15 +60,17 @@ const upload = multer({
 });
 
 function isReferenceMimeAllowed(mime: string): boolean {
+  const normalized = mime.trim().toLowerCase();
   const kind = inferMediaKind(mime);
-  if (kind === "image") return IMAGE_MIME.has(mime);
-  if (kind === "audio") return AUDIO_MIME.has(mime);
-  if (kind === "video") return VIDEO_MIME.has(mime);
+  if (kind === "image") return IMAGE_MIME.has(normalized);
+  if (kind === "audio") return AUDIO_MIME.has(normalized);
+  if (kind === "video") return VIDEO_MIME.has(normalized);
+  if (kind === "text") return normalized.startsWith("text/");
   return false;
 }
 
 function referenceMimeError(): string {
-  return "参考素材仅支持图片（JPEG/PNG/WebP/GIF）、音频（MP3/WAV/OGG/M4A）或视频（MP4/WebM/MOV）";
+  return "参考素材仅支持图片（JPEG/PNG/WebP/GIF）、音频（MP3/WAV/OGG/M4A）、视频（MP4/WebM/MOV）或文本（TXT 等 text/*）";
 }
 
 export const uploadRouter = Router();
@@ -95,7 +100,15 @@ uploadRouter.post("/", requireAuth, upload.single("file"), async (req: AuthedReq
     const maxBytes = REFERENCE_MAX_BYTES[kind];
     if (req.file.size > maxBytes) {
       const label =
-        kind === "image" ? "图片" : kind === "audio" ? "音频" : "视频";
+        kind === "image"
+          ? "图片"
+          : kind === "audio"
+            ? "音频"
+            : kind === "video"
+              ? "视频"
+              : kind === "text"
+                ? "文本"
+                : "文件";
       res.status(400).json({
         error: `${label}不能超过 ${Math.round(maxBytes / 1024 / 1024)}MB`,
       });

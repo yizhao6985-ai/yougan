@@ -3,10 +3,9 @@ import {
   referenceAssetUrl,
   type WorkReference,
 } from "@yougan/domain";
-import { ImageOffIcon, MusicIcon, VideoIcon } from "lucide-react";
+import { FileIcon, ImageOffIcon, MusicIcon, VideoIcon } from "lucide-react";
 import { useState } from "react";
 
-import { CreativeContextInset } from "@/components/studio/creative-context/shared";
 import { REFERENCE_PANEL } from "@/lib/site-copy";
 import { resolveReferenceAssetUrl } from "@/lib/reference-asset-url";
 import { cn } from "@/lib/utils";
@@ -73,7 +72,7 @@ function ReferenceMediaThumb({
 }: {
   url: string;
   title: string;
-  mediaKind: "audio" | "video" | "file";
+  mediaKind: "audio" | "video" | "text" | "file";
   className?: string;
 }) {
   const label =
@@ -82,7 +81,12 @@ function ReferenceMediaThumb({
       : mediaKind === "video"
         ? REFERENCE_PANEL.openVideo
         : REFERENCE_PANEL.openLink;
-  const Icon = mediaKind === "audio" ? MusicIcon : VideoIcon;
+  const Icon =
+    mediaKind === "audio"
+      ? MusicIcon
+      : mediaKind === "video"
+        ? VideoIcon
+        : FileIcon;
 
   if (mediaKind === "video") {
     return (
@@ -161,23 +165,12 @@ export function ReferenceAssetMedia({
   const assetUrl = referenceAssetUrl(item);
   if (!assetUrl) return null;
   const resolvedUrl = resolveReferenceAssetUrl(assetUrl);
-  if (!resolvedUrl || item.content.kind !== "asset") return null;
+  if (!resolvedUrl) return null;
 
-  const mediaKind = inferMediaKind(item.content.asset.mime_type);
+  const mediaKind = inferMediaKind(item.asset.mime_type);
   if (mediaKind === "image") {
     return (
       <ReferenceImageThumb url={resolvedUrl} alt={title} className={className} />
-    );
-  }
-
-  if (mediaKind === "audio" || mediaKind === "video") {
-    return (
-      <ReferenceMediaThumb
-        url={resolvedUrl}
-        title={title}
-        mediaKind={mediaKind}
-        className={className}
-      />
     );
   }
 
@@ -185,28 +178,8 @@ export function ReferenceAssetMedia({
     <ReferenceMediaThumb
       url={resolvedUrl}
       title={title}
-      mediaKind="file"
+      mediaKind={mediaKind}
       className={className}
     />
-  );
-}
-
-export function ReferenceMedia({
-  item,
-}: {
-  item: WorkReference;
-  title: string;
-}) {
-  if (item.content.kind === "asset") {
-    return null;
-  }
-
-  const excerpt = item.content.text.trim();
-  if (!excerpt) return null;
-
-  return (
-    <CreativeContextInset className="text-xs leading-5 text-muted-foreground">
-      {excerpt.length > 280 ? `${excerpt.slice(0, 280)}…` : excerpt}
-    </CreativeContextInset>
   );
 }

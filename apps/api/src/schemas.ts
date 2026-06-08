@@ -13,17 +13,6 @@ export const AssetSchema = z
   })
   .openapi("Asset");
 
-const ReferenceContentSchema = z.discriminatedUnion("kind", [
-  z.object({
-    kind: z.literal("text"),
-    text: z.string(),
-  }),
-  z.object({
-    kind: z.literal("asset"),
-    asset: AssetSchema,
-  }),
-]);
-
 const ReferenceAnalysisSchema = z.object({
   summary: z.string(),
   keywords: z.array(z.string()).optional(),
@@ -41,7 +30,7 @@ const ReferenceIntentSchema = z.object({
 export const WorkReferenceSchema = z
   .object({
     id: z.string(),
-    content: ReferenceContentSchema,
+    asset: AssetSchema,
     analysis: ReferenceAnalysisSchema,
     intent: ReferenceIntentSchema,
     analyzed_at: z.string(),

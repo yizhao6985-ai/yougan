@@ -6,7 +6,7 @@ import { promisify } from "node:util";
 
 import ffmpegPath from "ffmpeg-static";
 
-import { fetchAssetBuffer } from "./fetch-asset.js";
+import { fetchReferenceAssetBuffer } from "./asset-fetch.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -47,11 +47,11 @@ async function extractFramesFromFile(
   return frames;
 }
 
-export async function extractVideoKeyframeBuffers(input: {
+export async function extractReferenceVideoKeyframes(input: {
   url: string;
   extension: string;
 }): Promise<Buffer[]> {
-  const videoBuffer = await fetchAssetBuffer(input.url);
+  const videoBuffer = await fetchReferenceAssetBuffer(input.url);
   const dir = await mkdtemp(join(tmpdir(), "yougan-ref-frames-"));
 
   try {

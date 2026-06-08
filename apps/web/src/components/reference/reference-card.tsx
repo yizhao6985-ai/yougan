@@ -1,17 +1,13 @@
 import { ChevronDownIcon } from "lucide-react";
 import { useState } from "react";
 import {
-  inferMediaKind,
   referenceAssetUrl,
   referenceContentLabel,
   type WorkReference,
 } from "@yougan/domain";
 
 import { Badge } from "@/components/ui/badge";
-import {
-  ReferenceAssetMedia,
-  ReferenceMedia,
-} from "@/components/reference/reference-media";
+import { ReferenceAssetMedia } from "@/components/reference/reference-media";
 import { CreativeContextListItem } from "@/components/studio/creative-context/shared";
 import { REFERENCE_PANEL } from "@/lib/site-copy";
 import {
@@ -26,15 +22,12 @@ function referenceTypeLabel(reference: WorkReference) {
 }
 
 function referenceCardTitle(reference: WorkReference, index: number) {
-  if (reference.content.kind === "asset") {
-    const name = reference.content.asset.original_name?.trim();
-    if (name) return name;
-    const kind = inferMediaKind(reference.content.asset.mime_type);
-    return REFERENCE_PANEL.typeLabels[kind] ?? REFERENCE_PANEL.typeLabels.file;
-  }
-  const excerpt = reference.content.text.trim();
-  if (excerpt) return excerpt.slice(0, 40) + (excerpt.length > 40 ? "…" : "");
-  return REFERENCE_PANEL.fallbackTitle(index + 1);
+  const name = reference.asset.original_name?.trim();
+  if (name) return name;
+  const kind = referenceContentLabel(reference);
+  return (
+    REFERENCE_PANEL.typeLabels[kind] ?? REFERENCE_PANEL.fallbackTitle(index + 1)
+  );
 }
 
 function ReferenceMetaChips({ reference }: { reference: WorkReference }) {
@@ -76,8 +69,7 @@ export function ReferenceCard({
   const canExpand = Boolean(
     (analysis && analysis.length > 120) || (intent && intent.length > 80),
   );
-  const hasAssetThumb =
-    item.content.kind === "asset" && Boolean(referenceAssetUrl(item));
+  const hasAssetThumb = Boolean(referenceAssetUrl(item));
 
   const body = (
     <>
@@ -112,8 +104,6 @@ export function ReferenceCard({
           </button>
         ) : null}
       </div>
-
-      {!hasAssetThumb ? <ReferenceMedia item={item} title={title} /> : null}
 
       {analysis ? (
         <p

@@ -1,94 +1,50 @@
 import type {
-  HumanAssetUrlContentPart,
+  HumanAssetContentPart,
   HumanAttachmentAsset,
-  HumanImageContentPart,
   HumanImageUrlContentPart,
   HumanMessageContentPart,
 } from "../../models/messages/human-content.js";
-import { inferMediaKind } from "../asset.js";
 
+/** LLM 视觉调用边界：将 URL 转为 LangChain image part（不用于 human message 存储）。 */
 export function humanImageFromUrl(url: string): HumanImageUrlContentPart {
   return { type: "image", source_type: "url", url };
 }
 
-export function humanAssetFromUrl(input: HumanAttachmentAsset): HumanAssetUrlContentPart {
+export function humanAssetContentPart(
+  input: HumanAttachmentAsset,
+): HumanAssetContentPart {
   return {
-    type: "asset",
-    source_type: "url",
     url: input.url,
     mime_type: input.mime_type,
     original_name: input.original_name ?? null,
   };
 }
 
-function isImageContentPart(part: unknown): part is HumanImageContentPart {
+export function isHumanAssetContentPart(
+  part: unknown,
+): part is HumanAssetContentPart {
   if (!part || typeof part !== "object") return false;
-  return (part as { type?: string }).type === "image";
-}
-
-function isAssetContentPart(part: unknown): part is HumanAssetUrlContentPart {
-  if (!part || typeof part !== "object") return false;
-  const value = part as HumanAssetUrlContentPart;
-  return value.type === "asset" && value.source_type === "url";
-}
-
-/** 从 human message content 提取全部图片块（保留原始 part 结构）。 */
-export function extractImagePartsFromContent(
-  content: unknown,
-): HumanImageContentPart[] {
-  if (!Array.isArray(content)) return [];
-  return content.filter(isImageContentPart);
+  const value = part as Record<string, unknown>;
+  if (value.type === "text") return false;
+  return typeof value.url === "string" && typeof value.mime_type === "string";
 }
 
 export function extractAssetPartsFromContent(
   content: unknown,
-): HumanAssetUrlContentPart[] {
+): HumanAssetContentPart[] {
   if (!Array.isArray(content)) return [];
-  return content.filter(isAssetContentPart);
+  return content.filter(isHumanAssetContentPart);
 }
 
-function imageUrlFromPart(part: HumanImageContentPart): string | undefined {
-  if (part.source_type === "url") return part.url;
-  return undefined;
-}
-
-export function extractImageUrlsFromParts(
-  parts: HumanImageContentPart[],
-): string[] {
-  const urls: string[] = [];
-  for (const part of parts) {
-    const url = imageUrlFromPart(part);
-    if (url) urls.push(url);
-  }
-  return urls;
-}
-
-/** 从 human 消息 content 提取全部附件（图片 + 音视频等 asset part）。 */
+/** 从 human 消息 content 提取全部附件。 */
 export function extractAttachmentAssetsFromContent(
   content: unknown,
 ): HumanAttachmentAsset[] {
-  if (!Array.isArray(content)) return [];
-
-  const assets: HumanAttachmentAsset[] = [];
-
-  for (const part of content) {
-    if (isImageContentPart(part) && part.source_type === "url") {
-      assets.push({
-        url: part.url,
-        mime_type: "image/*",
-      });
-      continue;
-    }
-    if (isAssetContentPart(part)) {
-      assets.push({
-        url: part.url,
-        mime_type: part.mime_type,
-        original_name: part.original_name,
-      });
-    }
-  }
-
-  return assets;
+  return extractAssetPartsFromContent(content).map((part) => ({
+    url: part.url,
+    mime_type: part.mime_type,
+    original_name: part.original_name,
+  }));
 }
 
 function defaultAttachmentText(count: number): string {
@@ -107,12 +63,9 @@ export function buildHumanMessageContent(
     return trimmed;
   }
 
-  const parts: HumanMessageContentPart[] = ready.map((item) => {
-    const kind = inferMediaKind(item.mime_type);
-    return kind === "image"
-      ? humanImageFromUrl(item.url)
-      : humanAssetFromUrl(item);
-  });
+  const parts: HumanMessageContentPart[] = ready.map((item) =>
+    humanAssetContentPart(item),
+  );
 
   const textPart = trimmed || defaultAttachmentText(parts.length);
   return [{ type: "text", text: textPart }, ...parts];

@@ -1,4 +1,4 @@
-export function isLikelyPublicAssetUrl(url: string): boolean {
+export function isPublicReferenceAssetUrl(url: string): boolean {
   try {
     const host = new URL(url).hostname.toLowerCase();
     if (host === "localhost" || host === "127.0.0.1" || host.endsWith(".local")) {
@@ -10,7 +10,7 @@ export function isLikelyPublicAssetUrl(url: string): boolean {
   }
 }
 
-export async function fetchAssetBuffer(url: string): Promise<Buffer> {
+export async function fetchReferenceAssetBuffer(url: string): Promise<Buffer> {
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`FETCH_REFERENCE_ASSET_FAILED: ${response.status}`);
@@ -19,7 +19,7 @@ export async function fetchAssetBuffer(url: string): Promise<Buffer> {
   return Buffer.from(bytes);
 }
 
-export function fileExtensionFromAsset(
+export function referenceAssetFileExtension(
   mimeType: string,
   originalName?: string | null,
 ): string {

@@ -524,45 +524,8 @@
           "id": {
             "type": "string"
           },
-          "content": {
-            "oneOf": [
-              {
-                "type": "object",
-                "properties": {
-                  "kind": {
-                    "type": "string",
-                    "enum": [
-                      "text"
-                    ]
-                  },
-                  "text": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "kind",
-                  "text"
-                ]
-              },
-              {
-                "type": "object",
-                "properties": {
-                  "kind": {
-                    "type": "string",
-                    "enum": [
-                      "asset"
-                    ]
-                  },
-                  "asset": {
-                    "$ref": "#/components/schemas/Asset"
-                  }
-                },
-                "required": [
-                  "kind",
-                  "asset"
-                ]
-              }
-            ]
+          "asset": {
+            "$ref": "#/components/schemas/Asset"
           },
           "analysis": {
             "type": "object",
@@ -625,7 +588,7 @@
         },
         "required": [
           "id",
-          "content",
+          "asset",
           "analysis",
           "intent",
           "analyzed_at",

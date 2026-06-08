@@ -1,5 +1,6 @@
 import { AIMessage } from "@langchain/core/messages";
 import type { Message } from "@langchain/langgraph-sdk";
+import { isHumanAssetContentPart } from "@yougan/domain";
 import { messageContentToText as coreMessageContentToText } from "@/lib/message-content";
 
 import { isInternalOpeningModeSystemMessage } from "@/lib/opening-mode-internal";
@@ -17,11 +18,7 @@ type MessageWithBlocks = Message & {
 
 function countAttachmentParts(content: MessageContent): number {
   if (!Array.isArray(content)) return 0;
-  return content.filter((part) => {
-    if (!part || typeof part !== "object") return false;
-    const type = (part as { type?: string }).type;
-    return type === "image" || type === "asset";
-  }).length;
+  return content.filter(isHumanAssetContentPart).length;
 }
 
 export function humanMessageDisplayText(content: MessageContent): string {

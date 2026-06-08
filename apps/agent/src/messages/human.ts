@@ -2,9 +2,7 @@
 import { HumanMessage, type BaseMessage } from "@langchain/core/messages";
 import {
   extractAttachmentAssetsFromContent,
-  extractImagePartsFromContent,
   type HumanAttachmentAsset,
-  type HumanImageContentPart,
 } from "@yougan/domain";
 import { messageContentToText } from "./message-content.js";
 
@@ -26,15 +24,6 @@ export function getLatestHumanMessageText(
   const content = getHumanMessageContents(messages).at(-1);
   if (content === undefined) return "";
   return messageContentToText(content).trim();
-}
-
-/** 最近一条 human 消息中的全部图片 content part（原始结构）。 */
-export function getLatestHumanMessageImageParts(
-  messages: BaseMessage[] | undefined,
-): HumanImageContentPart[] {
-  const content = getHumanMessageContents(messages).at(-1);
-  if (content === undefined) return [];
-  return extractImagePartsFromContent(content);
 }
 
 /** 最近一条 human 消息中的全部附件（图片、音频、视频等）。 */

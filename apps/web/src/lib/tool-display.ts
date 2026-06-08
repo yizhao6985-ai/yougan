@@ -86,6 +86,11 @@ export function getToolInputSummary(
       return parts.join(" · ");
     }
     case "reference_apply_patch": {
+      const updates = toolInput.updates;
+      if (Array.isArray(updates) && updates.length) {
+        return `更新 ${updates.length} 条参考意图`;
+      }
+      if (toolInput.update) return "更新参考意图";
       const deletes = toolInput.deletes;
       if (Array.isArray(deletes) && deletes.length) {
         return `删除 ${deletes.length} 条参考`;

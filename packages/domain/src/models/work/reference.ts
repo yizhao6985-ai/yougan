@@ -1,15 +1,6 @@
 import type { Asset } from "./asset.js";
 
 /**
- * 参考素材内容。
- * - text：用户粘贴的参考文案
- * - asset：已上传的图片 / 音频 / 视频等文件
- */
-export type ReferenceContent =
-  | { kind: "text"; text: string }
-  | { kind: "asset"; asset: Asset };
-
-/**
  * 对参考素材的客观分析（感知 + 归纳结果）。
  * 写入侧栏「参考素材」，并注入 profile / production prompt。
  */
@@ -42,7 +33,8 @@ export interface ReferenceIntent {
  */
 export interface WorkReference {
   id: string;
-  content: ReferenceContent;
+  /** 已上传文件；文本参考使用 text/plain 等 text/* 文件 */
+  asset: Asset;
   analysis: ReferenceAnalysis;
   intent: ReferenceIntent;
   /** 最近一次完成分析的时间（ISO） */

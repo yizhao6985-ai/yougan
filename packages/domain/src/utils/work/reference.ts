@@ -3,7 +3,6 @@ import { inferMediaKind, type MediaKind } from "../asset.js";
 import {
   EMPTY_WORK_REFERENCES,
   type ReferenceAnalysis,
-  type ReferenceContent,
   type ReferenceIntent,
   type WorkReference,
 } from "../../models/work/reference.js";
@@ -17,7 +16,7 @@ function nowIso(): string {
 }
 
 export function newWorkReference(input: {
-  content: ReferenceContent;
+  asset: Asset;
   analysis: ReferenceAnalysis;
   intent: ReferenceIntent;
   analyzed_at?: string;
@@ -27,7 +26,7 @@ export function newWorkReference(input: {
   const timestamp = input.analyzed_at ?? nowIso();
   return {
     id: input.id ?? newId("reference"),
-    content: input.content,
+    asset: input.asset,
     analysis: input.analysis,
     intent: input.intent,
     analyzed_at: timestamp,
@@ -36,28 +35,19 @@ export function newWorkReference(input: {
 }
 
 export function referenceAssetUrl(reference: WorkReference): string | null {
-  if (reference.content.kind !== "asset") return null;
-  return reference.content.asset.url;
+  return reference.asset.url;
 }
 
 export function referenceAssetKey(reference: WorkReference): string | null {
-  if (reference.content.kind !== "asset") return null;
-  return reference.content.asset.key;
-}
-
-export function isAssetReference(reference: WorkReference): boolean {
-  return reference.content.kind === "asset";
+  return reference.asset.key;
 }
 
 export function isTextReference(reference: WorkReference): boolean {
-  return reference.content.kind === "text";
+  return inferMediaKind(reference.asset.mime_type) === "text";
 }
 
-export function referenceContentLabel(
-  reference: WorkReference,
-): "text" | MediaKind {
-  if (reference.content.kind === "text") return "text";
-  return inferMediaKind(reference.content.asset.mime_type);
+export function referenceContentLabel(reference: WorkReference): MediaKind {
+  return inferMediaKind(reference.asset.mime_type);
 }
 
 export function assetFromUrl(
@@ -109,6 +99,9 @@ export function assetFromUrl(
         return "video/webm";
       case "mov":
         return "video/quicktime";
+      case "txt":
+      case "md":
+        return "text/plain";
       default:
         return "application/octet-stream";
     }
@@ -142,17 +135,12 @@ function parseAsset(raw: unknown): Asset | null {
   };
 }
 
-function parseReferenceContent(raw: unknown): ReferenceContent | null {
+function parseReferenceAsset(raw: unknown): Asset | null {
+  const direct = parseAsset(raw);
+  if (direct) return direct;
   if (!raw || typeof raw !== "object") return null;
   const value = raw as Record<string, unknown>;
-  if (value.kind === "text" && typeof value.text === "string") {
-    const text = value.text.trim();
-    return text ? { kind: "text", text } : null;
-  }
-  if (value.kind === "asset") {
-    const asset = parseAsset(value.asset);
-    return asset ? { kind: "asset", asset } : null;
-  }
+  if (value.kind === "asset") return parseAsset(value.asset);
   return null;
 }
 
@@ -197,7 +185,7 @@ function parseReferenceIntent(raw: unknown): ReferenceIntent | null {
 
 function migrateLegacyReference(raw: Record<string, unknown>): WorkReference | null {
   if (
-    raw.content &&
+    (raw.asset || raw.content) &&
     raw.analysis &&
     raw.intent &&
     typeof raw.id === "string"
@@ -226,26 +214,12 @@ function migrateLegacyReference(raw: Record<string, unknown>): WorkReference | n
     summary: "历史参考素材，使用意图未单独记录。",
   };
 
-  if (sourceType === "text") {
-    const text =
-      typeof raw.raw_excerpt === "string" && raw.raw_excerpt.trim()
-        ? raw.raw_excerpt.trim()
-        : summary;
-    return newWorkReference({
-      content: { kind: "text", text },
-      analysis,
-      intent,
-      analyzed_at: timestamp,
-      created_at: timestamp,
-    });
-  }
-
   if (sourceType === "image") {
     const imageUrl =
       typeof raw.image_url === "string" ? raw.image_url.trim() : "";
     if (!imageUrl) return null;
     return newWorkReference({
-      content: { kind: "asset", asset: assetFromUrl(imageUrl) },
+      asset: assetFromUrl(imageUrl),
       analysis,
       intent,
       analyzed_at: timestamp,
@@ -260,10 +234,11 @@ export function parseWorkReference(raw: unknown): WorkReference | null {
   if (!raw || typeof raw !== "object") return null;
   const value = raw as Record<string, unknown>;
 
-  const content = parseReferenceContent(value.content);
+  const asset =
+    parseReferenceAsset(value.asset) ?? parseReferenceAsset(value.content);
   const analysis = parseReferenceAnalysis(value.analysis);
   const intent = parseReferenceIntent(value.intent);
-  if (!content || !analysis || !intent) {
+  if (!asset || !analysis || !intent) {
     return migrateLegacyReference(value);
   }
 
@@ -274,7 +249,7 @@ export function parseWorkReference(raw: unknown): WorkReference | null {
 
   return {
     id: typeof value.id === "string" ? value.id : newId("reference"),
-    content,
+    asset,
     analysis,
     intent,
     analyzed_at: analyzedAt,
@@ -301,14 +276,9 @@ export function upsertAssetReference(
   references: WorkReference[],
   item: WorkReference,
 ): WorkReference[] {
-  if (item.content.kind !== "asset") {
-    return appendWorkReferences(references, [item]);
-  }
-  const url = item.content.asset.url;
+  const url = item.asset.url;
   const refs = [...references];
-  const index = refs.findIndex(
-    (ref) => ref.content.kind === "asset" && ref.content.asset.url === url,
-  );
+  const index = refs.findIndex((ref) => ref.asset.url === url);
   if (index >= 0) {
     refs[index] = { ...item, id: refs[index]!.id, created_at: refs[index]!.created_at };
     return refs;
@@ -383,6 +353,95 @@ export function applyReferenceDeletes(
   return { references: next, deleted, warnings };
 }
 
+export type ReferenceTarget = {
+  reference_id?: string;
+  index?: number;
+  asset_url?: string;
+};
+
+export type ReferenceIntentPatch = ReferenceTarget & {
+  intent: ReferenceIntent;
+};
+
+export function updateWorkReferenceIntent(
+  references: WorkReference[],
+  target: ReferenceTarget,
+  intent: ReferenceIntent,
+): WorkReference[] | null {
+  const index = findReferenceIndex(references, target);
+  if (index < 0) return null;
+  const summary = intent.summary.trim();
+  if (!summary) return null;
+
+  const next = [...references];
+  next[index] = { ...next[index]!, intent: { summary } };
+  return next;
+}
+
+export function applyReferencePatch(
+  references: WorkReference[],
+  patch: {
+    deletes?: ReferenceTarget[];
+    updates?: ReferenceIntentPatch[];
+  },
+): {
+  references: WorkReference[];
+  deleted: number;
+  updated: number;
+  warnings: string[];
+} {
+  const deletes = patch.deletes ?? [];
+  const updates = patch.updates ?? [];
+  const warnings: string[] = [];
+
+  const deleteResult = deletes.length
+    ? applyReferenceDeletes(references, deletes)
+    : { references, deleted: 0, warnings: [] as string[] };
+  warnings.push(...deleteResult.warnings);
+
+  let next = deleteResult.references;
+  let updated = 0;
+
+  for (const item of updates) {
+    const summary = item.intent?.summary?.trim();
+    const target: ReferenceTarget = {
+      reference_id: item.reference_id,
+      index: item.index,
+      asset_url: item.asset_url,
+    };
+
+    if (
+      target.index == null &&
+      !target.reference_id?.trim() &&
+      !target.asset_url?.trim()
+    ) {
+      warnings.push("更新项须提供 reference_id、index 或 asset_url");
+      continue;
+    }
+    if (!summary) {
+      warnings.push("更新项须提供 intent.summary");
+      continue;
+    }
+
+    const result = updateWorkReferenceIntent(next, target, { summary });
+    if (result) {
+      next = result;
+      updated++;
+    } else {
+      warnings.push(
+        `未找到参考素材 ${target.reference_id ?? target.asset_url ?? String(target.index ?? "")}`.trim(),
+      );
+    }
+  }
+
+  return {
+    references: next,
+    deleted: deleteResult.deleted,
+    updated,
+    warnings,
+  };
+}
+
 export function findReferenceIndex(
   references: WorkReference[],
   target: { reference_id?: string; index?: number; asset_url?: string },
@@ -397,10 +456,7 @@ export function findReferenceIndex(
   }
   if (asset_url?.trim()) {
     const url = asset_url.trim();
-    return references.findIndex(
-      (item) =>
-        item.content.kind === "asset" && item.content.asset.url === url,
-    );
+    return references.findIndex((item) => item.asset.url === url);
   }
   return -1;
 }
