@@ -47,9 +47,19 @@ export function extractAttachmentAssetsFromContent(
   }));
 }
 
-function defaultAttachmentText(count: number): string {
+export function defaultAttachmentPromptText(count: number): string {
   if (count === 1) return "请结合我附带的参考素材理解并回复。";
   return `请结合我附带的 ${count} 份参考素材理解并回复。`;
+}
+
+/** 仅附件、无用户输入时写入 human 消息的占位文案。 */
+export function isDefaultAttachmentPromptText(
+  text: string,
+  attachmentCount: number,
+): boolean {
+  const trimmed = text.trim();
+  if (!trimmed || attachmentCount === 0) return false;
+  return trimmed === defaultAttachmentPromptText(attachmentCount);
 }
 
 export function buildHumanMessageContent(
@@ -67,6 +77,6 @@ export function buildHumanMessageContent(
     humanAssetContentPart(item),
   );
 
-  const textPart = trimmed || defaultAttachmentText(parts.length);
+  const textPart = trimmed || defaultAttachmentPromptText(parts.length);
   return [{ type: "text", text: textPart }, ...parts];
 }

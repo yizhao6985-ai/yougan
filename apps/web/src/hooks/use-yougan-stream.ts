@@ -4,12 +4,19 @@ import type { Message } from "@langchain/langgraph-sdk";
 import { useStream } from "@langchain/langgraph-sdk/react";
 
 import { useOpeningBootstrapQuery } from "@/hooks/queries/opening-bootstrap";
-import { buildHumanMessageContent } from "@yougan/domain";
 import { buildTurnCancelPatch } from "@/lib/cancel-turn";
-import { applyGraphUpdatesToValues } from "@/lib/message-utils";
+import {
+  applyGraphUpdatesToValues,
+  buildSubmitHumanMessage,
+} from "@/lib/message-utils";
 import { YOUGAN_ASSISTANT_ID } from "@/lib/yougan-chat-api";
 import { LANGGRAPH_API_URL } from "@/lib/env";
-import type { YouganValues, YouganSubmitInput, Work, WorkConversation } from "@/lib/types";
+import type {
+  YouganValues,
+  YouganSubmitInput,
+  Work,
+  WorkConversation,
+} from "@/lib/types";
 import { useAuthToken } from "@/store/auth";
 
 /** 消息 chunk 走 messages-tuple；其余 state（profile、turnQueue 等）走 updates 合并，避免 values 整表覆盖。 */
@@ -58,9 +65,8 @@ export function useYouganStream({
   const onRunCompleteRef = useRef(onRunComplete);
   onRunCompleteRef.current = onRunComplete;
 
-  const [valuesOverlay, setValuesOverlay] = useState<Partial<YouganValues> | null>(
-    null,
-  );
+  const [valuesOverlay, setValuesOverlay] =
+    useState<Partial<YouganValues> | null>(null);
 
   const defaultHeaders = useMemo(
     () => ({
@@ -88,7 +94,8 @@ export function useYouganStream({
         "values" in state && state.values
           ? (state.values as YouganValues)
           : (state as unknown as YouganValues);
-      if (values.turnCancelled === true || values.turnCommitted !== true) return;
+      if (values.turnCancelled === true || values.turnCommitted !== true)
+        return;
       onRunCompleteRef.current?.(workId, values);
     },
     onUpdateEvent: (update, { mutate }) => {
@@ -148,19 +155,20 @@ export function useYouganStream({
   const sendMessage = useCallback(
     async (
       text: string,
-      attachments: Parameters<typeof buildHumanMessageContent>[1] = [],
+      attachments: Parameters<typeof buildSubmitHumanMessage>[1] = [],
     ) => {
-      const content = buildHumanMessageContent(text, attachments);
+      const message = buildSubmitHumanMessage(text, attachments);
+      const content = message.content;
       const hasText =
-        typeof content === "string" ? Boolean(content.trim()) : content.length > 0;
+        typeof content === "string"
+          ? Boolean(content.trim())
+          : content.length > 0;
       if (!hasText || !work || !conversation) return;
 
       setValuesOverlay(null);
 
       await stream.submit(
-        buildStreamSubmitInput(work, conversation, modelTemperature, [
-          { type: "human" as const, content },
-        ]),
+        buildStreamSubmitInput(work, conversation, modelTemperature, [message]),
         {
           streamMode: [...LANGGRAPH_STREAM_MODE],
         },

@@ -1,4 +1,4 @@
-import { Fragment } from "react";
+import { Fragment, Suspense } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -12,6 +12,7 @@ import {
   UserRoundIcon,
 } from "lucide-react";
 
+import { OutletFallback } from "@/components/outlet-fallback";
 import {
   SettingsPageBody,
   SettingsUserStrip,
@@ -178,7 +179,9 @@ export function SettingsLayout() {
 
             <main className="min-w-0 flex-1">
               <SettingsPageBody>
-                <Outlet />
+                <Suspense fallback={<OutletFallback />}>
+                  <Outlet />
+                </Suspense>
               </SettingsPageBody>
             </main>
           </div>

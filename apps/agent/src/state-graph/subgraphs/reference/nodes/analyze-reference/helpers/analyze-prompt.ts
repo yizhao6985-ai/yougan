@@ -1,5 +1,4 @@
 import { HumanMessage } from "@langchain/core/messages";
-import { humanImageFromUrl } from "@yougan/domain";
 
 import { referenceImagePartFromBuffer } from "./asset-image-part.js";
 import type { ReferenceAssetPrep } from "./prep-types.js";
@@ -51,7 +50,10 @@ export function buildAnalyzeReferenceMessage(
     return new HumanMessage({
       content: [
         { type: "text", text: header },
-        humanImageFromUrl(prep.image_url),
+        {
+          type: "image_url",
+          image_url: { url: prep.image_url },
+        },
       ],
     });
   }

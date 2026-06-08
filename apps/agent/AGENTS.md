@@ -72,7 +72,7 @@ return new Command({
 
 | 子目录 | 职责 |
 |--------|------|
-| `llm/providers/` | **创建**客户端：`catalog`、`createChatModel`、`generateImage`（文本统一 qwen3.7-max） |
+| `llm/providers/` | **创建**客户端：`createChatModel`（Qwen）、`createMultimodalChatModel`（MiniMax）、`generateImage` |
 | `llm/invoke/` | **调用**：`streamChat`（对话）、`invokeStructured`（后台 work，自动 nostream） |
 
 ```typescript

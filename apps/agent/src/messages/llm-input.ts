@@ -1,0 +1,57 @@
+import { HumanMessage, type BaseMessage } from "@langchain/core/messages";
+import {
+  extractAttachmentAssetsFromContent,
+  isHumanAssetContentPart,
+} from "@yougan/domain";
+
+import { messageContentToText } from "./message-content.js";
+
+function attachmentLabel(count: number): string {
+  if (count === 1) return "[用户附带了 1 份参考素材]";
+  return `[用户附带了 ${count} 份参考素材]`;
+}
+
+function humanContentNeedsSanitize(content: HumanMessage["content"]): boolean {
+  if (typeof content === "string") return false;
+  if (!Array.isArray(content)) return false;
+
+  return content.some((part) => {
+    if (typeof part === "string") return false;
+    if (!part || typeof part !== "object") return true;
+    if (isHumanAssetContentPart(part)) return true;
+    return !("type" in part);
+  });
+}
+
+/** 将含附件块的 human 消息压成纯文本，供 Qwen 等非多模态 Chat 使用。 */
+export function sanitizeHumanMessageForTextChat(
+  message: HumanMessage,
+): HumanMessage {
+  if (!humanContentNeedsSanitize(message.content)) return message;
+
+  let text = messageContentToText(message.content).trim();
+  const attachmentCount = extractAttachmentAssetsFromContent(message.content)
+    .length;
+
+  if (attachmentCount > 0) {
+    const label = attachmentLabel(attachmentCount);
+    text = text ? `${label}\n${text}` : label;
+  }
+
+  return new HumanMessage({
+    id: message.id,
+    name: message.name,
+    content: text,
+  });
+}
+
+/** 过滤消息列表中不兼容文本 Chat API 的 human content part。 */
+export function sanitizeMessagesForTextChat(
+  messages: BaseMessage[],
+): BaseMessage[] {
+  return messages.map((message) =>
+    HumanMessage.isInstance(message)
+      ? sanitizeHumanMessageForTextChat(message)
+      : message,
+  );
+}

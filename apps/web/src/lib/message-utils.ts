@@ -1,6 +1,11 @@
 import { AIMessage } from "@langchain/core/messages";
 import type { Message } from "@langchain/langgraph-sdk";
-import { isHumanAssetContentPart } from "@yougan/domain";
+import {
+  buildHumanMessageContent,
+  extractAttachmentAssetsFromContent,
+  isDefaultAttachmentPromptText,
+  type HumanAttachmentAsset,
+} from "@yougan/domain";
 import { messageContentToText as coreMessageContentToText } from "@/lib/message-content";
 
 import { isInternalOpeningModeSystemMessage } from "@/lib/opening-mode-internal";
@@ -16,20 +21,27 @@ type MessageWithBlocks = Message & {
   contentBlocks?: ContentBlockLike[];
 };
 
-function countAttachmentParts(content: MessageContent): number {
-  if (!Array.isArray(content)) return 0;
-  return content.filter(isHumanAssetContentPart).length;
+export function parseHumanMessageForDisplay(content: MessageContent): {
+  text: string;
+  attachments: HumanAttachmentAsset[];
+} {
+  const attachments = extractAttachmentAssetsFromContent(content);
+  let text = messageContentToText(content).trim();
+  if (isDefaultAttachmentPromptText(text, attachments.length)) {
+    text = "";
+  }
+  return { text, attachments };
 }
 
-export function humanMessageDisplayText(content: MessageContent): string {
-  const text = messageContentToText(content);
-  const attachmentCount = countAttachmentParts(content);
-  if (attachmentCount === 0) return text;
-  const label =
-    attachmentCount === 1
-      ? "[1 份参考素材]"
-      : `[${attachmentCount} 份参考素材]`;
-  return text ? `${label} ${text}` : label;
+/** 提交给 LangGraph 的 human 消息；domain asset part 无 type，与 SDK MessageContent 约定兼容。 */
+export function buildSubmitHumanMessage(
+  text: string,
+  attachments: HumanAttachmentAsset[] = [],
+): Message {
+  return {
+    type: "human",
+    content: buildHumanMessageContent(text, attachments) as MessageContent,
+  };
 }
 
 export function messageContentToText(content: MessageContent): string {
@@ -144,6 +156,7 @@ export type RenderItem =
       id: string;
       kind: "human";
       content: string;
+      attachments: HumanAttachmentAsset[];
     }
   | {
       id: string;
@@ -286,12 +299,13 @@ export function buildRenderItems(
     const message = messages[index];
 
     if (message.type === "human") {
-      const content = humanMessageDisplayText(message.content);
-      if (content) {
+      const { text, attachments } = parseHumanMessageForDisplay(message.content);
+      if (text || attachments.length > 0) {
         items.push({
           id: message.id ?? `human-${index}`,
           kind: "human",
-          content,
+          content: text,
+          attachments,
         });
       }
       continue;

@@ -1,4 +1,8 @@
-import { inferMediaKind, type Asset, type ReferenceAnalysis } from "@yougan/domain";
+import {
+  inferMediaKind,
+  type Asset,
+  type ReferenceAnalysis,
+} from "@yougan/domain";
 
 import type { ReferenceAnalyzeRequest } from "./pending-requests.js";
 import { prepareReferenceAudio } from "./prep-audio.js";
@@ -71,7 +75,8 @@ export function finalizeReferenceAnalysis(
 ): ReferenceAnalysis {
   return {
     ...parsed,
-    transcript: prep.transcript?.trim() || parsed.transcript?.trim() || undefined,
+    transcript:
+      prep.transcript?.trim() || parsed.transcript?.trim() || undefined,
     visual_cues: parsed.visual_cues?.trim() || undefined,
   };
 }

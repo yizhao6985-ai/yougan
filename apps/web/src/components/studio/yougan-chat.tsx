@@ -21,6 +21,7 @@ import { Shimmer } from "@/components/ai-elements/shimmer";
 import { useYouganStreamContext } from "@/components/studio/yougan-stream-provider";
 import { useWorkItemNameDialog } from "@/hooks/use-work-item-name-dialog";
 import { WorksCreateMenu } from "@/components/studio/works-create-menu";
+import { HumanMessageAttachments } from "@/components/studio/human-message-attachments";
 import { buildRenderItems } from "@/lib/message-utils";
 import { scene } from "@/lib/scene-styles";
 import { cn } from "@/lib/utils";
@@ -223,10 +224,21 @@ export function YouganChat() {
             >
               {items.map((item, index) => {
                 if (item.kind === "human") {
+                  const hasAttachments = item.attachments.length > 0;
+                  const hasText = Boolean(item.content);
                   return (
                     <Message key={item.id} from="user">
-                      <MessageContent className="whitespace-pre-wrap break-words bg-card text-foreground ring-1 ring-border/80">
-                        {item.content}
+                      <MessageContent className="bg-card text-foreground ring-1 ring-border/80">
+                        <div className="flex flex-col gap-2">
+                          {hasAttachments ? (
+                            <HumanMessageAttachments items={item.attachments} />
+                          ) : null}
+                          {hasText ? (
+                            <p className="whitespace-pre-wrap break-words">
+                              {item.content}
+                            </p>
+                          ) : null}
+                        </div>
                       </MessageContent>
                     </Message>
                   );

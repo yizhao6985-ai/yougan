@@ -1,6 +1,5 @@
-import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
-
 import { invokeStructured } from "#agent/llm/invoke/index.js";
+import { createMultimodalChatModel } from "#agent/llm/providers/index.js";
 
 import type { ReferenceAnalyzeRequest } from "./pending-requests.js";
 import { buildAnalyzeReferenceMessage } from "./analyze-prompt.js";
@@ -15,9 +14,9 @@ import {
 
 export async function analyzeReferenceAsset(
   request: ReferenceAnalyzeRequest,
-  llm: BaseChatModel,
 ): Promise<ReferenceAnalyzeResult> {
   const prep = await prepareReferenceAsset(request);
+  const llm = createMultimodalChatModel({ temperature: 0.2 });
   const parsed = await invokeStructured(
     llm,
     ReferenceAnalyzeSchema,

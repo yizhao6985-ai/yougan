@@ -1,5 +1,5 @@
 /**
- * 阿里百炼 DashScope（OpenAI 兼容模式）Chat 模型工厂。
+ * Qwen（百炼 DashScope OpenAI 兼容）Chat 模型。
  */
 import { env } from "#agent/env.js";
 import {
@@ -13,7 +13,12 @@ function assertDashScopeApiKey(): void {
   }
 }
 
-/** 文本 Chat 模型（对话、结构化输出、多模态 work node 统一使用）。 */
+const QWEN_CHAT_KWARGS = {
+  enable_thinking: false,
+  incremental_output: true,
+} as const;
+
+/** 对话、结构化 work 等文本任务。 */
 export function createChatModel(options?: OpenAiCompatibleChatModelOptions) {
   assertDashScopeApiKey();
 
@@ -21,14 +26,11 @@ export function createChatModel(options?: OpenAiCompatibleChatModelOptions) {
     {
       apiKey: env.dashscopeApiKey,
       baseURL: env.dashscopeBaseUrl,
-      model: env.llmModel,
+      model: env.qwenModel,
       temperature: env.llmTemperature,
       streaming: true,
       maxTokens: env.llmMaxTokens,
-      modelKwargs: {
-        enable_thinking: false,
-        incremental_output: true,
-      },
+      modelKwargs: QWEN_CHAT_KWARGS,
     },
     options,
   );

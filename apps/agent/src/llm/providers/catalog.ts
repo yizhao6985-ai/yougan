@@ -1,21 +1,27 @@
 /**
- * Agent 可用模型目录（百炼 ID、上下文窗口）。
- * @see https://help.aliyun.com/zh/model-studio/getting-started/models
+ * Agent Chat 模型目录。
+ * 仅两个对话模型：Qwen（百炼）、MiniMax（全模态）。
  */
-export const DASHSCOPE_TEXT_MODELS = {
-  qwen37Max: "qwen3.7-max",
+export const QWEN_MODELS = {
+  default: "qwen3.7-max",
 } as const;
 
-export const DASHSCOPE_TEXT_MODEL_MAX_CONTEXT = 990_000 as const;
+export const MINIMAX_MODELS = {
+  m3: "MiniMax-M3",
+} as const;
 
-export type DashScopeTextModelId =
-  (typeof DASHSCOPE_TEXT_MODELS)[keyof typeof DASHSCOPE_TEXT_MODELS];
+export const QWEN_MAX_CONTEXT = 990_000 as const;
+export const MINIMAX_MAX_CONTEXT = 1_000_000 as const;
 
+export type QwenModelId = (typeof QWEN_MODELS)[keyof typeof QWEN_MODELS];
+export type MiniMaxModelId = (typeof MINIMAX_MODELS)[keyof typeof MINIMAX_MODELS];
+
+/** 百炼文生图（非 Chat，仍走 DashScope 原生 API） */
 export const DASHSCOPE_IMAGE_MODELS = {
   qwenImage20Pro: "qwen-image-2.0-pro",
 } as const;
 
-/** 非实时语音识别（Fun-ASR / Paraformer 系列） */
+/** 百炼语音识别（非 Chat，仍走 DashScope 原生 API） */
 export const DASHSCOPE_ASR_MODELS = {
   funAsr: "fun-asr",
 } as const;

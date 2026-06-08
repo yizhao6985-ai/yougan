@@ -86,7 +86,14 @@ START
 
 ## LLM 接入
 
-全部经 **阿里百炼 DashScope**（`DASHSCOPE_API_KEY`，OpenAI 兼容 `compatible-mode/v1`）。默认模型见 `src/llm/providers/catalog.ts`，可用 `LLM_MODEL_*` 覆盖。
+两个 Chat 模型，分工固定：
+
+| 模型 | 环境变量 | 用途 |
+|------|----------|------|
+| **Qwen** | `DASHSCOPE_API_KEY` + `LLM_MODEL` | 对话、结构化 work |
+| **MiniMax** | `MINIMAX_API_KEY` + `MINIMAX_MODEL` | 多模态（参考素材分析等） |
+
+默认模型 ID 见 `src/llm/providers/catalog.ts`。文生图 / ASR 仍走百炼原生 API。
 
 ## llm 分层
 
@@ -97,12 +104,12 @@ START
 
 ## 模型分工
 
-| 场景 | 工厂 | 调用 | 默认模型 |
-|------|------|------|----------|
-| 对话子图 | `createChatModel` | `streamChat` | qwen3.7-max |
-| 参考解析、专员产出 | `createChatModel` | `invokeStructured` | qwen3.7-max |
-| 队列解析、建议、创意总监 | `createChatModel` | `invokeStructured` | qwen3.7-max |
-| 文生图 | `generateImage` | — | qwen-image-2.0-pro |
+| 场景 | 工厂 | 调用 | 模型 |
+|------|------|------|------|
+| 对话子图 | `createChatModel` | `streamChat` | Qwen |
+| 参考素材分析 | `createMultimodalChatModel` | `invokeStructured` | MiniMax |
+| 结构化 work | `createChatModel` | `invokeStructured` | Qwen |
+| 文生图 | `generateImage` | — | 百炼 qwen-image |
 
 ## 相关文档
 

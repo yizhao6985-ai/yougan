@@ -1,6 +1,6 @@
 /**
  * Agent 环境变量解析与归一化。
- * 全部 LLM 经阿里百炼 DashScope OpenAI 兼容端点接入。
+ * Chat：Qwen（百炼 OpenAI 兼容）+ MiniMax（多模态 OpenAI 兼容）。
  */
 import { config as loadEnv } from "dotenv";
 import { dirname, resolve } from "node:path";
@@ -10,7 +10,8 @@ import { z } from "zod";
 import {
   DASHSCOPE_ASR_MODELS,
   DASHSCOPE_IMAGE_MODELS,
-  DASHSCOPE_TEXT_MODELS,
+  MINIMAX_MODELS,
+  QWEN_MODELS,
 } from "./llm/providers/catalog.js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -57,11 +58,15 @@ const AgentEnvSchema = z
     POSTGRES_URI: requiredString,
     DASHSCOPE_API_KEY: optionalString,
     DASHSCOPE_BASE_URL: optionalString,
+    LLM_MODEL: optionalString,
     LLM_MAX_TOKENS: z.coerce.number().int().positive().default(8192),
     LLM_TEMPERATURE: z.coerce.number().min(0).max(2).default(0.7),
-    LLM_MODEL: optionalString,
     LLM_MODEL_IMAGE: optionalString,
     LLM_MODEL_ASR: optionalString,
+    MINIMAX_API_KEY: optionalString,
+    MINIMAX_BASE_URL: optionalString,
+    MINIMAX_MODEL: optionalString,
+    MINIMAX_MAX_TOKENS: z.coerce.number().int().positive().optional(),
     TAVILY_API_KEY: optionalString,
   })
   .transform((env) => {
@@ -74,12 +79,16 @@ const AgentEnvSchema = z
       dashscopeApiKey: env.DASHSCOPE_API_KEY ?? "",
       dashscopeBaseUrl,
       dashscopeApiBaseUrl: resolveDashScopeApiBaseUrl(dashscopeBaseUrl),
+      qwenModel: env.LLM_MODEL ?? QWEN_MODELS.default,
       llmMaxTokens: env.LLM_MAX_TOKENS,
       llmTemperature: env.LLM_TEMPERATURE,
-      llmModel: env.LLM_MODEL ?? DASHSCOPE_TEXT_MODELS.qwen37Max,
       llmModelImage:
         env.LLM_MODEL_IMAGE ?? DASHSCOPE_IMAGE_MODELS.qwenImage20Pro,
       llmModelAsr: env.LLM_MODEL_ASR ?? DASHSCOPE_ASR_MODELS.funAsr,
+      minimaxApiKey: env.MINIMAX_API_KEY ?? "",
+      minimaxBaseUrl: env.MINIMAX_BASE_URL ?? "https://api.minimaxi.com/v1",
+      minimaxModel: env.MINIMAX_MODEL ?? MINIMAX_MODELS.m3,
+      minimaxMaxTokens: env.MINIMAX_MAX_TOKENS ?? env.LLM_MAX_TOKENS,
       tavilyApiKey: env.TAVILY_API_KEY ?? "",
     };
   });

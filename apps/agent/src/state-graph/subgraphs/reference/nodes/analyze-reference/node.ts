@@ -1,7 +1,6 @@
 /**
  * 参考素材分析节点：并行分析待处理附件并写入 staging.references。
  */
-import { createChatModel } from "#agent/llm/providers/index.js";
 import {
   getReferences,
   patchPendingReferences,
@@ -18,10 +17,9 @@ export async function analyzeReferenceNode(
   const requests = listPendingAnalyzeRequests(state);
   if (!requests.length) return {};
 
-  const llm = createChatModel({ temperature: 0.2 });
   const analyzed = await Promise.all(
     requests.map(async (request) => {
-      const parsed = await analyzeReferenceAsset(request, llm);
+      const parsed = await analyzeReferenceAsset(request);
       const analyzedAt = new Date().toISOString();
       return newWorkReference({
         asset: request.asset,

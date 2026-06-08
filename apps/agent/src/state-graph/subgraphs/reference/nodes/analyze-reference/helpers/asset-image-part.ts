@@ -1,13 +1,12 @@
-import type { HumanImageBase64ContentPart } from "@yougan/domain";
-
+/** OpenAI 兼容多模态 image_url content block */
 export function referenceImagePartFromBuffer(
   frame: Buffer,
   mimeType = "image/jpeg",
-): HumanImageBase64ContentPart {
+) {
   return {
-    type: "image",
-    source_type: "base64",
-    mime_type: mimeType,
-    data: frame.toString("base64"),
+    type: "image_url" as const,
+    image_url: {
+      url: `data:${mimeType};base64,${frame.toString("base64")}`,
+    },
   };
 }

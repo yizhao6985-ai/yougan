@@ -2,10 +2,13 @@
  * 结构化输出调用（同步 invoke）。
  * 内部 LLM 默认带 nostream tag，避免 messages-tuple 泄漏到前端。
  */
+import type { BaseMessage } from "@langchain/core/messages";
 import type { BaseLanguageModelInput } from "@langchain/core/language_models/base";
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import type { RunnableConfig } from "@langchain/core/runnables";
 import type { z } from "zod";
+
+import { sanitizeMessagesForTextChat } from "#agent/messages/llm-input.js";
 
 type StructuredOutputMethod = "functionCalling" | "jsonMode";
 
@@ -29,14 +32,23 @@ export function isolatedStructuredConfig(
   return { ...config, tags };
 }
 
-/** 百炼 thinking mode 与 functionCalling 结构化输出不兼容。 */
+/** Qwen：关闭 thinking，避免与 functionCalling 结构化输出冲突。 */
 function forStructuredInvoke(llm: BaseChatModel): BaseChatModel {
   const chat = llm as ChatModelWithKwargs;
-  chat.modelKwargs = {
-    ...chat.modelKwargs,
-    enable_thinking: false,
-  };
+  if (chat.modelKwargs !== undefined) {
+    chat.modelKwargs = {
+      ...chat.modelKwargs,
+      enable_thinking: false,
+    };
+  }
   return llm;
+}
+
+function sanitizeStructuredInput(
+  input: BaseLanguageModelInput,
+): BaseLanguageModelInput {
+  if (!Array.isArray(input)) return input;
+  return sanitizeMessagesForTextChat(input as BaseMessage[]);
 }
 
 /** 同步结构化输出，返回 Zod 校验后的对象。 */
@@ -52,7 +64,7 @@ export async function invokeStructured<T extends Record<string, unknown>>(
     method: options?.method ?? "functionCalling",
   });
   return structured.invoke(
-    input,
+    sanitizeStructuredInput(input),
     isolatedStructuredConfig(config),
   ) as Promise<T>;
 }
