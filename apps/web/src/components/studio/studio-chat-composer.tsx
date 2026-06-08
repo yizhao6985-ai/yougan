@@ -11,23 +11,24 @@ import {
 import { ComposerAttachmentDrawer } from "@/components/studio/composer-attachment-drawer";
 import { useComposerAttachmentsContext } from "@/components/studio/composer-attachments-context";
 import { ModelTemperatureControl } from "@/components/studio/model-temperature-control";
-import { UploadReferenceButton } from "@/components/studio/upload-reference-button";
+import { UploadReferenceButtons } from "@/components/studio/upload-reference-button";
 import { useYouganStreamContext } from "@/components/studio/yougan-stream-provider";
 import { scene } from "@/lib/scene-styles";
+import type { HumanAttachmentAsset } from "@yougan/domain";
 import { CHAT_COPY } from "@/lib/site-copy";
-import type { TurnQueueKind } from "@/lib/types";
 
 type StudioChatComposerProps = {
-  activeTurnKind?: TurnQueueKind;
   input: string;
   onInputChange: (value: string) => void;
-  onSend: (payload: { text: string; imageUrls: string[] }) => void | Promise<void>;
+  onSend: (payload: {
+    text: string;
+    attachments: HumanAttachmentAsset[];
+  }) => void | Promise<void>;
   onStop?: () => void | Promise<void>;
   chatStatus: "ready" | "submitted" | "streaming" | "error";
 };
 
 export function StudioChatComposer({
-  activeTurnKind,
   input,
   onInputChange,
   onSend,
@@ -38,23 +39,27 @@ export function StudioChatComposer({
     useYouganStreamContext();
   const {
     clear,
-    readyUrls,
+    readyAttachments,
     hasReady,
     hasUploading,
   } = useComposerAttachmentsContext();
 
   const handleSubmit = useCallback(
     async (message: { text: string }) => {
-      const urls = readyUrls();
+      const attachments = readyAttachments();
       const trimmed = message.text.trim();
-      if ((!trimmed && urls.length === 0) || stream.isLoading || hasUploading) {
+      if (
+        (!trimmed && attachments.length === 0) ||
+        stream.isLoading ||
+        hasUploading
+      ) {
         return;
       }
       onInputChange("");
       clear();
-      await onSend({ text: trimmed, imageUrls: urls });
+      await onSend({ text: trimmed, attachments });
     },
-    [clear, hasUploading, onInputChange, onSend, readyUrls, stream.isLoading],
+    [clear, hasUploading, onInputChange, onSend, readyAttachments, stream.isLoading],
   );
 
   const canSubmit =
@@ -75,14 +80,11 @@ export function StudioChatComposer({
       </PromptInputBody>
       <PromptInputFooter>
         <PromptInputTools className="flex-wrap gap-2">
-          <UploadReferenceButton />
-          {activeTurnKind === "production" ? (
-            <ModelTemperatureControl
-              level={modelTemperatureLevel}
-              onChange={setModelTemperatureLevel}
-              disabled={stream.isLoading}
-            />
-          ) : null}
+          <UploadReferenceButtons />
+          <ModelTemperatureControl
+            level={modelTemperatureLevel}
+            onChange={setModelTemperatureLevel}
+          />
         </PromptInputTools>
         <PromptInputSubmit
           disabled={!canSubmit && chatStatus !== "streaming"}

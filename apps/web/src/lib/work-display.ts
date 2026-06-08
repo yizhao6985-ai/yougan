@@ -4,9 +4,9 @@ import type { Work } from "@/lib/types";
 export function workSubtitle(
   work: Pick<Work, "profile">,
 ): string | null {
-  const topic = work.profile?.spec?.content_topic?.trim();
+  const topic = work.profile?.delivery?.topic?.trim();
   if (topic) return topic;
-  const premise = work.profile?.premise?.trim();
-  if (premise) return premise.length > 24 ? `${premise.slice(0, 24)}…` : premise;
+  const summary = work.profile?.blueprint?.summary?.trim();
+  if (summary) return summary.length > 24 ? `${summary.slice(0, 24)}…` : summary;
   return null;
 }

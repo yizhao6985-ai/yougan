@@ -1,13 +1,13 @@
 import {
   CONTENT_FORMATS,
   MEDIA_MODALITIES,
-} from "../../models/content/catalog.js";
+} from "../../models/taxonomy/content.js";
 import {
   DISCOVER_PLATFORMS,
   DISCOVER_TOPIC_CATEGORIES,
   EMPTY_DISCOVER_FILTERS,
   type DiscoverFilters,
-} from "../../models/discover/taxonomy.js";
+} from "../../models/taxonomy/discover.js";
 
 export { EMPTY_DISCOVER_FILTERS };
 

@@ -53,7 +53,7 @@ flowchart TB
 | 标签 | `hashtags` | 话题传播 |
 | 封面与配图 | `coverUrl`、`images` | 列表展示 |
 
-taxonomy 定义于 `apps/api/src/lib/discover-taxonomy.ts`，前端 catalog 同步于 `apps/web/src/lib/discover-taxonomy.ts`。
+taxonomy 定义于 `packages/domain/src/models/taxonomy/`，API/前端同步于 `apps/web/src/lib/discover-taxonomy.ts`。
 
 **完整分类设计文档**：[content-taxonomy.md](./content-taxonomy.md)
 

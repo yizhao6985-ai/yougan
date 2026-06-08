@@ -1,19 +1,18 @@
 /** ask 子图 LLM 系统提示词（纯答疑，不改方案与成稿） */
 import {
   profileSummary,
-  referencesSummary,
-  resolveContentSpecFromProfile,
+  profileReferencesSummary,
+  resolveDeliveryFromProfile,
 } from "@yougan/domain";
 import { composeSystemPrompt } from "#agent/system-prompt.js";
-import { getProfile } from "#agent/state-io/index.js";
+import { getProfile, getReferences } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 import { resolveIndustryContext } from "../../../production/nodes/llm-call/prompt.js";
 
 export function buildAskPrompt(state: AgentStateType): string {
   const profile = getProfile(state);
-  const industry = resolveIndustryContext(
-    resolveContentSpecFromProfile(profile),
-  );
+  const references = getReferences(state);
+  const industry = resolveIndustryContext(resolveDeliveryFromProfile(profile));
 
   const modePrompt = `当前任务：提问答疑（不执行制作，不修改作品方案）
 
@@ -23,9 +22,9 @@ export function buildAskPrompt(state: AgentStateType): string {
 3. 禁止代为修改方案结构或触发制作；除 tavily_search 外不要调用其他工具
 
 作品方案（只读参考）：
-${profileSummary(profile)}
+${profileSummary(profile, references)}
 
-${referencesSummary(profile.references)}
+${profileReferencesSummary(references)}
 
 行业参考：
 ${industry}`;

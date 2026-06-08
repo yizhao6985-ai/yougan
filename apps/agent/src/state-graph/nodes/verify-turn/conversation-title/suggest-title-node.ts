@@ -9,7 +9,7 @@ import {
 import { createChatModel } from "#agent/llm/providers/index.js";
 import { shouldSuggestConversationTitle } from "./should-suggest-title.js";
 import {
-  getLatestHumanMessageImageParts,
+  getLatestHumanMessageAttachments,
   getLatestHumanMessageText,
 } from "#agent/messages/human.js";
 import { invokeStructured } from "#agent/llm/invoke/index.js";
@@ -24,7 +24,7 @@ function buildConversationTitlePrompt(
   state: AgentStateType,
   userMessage: string,
   lastAssistantReply: string,
-  hasImages: boolean,
+  hasAttachments: boolean,
 ): string {
   const profile = getProfile(state);
   const conversationTitle = state.conversationTitle?.trim() || "（未命名）";
@@ -34,25 +34,25 @@ function buildConversationTitlePrompt(
 ${profileSummary(profile)}
 
 ${YOUGAN_USER_LABEL}首条消息：
-${userMessage || (hasImages ? "（仅上传图片，无文字说明）" : "（空）")}
+${userMessage || (hasAttachments ? "（仅上传参考素材，无文字说明）" : "（空）")}
 
 AI 本轮回复（节选，供理解话题）：
 ${lastAssistantReply.trim() || "（尚无可见回复）"}
 
 输出要求：
 - conversationTitle：不超过 ${MAX_CONVERSATION_TITLE_LENGTH} 字的中文短语，概括创作主题（总结，不要照抄整句）
-- 仅图片无文字时，可写如「参考图选题讨论」
+- 仅附件无文字时，可写如「参考素材讨论」
 - 不要引号、不要含「对话」字样`;
 }
 
 function fallbackTitle(
   userMessage: string,
-  hasImages: boolean,
+  hasAttachments: boolean,
 ): string | null {
   const fromText = fallbackConversationTitleFromText(userMessage);
   if (fromText) return fromText;
-  if (hasImages) {
-    return sanitizeAutoConversationTitle("参考图讨论");
+  if (hasAttachments) {
+    return sanitizeAutoConversationTitle("参考素材讨论");
   }
   return null;
 }
@@ -66,8 +66,8 @@ export async function generateSuggestedConversationTitle(
   }
 
   const userMessage = getLatestHumanMessageText(state.messages);
-  const hasImages =
-    getLatestHumanMessageImageParts(state.messages).length > 0;
+  const hasAttachments =
+    getLatestHumanMessageAttachments(state.messages).length > 0;
   const { lastAssistant } = extractLastMessages(state);
 
   const llm = createChatModel({ temperature: 0.2 });
@@ -75,7 +75,7 @@ export async function generateSuggestedConversationTitle(
     state,
     userMessage,
     lastAssistant,
-    hasImages,
+    hasAttachments,
   );
 
   try {
@@ -87,9 +87,9 @@ export async function generateSuggestedConversationTitle(
     );
     const suggested =
       sanitizeAutoConversationTitle(parsed.conversationTitle) ??
-      fallbackTitle(userMessage, hasImages);
+      fallbackTitle(userMessage, hasAttachments);
     return suggested;
   } catch {
-    return fallbackTitle(userMessage, hasImages);
+    return fallbackTitle(userMessage, hasAttachments);
   }
 }

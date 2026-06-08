@@ -1,21 +1,31 @@
 export type {
-  ProfileBeat,
-  ProfileConstraint,
+  Work,
+  WorkVersion,
+  WorkVersionSnapshot,
+  WorkGroup,
+  SyncWorkState,
+  AgentContext,
+} from "@/services/types";
+
+export type {
+  ProfileSegment,
+  ProfileGuardrail,
+  ProfileDelivery,
+  FormatParams,
   NextStepSuggestion,
   NextStepSuggestions,
-  ChatMode,
   ExecutedPlanTask,
   ProductionDepartment,
   ProductionPlanTask,
+  Asset,
+  HumanAttachmentAsset,
+  HumanMessageContentPart,
+  WorkReference,
+  /** @deprecated Use WorkReference */
   ReferenceItem,
-  RevisionKind,
-  UserRevisionPhase,
   WorkPreview,
-  WorkDTO,
   WorkProductionPlan,
   WorkProfile,
-  WorkRevisionDTO,
-  WorkRevisionSnapshot,
   YouganAgentState,
   YouganStreamValues,
   YouganAgentSubmitInput,
@@ -23,44 +33,21 @@ export type {
 } from "@yougan/domain";
 
 export {
-  CHAT_MODES,
   DEFAULT_NEXT_STEP_SUGGESTIONS_HINT,
   EMPTY_WORK_PROFILE,
   EMPTY_WORK_PRODUCTION_PLAN,
   EMPTY_WORK_REFERENCES,
-  getProfilePremise,
+  mergeReferencesForDisplay,
+  getProfileSummary,
   getPlanSummary,
   hasProfileContent,
-  hasProfileBeats,
+  hasProfileSegments,
   isProfileActionable,
   isPlanReady,
   parseProfileJson,
   parseProductionPlanJson,
-  REVISION_KINDS,
-  USER_REVISION_PHASES,
   TURN_QUEUE_KINDS,
 } from "@yougan/domain";
-
-export interface WorkGroup {
-  id: string;
-  title: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Work {
-  id: string;
-  title: string;
-  groupId: string | null;
-  profile: import("@yougan/domain").WorkProfile;
-  productionPlan: import("@yougan/domain").WorkProductionPlan;
-  preview: import("@yougan/domain").WorkPreview | null;
-  headRevisionId: string | null;
-  sourceWorkId: string | null;
-  sourceRevisionId: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
 
 export interface WorkConversation {
   id: string;

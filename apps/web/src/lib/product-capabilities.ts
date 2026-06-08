@@ -9,8 +9,6 @@ import {
   WandSparklesIcon,
 } from "lucide-react";
 
-import type { ChatMode } from "@/lib/types";
-
 /** 能力页展示的创作形态示例（非平台绑定） */
 export const PRODUCTION_FORMS = [
   "观点长文",
@@ -21,11 +19,10 @@ export const PRODUCTION_FORMS = [
   "脚本口播",
 ] as const;
 
-export type CapabilityMode = {
-  id: ChatMode;
+export type StudioCapability = {
   anchor: string;
   icon: LucideIcon;
-  /** 能力页与首页卡片上的阶段名称 */
+  /** 能力页与首页卡片上的名称 */
   label: string;
   /** 首页能力卡片摘要 */
   teaser: string;
@@ -35,9 +32,8 @@ export type CapabilityMode = {
   avoids: string[];
 };
 
-export const STUDIO_CAPABILITY_MODES: CapabilityMode[] = [
+export const STUDIO_CAPABILITIES: StudioCapability[] = [
   {
-    id: "profile",
     anchor: "profile",
     icon: ListTreeIcon,
     label: "作品方案",
@@ -54,7 +50,6 @@ export const STUDIO_CAPABILITY_MODES: CapabilityMode[] = [
     avoids: ["不直接写出完整正文", "不执行制作任务"],
   },
   {
-    id: "production",
     anchor: "production",
     icon: WandSparklesIcon,
     label: "制作",
@@ -71,19 +66,18 @@ export const STUDIO_CAPABILITY_MODES: CapabilityMode[] = [
     avoids: ["不跳过任务记录直接生成"],
   },
   {
-    id: "ask",
     anchor: "ask",
     icon: BookOpenIcon,
     label: "提问",
     teaser: "优化建议、创作答疑、背景知识，随时可问。",
     tagline: "有问题，随时问",
     summary:
-      "提问阶段：问怎么做得更好给优化建议；问创作方法帮你答疑学习；问行业、受众等背景也一并作答。",
+      "问怎么做得更好给优化建议；问创作方法帮你答疑学习；问行业、受众等背景也一并作答。若要写入方案，说明意图即可。",
     highlights: [
       "优化类：怎么改、怎么提升、哪里可以更好",
       "学习类：创作技巧、结构、概念与方法答疑",
       "背景类：行业趋势、受众与表达逻辑",
-      "若要写入方案，说明后由编排进入方案维护",
+      "需要落进方案时，说明后系统会帮你整理",
     ],
     avoids: ["不直接生成交付稿", "不制定制作计划"],
   },
@@ -108,7 +102,7 @@ export const WORKFLOW_STEPS = [
   {
     step: "04",
     title: "提问 · 随时答疑",
-    body: "优化建议、创作方法、行业背景——Agent 会按修改对象自动路由到方案或制作。",
+    body: "优化建议、创作方法、行业背景——有需要随时问，系统会在对话里帮你处理。",
   },
 ] as const;
 
@@ -130,10 +124,10 @@ export const STUDIO_PANELS = [
   },
 ] as const;
 
-export const HOME_FEATURE_TEASERS = STUDIO_CAPABILITY_MODES.map((mode) => ({
-  title: mode.label,
-  body: mode.teaser,
-  href: `/features#${mode.anchor}`,
+export const HOME_FEATURE_TEASERS = STUDIO_CAPABILITIES.map((capability) => ({
+  title: capability.label,
+  body: capability.teaser,
+  href: `/features#${capability.anchor}`,
 }));
 
 export const EXTRA_CAPABILITIES = [
@@ -145,6 +139,6 @@ export const EXTRA_CAPABILITIES = [
   {
     icon: SparklesIcon,
     title: "智能回合编排",
-    body: "每条消息按修改对象自动编排：改方案走 profile，出预览走 production；复合意图可串联多步。",
+    body: "每条消息按你的意图自动编排：改方案、出预览或答疑，复合需求也可一步串联。",
   },
 ] as const;

@@ -756,7 +756,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/works/{workId}/revisions": {
+    "/api/works/{workId}/versions": {
         parameters: {
             query?: never;
             header?: never;
@@ -774,14 +774,14 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Revision history for a work */
+                /** @description Version history for a work */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
                         "application/json": {
-                            revisions: components["schemas"]["WorkRevision"][];
+                            versions: components["schemas"]["WorkVersion"][];
                         };
                     };
                 };
@@ -795,7 +795,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/works/{workId}/restore/{revisionId}": {
+    "/api/works/{workId}/restore/{versionId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -810,20 +810,20 @@ export interface paths {
                 header?: never;
                 path: {
                     workId: string;
-                    revisionId: string;
+                    versionId: string;
                 };
                 cookie?: never;
             };
             requestBody?: never;
             responses: {
-                /** @description Restore work to a revision snapshot */
+                /** @description Restore work to a version snapshot */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
                         "application/json": {
-                            revision: components["schemas"]["WorkRevision"];
+                            version: components["schemas"]["WorkVersion"];
                             work: components["schemas"]["Work"];
                         };
                     };
@@ -859,12 +859,12 @@ export interface paths {
                     "application/json": {
                         title?: string;
                         groupId?: string | null;
-                        revisionId?: string;
+                        versionId?: string;
                     };
                 };
             };
             responses: {
-                /** @description Duplicate work from current or historical revision */
+                /** @description Duplicate work from current or historical version */
                 201: {
                     headers: {
                         [name: string]: unknown;
@@ -1243,49 +1243,107 @@ export interface components {
             createdAt: string;
             updatedAt: string;
         };
-        ReferenceItem: {
-            /** @enum {string} */
-            source_type: "text" | "image" | "web";
-            summary: string;
-            keywords?: string[];
-            tone_hints?: string[];
-            structure_hints?: string[];
-            hashtags?: string[];
-            raw_excerpt?: string | null;
-            image_url?: string | null;
-            url?: string | null;
-            title?: string | null;
-        };
-        WorkReferences: components["schemas"]["ReferenceItem"][];
         WorkProfile: {
-            spec: {
+            delivery: {
+                topic: string;
+                format: string;
+                modalities: string[];
                 platform?: string | null;
-                content_topic?: string | null;
-                content_type?: string | null;
-                content_format?: string | null;
-                media_modalities?: string[];
-            };
-            voice: {
-                audience?: string | null;
-                tone?: string | null;
-                style?: string | null;
-                persona?: string | null;
-                goals?: string[];
-            };
-            premise: string;
-            references: components["schemas"]["WorkReferences"];
-            constraints: {
-                id: string;
-                description: string;
-                confirmed_at: string;
-            }[];
-            beats: {
-                id: string;
-                description: string;
+                category?: string | null;
                 intent?: string | null;
+            };
+            expression: {
+                audience?: string | null;
+                verbal?: {
+                    tone?: string | null;
+                    style?: string | null;
+                    persona?: string | null;
+                };
+                visual?: {
+                    style?: string | null;
+                    mood?: string | null;
+                    palette?: string | null;
+                };
+            };
+            blueprint: {
+                summary: string;
+                segments: {
+                    id: string;
+                    confirmed_at: string;
+                    role?: string | null;
+                    title?: string | null;
+                    description: string;
+                }[];
+            };
+            guardrails: {
+                id: string;
+                description: string;
+                /** @enum {string} */
+                scope: "all" | "verbal" | "visual" | "audio" | "video";
                 confirmed_at: string;
             }[];
+            params: {
+                /** @enum {string} */
+                kind: "text";
+                word_count?: {
+                    min?: number;
+                    max?: number;
+                };
+                /** @enum {string} */
+                emoji_level?: "none" | "light" | "heavy";
+            } | {
+                /** @enum {string} */
+                kind: "illustration";
+                aspect_ratio?: string;
+                image_count?: number;
+                negative_hints?: string[];
+            } | {
+                /** @enum {string} */
+                kind: "video";
+                duration_sec?: number;
+                aspect_ratio?: string;
+                pacing?: string;
+            } | {
+                /** @enum {string} */
+                kind: "audio";
+                duration_sec?: number;
+                segment_count?: number;
+            };
         };
+        Asset: {
+            key: string;
+            url: string;
+            mime_type: string;
+            size_bytes?: number | null;
+            original_name?: string | null;
+        };
+        WorkReference: {
+            id: string;
+            content: {
+                /** @enum {string} */
+                kind: "text";
+                text: string;
+            } | {
+                /** @enum {string} */
+                kind: "asset";
+                asset: components["schemas"]["Asset"];
+            };
+            analysis: {
+                summary: string;
+                keywords?: string[];
+                tone_hints?: string[];
+                style_hints?: string[];
+                structure_hints?: string[];
+                transcript?: string;
+                visual_cues?: string;
+            };
+            intent: {
+                summary: string;
+            };
+            analyzed_at: string;
+            created_at: string;
+        };
+        WorkReferences: components["schemas"]["WorkReference"][];
         WorkProductionPlan: {
             pending_tasks: {
                 id: string;
@@ -1332,17 +1390,19 @@ export interface components {
             title: string;
             groupId: string | null;
             profile: components["schemas"]["WorkProfile"];
+            references: components["schemas"]["WorkReferences"];
             productionPlan: components["schemas"]["WorkProductionPlan"];
             preview: components["schemas"]["WorkPreview"];
-            headRevisionId: string | null;
+            headVersionId: string | null;
             sourceWorkId: string | null;
-            sourceRevisionId: string | null;
+            sourceVersionId: string | null;
             createdAt: string;
             updatedAt: string;
         };
         SyncWorkState: {
             groupId?: string | null;
             profile?: components["schemas"]["WorkProfile"];
+            references?: components["schemas"]["WorkReferences"];
             productionPlan?: components["schemas"]["WorkProductionPlan"];
             preview?: components["schemas"]["WorkPreview"];
             title?: string;
@@ -1350,30 +1410,28 @@ export interface components {
         AgentContext: {
             workId: string;
             conversationId?: string;
-            headRevisionId?: string | null;
+            headVersionId?: string | null;
             profile: components["schemas"]["WorkProfile"];
+            references: components["schemas"]["WorkReferences"];
             productionPlan: components["schemas"]["WorkProductionPlan"];
             preview: components["schemas"]["WorkPreview"];
             threadId?: string | null;
             workTitle?: string;
             conversationTitle?: string;
         };
-        WorkRevisionSnapshot: {
+        WorkVersionSnapshot: {
             profile: components["schemas"]["WorkProfile"];
+            references: components["schemas"]["WorkReferences"];
             productionPlan: components["schemas"]["WorkProductionPlan"];
             preview: components["schemas"]["WorkPreview"];
         };
-        WorkRevision: {
+        WorkVersion: {
             id: string;
             workId: string;
-            parentRevisionId: string | null;
+            parentVersionId: string | null;
             conversationId: string | null;
-            /** @enum {string} */
-            kind: "work_created" | "work_duplicated" | "work_restored" | "references_updated" | "profile_constraint_added" | "profile_constraint_updated" | "profile_constraint_removed" | "profile_beat_added" | "profile_beat_updated" | "profile_beat_removed" | "profile_revised" | "production_plan_ready" | "production_plan_revised" | "execution_complete";
-            /** @enum {string} */
-            phase: "preview";
             summary: string;
-            snapshot: components["schemas"]["WorkRevisionSnapshot"];
+            snapshot: components["schemas"]["WorkVersionSnapshot"];
             createdAt: string;
         };
         UploadResponse: {

@@ -1,61 +1,139 @@
 import { z } from "zod";
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
-import { REVISION_KINDS, USER_REVISION_PHASES } from "@yougan/domain";
 
 extendZodWithOpenApi(z);
 
-export const ReferenceItemSchema = z
+export const AssetSchema = z
   .object({
-    source_type: z.enum(["text", "image", "web"]),
-    summary: z.string(),
-    keywords: z.array(z.string()).optional(),
-    tone_hints: z.array(z.string()).optional(),
-    structure_hints: z.array(z.string()).optional(),
-    hashtags: z.array(z.string()).optional(),
-    raw_excerpt: z.string().nullable().optional(),
-    image_url: z.string().nullable().optional(),
-    url: z.string().nullable().optional(),
-    title: z.string().nullable().optional(),
+    key: z.string(),
+    url: z.string(),
+    mime_type: z.string(),
+    size_bytes: z.number().nullable().optional(),
+    original_name: z.string().nullable().optional(),
   })
-  .openapi("ReferenceItem");
+  .openapi("Asset");
+
+const ReferenceContentSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("text"),
+    text: z.string(),
+  }),
+  z.object({
+    kind: z.literal("asset"),
+    asset: AssetSchema,
+  }),
+]);
+
+const ReferenceAnalysisSchema = z.object({
+  summary: z.string(),
+  keywords: z.array(z.string()).optional(),
+  tone_hints: z.array(z.string()).optional(),
+  style_hints: z.array(z.string()).optional(),
+  structure_hints: z.array(z.string()).optional(),
+  transcript: z.string().optional(),
+  visual_cues: z.string().optional(),
+});
+
+const ReferenceIntentSchema = z.object({
+  summary: z.string(),
+});
+
+export const WorkReferenceSchema = z
+  .object({
+    id: z.string(),
+    content: ReferenceContentSchema,
+    analysis: ReferenceAnalysisSchema,
+    intent: ReferenceIntentSchema,
+    analyzed_at: z.string(),
+    created_at: z.string(),
+  })
+  .openapi("WorkReference");
+
+/** @deprecated Use WorkReferenceSchema */
+export const ReferenceItemSchema = WorkReferenceSchema;
 
 export const WorkReferencesSchema = z
-  .array(ReferenceItemSchema)
+  .array(WorkReferenceSchema)
   .openapi("WorkReferences");
+
+const FormatParamsSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("text"),
+    word_count: z
+      .object({
+        min: z.number().optional(),
+        max: z.number().optional(),
+      })
+      .optional(),
+    emoji_level: z.enum(["none", "light", "heavy"]).optional(),
+  }),
+  z.object({
+    kind: z.literal("illustration"),
+    aspect_ratio: z.string().optional(),
+    image_count: z.number().optional(),
+    negative_hints: z.array(z.string()).optional(),
+  }),
+  z.object({
+    kind: z.literal("video"),
+    duration_sec: z.number().optional(),
+    aspect_ratio: z.string().optional(),
+    pacing: z.string().optional(),
+  }),
+  z.object({
+    kind: z.literal("audio"),
+    duration_sec: z.number().optional(),
+    segment_count: z.number().optional(),
+  }),
+]);
 
 export const WorkProfileSchema = z
   .object({
-    spec: z.object({
+    delivery: z.object({
+      topic: z.string(),
+      format: z.string(),
+      modalities: z.array(z.string()),
       platform: z.string().nullable().optional(),
-      content_topic: z.string().nullable().optional(),
-      content_type: z.string().nullable().optional(),
-      content_format: z.string().nullable().optional(),
-      media_modalities: z.array(z.string()).optional(),
+      category: z.string().nullable().optional(),
+      intent: z.string().nullable().optional(),
     }),
-    voice: z.object({
+    expression: z.object({
       audience: z.string().nullable().optional(),
-      tone: z.string().nullable().optional(),
-      style: z.string().nullable().optional(),
-      persona: z.string().nullable().optional(),
-      goals: z.array(z.string()).optional(),
+      verbal: z
+        .object({
+          tone: z.string().nullable().optional(),
+          style: z.string().nullable().optional(),
+          persona: z.string().nullable().optional(),
+        })
+        .optional(),
+      visual: z
+        .object({
+          style: z.string().nullable().optional(),
+          mood: z.string().nullable().optional(),
+          palette: z.string().nullable().optional(),
+        })
+        .optional(),
     }),
-    premise: z.string(),
-    references: WorkReferencesSchema,
-    constraints: z.array(
+    blueprint: z.object({
+      summary: z.string(),
+      segments: z.array(
+        z.object({
+          id: z.string(),
+          confirmed_at: z.string(),
+          role: z.string().nullable().optional(),
+          title: z.string().nullable().optional(),
+          description: z.string(),
+        }),
+      ),
+    }),
+    guardrails: z.array(
       z.object({
         id: z.string(),
         description: z.string(),
+        scope: z.enum(["all", "verbal", "visual", "audio", "video"]),
         confirmed_at: z.string(),
       }),
     ),
-    beats: z.array(
-      z.object({
-        id: z.string(),
-        description: z.string(),
-        intent: z.string().nullable().optional(),
-        confirmed_at: z.string(),
-      }),
-    ),
+    params: FormatParamsSchema,
   })
   .openapi("WorkProfile");
 
@@ -112,28 +190,26 @@ export const WorkPreviewSchema = z
   })
   .openapi("WorkPreview");
 
-
-export const WorkRevisionSnapshotSchema = z
+export const WorkVersionSnapshotSchema = z
   .object({
     profile: WorkProfileSchema,
+    references: WorkReferencesSchema,
     productionPlan: WorkProductionPlanSchema,
     preview: WorkPreviewSchema.nullable(),
   })
-  .openapi("WorkRevisionSnapshot");
+  .openapi("WorkVersionSnapshot");
 
-export const WorkRevisionSchema = z
+export const WorkVersionSchema = z
   .object({
     id: z.string(),
     workId: z.string(),
-    parentRevisionId: z.string().nullable(),
+    parentVersionId: z.string().nullable(),
     conversationId: z.string().nullable(),
-    kind: z.enum(REVISION_KINDS),
-    phase: z.enum(USER_REVISION_PHASES),
     summary: z.string(),
-    snapshot: WorkRevisionSnapshotSchema,
+    snapshot: WorkVersionSnapshotSchema,
     createdAt: z.string(),
   })
-  .openapi("WorkRevision");
+  .openapi("WorkVersion");
 
 export const WorkGroupSchema = z
   .object({
@@ -150,11 +226,12 @@ export const WorkSchema = z
     title: z.string(),
     groupId: z.string().nullable(),
     profile: WorkProfileSchema,
+    references: WorkReferencesSchema,
     productionPlan: WorkProductionPlanSchema,
     preview: WorkPreviewSchema.nullable(),
-    headRevisionId: z.string().nullable(),
+    headVersionId: z.string().nullable(),
     sourceWorkId: z.string().nullable(),
-    sourceRevisionId: z.string().nullable(),
+    sourceVersionId: z.string().nullable(),
     createdAt: z.string(),
     updatedAt: z.string(),
   })
@@ -183,19 +260,6 @@ export const UserSchema = z
   })
   .openapi("User");
 
-export const UserProfileStatsSchema = z
-  .object({
-    publicationCount: z.number(),
-    totalViews: z.number(),
-    publicationsByMonth: z.array(
-      z.object({
-        month: z.string(),
-        count: z.number(),
-      }),
-    ),
-  })
-  .openapi("UserProfileStats");
-
 export const AuthTokenSchema = z
   .object({
     token: z.string(),
@@ -215,6 +279,7 @@ export const SyncWorkStateSchema = z
   .object({
     groupId: z.string().nullable().optional(),
     profile: WorkProfileSchema.optional(),
+    references: WorkReferencesSchema.optional(),
     productionPlan: WorkProductionPlanSchema.optional(),
     preview: WorkPreviewSchema.nullable().optional(),
     title: z.string().optional(),
@@ -232,8 +297,9 @@ export const AgentContextSchema = z
   .object({
     workId: z.string(),
     conversationId: z.string().optional(),
-    headRevisionId: z.string().nullable().optional(),
+    headVersionId: z.string().nullable().optional(),
     profile: WorkProfileSchema,
+    references: WorkReferencesSchema,
     productionPlan: WorkProductionPlanSchema,
     preview: WorkPreviewSchema.nullable(),
     threadId: z.string().nullable().optional(),
@@ -245,7 +311,9 @@ export const AgentContextSchema = z
 export type WorkDTO = z.infer<typeof WorkSchema>;
 export type WorkConversationDTO = z.infer<typeof WorkConversationSchema>;
 export type WorkGroupDTO = z.infer<typeof WorkGroupSchema>;
-export type WorkRevisionDTO = z.infer<typeof WorkRevisionSchema>;
+export type WorkVersionDTO = z.infer<typeof WorkVersionSchema>;
+
+/** OpenAPI 组件名 Work / WorkVersion；上述 *DTO 为 API 层别名。 */
 
 export const UpdateProfileSchema = z
   .object({
@@ -315,7 +383,13 @@ export const PublicationSchema = z
     contentType: z.string().nullable(),
     mediaTypes: z.array(z.string()),
     hashtags: z.array(z.string()),
-    images: z.array(z.object({ url: z.string().url() })),
+    images: z.array(
+      z.object({
+        url: z.string(),
+        alt: z.string().nullable().optional(),
+        prompt: z.string().nullable().optional(),
+      }),
+    ),
     status: PublicationStatusSchema,
     publishedAt: z.string().nullable(),
     createdAt: z.string(),

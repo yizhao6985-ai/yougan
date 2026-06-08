@@ -6,10 +6,10 @@ import {
   isProfileActionable,
   profileSummary,
   productionPlanSummary,
-  referencesSummary,
-  resolveContentSpecFromProfile,
+  profileReferencesSummary,
+  resolveDeliveryFromProfile,
   type ContentFormatId,
-  type FlatContentSpec,
+  type ProfileDelivery,
 } from "@yougan/domain";
 import {
   composeSystemPrompt,
@@ -19,6 +19,7 @@ import { buildFormatGenerationGuidance } from "./format-guidance.js";
 import {
   getProductionPlan,
   getProfile,
+  getReferences,
 } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 
@@ -53,21 +54,21 @@ const MODALITY_INDUSTRY: Record<string, string> = {
     "图片媒介：可为独立绘画（仅 image）或图文组合（text + image）；前者走设计管线，后者文案为主。",
 };
 
-/** 根据平台、体裁、媒介拼行业经验段落（写入 plan.industry_context 或嵌入 prompt） */
-export function resolveIndustryContext(spec: FlatContentSpec): string {
+/** 根据平台、体裁、媒介拼行业经验段落 */
+export function resolveIndustryContext(delivery: ProfileDelivery): string {
   const parts: string[] = [];
 
-  const platform = spec.platform?.trim().toLowerCase();
+  const platform = delivery.platform?.trim().toLowerCase();
   if (platform && PLATFORM_INDUSTRY[platform]) {
     parts.push(PLATFORM_INDUSTRY[platform]);
   }
 
-  const format = spec.content_format?.trim().toLowerCase();
+  const format = delivery.format?.trim().toLowerCase();
   if (format && FORMAT_INDUSTRY[format]) {
     parts.push(FORMAT_INDUSTRY[format]);
   }
 
-  const modalities = spec.media_modalities ?? [];
+  const modalities = delivery.modalities ?? [];
   if (modalities.includes("image") && !modalities.includes("text")) {
     parts.push(
       "绘画组合：仅含图片原子，走设计管线，交付插画/海报/封面等视觉资产。",
@@ -81,9 +82,9 @@ export function resolveIndustryContext(spec: FlatContentSpec): string {
     }
   }
 
-  if (spec.content_topic) {
+  if (delivery.topic) {
     parts.push(
-      `创作主题「${spec.content_topic}」：需结合该领域受众关注点与常见内容形式。`,
+      `创作主题「${delivery.topic}」：需结合该领域受众关注点与常见内容形式。`,
     );
   }
 
@@ -94,12 +95,13 @@ export function resolveIndustryContext(spec: FlatContentSpec): string {
 
 export function buildProductionLlmPrompt(state: AgentStateType): string {
   const profile = getProfile(state);
-  const contentProfile = resolveContentSpecFromProfile(profile);
+  const references = getReferences(state);
+  const delivery = resolveDeliveryFromProfile(profile);
   const plan = getProductionPlan(state);
-  const industry = plan.industry_context ?? resolveIndustryContext(contentProfile);
+  const industry = plan.industry_context ?? resolveIndustryContext(delivery);
   const formatHint = buildFormatGenerationGuidance(
-    contentProfile.content_format as ContentFormatId | null,
-    contentProfile.media_modalities?.[0] ?? null,
+    delivery.format as ContentFormatId | null,
+    delivery.modalities?.[0] ?? null,
   );
 
   const pendingBlock = plan.pending_tasks.length
@@ -140,9 +142,9 @@ ${industry}
 
 禁止跳过 add_plan_task 直接生成；禁止向${YOUGAN_USER_LABEL}展示任务列表或部门分工细节。
 
-${profileSummary(profile)}
+${profileSummary(profile, references)}
 
-${referencesSummary(profile.references)}
+${profileReferencesSummary(references)}
 
 内部计划摘要：${getPlanSummary(plan) ?? "（待定）"}
 创意总监备注：${plan.director_notes ?? "无"}

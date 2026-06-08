@@ -3,11 +3,11 @@
  */
 import type {
   ProductionStagingMeta,
-  ProfileStagingMeta,
   TurnStaging,
   WorkPreview,
   WorkProductionPlan,
   WorkProfile,
+  WorkReference,
 } from "@yougan/domain";
 
 import type { AgentStateType } from "#agent/state.js";
@@ -16,7 +16,9 @@ import { requirePending } from "./lifecycle.js";
 
 export function patchPending(
   state: AgentStateType,
-  patch: Partial<Pick<TurnStaging, "profile" | "productionPlan" | "preview">>,
+  patch: Partial<
+    Pick<TurnStaging, "profile" | "references" | "productionPlan" | "preview">
+  >,
 ): { staging: TurnStaging } {
   const staging = requirePending(state);
   return {
@@ -34,6 +36,13 @@ export function patchPendingProfile(
   return patchPending(state, { profile });
 }
 
+export function patchPendingReferences(
+  state: AgentStateType,
+  references: WorkReference[],
+): { staging: TurnStaging } {
+  return patchPending(state, { references });
+}
+
 export function patchPendingProductionPlan(
   state: AgentStateType,
   productionPlan: WorkProductionPlan,
@@ -46,25 +55,6 @@ export function patchPendingPreview(
   preview: WorkPreview | null,
 ): { staging: TurnStaging } {
   return patchPending(state, { preview });
-}
-
-export function patchPendingProfileMeta(
-  state: AgentStateType,
-  patch: Partial<ProfileStagingMeta>,
-): { staging: TurnStaging } {
-  const staging = requirePending(state);
-  const profileMeta = {
-    pendingParseReferenceText: null,
-    pendingParseReferenceImage: null,
-    ...staging.meta.profile,
-    ...patch,
-  };
-  return {
-    staging: {
-      ...staging,
-      meta: { ...staging.meta, profile: profileMeta },
-    },
-  };
 }
 
 export function patchPendingProductionMeta(
@@ -105,6 +95,7 @@ export function patchPendingBatch(
     merged = {
       ...merged,
       profile: patch.staging.profile ?? merged.profile,
+      references: patch.staging.references ?? merged.references,
       productionPlan: patch.staging.productionPlan ?? merged.productionPlan,
       preview:
         patch.staging.preview !== undefined

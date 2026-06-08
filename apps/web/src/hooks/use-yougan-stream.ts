@@ -4,7 +4,7 @@ import type { Message } from "@langchain/langgraph-sdk";
 import { useStream } from "@langchain/langgraph-sdk/react";
 
 import { useOpeningBootstrapQuery } from "@/hooks/queries/opening-bootstrap";
-import { buildHumanMessageContent } from "@/lib/build-human-message-content";
+import { buildHumanMessageContent } from "@yougan/domain";
 import { buildTurnCancelPatch } from "@/lib/cancel-turn";
 import { applyGraphUpdatesToValues } from "@/lib/message-utils";
 import { YOUGAN_ASSISTANT_ID } from "@/lib/yougan-chat-api";
@@ -35,6 +35,7 @@ function buildStreamSubmitInput(
     workTitle: work.title,
     conversationTitle: conversation.title,
     profile: work.profile,
+    references: work.references,
     productionPlan: work.productionPlan,
     nextStepSuggestions: null,
     preview: work.preview,
@@ -145,8 +146,11 @@ export function useYouganStream({
   }, [stream, threadId, valuesOverlay]);
 
   const sendMessage = useCallback(
-    async (text: string, imageUrls: string[] = []) => {
-      const content = buildHumanMessageContent(text, imageUrls);
+    async (
+      text: string,
+      attachments: Parameters<typeof buildHumanMessageContent>[1] = [],
+    ) => {
+      const content = buildHumanMessageContent(text, attachments);
       const hasText =
         typeof content === "string" ? Boolean(content.trim()) : content.length > 0;
       if (!hasText || !work || !conversation) return;

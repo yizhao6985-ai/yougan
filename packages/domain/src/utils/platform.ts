@@ -1,4 +1,4 @@
-import { KNOWN_PLATFORMS } from "../models/platform.js";
+import { KNOWN_PLATFORMS } from "../models/taxonomy/platform.js";
 
 const PLATFORM_ALIASES: Record<string, string> = {
   小红书: "xiaohongshu",

@@ -5,13 +5,13 @@ import {
   CreativeContextSection,
 } from "@/components/studio/creative-context/shared";
 import { REFERENCE_PANEL } from "@/lib/site-copy";
-import type { ReferenceItem } from "@/lib/types";
+import type { WorkReference } from "@/lib/types";
 
 export function ReferencePanel({
   references,
   compact = false,
 }: {
-  references?: ReferenceItem[];
+  references?: WorkReference[];
   compact?: boolean;
 }) {
   const items = references ?? [];
@@ -28,7 +28,7 @@ export function ReferencePanel({
         <CreativeContextList>
           {items.map((item, index) => (
             <ReferenceCard
-              key={`${item.source_type}-${item.image_url ?? item.url ?? item.summary}-${index}`}
+              key={item.id}
               item={item}
               index={index}
             />

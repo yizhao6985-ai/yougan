@@ -1,10 +1,14 @@
-import { ExternalLinkIcon, ImageOffIcon } from "lucide-react";
+import {
+  inferMediaKind,
+  referenceAssetUrl,
+  type WorkReference,
+} from "@yougan/domain";
+import { ImageOffIcon, MusicIcon, VideoIcon } from "lucide-react";
 import { useState } from "react";
 
 import { CreativeContextInset } from "@/components/studio/creative-context/shared";
 import { REFERENCE_PANEL } from "@/lib/site-copy";
 import { resolveReferenceAssetUrl } from "@/lib/reference-asset-url";
-import type { ReferenceItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const THUMB_CLASS =
@@ -61,18 +65,50 @@ function ReferenceImageThumb({
   );
 }
 
-function ReferenceWebPreview({
+function ReferenceMediaThumb({
   url,
   title,
+  mediaKind,
+  className,
 }: {
   url: string;
-  title?: string | null;
+  title: string;
+  mediaKind: "audio" | "video" | "file";
+  className?: string;
 }) {
-  let hostname = url;
-  try {
-    hostname = new URL(url).hostname.replace(/^www\./, "");
-  } catch {
-    // keep raw url
+  const label =
+    mediaKind === "audio"
+      ? REFERENCE_PANEL.openAudio
+      : mediaKind === "video"
+        ? REFERENCE_PANEL.openVideo
+        : REFERENCE_PANEL.openLink;
+  const Icon = mediaKind === "audio" ? MusicIcon : VideoIcon;
+
+  if (mediaKind === "video") {
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        className={cn(
+          THUMB_CLASS,
+          "group/thumb relative block transition hover:border-primary/30 hover:ring-2 hover:ring-primary/10",
+          className,
+        )}
+        aria-label={label}
+      >
+        <video
+          src={url}
+          muted
+          playsInline
+          preload="metadata"
+          className="size-full object-cover"
+        />
+        <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background/20">
+          <VideoIcon className="size-5 text-foreground/80" aria-hidden />
+        </span>
+      </a>
+    );
   }
 
   return (
@@ -80,27 +116,17 @@ function ReferenceWebPreview({
       href={url}
       target="_blank"
       rel="noreferrer"
-      className="flex items-start gap-2 rounded-lg border border-border/70 bg-muted/30 px-3 py-2 transition hover:border-primary/25 hover:bg-muted/50"
+      className={cn(
+        THUMB_CLASS,
+        "flex flex-col items-center justify-center gap-1 bg-muted/40 px-1 text-muted-foreground transition hover:border-primary/30 hover:text-foreground",
+        className,
+      )}
+      aria-label={label}
     >
-      <ExternalLinkIcon
-        className="mt-0.5 size-3.5 shrink-0 text-muted-foreground"
-        aria-hidden
-      />
-      <div className="min-w-0 flex-1">
-        {title ? (
-          <p className="line-clamp-2 text-sm font-medium text-foreground">
-            {title}
-          </p>
-        ) : null}
-        <p
-          className={cn(
-            "truncate text-xs text-primary",
-            title ? "mt-0.5" : undefined,
-          )}
-        >
-          {hostname}
-        </p>
-      </div>
+      <Icon className="size-4 shrink-0" aria-hidden />
+      <span className="line-clamp-2 w-full text-center text-[9px] leading-tight">
+        {title}
+      </span>
     </a>
   );
 }
@@ -110,39 +136,77 @@ export function ReferenceImageMedia({
   title,
   className,
 }: {
-  item: ReferenceItem;
+  item: WorkReference;
   title: string;
   className?: string;
 }) {
-  if (item.source_type !== "image" || !item.image_url) return null;
-  const resolvedUrl = resolveReferenceAssetUrl(item.image_url);
+  const assetUrl = referenceAssetUrl(item);
+  if (!assetUrl) return null;
+  const resolvedUrl = resolveReferenceAssetUrl(assetUrl);
   if (!resolvedUrl) return null;
   return (
     <ReferenceImageThumb url={resolvedUrl} alt={title} className={className} />
   );
 }
 
-export function ReferenceMedia({
+export function ReferenceAssetMedia({
   item,
+  title,
+  className,
 }: {
-  item: ReferenceItem;
+  item: WorkReference;
   title: string;
+  className?: string;
 }) {
-  if (item.source_type === "image") {
-    return null;
-  }
+  const assetUrl = referenceAssetUrl(item);
+  if (!assetUrl) return null;
+  const resolvedUrl = resolveReferenceAssetUrl(assetUrl);
+  if (!resolvedUrl || item.content.kind !== "asset") return null;
 
-  if (item.source_type === "text" && item.raw_excerpt?.trim()) {
+  const mediaKind = inferMediaKind(item.content.asset.mime_type);
+  if (mediaKind === "image") {
     return (
-      <CreativeContextInset className="text-xs leading-5 text-muted-foreground">
-        {item.raw_excerpt.trim()}
-      </CreativeContextInset>
+      <ReferenceImageThumb url={resolvedUrl} alt={title} className={className} />
     );
   }
 
-  if (item.source_type === "web" && item.url) {
-    return <ReferenceWebPreview url={item.url} title={item.title} />;
+  if (mediaKind === "audio" || mediaKind === "video") {
+    return (
+      <ReferenceMediaThumb
+        url={resolvedUrl}
+        title={title}
+        mediaKind={mediaKind}
+        className={className}
+      />
+    );
   }
 
-  return null;
+  return (
+    <ReferenceMediaThumb
+      url={resolvedUrl}
+      title={title}
+      mediaKind="file"
+      className={className}
+    />
+  );
+}
+
+export function ReferenceMedia({
+  item,
+}: {
+  item: WorkReference;
+  title: string;
+}) {
+  if (item.content.kind === "asset") {
+    return null;
+  }
+
+  const excerpt = item.content.text.trim();
+  if (!excerpt) return null;
+
+  return (
+    <CreativeContextInset className="text-xs leading-5 text-muted-foreground">
+      {excerpt.length > 280 ? `${excerpt.slice(0, 280)}…` : excerpt}
+    </CreativeContextInset>
+  );
 }

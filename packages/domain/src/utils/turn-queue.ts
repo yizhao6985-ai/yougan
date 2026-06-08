@@ -1,7 +1,7 @@
 import {
   TURN_QUEUE_ORDER,
   type TurnQueueKind,
-} from "../models/chat/turn-queue.js";
+} from "../models/agent/turn-queue.js";
 
 export function sortTurnQueue(kinds: TurnQueueKind[]): TurnQueueKind[] {
   const set = new Set(kinds);

@@ -7,7 +7,7 @@ import { invokeStructured } from "#agent/llm/invoke/index.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
 import {
   getHumanMessageContents,
-  getLatestHumanMessageImageParts,
+  getLatestHumanMessageAttachments,
   getLatestHumanMessageText,
 } from "#agent/messages/human.js";
 import { initPendingTurn } from "#agent/state-io/index.js";
@@ -18,6 +18,21 @@ import { TurnQueueDecisionSchema, type TurnQueueDecision } from "./schema.js";
 
 const DEFAULT_QUEUE: TurnQueueKind[] = ["profile"];
 
+function withReferenceQueue(
+  queue: TurnQueueKind[],
+  hasAttachments: boolean,
+): TurnQueueKind[] {
+  const sorted = sortTurnQueue(queue);
+  const base = sorted.length ? sorted : DEFAULT_QUEUE;
+  if (!hasAttachments || base.includes("reference")) return base;
+
+  const askOnly =
+    base.length === 1 && base[0] === "ask";
+  if (askOnly) return base;
+
+  return sortTurnQueue(["reference", ...base]);
+}
+
 async function resolveTurnQueue(
   state: AgentStateType,
   config?: RunnableConfig,
@@ -27,8 +42,9 @@ async function resolveTurnQueue(
   }
 
   const userMessage = getLatestHumanMessageText(state.messages);
-  const hasImages = getLatestHumanMessageImageParts(state.messages).length > 0;
-  if (!userMessage && !hasImages) {
+  const hasAttachments =
+    getLatestHumanMessageAttachments(state.messages).length > 0;
+  if (!userMessage && !hasAttachments) {
     return DEFAULT_QUEUE;
   }
 
@@ -44,9 +60,12 @@ async function resolveTurnQueue(
       config,
     )) as TurnQueueDecision;
     const queue = sortTurnQueue(parsed.kinds);
-    return queue.length ? queue : DEFAULT_QUEUE;
+    return withReferenceQueue(
+      queue.length ? queue : DEFAULT_QUEUE,
+      hasAttachments,
+    );
   } catch {
-    return DEFAULT_QUEUE;
+    return withReferenceQueue(DEFAULT_QUEUE, hasAttachments);
   }
 }
 

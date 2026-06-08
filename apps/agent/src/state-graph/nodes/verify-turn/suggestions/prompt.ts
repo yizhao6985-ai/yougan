@@ -2,7 +2,7 @@
 import {
   profileSummary,
   productionPlanSummary,
-  referencesSummary,
+  profileReferencesSummary,
   type TurnQueueKind,
 } from "@yougan/domain";
 
@@ -12,6 +12,7 @@ import {
   getPreview,
   getProductionPlan,
   getProfile,
+  getReferences,
 } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 import { hasSuggestionWorkContext } from "./work-context.js";
@@ -24,6 +25,7 @@ function completedKindsLabel(kinds: TurnQueueKind[]): string {
 function stagingNote(state: AgentStateType): string {
   const hasStaging =
     Boolean(state.staging?.profile) ||
+    Boolean(state.staging?.references?.length) ||
     Boolean(state.staging?.productionPlan) ||
     Boolean(state.staging?.preview);
   return hasStaging
@@ -46,6 +48,7 @@ export function buildNextStepSuggestionsPrompt(
   const topicMode = isOpening && !hasSuggestionWorkContext(state);
 
   const profile = getProfile(state);
+  const references = getReferences(state);
   const plan = getProductionPlan(state);
   const preview = getPreview(state);
   const completed = getCompletedTurnKinds(state);
@@ -56,7 +59,7 @@ export function buildNextStepSuggestionsPrompt(
   const sceneIntro = topicMode
     ? `${YOUGAN_USER_LABEL}刚打开本对话，thread 尚无消息，且作品尚无已沉淀方案。请根据**作品标题**生成 ${count} 条**可立刻开写的具体选题**可点击建议。`
     : isOpening
-      ? `${YOUGAN_USER_LABEL}刚在本作品下打开新对话，thread 尚无消息。请根据**作品当前进展**（canonical 与 staging，staging 优先）生成 ${count} 条**下一步工作**可点击建议。`
+      ? `${YOUGAN_USER_LABEL}刚在本作品下打开新对话，thread 尚无消息。请根据**作品当前进展**（state 顶层与 staging，staging 优先）生成 ${count} 条**下一步工作**可点击建议。`
       : `本轮队列已执行完毕（${completedKindsLabel(completed)}）。请根据**作品当前进展、staging、${YOUGAN_USER_LABEL}上一条消息与 AI 刚回复**，生成 ${count} 条**下一步工作**可点击建议。`;
 
   const messageBlock =
@@ -94,7 +97,7 @@ ${lastAssistant || "（无）"}`
 
 ## 生成要求
 1. 结合当前阶段（方案拟定 / 答疑 / 制作计划 / 出稿 / 改稿 / 发布准备）给出**具体可执行**的下一步，承接上表状态与（若有）用户上一条消息
-2. **禁止**把已有方案或成稿进度当成空白来推「选题」；不要生成「我想写一篇…具体选题」类消息，除非作品规格里确实尚无 content_topic 且用户在补创作方向
+2. **禁止**把已有方案或成稿进度当成空白来推「选题」；不要生成「我想写一篇…具体选题」类消息，除非作品规格里确实尚无创作主题且用户在补创作方向
 3. message 须像用户亲自打字，点名方案中的具体主题、节拍、段落或制作环节；禁止空泛套话（如「聊聊方向」「找灵感」「理清思路」「探索可能性」）
 4. label ≤10 字；message 一句说清、可稍长，点击后原样发送
 5. kind：explore / confirm / navigate 按意图选择；方案已可执行时可 navigate 开始出稿
@@ -110,8 +113,8 @@ ${lastAssistant || "（无）"}`
 ${workTitle}${stagingNote(state)}
 
 ## 作品状态
-${profileSummary(profile)}
-${referencesSummary(profile.references)}
+${profileSummary(profile, references)}
+${profileReferencesSummary(references)}
 ${productionPlanSummary(plan)}
 ${preview?.body?.trim() ? `已有预览正文（节选）：${preview.body.slice(0, 200)}…` : "尚无预览成稿"}${messageBlock}${profileTurnHint}${topicRequirements}
 

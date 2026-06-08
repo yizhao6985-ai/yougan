@@ -1,12 +1,13 @@
 import { apiFetch } from "@/services/client";
-import type { Work } from "@/lib/types";
+import type { WorkWire } from "@/services/types";
+import type { Asset, Work } from "@/lib/types";
 
 export async function listWorks() {
-  return apiFetch<{ works: Work[] }>("/api/works");
+  return apiFetch<{ works: WorkWire[] }>("/api/works");
 }
 
 export async function createWork(title?: string, groupId?: string | null) {
-  return apiFetch<{ work: Work }>("/api/works", {
+  return apiFetch<{ work: WorkWire }>("/api/works", {
     method: "POST",
     body: JSON.stringify({ title, groupId: groupId ?? undefined }),
   });
@@ -20,7 +21,7 @@ export async function updateWork(
     preview?: Work["preview"];
   },
 ) {
-  return apiFetch<{ work: Work }>(`/api/works/${workId}`, {
+  return apiFetch<{ work: WorkWire }>(`/api/works/${workId}`, {
     method: "PATCH",
     body: JSON.stringify(patch),
   });
@@ -30,11 +31,23 @@ export async function deleteWork(workId: string) {
   await apiFetch<void>(`/api/works/${workId}`, { method: "DELETE" });
 }
 
-export async function uploadReference(file: File) {
+export async function uploadReference(file: File): Promise<Asset> {
   const body = new FormData();
   body.append("file", file);
-  return apiFetch<{ url: string; key: string }>("/api/upload", {
+  body.append("purpose", "reference");
+  const data = await apiFetch<{
+    asset: Asset;
+    url: string;
+    key: string;
+  }>("/api/upload", {
     method: "POST",
     body,
   });
+  return data.asset ?? {
+    key: data.key,
+    url: data.url,
+    mime_type: file.type || "application/octet-stream",
+    size_bytes: file.size,
+    original_name: file.name,
+  };
 }

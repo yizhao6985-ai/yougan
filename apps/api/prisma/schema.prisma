@@ -127,13 +127,15 @@ model Work {
   groupId            String?
   group              WorkGroup?          @relation(fields: [groupId], references: [id], onDelete: SetNull)
   title              String
-  /// 当前 head revision
-  headRevisionId     String?
+  /// 当前 head version
+  headVersionId     String?
   /// 若由另存为新作品创建，记录来源
   sourceWorkId       String?
-  sourceRevisionId   String?
-  /// 物化视图：创作轮廓（含 references / spec / beats 等）
+  sourceVersionId   String?
+  /// 物化视图：创作方案（delivery、blueprint、guardrails 等；不含 references）
   profile            Json                @default("{}")
+  /// 物化视图：参考素材
+  references         Json                @default("[]")
   /// 物化视图：内部制作计划（不对用户展示）
   productionPlan     Json                @default("{}")
   /// 物化视图：最新作品预览
@@ -142,18 +144,18 @@ model Work {
   updatedAt          DateTime            @updatedAt
   publications       Publication[]
   conversations      WorkConversation[]
-  revisions          WorkRevision[]
+  versions          WorkVersion[]
 
   @@index([userId, updatedAt(sort: Desc)])
   @@index([userId, groupId, updatedAt(sort: Desc)])
 }
 
 /// 作品版本节点（单线时间轴）
-model WorkRevision {
+model WorkVersion {
   id               String   @id @default(cuid())
   workId           String
   work             Work     @relation(fields: [workId], references: [id], onDelete: Cascade)
-  parentRevisionId String?
+  parentVersionId String?
   conversationId   String?
   kind             String
   summary          String

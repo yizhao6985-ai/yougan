@@ -10,13 +10,13 @@ import {
   type CreativeContextTabId,
 } from "@/lib/site-copy";
 import { readStoredString, writeStoredString } from "@/lib/storage-value";
-import type { ReferenceItem, Work, WorkPreview, WorkProfile } from "@/lib/types";
+import type { Work, WorkPreview, WorkProfile, WorkReference } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const TAB_ORDER: CreativeContextTabId[] = [
   "profile",
-  "preview",
   "references",
+  "preview",
   "history",
 ];
 
@@ -32,18 +32,18 @@ function readStoredTab(): CreativeContextTabId {
 
 type CreativeContextPanelContentProps = {
   activeWork: Work | null;
-  references?: ReferenceItem[];
+  references?: WorkReference[];
   /** 创作轮廓（含 references） */
   profile?: WorkProfile;
   preview?: WorkPreview | null;
   previewUnsaved?: boolean;
   onDuplicated?: (workId: string) => void;
-  onUpdateConstraint?: (constraintId: string, description: string) => void;
-  onDeleteConstraint?: (constraintId: string) => void;
-  onClearConstraints?: () => void;
-  onUpdateBeat?: (beatId: string, description: string) => void;
-  onDeleteBeat?: (beatId: string) => void;
-  onClearBeats?: () => void;
+  onUpdateGuardrail?: (guardrailId: string, description: string) => void;
+  onDeleteGuardrail?: (guardrailId: string) => void;
+  onClearGuardrails?: () => void;
+  onUpdateSegment?: (segmentId: string, description: string) => void;
+  onDeleteSegment?: (segmentId: string) => void;
+  onClearSegments?: () => void;
 };
 
 export function CreativeContextPanelContent({
@@ -53,12 +53,12 @@ export function CreativeContextPanelContent({
   preview,
   previewUnsaved,
   onDuplicated,
-  onUpdateConstraint,
-  onDeleteConstraint,
-  onClearConstraints,
-  onUpdateBeat,
-  onDeleteBeat,
-  onClearBeats,
+  onUpdateGuardrail,
+  onDeleteGuardrail,
+  onClearGuardrails,
+  onUpdateSegment,
+  onDeleteSegment,
+  onClearSegments,
 }: CreativeContextPanelContentProps) {
   const [activeTab, setActiveTab] = useState<CreativeContextTabId>(readStoredTab);
 
@@ -107,12 +107,12 @@ export function CreativeContextPanelContent({
               profile={profile}
               editable={Boolean(activeWork)}
               compact
-              onUpdateConstraint={onUpdateConstraint}
-              onDeleteConstraint={onDeleteConstraint}
-              onClearConstraints={onClearConstraints}
-              onUpdateBeat={onUpdateBeat}
-              onDeleteBeat={onDeleteBeat}
-              onClearBeats={onClearBeats}
+              onUpdateGuardrail={onUpdateGuardrail}
+              onDeleteGuardrail={onDeleteGuardrail}
+              onClearGuardrails={onClearGuardrails}
+              onUpdateSegment={onUpdateSegment}
+              onDeleteSegment={onDeleteSegment}
+              onClearSegments={onClearSegments}
             />
           </div>
         ) : null}

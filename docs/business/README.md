@@ -37,5 +37,5 @@
 
 - [根目录 README](../../README.md) — 开发与部署
 - [agent-turn-queue.md](../technical/agent-turn-queue.md) — 回合队列与线程同步
-- [revision-graph.md](../technical/revision-graph.md) — 版本时间轴
+- [version-graph.md](../technical/version-graph.md) — 版本时间轴
 - [platform-oauth.md](../platform-oauth.md) — OAuth 技术配置

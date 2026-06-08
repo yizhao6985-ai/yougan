@@ -1,72 +1,144 @@
-import type { MediaModalityId } from "../content/catalog.js";
-import type { ReferenceItem } from "./reference.js";
+import type { ContentFormatId, MediaModalityId } from "../taxonomy/content.js";
+import type { DiscoverPlatformId, DiscoverTopicCategoryId } from "../taxonomy/discover.js";
 
-/** 创作规格与形态（platform 保留兼容，不作为创作门禁） */
-export interface ProfileSpec {
-  platform?: string | null;
-  content_topic?: string | null;
-  content_type?: string | null;
-  content_format?: string | null;
-  /** 媒介原子组合，如 ["text", "image"] */
-  media_modalities?: MediaModalityId[];
-}
-
-/** 表达设定 */
-export interface ProfileVoice {
-  audience?: string | null;
-  tone?: string | null;
-  style?: string | null;
-  persona?: string | null;
-  goals?: string[];
-}
-
-/** 非结构性写作要求 */
-export interface ProfileConstraint {
-  id: string;
-  description: string;
-  confirmed_at: string;
-}
-
-/** 有序内容节拍 */
-export interface ProfileBeat {
-  id: string;
-  description: string;
+/**
+ * 交付规格：机器权威字段，决定子图路由、制作管线与发布推断。
+ * 与 expression / blueprint 分离，避免「写什么」与「怎么写」混在一起。
+ */
+export interface ProfileDelivery {
+  /** 创作主题（一句话题眼） */
+  topic: string;
+  /** 体裁 id，见 CONTENT_FORMATS */
+  format: ContentFormatId;
+  /** 交付媒介组合，如 ["text"]、["text", "image"] */
+  modalities: MediaModalityId[];
+  /** 目标发布平台（可选） */
+  platform?: DiscoverPlatformId | null;
+  /** 内容分类（发现页 taxonomy） */
+  category?: DiscoverTopicCategoryId | null;
+  /** 用户原话摘录，仅展示，不参与路由 */
   intent?: string | null;
+}
+
+/** 表达设定：受众、语气文风与画面气质 */
+export interface ProfileExpression {
+  audience?: string | null;
+  verbal?: {
+    tone?: string | null;
+    style?: string | null;
+    persona?: string | null;
+  };
+  visual?: {
+    style?: string | null;
+    mood?: string | null;
+    palette?: string | null;
+  };
+}
+
+/** 结构段角色（跨体裁复用，按叙事/镜头语义选用） */
+export type SegmentRole =
+  | "hook"
+  | "context"
+  | "point"
+  | "example"
+  | "cta"
+  | "chapter"
+  | "scene"
+  | "shot"
+  | "broll"
+  | "transition"
+  | "subject"
+  | "composition"
+  | "detail"
+  | "intro"
+  | "segment"
+  | "outro"
+  | "bridge";
+
+/** 有序结构段；id 供 profile 工具 update/delete 引用 */
+export interface ProfileSegment {
+  id: string;
   confirmed_at: string;
+  role?: SegmentRole | null;
+  title?: string | null;
+  description: string;
 }
 
-/** 作品创作轮廓（用户可见）：规格、表达、参考、结构与节拍 */
+/** 内容蓝图：一句话定位 + 结构段列表 */
+export interface ProfileBlueprint {
+  summary: string;
+  segments: ProfileSegment[];
+}
+
+/** 创作规则生效范围 */
+export type GuardrailScope = "all" | "verbal" | "visual" | "audio" | "video";
+
+/** 硬性创作约束（禁用词、必提要素、尺度边界等） */
+export interface ProfileGuardrail {
+  id: string;
+  confirmed_at: string;
+  description: string;
+  scope: GuardrailScope;
+}
+
+export interface TextFormatParams {
+  kind: "text";
+  word_count?: { min?: number; max?: number };
+  emoji_level?: "none" | "light" | "heavy";
+}
+
+export interface IllustrationFormatParams {
+  kind: "illustration";
+  aspect_ratio?: "1:1" | "3:4" | "4:3" | "16:9" | "9:16" | string;
+  image_count?: number;
+  negative_hints?: string[];
+}
+
+export interface VideoFormatParams {
+  kind: "video";
+  duration_sec?: number;
+  aspect_ratio?: string;
+  pacing?: "fast" | "medium" | "slow" | string;
+}
+
+export interface AudioFormatParams {
+  kind: "audio";
+  duration_sec?: number;
+  segment_count?: number;
+}
+
+/** 体裁参数（与 delivery.format 对应，互斥 union） */
+export type FormatParams =
+  | TextFormatParams
+  | IllustrationFormatParams
+  | VideoFormatParams
+  | AudioFormatParams;
+
+/**
+ * 作品创作方案（state 顶层 profile）。
+ * 不含 references——参考素材在 Work.references 顶层维护（API schema）。
+ */
 export interface WorkProfile {
-  spec: ProfileSpec;
-  voice: ProfileVoice;
-  premise: string;
-  /** 参考素材，属于创作轮廓的一部分 */
-  references: ReferenceItem[];
-  constraints: ProfileConstraint[];
-  beats: ProfileBeat[];
+  delivery: ProfileDelivery;
+  expression: ProfileExpression;
+  blueprint: ProfileBlueprint;
+  guardrails: ProfileGuardrail[];
+  params: FormatParams;
 }
 
-export const EMPTY_PROFILE_SPEC: ProfileSpec = {
+export const EMPTY_PROFILE_DELIVERY: ProfileDelivery = {
+  topic: "",
+  format: "short_post",
+  modalities: ["text"],
   platform: null,
-  content_topic: null,
-  content_type: null,
-  content_format: null,
-  media_modalities: [],
-};
-
-export const EMPTY_PROFILE_VOICE: ProfileVoice = {
-  audience: null,
-  tone: null,
-  style: null,
-  persona: null,
-  goals: [],
+  category: null,
+  intent: null,
 };
 
 export const EMPTY_WORK_PROFILE: WorkProfile = {
-  spec: { ...EMPTY_PROFILE_SPEC },
-  voice: { ...EMPTY_PROFILE_VOICE },
-  premise: "",
-  references: [],
-  constraints: [],
-  beats: [],
+  delivery: { ...EMPTY_PROFILE_DELIVERY },
+  expression: {},
+  blueprint: { summary: "", segments: [] },
+  guardrails: [],
+  params: { kind: "text" },
 };

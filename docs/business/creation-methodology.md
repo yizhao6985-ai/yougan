@@ -1,6 +1,6 @@
 # 创作方法论：分阶段确认
 
-有感的核心产品逻辑是**分阶段确认**，而非单次 Prompt 生成全文。每件作品采用 **单线 revision** 记录对用户可见的里程碑（见 [revision-graph.md](../technical/revision-graph.md)）。
+有感的核心产品逻辑是**分阶段确认**，而非单次 Prompt 生成全文。每件作品采用 **单线 version** 记录对用户可见的里程碑（见 [version-graph.md](../technical/version-graph.md)）。
 
 Agent 每条用户消息先经 **回合队列**（`turnQueue`）编排（见 [agent-turn-queue.md](../technical/agent-turn-queue.md)），再路由到对话子图。**聊天中的状态变更**一律走对话子图（有回复与工具）；**侧栏直改**走 `PATCH Work` + API 同步 LangGraph thread。
 
@@ -73,7 +73,7 @@ Agent 每条用户消息先经 **回合队列**（`turnQueue`）编排（见 [ag
 
 ## 版本与另存
 
-- **版本记录**：仅 `draft`（作品预览）里程碑进入 `WorkRevision` 时间轴
+- **版本记录**：仅 `draft`（作品预览）里程碑进入 `WorkVersion` 时间轴
 - **brief / outline / plan**：更新物化列，不单独占版本节点
 - **回到这一版**：restore
 - **另存为新作品**：`POST /api/works/:id/duplicate`（平行探索）

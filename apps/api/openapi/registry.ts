@@ -19,8 +19,8 @@ import {
   PlatformIntegrationSchema,
   UpdateProfileSchema,
   WorkGroupSchema,
-  WorkRevisionSchema,
-  WorkRevisionSnapshotSchema,
+  WorkVersionSchema,
+  WorkVersionSnapshotSchema,
   WorkSchema,
 } from "../src/schemas.js";
 
@@ -425,16 +425,16 @@ registry.registerPath({
 
 registry.registerPath({
   method: "get",
-  path: "/api/works/{workId}/revisions",
+  path: "/api/works/{workId}/versions",
   tags: ["Works"],
   security,
   request: { params: z.object({ workId: z.string() }) },
   responses: {
     200: {
-      description: "Revision history for a work",
+      description: "Version history for a work",
       content: {
         "application/json": {
-          schema: z.object({ revisions: z.array(WorkRevisionSchema) }),
+          schema: z.object({ versions: z.array(WorkVersionSchema) }),
         },
       },
     },
@@ -443,19 +443,19 @@ registry.registerPath({
 
 registry.registerPath({
   method: "post",
-  path: "/api/works/{workId}/restore/{revisionId}",
+  path: "/api/works/{workId}/restore/{versionId}",
   tags: ["Works"],
   security,
   request: {
-    params: z.object({ workId: z.string(), revisionId: z.string() }),
+    params: z.object({ workId: z.string(), versionId: z.string() }),
   },
   responses: {
     200: {
-      description: "Restore work to a revision snapshot",
+      description: "Restore work to a version snapshot",
       content: {
         "application/json": {
           schema: z.object({
-            revision: WorkRevisionSchema,
+            version: WorkVersionSchema,
             work: WorkSchema,
           }),
         },
@@ -477,7 +477,7 @@ registry.registerPath({
           schema: z.object({
             title: z.string().optional(),
             groupId: z.string().nullable().optional(),
-            revisionId: z.string().optional(),
+            versionId: z.string().optional(),
           }),
         },
       },
@@ -485,7 +485,7 @@ registry.registerPath({
   },
   responses: {
     201: {
-      description: "Duplicate work from current or historical revision",
+      description: "Duplicate work from current or historical version",
       content: {
         "application/json": { schema: z.object({ work: WorkSchema }) },
       },

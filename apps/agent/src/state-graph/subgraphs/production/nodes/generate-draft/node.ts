@@ -4,10 +4,10 @@ import { HumanMessage } from "@langchain/core/messages";
 import { invokeStructured } from "#agent/llm/invoke/index.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
 import {
-  hasProfileBeats,
+  hasProfileSegments,
   isPlanReady,
   isProfileActionable,
-  resolveContentSpecFromProfile,
+  resolveDeliveryFromProfile,
   type WorkPreview,
 } from "@yougan/domain";
 import {
@@ -19,6 +19,7 @@ import {
   getModelTemperature,
   getProductionPlan,
   getProfile,
+  getReferences,
 } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 
@@ -30,11 +31,12 @@ export async function generateDraftNode(
   state: AgentStateType,
 ): Promise<Partial<AgentStateType>> {
   const profile = getProfile(state);
+  const references = getReferences(state);
   const plan = getProductionPlan(state);
-  const contentProfile = resolveContentSpecFromProfile(profile);
+  const delivery = resolveDeliveryFromProfile(profile);
 
   if (
-    !hasProfileBeats(profile) ||
+    !hasProfileSegments(profile) ||
     !plan.pending_tasks.length ||
     !isPlanReady(plan) ||
     !isProfileActionable(profile)
@@ -47,7 +49,7 @@ export async function generateDraftNode(
   const llm = createChatModel({
     temperature: getModelTemperature(state),
   });
-  const prompt = buildGenerateDraftPrompt({ profile, plan });
+  const prompt = buildGenerateDraftPrompt({ profile, references, plan });
 
   let payload: WorkPreviewPayload;
   try {
@@ -64,14 +66,14 @@ export async function generateDraftNode(
     );
   } catch {
     payload = {
-      title: contentProfile.content_topic,
+      title: delivery.topic,
       body: "文案生成失败，请重试。",
       hashtags: [],
     };
   }
 
   const preview: WorkPreview = {
-    platform: contentProfile.platform ?? "yougan",
+    platform: delivery.platform ?? "yougan",
     title: payload.title ?? null,
     body: payload.body,
     hashtags: payload.hashtags ?? [],

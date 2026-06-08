@@ -16,6 +16,7 @@ import { verifyTurnNode } from "./state-graph/nodes/verify-turn/node.js";
 import { askGraph } from "./state-graph/subgraphs/ask/graph.js";
 import { productionGraph } from "./state-graph/subgraphs/production/graph.js";
 import { profileGraph } from "./state-graph/subgraphs/profile/graph.js";
+import { referenceGraph } from "./state-graph/subgraphs/reference/graph.js";
 import { AgentState } from "./state.js";
 
 const workflow = new StateGraph(AgentState)
@@ -24,6 +25,7 @@ const workflow = new StateGraph(AgentState)
   .addNode("advanceTurnQueue", advanceTurnQueueNode)
   .addNode("verifyTurn", verifyTurnNode)
   .addNode("commitTurn", commitTurnNode)
+  .addNode("referenceGraph", referenceGraph)
   .addNode("profileGraph", profileGraph)
   .addNode("productionGraph", productionGraph)
   .addNode("askGraph", askGraph)
@@ -38,6 +40,7 @@ const workflow = new StateGraph(AgentState)
     subgraphByTurnKind.selectSubgraphByTurnKind,
     subgraphByTurnKind.paths,
   )
+  .addEdge("referenceGraph", "advanceTurnQueue")
   .addEdge("profileGraph", "advanceTurnQueue")
   .addEdge("productionGraph", "advanceTurnQueue")
   .addEdge("askGraph", "advanceTurnQueue")

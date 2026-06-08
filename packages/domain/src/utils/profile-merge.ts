@@ -2,18 +2,17 @@ import { EMPTY_WORK_PROFILE, type WorkProfile } from "../models/work/profile.js"
 import { isProfileEmpty, parseProfileJson } from "./work/profile.js";
 
 function isProfileAuthoritativeReplace(base: WorkProfile, next: WorkProfile): boolean {
-  if (next.beats.length < base.beats.length) return true;
-  if (next.constraints.length < base.constraints.length) return true;
-  if (next.references.length < base.references.length) return true;
+  if (next.blueprint.segments.length < base.blueprint.segments.length) return true;
+  if (next.guardrails.length < base.guardrails.length) return true;
 
-  const baseBeatIds = new Set(base.beats.map((b) => b.id));
-  for (const id of baseBeatIds) {
-    if (!next.beats.some((b) => b.id === id)) return true;
+  const baseSegmentIds = new Set(base.blueprint.segments.map((s) => s.id));
+  for (const id of baseSegmentIds) {
+    if (!next.blueprint.segments.some((s) => s.id === id)) return true;
   }
 
-  const baseConstraintIds = new Set(base.constraints.map((c) => c.id));
-  for (const id of baseConstraintIds) {
-    if (!next.constraints.some((c) => c.id === id)) return true;
+  const baseGuardrailIds = new Set(base.guardrails.map((g) => g.id));
+  for (const id of baseGuardrailIds) {
+    if (!next.guardrails.some((g) => g.id === id)) return true;
   }
 
   return false;
@@ -35,12 +34,20 @@ export function mergeProfileState(
   }
 
   return {
-    spec: { ...base.spec, ...patch.spec },
-    voice: { ...base.voice, ...patch.voice },
-    premise: patch.premise.trim() || base.premise,
-    references: patch.references.length ? patch.references : base.references,
-    constraints: patch.constraints.length ? patch.constraints : base.constraints,
-    beats: patch.beats.length ? patch.beats : base.beats,
+    delivery: { ...base.delivery, ...patch.delivery },
+    expression: {
+      audience: patch.expression.audience ?? base.expression.audience,
+      verbal: { ...base.expression.verbal, ...patch.expression.verbal },
+      visual: { ...base.expression.visual, ...patch.expression.visual },
+    },
+    blueprint: {
+      summary: patch.blueprint.summary.trim() || base.blueprint.summary,
+      segments: patch.blueprint.segments.length
+        ? patch.blueprint.segments
+        : base.blueprint.segments,
+    },
+    guardrails: patch.guardrails.length ? patch.guardrails : base.guardrails,
+    params: patch.params.kind !== base.params.kind ? patch.params : patch.params,
   };
 }
 

@@ -6,7 +6,7 @@ import { Command } from "@langchain/langgraph";
 import { z } from "zod";
 
 import {
-  hasProfileBeats,
+  hasProfileSegments,
   isPlanReady,
   isProfileActionable,
 } from "@yougan/domain";
@@ -39,12 +39,12 @@ export const generateDraft = tool(
     const profile = getProfile(state);
     const plan = getProductionPlan(state);
 
-    if (!hasProfileBeats(profile)) {
+    if (!hasProfileSegments(profile)) {
       return new Command({
         update: {
           messages: [
             new ToolMessage({
-              content: "生成被阻止：尚无作品方案节拍。",
+              content: "生成被阻止：尚无作品方案结构段。",
               tool_call_id: toolCallId,
             }),
           ],
@@ -80,7 +80,7 @@ export const generateDraft = tool(
         update: {
           messages: [
             new ToolMessage({
-              content: "生成被阻止：请先在作品方案中确认创作主题与内容节拍。",
+              content: "生成被阻止：请先在作品方案中确认创作主题与结构段。",
               tool_call_id: toolCallId,
             }),
           ],

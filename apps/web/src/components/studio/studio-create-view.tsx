@@ -3,29 +3,33 @@ import { CreativeContextPanelContent } from "@/components/studio/creative-contex
 import { WorksAside } from "@/components/studio/works-aside";
 import { YouganChat } from "@/components/studio/yougan-chat";
 import { useYouganStreamContext } from "@/components/studio/yougan-stream-provider";
-import { mergeProfileForDisplay } from "@yougan/domain";
+import { mergeProfileForDisplay, mergeReferencesForDisplay } from "@yougan/domain";
 export function StudioCreateView() {
   const {
     activeWork,
     stream,
     selectWork,
-    updateProfileConstraint,
-    deleteProfileConstraint,
-    clearWorkProfileConstraints,
-    updateProfileBeat,
-    deleteProfileBeat,
-    clearWorkProfileBeats,
+    updateProfileGuardrail,
+    deleteProfileGuardrail,
+    clearWorkProfileGuardrails,
+    updateProfileSegment,
+    deleteProfileSegment,
+    clearWorkProfileSegments,
   } = useYouganStreamContext();
 
   const staging = stream.values?.staging;
   const hasPendingStaging = Boolean(
     staging && stream.values?.turnCommitted !== true,
   );
-  // 无进行中的 staging 时以作品缓存为准，避免手动编辑（清空/删除）后被 thread 内陈旧 profile 覆盖。
   const profile = hasPendingStaging
     ? mergeProfileForDisplay(activeWork?.profile, staging?.profile)
     : activeWork?.profile;
-  const references = profile?.references ?? [];
+  const references = hasPendingStaging
+    ? mergeReferencesForDisplay(
+        activeWork?.references,
+        staging?.references ?? stream.values?.references,
+      )
+    : (activeWork?.references ?? stream.values?.references ?? []);
   const preview =
     staging?.preview ??
     stream.values?.preview ??
@@ -43,36 +47,36 @@ export function StudioCreateView() {
       preview={preview}
       previewUnsaved={previewUnsaved}
       onDuplicated={selectWork}
-      onUpdateConstraint={
+      onUpdateGuardrail={
         activeWork
-          ? (constraintId, description) =>
-              updateProfileConstraint(activeWork.id, constraintId, description)
+          ? (guardrailId, description) =>
+              updateProfileGuardrail(activeWork.id, guardrailId, description)
           : undefined
       }
-      onDeleteConstraint={
+      onDeleteGuardrail={
         activeWork
-          ? (constraintId) =>
-              deleteProfileConstraint(activeWork.id, constraintId)
+          ? (guardrailId) =>
+              deleteProfileGuardrail(activeWork.id, guardrailId)
           : undefined
       }
-      onClearConstraints={
+      onClearGuardrails={
         activeWork
-          ? () => clearWorkProfileConstraints(activeWork.id)
+          ? () => clearWorkProfileGuardrails(activeWork.id)
           : undefined
       }
-      onUpdateBeat={
+      onUpdateSegment={
         activeWork
-          ? (beatId, description) =>
-              updateProfileBeat(activeWork.id, beatId, description)
+          ? (segmentId, description) =>
+              updateProfileSegment(activeWork.id, segmentId, description)
           : undefined
       }
-      onDeleteBeat={
+      onDeleteSegment={
         activeWork
-          ? (beatId) => deleteProfileBeat(activeWork.id, beatId)
+          ? (segmentId) => deleteProfileSegment(activeWork.id, segmentId)
           : undefined
       }
-      onClearBeats={
-        activeWork ? () => clearWorkProfileBeats(activeWork.id) : undefined
+      onClearSegments={
+        activeWork ? () => clearWorkProfileSegments(activeWork.id) : undefined
       }
     />
   );

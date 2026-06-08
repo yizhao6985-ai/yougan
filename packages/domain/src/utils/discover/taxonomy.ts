@@ -2,7 +2,7 @@ import {
   CONTENT_FORMATS,
   type ContentFormatId,
   type MediaModalityId,
-} from "../../models/content/catalog.js";
+} from "../../models/taxonomy/content.js";
 import {
   DISCOVER_PLATFORMS,
   DISCOVER_TOPIC_CATEGORIES,
@@ -12,15 +12,16 @@ import {
   type DiscoverTopicCategoryId,
   type PublicationMetadata,
   type PublicationMetadataOverrides,
-} from "../../models/discover/taxonomy.js";
+} from "../../models/taxonomy/discover.js";
+import type { WorkProfile } from "../../models/work/profile.js";
 import {
   inferMediaModalities,
   isMediaModalityId,
   mediaModalitiesLabel,
   mediaModalityLabel,
-  normalizeMediaModalities,
   sortMediaModalities,
 } from "../media-modalities.js";
+import { parseProfileJson, resolveDeliveryFromProfile } from "../work/profile.js";
 
 const FORMAT_LABELS = Object.fromEntries(
   CONTENT_FORMATS.map((item) => [item.id, item.label]),
@@ -33,16 +34,6 @@ const TOPIC_LABELS = Object.fromEntries(
 const PLATFORM_LABELS = Object.fromEntries(
   DISCOVER_PLATFORMS.map((item) => [item.id, item.label]),
 ) as Record<DiscoverPlatformId, string>;
-
-type ProfileLike = {
-  platform?: string | null;
-  content_topic?: string | null;
-  content_type?: string | null;
-  content_format?: string | null;
-  media_modalities?: MediaModalityId[];
-  /** @deprecated */
-  media_modality?: string | null;
-};
 
 type OutputLike = {
   platform?: string;
@@ -166,50 +157,52 @@ export function inferMediaTypes(input: {
 }
 
 export function buildPublicationMetadata(input: {
-  profile?: ProfileLike | null;
+  profile?: WorkProfile | unknown | null;
   output?: OutputLike | null;
   coverUrl?: string | null;
   body?: string | null;
   images?: unknown;
   platform?: string | null;
 }): PublicationMetadata {
-  const profile = input.profile ?? {};
   const output = input.output ?? {};
-  const platform =
-    input.platform ?? output.platform ?? profile.platform ?? "yougan";
-  const contentTopic = profile.content_topic?.trim() || null;
-  const contentType = profile.content_type?.trim() || null;
   const body = input.body ?? output.body ?? null;
   const hasImage =
     Boolean(input.coverUrl) ||
     (Array.isArray(input.images) && input.images.length > 0) ||
     (Array.isArray(output.images) && output.images.length > 0);
 
+  const delivery = input.profile
+    ? resolveDeliveryFromProfile(parseProfileJson(input.profile))
+    : null;
+
+  const platform =
+    input.platform ?? output.platform ?? delivery?.platform ?? "yougan";
+  const contentTopic = delivery?.topic?.trim() || null;
+  const contentType = delivery?.intent?.trim() || null;
+
   const contentFormat =
-    profile.content_format &&
-    CONTENT_FORMATS.some((item) => item.id === profile.content_format)
-      ? profile.content_format
+    delivery?.format &&
+    CONTENT_FORMATS.some((item) => item.id === delivery.format)
+      ? delivery.format
       : inferContentFormat({
           platform,
           contentType,
           body,
           hasImage,
         });
-  const topicCategory = normalizeTopicCategory(contentTopic);
-  const mediaTypes = profile.media_modalities?.length
-    ? sortMediaModalities(profile.media_modalities)
-    : profile.media_modality
-      ? normalizeMediaModalities(
-          profile.media_modality,
-          profile.content_format ?? contentFormat,
-        )
-      : inferMediaTypes({
-          coverUrl: input.coverUrl,
-          images: input.images ?? output.images,
-          contentType,
-          body,
-          contentFormat,
-        });
+
+  const topicCategory =
+    delivery?.category ?? normalizeTopicCategory(contentTopic);
+
+  const mediaTypes = delivery?.modalities?.length
+    ? sortMediaModalities(delivery.modalities)
+    : inferMediaTypes({
+        coverUrl: input.coverUrl,
+        images: input.images ?? output.images,
+        contentType,
+        body,
+        contentFormat,
+      });
 
   return {
     platform,
@@ -221,11 +214,11 @@ export function buildPublicationMetadata(input: {
   };
 }
 
-function isValidCatalogId<T extends { id: string }>(
-  catalog: readonly T[],
+function isValidTaxonomyId<T extends { id: string }>(
+  items: readonly T[],
   id: string | undefined,
 ) {
-  return Boolean(id && catalog.some((item) => item.id === id));
+  return Boolean(id && items.some((item) => item.id === id));
 }
 
 export function applyMetadataOverrides(
@@ -246,13 +239,13 @@ export function applyMetadataOverrides(
 
   return {
     ...metadata,
-    platform: isValidCatalogId(DISCOVER_PLATFORMS, overrides.platform)
+    platform: isValidTaxonomyId(DISCOVER_PLATFORMS, overrides.platform)
       ? overrides.platform!
       : metadata.platform,
-    contentFormat: isValidCatalogId(CONTENT_FORMATS, overrides.contentFormat)
+    contentFormat: isValidTaxonomyId(CONTENT_FORMATS, overrides.contentFormat)
       ? overrides.contentFormat!
       : metadata.contentFormat,
-    topicCategory: isValidCatalogId(
+    topicCategory: isValidTaxonomyId(
       DISCOVER_TOPIC_CATEGORIES,
       overrides.topicCategory,
     )
@@ -272,10 +265,10 @@ export function buildMetadataLabels(metadata: PublicationMetadata) {
 }
 
 export function buildFacetOptions<T extends { id: string; label: string }>(
-  catalog: readonly T[],
+  items: readonly T[],
   counts: Record<string, number>,
 ) {
-  return catalog
+  return items
     .map((item) => ({
       id: item.id,
       label: item.label,

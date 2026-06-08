@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { z } from "zod";
 
 import {
+  DASHSCOPE_ASR_MODELS,
   DASHSCOPE_IMAGE_MODELS,
   DASHSCOPE_TEXT_MODELS,
 } from "./llm/providers/catalog.js";
@@ -60,6 +61,7 @@ const AgentEnvSchema = z
     LLM_TEMPERATURE: z.coerce.number().min(0).max(2).default(0.7),
     LLM_MODEL: optionalString,
     LLM_MODEL_IMAGE: optionalString,
+    LLM_MODEL_ASR: optionalString,
     TAVILY_API_KEY: optionalString,
   })
   .transform((env) => {
@@ -77,6 +79,7 @@ const AgentEnvSchema = z
       llmModel: env.LLM_MODEL ?? DASHSCOPE_TEXT_MODELS.qwen37Max,
       llmModelImage:
         env.LLM_MODEL_IMAGE ?? DASHSCOPE_IMAGE_MODELS.qwenImage20Pro,
+      llmModelAsr: env.LLM_MODEL_ASR ?? DASHSCOPE_ASR_MODELS.funAsr,
       tavilyApiKey: env.TAVILY_API_KEY ?? "",
     };
   });

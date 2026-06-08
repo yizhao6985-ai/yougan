@@ -6,7 +6,7 @@ import { createChatModel } from "#agent/llm/providers/index.js";
 import {
   getPlanSummary,
   profileSummary,
-  resolveContentSpecFromProfile,
+  resolveDeliveryFromProfile,
   type ProductionDepartment,
   type WorkPreview,
 } from "@yougan/domain";
@@ -34,7 +34,7 @@ export async function retryTaskDeliverable(
 ): Promise<WorkPreview | null> {
   const profile = getProfile(state);
   const plan = getProductionPlan(state);
-  const contentProfile = resolveContentSpecFromProfile(profile);
+  const delivery = resolveDeliveryFromProfile(profile);
   const department = task.department ?? "writing";
   const label = DEPARTMENT_LABELS[department];
   const existing = getPreview(state);
@@ -45,8 +45,8 @@ export async function retryTaskDeliverable(
 任务：${task.description}
 质检反馈：${feedback}
 
-作品主题：${contentProfile.content_topic ?? "未指定"}
-体裁：${contentProfile.content_format ?? "未指定"}
+作品主题：${delivery.topic ?? "未指定"}
+体裁：${delivery.format ?? "未指定"}
 作品方案：${profileSummary(profile)}
 制作计划：${getPlanSummary(plan) ?? "无"}
 
@@ -73,8 +73,8 @@ export async function retryTaskDeliverable(
       };
     }
     return {
-      platform: contentProfile.platform ?? "yougan",
-      title: contentProfile.content_topic ?? null,
+      platform: delivery.platform ?? "yougan",
+      title: delivery.topic ?? null,
       body: output,
       notes: section,
     };

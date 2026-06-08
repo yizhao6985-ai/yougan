@@ -1,15 +1,15 @@
-/** ensureProfile 结构化输出：补全 content_topic / premise / beats */
+/** ensureProfile 结构化输出：补全 topic / summary / segments */
 import { z } from "zod";
 
-const ProfileBeatSchema = z.object({
-  description: z.string().min(1).describe("内容节拍描述"),
-  intent: z.string().nullable().optional().describe("本节意图，如钩子/转化"),
+const ProfileSegmentSchema = z.object({
+  description: z.string().min(1).describe("结构段描述"),
+  role: z.string().nullable().optional().describe("段落角色，如 hook/scene/subject"),
 });
 
 export const EnsureProfileResponseSchema = z.object({
-  content_topic: z.string().min(1).describe("创作主题，从用户诉求与已有信息合理推断"),
-  premise: z.string().min(1).describe("作品方案一句话定位"),
-  beats: z.array(ProfileBeatSchema).min(1).max(8).describe("有序内容节拍"),
+  topic: z.string().min(1).describe("创作主题，从用户诉求与已有信息合理推断"),
+  summary: z.string().min(1).describe("一句话定位"),
+  segments: z.array(ProfileSegmentSchema).min(1).max(8).describe("有序结构段"),
   audience: z.string().nullable().optional().describe("目标受众，可合理默认"),
   tone: z.string().nullable().optional().describe("语气，可合理默认"),
 });

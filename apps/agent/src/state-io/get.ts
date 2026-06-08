@@ -8,8 +8,7 @@ import {
   EMPTY_WORK_PRODUCTION_PLAN,
   EMPTY_WORK_REFERENCES,
   type ProductionStagingMeta,
-  type ProfileStagingMeta,
-  type ReferenceItem,
+  type WorkReference,
   type TurnQueueKind,
   type WorkPreview,
   type WorkProductionPlan,
@@ -18,6 +17,11 @@ import {
 
 export function getProfile(state: AgentStateType): WorkProfile {
   return state.staging?.profile ?? state.profile ?? EMPTY_WORK_PROFILE;
+}
+
+export function getReferences(state: AgentStateType): WorkReference[] {
+  const refs = state.staging?.references ?? state.references;
+  return refs?.length ? refs : [...EMPTY_WORK_REFERENCES];
 }
 
 export function getProductionPlan(state: AgentStateType): WorkProductionPlan {
@@ -30,11 +34,6 @@ export function getProductionPlan(state: AgentStateType): WorkProductionPlan {
 
 export function getPreview(state: AgentStateType): WorkPreview | null {
   return state.staging?.preview ?? state.preview ?? null;
-}
-
-export function getReferences(state: AgentStateType): ReferenceItem[] {
-  const profileRefs = getProfile(state).references;
-  return profileRefs?.length ? profileRefs : [...EMPTY_WORK_REFERENCES];
 }
 
 export function getTurnQueue(state: AgentStateType): TurnQueueKind[] {
@@ -56,14 +55,6 @@ export function getModelTemperature(state: AgentStateType): number {
   }
   return Math.min(1, Math.max(0.1, Math.round(value * 10) / 10));
 }
-export function getProfileStagingMeta(state: AgentStateType): ProfileStagingMeta {
-  return {
-    pendingParseReferenceText: null,
-    pendingParseReferenceImage: null,
-    ...state.staging?.meta.profile,
-  };
-}
-
 export function getProductionStagingMeta(
   state: AgentStateType,
 ): ProductionStagingMeta {

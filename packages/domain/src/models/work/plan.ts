@@ -1,4 +1,4 @@
-/** 制作团队部门 */
+/** 制作团队部门（内部编排，不对用户展示部门名） */
 export type ProductionDepartment = "writing" | "design" | "audio" | "video";
 
 export const PRODUCTION_DEPARTMENTS: ProductionDepartment[] = [
@@ -8,7 +8,7 @@ export const PRODUCTION_DEPARTMENTS: ProductionDepartment[] = [
   "video",
 ];
 
-/** 创作计划任务（内部，不对用户展示） */
+/** 待执行任务（schedule-production 入队） */
 export interface ProductionPlanTask {
   id: string;
   description: string;
@@ -18,7 +18,7 @@ export interface ProductionPlanTask {
   assignee?: string | null;
 }
 
-/** 已在作品中落地的任务批次（内部） */
+/** 已落地任务批次（inspect / commit 后归档） */
 export interface ExecutedPlanTask {
   id: string;
   description: string;
@@ -28,11 +28,15 @@ export interface ExecutedPlanTask {
   assignee?: string | null;
 }
 
-/** 制作统筹计划，对应 Work.productionPlan（内部物化，用户不可见） */
+/**
+ * 制作统筹计划（Work.productionPlan）。
+ * 用户不可见；驱动 production 子图多部门流水线。
+ */
 export interface WorkProductionPlan {
   pending_tasks: ProductionPlanTask[];
   executed_tasks: ExecutedPlanTask[];
   last_execution_summary?: string | null;
+  /** 方案 + 计划齐备，可进入执行 */
   ready: boolean;
   summary?: string | null;
   departments?: ProductionDepartment[];

@@ -1,7 +1,7 @@
 import {
   MEDIA_MODALITIES,
   type MediaModalityId,
-} from "../models/content/catalog.js";
+} from "../models/taxonomy/content.js";
 
 export const MEDIA_MODALITY_ORDER: readonly MediaModalityId[] = [
   "text",

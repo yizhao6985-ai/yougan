@@ -14,9 +14,9 @@ import {
   updateWork,
 } from "../services/works.js";
 import {
-  listWorkRevisions,
-  restoreWorkToRevision,
-} from "../services/work-revisions.js";
+  listWorkVersions,
+  restoreWorkToVersion,
+} from "../services/work-versions.js";
 import { SyncWorkStateSchema } from "../schemas.js";
 
 export const worksRouter = Router();
@@ -109,35 +109,35 @@ worksRouter.get("/:workId/agent-context", async (req: AuthedRequest, res) => {
   res.json({ context });
 });
 
-worksRouter.get("/:workId/revisions", async (req: AuthedRequest, res) => {
-  const revisions = await listWorkRevisions(
+worksRouter.get("/:workId/versions", async (req: AuthedRequest, res) => {
+  const versions = await listWorkVersions(
     req.userId!,
     routeParam(req.params.workId, "workId"),
   );
-  if (!revisions) {
+  if (!versions) {
     res.status(404).json({ error: "Work not found" });
     return;
   }
-  res.json({ revisions });
+  res.json({ versions });
 });
 
 worksRouter.post(
-  "/:workId/restore/:revisionId",
+  "/:workId/restore/:versionId",
   async (req: AuthedRequest, res) => {
-    const revision = await restoreWorkToRevision(
+    const version = await restoreWorkToVersion(
       req.userId!,
       routeParam(req.params.workId, "workId"),
-      routeParam(req.params.revisionId, "revisionId"),
+      routeParam(req.params.versionId, "versionId"),
     );
-    if (!revision) {
-      res.status(404).json({ error: "Revision not found" });
+    if (!version) {
+      res.status(404).json({ error: "Version not found" });
       return;
     }
     const work = await getWork(
       req.userId!,
       routeParam(req.params.workId, "workId"),
     );
-    res.json({ revision, work });
+    res.json({ version, work });
   },
 );
 
@@ -146,7 +146,7 @@ worksRouter.post("/:workId/duplicate", async (req: AuthedRequest, res) => {
     .object({
       title: z.string().optional(),
       groupId: z.string().nullable().optional(),
-      revisionId: z.string().optional(),
+      versionId: z.string().optional(),
     })
     .safeParse(req.body ?? {});
   if (!body.success) {

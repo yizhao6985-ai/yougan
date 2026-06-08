@@ -101,9 +101,15 @@ export function YouganChat() {
     items[items.length - 1]?.kind === "human";
 
   const handleSend = useCallback(
-    async ({ text, imageUrls }: { text: string; imageUrls: string[] }) => {
+    async ({
+      text,
+      attachments,
+    }: {
+      text: string;
+      attachments: Parameters<typeof sendMessage>[1];
+    }) => {
       if (stream.isLoading || !canChat) return;
-      await sendMessage(text, imageUrls);
+      await sendMessage(text, attachments);
     },
     [canChat, sendMessage, stream.isLoading],
   );
@@ -135,19 +141,21 @@ export function YouganChat() {
     stream.values?.staging?.profile ??
     stream.values?.profile ??
     activeWork.profile;
-  const beatCount = profile.beats?.length ?? 0;
-  const constraintCount = profile.constraints?.length ?? 0;
+  const segmentCount = profile.blueprint?.segments?.length ?? 0;
+  const guardrailCount = profile.guardrails?.length ?? 0;
 
   const statusHint = (() => {
     switch (activeKind) {
+      case "reference":
+        return CHAT_COPY.status.referenceProcessing;
       case "production":
         return CHAT_COPY.status.productionExecuting;
       case "ask":
         return CHAT_COPY.status.askExploring;
       case "profile":
       default:
-        return beatCount > 0 || constraintCount > 0
-          ? CHAT_COPY.status.profileEditing(beatCount, constraintCount)
+        return segmentCount > 0 || guardrailCount > 0
+          ? CHAT_COPY.status.profileEditing(segmentCount, guardrailCount)
           : CHAT_COPY.status.profileExploring;
     }
   })();
@@ -323,7 +331,6 @@ export function YouganChat() {
           <div className="pointer-events-auto mx-auto w-full max-w-3xl">
             <ComposerAttachmentsProvider>
               <StudioChatComposer
-                activeTurnKind={activeKind}
                 input={input}
                 onInputChange={setInput}
                 onSend={handleSend}

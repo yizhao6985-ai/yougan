@@ -6,7 +6,6 @@ export {
   getProductionPlan,
   getProductionStagingMeta,
   getProfile,
-  getProfileStagingMeta,
   getReferences,
   getTurnQueue,
 } from "./get.js";
@@ -23,7 +22,7 @@ export {
   patchPendingProductionMeta,
   patchPendingProductionPlan,
   patchPendingProfile,
-  patchPendingProfileMeta,
+  patchPendingReferences,
 } from "./patch-pending.js";
 import { getCurrentTaskInput } from "@langchain/langgraph";
 

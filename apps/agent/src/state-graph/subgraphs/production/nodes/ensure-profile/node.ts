@@ -6,24 +6,24 @@ import { HumanMessage } from "@langchain/core/messages";
 
 import {
   isProfileActionable,
-  newProfileBeat,
-  resolveContentSpecFromProfile,
+  newProfileSegment,
+  resolveDeliveryFromProfile,
   type WorkProfile,
 } from "@yougan/domain";
 
 import { invokeStructured } from "#agent/llm/invoke/index.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
 import {
-  getLatestHumanMessageImageParts,
+  getLatestHumanMessageAttachments,
   getLatestHumanMessageText,
 } from "#agent/messages/human.js";
 import { resolveIndustryContext } from "../llm-call/prompt.js";
 import {
   profileSummary,
-  referencesSummary,
+  profileReferencesSummary,
 } from "@yougan/domain";
 import { YOUGAN_USER_LABEL } from "#agent/system-prompt.js";
-import { getProfile } from "#agent/state-io/index.js";
+import { getProfile, getReferences } from "#agent/state-io/index.js";
 import { patchPendingProfile } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 import {
@@ -39,70 +39,73 @@ export function shouldEnsureProfileForProduction(
 
 function buildEnsureProfilePrompt(state: AgentStateType): string {
   const profile = getProfile(state);
+  const references = getReferences(state);
   const userMessage = getLatestHumanMessageText(state.messages);
-  const hasImages =
-    getLatestHumanMessageImageParts(state.messages).length > 0;
-  const industry = resolveIndustryContext(resolveContentSpecFromProfile(profile));
+  const hasAttachments =
+    getLatestHumanMessageAttachments(state.messages).length > 0;
+  const industry = resolveIndustryContext(resolveDeliveryFromProfile(profile));
 
   return `你是制作前方案补全助手（内部角色，不对${YOUGAN_USER_LABEL}直接说话）。
 ${YOUGAN_USER_LABEL}已触发**制作/出稿**，但作品方案尚不完整。请根据已有信息与用户最新消息，**合理推断并补全**缺失字段，使方案足以开写。
 
 已有方案（保留已有非空字段，只补缺口）：
-${profileSummary(profile)}
+${profileSummary(profile, references)}
 
-${referencesSummary(profile.references)}
+${profileReferencesSummary(references)}
 
 行业经验：
 ${industry}
 
 ${YOUGAN_USER_LABEL}最新一条消息：
-${userMessage || (hasImages ? "（仅上传图片，无文字说明）" : "（空）")}
+${userMessage || (hasAttachments ? "（仅上传参考素材，无文字说明）" : "（空）")}
 
 请输出：
-1. content_topic：创作主题（若已有则沿用或精炼）
-2. premise：一句话定位
-3. beats：3–8 个有序节拍
+1. topic：创作主题（若已有则沿用或精炼）
+2. summary：一句话定位
+3. segments：3–8 个有序结构段
 4. audience / tone：可据体裁合理默认
 5. 只补结构，不生成正文`;
 }
 
 function applyEnsureProfileResponse(
   existing: WorkProfile,
-  response: {
-    content_topic: string;
-    premise: string;
-    beats: Array<{ description: string; intent?: string | null }>;
-    audience?: string | null;
-    tone?: string | null;
-  },
+  response: EnsureProfileResponse,
 ): WorkProfile {
   const topic =
-    existing.spec.content_topic?.trim() ||
-    response.content_topic.trim() ||
+    existing.delivery.topic?.trim() ||
+    response.topic.trim() ||
     "未命名创作主题";
 
   return {
     ...existing,
-    spec: {
-      ...existing.spec,
-      content_topic: topic,
+    delivery: {
+      ...existing.delivery,
+      topic,
     },
-    voice: {
-      ...existing.voice,
+    expression: {
+      ...existing.expression,
       audience:
-        existing.voice.audience?.trim() ||
+        existing.expression.audience?.trim() ||
         response.audience?.trim() ||
-        existing.voice.audience,
-      tone:
-        existing.voice.tone?.trim() ||
-        response.tone?.trim() ||
-        existing.voice.tone,
+        existing.expression.audience,
+      verbal: {
+        ...existing.expression.verbal,
+        tone:
+          existing.expression.verbal?.tone?.trim() ||
+          response.tone?.trim() ||
+          existing.expression.verbal?.tone,
+      },
     },
-    premise: existing.premise.trim() || response.premise.trim() || topic,
-    beats:
-      existing.beats.length > 0
-        ? existing.beats
-        : response.beats.map((b) => newProfileBeat(b.description, b.intent)),
+    blueprint: {
+      summary:
+        existing.blueprint.summary.trim() || response.summary.trim() || topic,
+      segments:
+        existing.blueprint.segments.length > 0
+          ? existing.blueprint.segments
+          : response.segments.map((s) =>
+              newProfileSegment(s.description, s.role),
+            ),
+    },
   };
 }
 
@@ -112,22 +115,24 @@ function fallbackProfile(
 ): WorkProfile {
   const userMessage = getLatestHumanMessageText(state.messages).trim();
   const topic =
-    existing.spec.content_topic?.trim() ||
+    existing.delivery.topic?.trim() ||
     userMessage.slice(0, 48) ||
     "未命名创作主题";
 
   return {
     ...existing,
-    spec: { ...existing.spec, content_topic: topic },
-    premise: existing.premise.trim() || topic,
-    beats:
-      existing.beats.length > 0
-        ? existing.beats
-        : [
-            newProfileBeat("开篇钩子与核心观点"),
-            newProfileBeat("主体内容与案例展开"),
-            newProfileBeat("总结与行动号召"),
-          ],
+    delivery: { ...existing.delivery, topic },
+    blueprint: {
+      summary: existing.blueprint.summary.trim() || topic,
+      segments:
+        existing.blueprint.segments.length > 0
+          ? existing.blueprint.segments
+          : [
+              newProfileSegment("开篇钩子与核心观点", "hook"),
+              newProfileSegment("主体内容与案例展开", "point"),
+              newProfileSegment("总结与行动号召", "cta"),
+            ],
+    },
   };
 }
 

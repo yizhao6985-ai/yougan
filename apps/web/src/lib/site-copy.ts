@@ -94,7 +94,7 @@ export const ABOUT_PAGE = {
     },
     {
       title: "坦诚的产品边界",
-      body: "灵感、大纲、创作、提问各司其职——Agent 根据每条消息自动路由，边界清晰，你只需自然对话。",
+      body: "方案、制作、答疑各做各的事，边界清晰；你只需自然对话，其余交给系统处理。",
     },
   ] as const,
   productTitle: "我们的产品",
@@ -117,7 +117,7 @@ export const HOME = {
     "帮你找灵感、理清选题与写法；AI 团队制定制作计划，文案/设计/音视频按计划精良出稿。专注创作本身，从方案到成稿一路可改。",
   ctaStudio: "开始创作",
   ctaFeatures: "了解产品能力",
-  capabilitiesTitle: "四个阶段，一件作品走完全流程",
+  capabilitiesTitle: "写方案、做内容、随时问",
   capabilitiesLink: "查看说明 →",
 } as const;
 
@@ -126,17 +126,17 @@ export const FEATURES_PAGE = {
   eyebrow: "产品能力",
   title: "从找灵感到 AI 团队出稿",
   subtitle:
-    "很多 AI 工具问一句就出一篇，选题偏了就要整篇重写。有感先帮你找灵感、对齐写法，再由 AI 团队定计划、精良制作；中间随时提问、改计划。系统会根据对话意图自动推进各阶段。",
+    "很多 AI 工具问一句就出一篇，选题偏了就要整篇重写。有感先帮你找灵感、对齐写法，再由 AI 团队定计划、精良制作；中间随时提问、改计划，对话里一路可改。",
   platformsIntro: "常见创作形态",
   workflowTitle: "推荐使用方式",
-  workflowSubtitle: "从新建作品到可以发布，一般这样走（不必手动切换阶段）",
-  modesTitle: "创作流程里的四个阶段",
-  modesSubtitle:
-    "你只需自然对话；Agent 会根据每条消息自动识别该做灵感收集、大纲确认、出稿还是答疑。",
+  workflowSubtitle: "从新建作品到可以发布，一般这样走",
+  capabilitiesDetailTitle: "能帮你做什么",
+  capabilitiesDetailSubtitle:
+    "自然对话即可，系统会在背后帮你整理方案、推进制作、回答问题。",
   studioTitle: "创作台布局",
   studioSubtitle: "左侧作品列表、中间对话、右侧作品面板",
-  modeBenefitsHeading: "会帮你做",
-  modeLimitsHeading: "这一步不做",
+  capabilityBenefitsHeading: "会帮你做",
+  capabilityLimitsHeading: "这一步不做",
   ctaStudio: "打开创作台",
   ctaMobile: "下载手机 App",
 } as const;
@@ -317,8 +317,9 @@ export const STUDIO = {
   referencesCount: (n: number) => `已添加 ${n} 条参考素材`,
   publishViewInDiscover: (sectionTitle: string) => `在${sectionTitle}查看`,
   modelTemperatureLabel: "创意度",
+  modelTemperatureScope: "仅出稿",
   modelTemperatureHint:
-    "仅影响创作出稿时 AI 团队的文案与专员产出，不影响灵感/提问对话与制作计划编排（0.1–1.0）",
+    "调节 AI 团队在生成成稿时的发散程度（文案、设计等）。不影响方案对话、提问答疑与制作计划编排。",
 } as const;
 
 export const CHAT_COPY = {
@@ -328,9 +329,10 @@ export const CHAT_COPY = {
   /** 开屏空态：单行标题（建议气泡上方；新对话也可能承接已有作品方案） */
   emptyTitle: "选一个下一步，或直接输入",
   status: {
+    referenceProcessing: "正在分析参考素材",
     profileExploring: "正在帮你整理作品方案",
-    profileEditing: (beats: number, constraints: number) =>
-      `方案 ${beats} 节 · ${constraints} 条要求，可在右侧随时修改`,
+    profileEditing: (segments: number, guardrails: number) =>
+      `方案 ${segments} 节 · ${guardrails} 条规则，可在右侧随时修改`,
     askExploring: "有问题随时问：优化、学习、行业背景都可以",
     productionExecuting: "AI 团队正在按方案精良制作",
   },
@@ -343,16 +345,20 @@ export const CHAT_COPY = {
     expand: "展开附件",
     collapse: "收起附件",
     remove: (name: string) => `移除 ${name}`,
-    uploadTooltip: "添加参考图",
+    uploadTooltips: {
+      image: "添加参考图片",
+      audio: "添加参考音频",
+      video: "添加参考视频",
+    },
     uploading: "上传中…",
-    maxReached: "最多 6 张参考图",
+    maxReached: "最多 6 份参考素材",
   },
 } as const;
 
 /** 创作台右侧栏 */
 export const CREATIVE_CONTEXT_PANEL = {
   title: "作品面板",
-  hint: "作品方案、作品预览、参考素材与版本记录集中在这里",
+  hint: "作品方案、参考素材、作品预览与版本记录集中在这里",
   expand: "展开作品面板",
   collapse: "收起作品面板",
   tabs: {
@@ -390,13 +396,21 @@ export const WORK_HISTORY_PANEL = {
 /** 作品面板 · 作品方案 */
 export const PROFILE_PANEL = {
   title: "作品方案",
-  hint: "创作主题、体裁形式、表达设定、写作要求与内容节拍；对话中确认后 Agent 会写入这里",
-  premiseLabel: "定位",
-  constraintsLabel: "写作要求",
-  beatsLabel: "内容节拍",
-  clearConstraints: "清空要求",
-  clearBeats: "清空节拍",
-  empty: "还没有作品方案。在对话里讨论方向后，Agent 会通过工具写入这里。",
+  hint: "交付规格、表达设定、内容定位、结构段、创作规则与体裁参数；对话中确认后 Agent 会写入这里",
+  deliveryLabel: "交付规格",
+  expressionLabel: "表达设定",
+  summaryLabel: "内容定位",
+  segmentsLabel: "内容结构",
+  guardrailsLabel: "创作规则",
+  paramsLabel: "体裁参数",
+  clearGuardrails: "清空规则",
+  clearSegments: "清空结构",
+  deliveryEmpty: "创作主题、体裁、媒介形式、发布平台与内容分类，会汇总在这里。",
+  expressionEmpty: "目标受众、语气文风、叙述视角，以及画面风格与氛围，会记录在这里。",
+  summaryEmpty: "这篇内容的一句话定位与核心主张，会写在这里。",
+  segmentsEmpty: "钩子、论点、案例、收尾等结构段，会按叙事顺序列在这里。",
+  guardrailsEmpty: "禁用词、必提要素、尺度边界等硬性约束，会列在这里。",
+  paramsEmpty: "目标字数、画幅比例、视频时长等体裁参数，会设在这里。",
 } as const;
 
 /** 对话流 · 大纲进度（已移除，方案仅在侧栏展示） */
@@ -410,19 +424,26 @@ export const PREVIEW_PANEL = {
 
 export const REFERENCE_PANEL = {
   title: "参考素材",
-  hint: "对话中上传或解析的参考文案与图片会汇总在这里",
+  hint: "对话中上传或粘贴的参考会经 AI 分析后汇总在这里",
   empty: "添加参考素材后，会显示在这里。",
+  analysisLabel: "分析：",
+  intentLabel: "意图：",
   typeLabels: {
     text: "文案",
     image: "图片",
-    web: "网页",
+    audio: "音频",
+    video: "视频",
+    file: "文件",
   },
   fallbackTitle: (n: number) => `参考素材 ${n}`,
   expand: "展开",
   collapse: "收起",
   openLink: "打开链接",
   openImage: "查看原图",
+  openAudio: "播放音频",
+  openVideo: "播放视频",
   imageUnavailable: "图片不可用",
+  mediaUnavailable: "媒体不可用",
 } as const;
 
 export const INTEGRATIONS = {

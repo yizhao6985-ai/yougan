@@ -1,4 +1,4 @@
-/** dispatchTurnQueue：按队首 kind 进入 profile / production / ask 子图 */
+/** dispatchTurnQueue：按队首 kind 进入 reference / profile / production / ask 子图 */
 import type { TurnQueueKind } from "@yougan/domain";
 
 import {
@@ -10,12 +10,15 @@ import type { AgentStateType } from "#agent/state.js";
 export const from = "dispatchTurnQueue" as const;
 
 export type SubgraphByTurnKindTarget =
+  | "referenceGraph"
   | "profileGraph"
   | "productionGraph"
   | "askGraph";
 
 function subgraphForKind(kind: TurnQueueKind): SubgraphByTurnKindTarget {
   switch (kind) {
+    case "reference":
+      return "referenceGraph";
     case "profile":
       return "profileGraph";
     case "production":
@@ -34,6 +37,7 @@ export function selectSubgraphByTurnKind(
 }
 
 export const paths: SubgraphByTurnKindTarget[] = [
+  "referenceGraph",
   "profileGraph",
   "productionGraph",
   "askGraph",

@@ -12,7 +12,7 @@ export const queryKeys = {
       ["works", workId, "conversations"] as const,
     openingBootstrap: (workId: string, conversationId: string) =>
       ["works", workId, "conversations", conversationId, "opening-bootstrap"] as const,
-    revisions: (workId: string) => ["works", workId, "revisions"] as const,
+    versions: (workId: string) => ["works", workId, "versions"] as const,
   },
   workGroups: {
     all: ["work-groups"] as const,

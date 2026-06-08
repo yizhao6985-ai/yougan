@@ -42,7 +42,7 @@ src/
 | 模块 | 函数 | 用途 |
 |------|------|------|
 | `get.ts` | `getProfile`、`getProductionPlan`、`getPreview`… | 作品字段 **staging 优先** |
-| `get.ts` | `getProfileStagingMeta`、`getProductionStagingMeta` | staging.meta（含默认值） |
+| `get.ts` | `getProductionStagingMeta` | staging.meta.production（含默认值） |
 | `get.ts` | `getTurnQueue`、`getActiveTurnKind`… | 控制字段，读 state 顶层 |
 | `patch-pending.ts` | `patchPendingProfile`、`patchPendingProductionMeta`… | 写 staging |
 | `patch-pending.ts` | `patchPendingBatch` | 合并多个 `{ staging }` patch |

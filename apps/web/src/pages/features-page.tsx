@@ -1,15 +1,10 @@
 import { Link } from "react-router-dom";
-import {
-  ArrowLeftIcon,
-  ArrowRightIcon,
-  CheckIcon,
-  XIcon,
-} from "lucide-react";
+import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, XIcon } from "lucide-react";
 
 import { SiteHeader } from "@/components/site-header";
 import {
   PRODUCTION_FORMS,
-  STUDIO_CAPABILITY_MODES,
+  STUDIO_CAPABILITIES,
   EXTRA_CAPABILITIES,
   STUDIO_PANELS,
   WORKFLOW_STEPS,
@@ -18,19 +13,19 @@ import { scene } from "@/lib/scene-styles";
 import { FEATURES_PAGE } from "@/lib/site-copy";
 import { cn } from "@/lib/utils";
 
-function ModeSection({
-  mode,
+function CapabilitySection({
+  capability,
   index,
 }: {
-  mode: (typeof STUDIO_CAPABILITY_MODES)[number];
+  capability: (typeof STUDIO_CAPABILITIES)[number];
   index: number;
 }) {
-  const Icon = mode.icon;
+  const Icon = capability.icon;
   const reversed = index % 2 === 1;
 
   return (
     <section
-      id={mode.anchor}
+      id={capability.anchor}
       className={cn(scene.card, scene.cardPadding, "scroll-mt-24 sm:p-8")}
     >
       <div
@@ -45,24 +40,26 @@ function ModeSection({
           </span>
           <div>
             <p className="text-xs font-medium uppercase tracking-wider text-primary/90">
-              {mode.label}
+              {capability.label}
             </p>
             <h2 className="mt-1 text-2xl font-semibold text-foreground">
-              {mode.tagline}
+              {capability.tagline}
             </h2>
           </div>
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="text-base leading-7 text-muted-foreground">{mode.summary}</p>
+          <p className="text-base leading-7 text-muted-foreground">
+            {capability.summary}
+          </p>
 
           <div className="mt-8 grid gap-6 sm:grid-cols-2">
             <div>
               <h3 className="text-sm font-medium text-foreground">
-                {FEATURES_PAGE.modeBenefitsHeading}
+                {FEATURES_PAGE.capabilityBenefitsHeading}
               </h3>
               <ul className="mt-3 space-y-2.5">
-                {mode.highlights.map((item) => (
+                {capability.highlights.map((item) => (
                   <li
                     key={item}
                     className="flex gap-2 text-sm leading-6 text-muted-foreground"
@@ -78,10 +75,10 @@ function ModeSection({
             </div>
             <div>
               <h3 className="text-sm font-medium text-foreground">
-                {FEATURES_PAGE.modeLimitsHeading}
+                {FEATURES_PAGE.capabilityLimitsHeading}
               </h3>
               <ul className="mt-3 space-y-2.5">
-                {mode.avoids.map((item) => (
+                {capability.avoids.map((item) => (
                   <li
                     key={item}
                     className="flex gap-2 text-sm leading-6 text-muted-foreground"
@@ -131,14 +128,14 @@ export function FeaturesPage() {
             {FEATURES_PAGE.platformsIntro}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
-          {PRODUCTION_FORMS.map((form) => (
-            <span
-              key={form}
-              className="rounded-md border border-border/80 bg-card/90 px-4 py-1.5 text-sm text-foreground/90 shadow-sm"
-            >
-              {form}
-            </span>
-          ))}
+            {PRODUCTION_FORMS.map((form) => (
+              <span
+                key={form}
+                className="rounded-md border border-border/80 bg-card/90 px-4 py-1.5 text-sm text-foreground/90 shadow-sm"
+              >
+                {form}
+              </span>
+            ))}
           </div>
         </section>
 
@@ -188,19 +185,23 @@ export function FeaturesPage() {
           </div>
         </section>
 
-        <section className="mt-20" aria-labelledby="modes-heading">
+        <section className="mt-20" aria-labelledby="capabilities-heading">
           <h2
-            id="modes-heading"
+            id="capabilities-heading"
             className="text-2xl font-semibold text-foreground"
           >
-            {FEATURES_PAGE.modesTitle}
+            {FEATURES_PAGE.capabilitiesDetailTitle}
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            {FEATURES_PAGE.modesSubtitle}
+            {FEATURES_PAGE.capabilitiesDetailSubtitle}
           </p>
           <div className="mt-8 space-y-8">
-            {STUDIO_CAPABILITY_MODES.map((mode, index) => (
-              <ModeSection key={mode.id} mode={mode} index={index} />
+            {STUDIO_CAPABILITIES.map((capability, index) => (
+              <CapabilitySection
+                key={capability.anchor}
+                capability={capability}
+                index={index}
+              />
             ))}
           </div>
         </section>
@@ -223,7 +224,9 @@ export function FeaturesPage() {
               >
                 <Icon className="size-5 text-primary" aria-hidden />
                 <h3 className="mt-3 font-medium text-foreground">{title}</h3>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">{body}</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  {body}
+                </p>
               </article>
             ))}
           </div>
@@ -237,22 +240,18 @@ export function FeaturesPage() {
             >
               <Icon className="size-5 text-primary" aria-hidden />
               <h3 className="mt-3 font-medium text-foreground">{title}</h3>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">{body}</p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                {body}
+              </p>
             </article>
           ))}
         </section>
 
         <div className="mt-16 flex flex-wrap justify-center gap-4 border-t border-border/80 pt-12">
-          <Link
-            to="/studio"
-            className={scene.ctaPrimary}
-          >
+          <Link to="/studio" className={scene.ctaPrimary}>
             {FEATURES_PAGE.ctaStudio}
           </Link>
-          <Link
-            to="/mobile"
-            className={scene.ctaSecondary}
-          >
+          <Link to="/mobile" className={scene.ctaSecondary}>
             {FEATURES_PAGE.ctaMobile}
           </Link>
         </div>

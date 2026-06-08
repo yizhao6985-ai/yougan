@@ -16,15 +16,12 @@ import {
 } from "@/components/studio/chat-stream-block";
 import {
   useDuplicateWorkMutation,
-  useRestoreWorkRevisionMutation,
-  useWorkRevisionsQuery,
-} from "@/hooks/queries/revisions";
-import {
-  formatRevisionTime,
-  revisionPhaseLabel,
-} from "@/lib/revision-labels";
+  useRestoreWorkVersionMutation,
+  useWorkVersionsQuery,
+} from "@/hooks/queries/versions";
+import { formatVersionTime } from "@/lib/version-labels";
 import { WORK_HISTORY_PANEL } from "@/lib/site-copy";
-import type { WorkRevisionDTO } from "@/lib/types";
+import type { WorkVersion } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type WorkHistoryPanelProps = {
@@ -33,21 +30,21 @@ type WorkHistoryPanelProps = {
   onDuplicated?: (workId: string) => void;
 };
 
-type PendingRestore = WorkRevisionDTO;
+type PendingRestore = WorkVersion;
 
 export function WorkHistoryPanel({
   workId,
   compact,
   onDuplicated,
 }: WorkHistoryPanelProps) {
-  const revisionsQuery = useWorkRevisionsQuery(workId);
-  const restoreMutation = useRestoreWorkRevisionMutation(workId);
+  const versionsQuery = useWorkVersionsQuery(workId);
+  const restoreMutation = useRestoreWorkVersionMutation(workId);
   const duplicateMutation = useDuplicateWorkMutation(workId);
   const [pendingRestore, setPendingRestore] = useState<PendingRestore | null>(
     null,
   );
 
-  const revisions = revisionsQuery.data ?? [];
+  const versions = versionsQuery.data ?? [];
 
   const handleRestore = () => {
     if (!pendingRestore) return;
@@ -57,14 +54,14 @@ export function WorkHistoryPanel({
       .catch(() => undefined);
   };
 
-  const handleDuplicate = (revisionId?: string) => {
+  const handleDuplicate = (versionId?: string) => {
     void duplicateMutation
-      .mutateAsync({ revisionId })
+      .mutateAsync({ versionId })
       .then(({ work }) => onDuplicated?.(work.id))
       .catch(() => undefined);
   };
 
-  if (revisionsQuery.isLoading) {
+  if (versionsQuery.isLoading) {
     return <p className={chatStreamBlock.muted}>{WORK_HISTORY_PANEL.loading}</p>;
   }
 
@@ -101,19 +98,19 @@ export function WorkHistoryPanel({
           {WORK_HISTORY_PANEL.timelineHint}
         </p>
 
-        {revisions.length === 0 ? (
+        {versions.length === 0 ? (
           <p className={chatStreamBlock.muted}>{WORK_HISTORY_PANEL.empty}</p>
         ) : (
           <ol className="space-y-2">
-            {revisions.map((revision, index) => (
-              <li key={revision.id}>
-                <RevisionRow
-                  revision={revision}
+            {versions.map((version, index) => (
+              <li key={version.id}>
+                <VersionRow
+                  version={version}
                   isHead={index === 0}
                   disableRestore={restoreMutation.isPending || index === 0}
                   disableDuplicate={duplicateMutation.isPending}
-                  onRestore={() => setPendingRestore(revision)}
-                  onDuplicate={() => handleDuplicate(revision.id)}
+                  onRestore={() => setPendingRestore(version)}
+                  onDuplicate={() => handleDuplicate(version.id)}
                 />
               </li>
             ))}
@@ -140,8 +137,7 @@ export function WorkHistoryPanel({
                 {pendingRestore.summary}
               </p>
               <p className={cn(chatStreamBlock.caption, "mt-1")}>
-                {revisionPhaseLabel(pendingRestore.phase)} ·{" "}
-                {formatRevisionTime(pendingRestore.createdAt)}
+                {formatVersionTime(pendingRestore.createdAt)}
               </p>
             </div>
           ) : null}
@@ -169,15 +165,15 @@ export function WorkHistoryPanel({
   );
 }
 
-function RevisionRow({
-  revision,
+function VersionRow({
+  version,
   isHead,
   disableRestore,
   disableDuplicate,
   onRestore,
   onDuplicate,
 }: {
-  revision: WorkRevisionDTO;
+  version: WorkVersion;
   isHead: boolean;
   disableRestore: boolean;
   disableDuplicate: boolean;
@@ -189,15 +185,6 @@ function RevisionRow({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span
-              className={cn(
-                chatStreamBlock.headerMeta,
-                revision.phase === "preview" &&
-                  "text-primary",
-              )}
-            >
-              {revisionPhaseLabel(revision.phase)}
-            </span>
             {isHead ? (
               <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
                 {WORK_HISTORY_PANEL.headBadge}
@@ -205,10 +192,10 @@ function RevisionRow({
             ) : null}
           </div>
           <p className="mt-1.5 text-sm leading-6 text-foreground/90">
-            {revision.summary}
+            {version.summary}
           </p>
           <p className={cn(chatStreamBlock.caption, "mt-1")}>
-            {formatRevisionTime(revision.createdAt)}
+            {formatVersionTime(version.createdAt)}
           </p>
         </div>
         <div className="flex shrink-0 flex-col gap-1">

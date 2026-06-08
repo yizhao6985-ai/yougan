@@ -1,4 +1,11 @@
-import { ChevronDownIcon, Loader2Icon, XIcon } from "lucide-react";
+import {
+  ChevronDownIcon,
+  FileIcon,
+  Loader2Icon,
+  MusicIcon,
+  VideoIcon,
+  XIcon,
+} from "lucide-react";
 import { useRef, useState } from "react";
 
 import {
@@ -7,8 +14,56 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useComposerAttachmentsContext } from "@/components/studio/composer-attachments-context";
+import type { ComposerAttachment } from "@/hooks/use-composer-attachments";
 import { CHAT_COPY } from "@/lib/site-copy";
 import { cn } from "@/lib/utils";
+
+function AttachmentPreview({ item }: { item: ComposerAttachment }) {
+  if (item.mediaKind === "image") {
+    return (
+      <img
+        src={item.previewUrl}
+        alt={item.filename}
+        className={cn(
+          "size-full object-cover",
+          item.status === "error" && "opacity-40",
+        )}
+      />
+    );
+  }
+
+  if (item.mediaKind === "video") {
+    return (
+      <video
+        src={item.previewUrl}
+        muted
+        playsInline
+        preload="metadata"
+        className={cn(
+          "size-full object-cover",
+          item.status === "error" && "opacity-40",
+        )}
+      />
+    );
+  }
+
+  const Icon =
+    item.mediaKind === "audio" ? MusicIcon : FileIcon;
+
+  return (
+    <div
+      className={cn(
+        "flex size-full flex-col items-center justify-center gap-1 bg-muted/40 px-1 text-muted-foreground",
+        item.status === "error" && "opacity-40",
+      )}
+    >
+      <Icon className="size-5 shrink-0" aria-hidden />
+      <span className="line-clamp-2 w-full text-center text-[9px] leading-tight">
+        {item.filename}
+      </span>
+    </div>
+  );
+}
 
 export function ComposerAttachmentDrawer({ className }: { className?: string }) {
   const { items, remove } = useComposerAttachmentsContext();
@@ -78,14 +133,7 @@ export function ComposerAttachmentDrawer({ className }: { className?: string }) 
               key={item.id}
               className="group relative size-16 shrink-0 overflow-hidden rounded-lg border border-border/70 bg-background shadow-sm"
             >
-              <img
-                src={item.previewUrl}
-                alt={item.filename}
-                className={cn(
-                  "size-full object-cover",
-                  item.status === "error" && "opacity-40",
-                )}
-              />
+              <AttachmentPreview item={item} />
               {item.status === "uploading" ? (
                 <div className="absolute inset-0 flex items-center justify-center bg-background/70">
                   <Loader2Icon className="size-4 animate-spin text-muted-foreground" />

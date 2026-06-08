@@ -46,7 +46,7 @@ START
 
 ## 队列项类型（TurnQueueKind）
 
-定义于 `packages/domain/src/models/chat/turn-queue.ts`（排序工具见 `utils/turn-queue.ts`）：
+定义于 `packages/domain/src/models/agent/turn-queue.ts`（排序工具见 `utils/turn-queue.ts`）：
 
 | kind | 主图节点 | 行为 |
 |------|----------|------|
@@ -78,7 +78,7 @@ LangGraph stream 结束后（`agent-proxy`）：`verifyTurn` 写入的 `suggeste
 
 ## 相关代码
 
-- `packages/domain/src/models/chat/turn-queue.ts`
+- `packages/domain/src/models/agent/turn-queue.ts`
 - `packages/domain/src/utils/turn-queue.ts`
 - `apps/agent/src/graph.ts`
 - `apps/agent/src/nodes/`（`planner` / `executor` / `verifier` / `edges`）

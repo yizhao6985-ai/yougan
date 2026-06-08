@@ -1,4 +1,4 @@
-/** 作品方案增量工具：spec / voice / premise / constraints / beats */
+/** 作品方案批量 patch 工具 */
 import { ToolMessage } from "@langchain/core/messages";
 import { tool } from "@langchain/core/tools";
 import type { ToolRunnableConfig } from "@langchain/core/tools";
@@ -6,567 +6,254 @@ import { Command } from "@langchain/langgraph";
 import { z } from "zod";
 
 import {
-  appendProfileBeat,
-  appendProfileBeats,
-  appendProfileConstraint,
-  clearProfileBeats,
-  clearProfileConstraints,
-  deleteProfileBeat,
-  deleteProfileConstraint,
-  findProfileBeatIndex,
-  findProfileConstraintIndex,
-  patchProfileSpec,
-  patchProfileVoice,
-  setProfilePremise,
-  updateProfileBeat,
-  updateProfileConstraint,
+  applyProfilePatch,
+  type FormatParams,
+  type ProfilePatch,
+  type WorkProfile,
 } from "@yougan/domain";
 import {
-  getActiveTurnKind,
   getProfile,
   getState,
   patchPendingProfile,
 } from "#agent/state-io/index.js";
 
-function requireProfileMode(config: object): string | null {
-  if (getActiveTurnKind(getState()) !== "profile") {
-    return "作品方案工具仅在 profile 模式可用。";
-  }
-  return null;
-}
-
-export const updateProfileSpec = tool(
-  async (input, config) => {
-    const toolCallId = (config as ToolRunnableConfig).toolCall?.id ?? "";
-    const gate = requireProfileMode(config);
-    if (gate) {
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({ content: gate, tool_call_id: toolCallId }),
-          ],
-        },
-      });
-    }
-
-    const updates = Object.fromEntries(
-      Object.entries(input).filter(([, v]) => v !== undefined),
-    );
-    if (!Object.keys(updates).length) {
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({
-              content: "未提供需要更新的创作规格。",
-              tool_call_id: toolCallId,
-            }),
-          ],
-        },
-      });
-    }
-
-    const profile = getProfile(getState());
-    return new Command({
-      update: {
-        messages: [
-          new ToolMessage({
-            content: "已更新作品方案创作规格。",
-            tool_call_id: toolCallId,
-          }),
-        ],
-        ...patchPendingProfile(getState(), patchProfileSpec(profile, updates)),
-      },
-    });
-  },
-  {
-    name: "update_profile_spec",
-    description:
-      "写入或更新创作主题、体裁、媒介形式。换选题/换方向时优先更新 content_topic。仅当用户主动提到发布渠道时才写 platform。",
-    schema: z.object({
-      platform: z.string().nullable().optional(),
-      content_topic: z.string().nullable().optional(),
-      content_type: z.string().nullable().optional(),
-      content_format: z.string().nullable().optional(),
-      media_modality: z.string().nullable().optional(),
-    }),
-  },
-);
-
-export const updateProfileVoice = tool(
-  async (input, config) => {
-    const toolCallId = (config as ToolRunnableConfig).toolCall?.id ?? "";
-    const gate = requireProfileMode(config);
-    if (gate) {
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({ content: gate, tool_call_id: toolCallId }),
-          ],
-        },
-      });
-    }
-
-    const updates = Object.fromEntries(
-      Object.entries(input).filter(([, v]) => v !== undefined),
-    );
-    if (!Object.keys(updates).length) {
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({
-              content: "未提供需要更新的表达设定。",
-              tool_call_id: toolCallId,
-            }),
-          ],
-        },
-      });
-    }
-
-    const profile = getProfile(getState());
-    return new Command({
-      update: {
-        messages: [
-          new ToolMessage({
-            content: "已更新作品方案表达设定。",
-            tool_call_id: toolCallId,
-          }),
-        ],
-        ...patchPendingProfile(getState(), patchProfileVoice(profile, updates)),
-      },
-    });
-  },
-  {
-    name: "update_profile_voice",
-    description: "写入受众、语气、风格等人设相关设定。",
-    schema: z.object({
-      audience: z.string().nullable().optional(),
-      tone: z.string().nullable().optional(),
-      style: z.string().nullable().optional(),
-      persona: z.string().nullable().optional(),
-      goals: z.array(z.string()).optional(),
-    }),
-  },
-);
-
-export const setProfilePremiseTool = tool(
-  async ({ premise }, config) => {
-    const toolCallId = (config as ToolRunnableConfig).toolCall?.id ?? "";
-    const gate = requireProfileMode(config);
-    if (gate) {
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({ content: gate, tool_call_id: toolCallId }),
-          ],
-        },
-      });
-    }
-    const trimmed = premise.trim();
-    if (!trimmed) {
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({
-              content: "定位描述不能为空。",
-              tool_call_id: toolCallId,
-            }),
-          ],
-        },
-      });
-    }
-    const profile = getProfile(getState());
-    return new Command({
-      update: {
-        messages: [
-          new ToolMessage({
-            content: "已更新作品方案定位。",
-            tool_call_id: toolCallId,
-          }),
-        ],
-        ...patchPendingProfile(getState(), setProfilePremise(profile, trimmed)),
-      },
-    });
-  },
-  {
-    name: "set_profile_premise",
-    description:
-      "写入或更新一句话定位。换方向后与新 content_topic 对齐；局部调整时也可单独更新。",
-    schema: z.object({
-      premise: z.string().describe("这篇内容要讲什么"),
-    }),
-  },
-);
-
-export const addProfileConstraint = tool(
-  async ({ description }, config) => {
-    const toolCallId = (config as ToolRunnableConfig).toolCall?.id ?? "";
-    const gate = requireProfileMode(config);
-    if (gate) {
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({ content: gate, tool_call_id: toolCallId }),
-          ],
-        },
-      });
-    }
-    const trimmed = description.trim();
-    if (!trimmed) {
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({
-              content: "写作要求不能为空。",
-              tool_call_id: toolCallId,
-            }),
-          ],
-        },
-      });
-    }
-    const profile = getProfile(getState());
-    const next = appendProfileConstraint(profile, trimmed);
-    if (!next) {
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({
-              content: "该要求已在方案中。",
-              tool_call_id: toolCallId,
-            }),
-          ],
-        },
-      });
-    }
-    return new Command({
-      update: {
-        messages: [
-          new ToolMessage({
-            content: `已添加写作要求（共 ${next.constraints.length} 条）。`,
-            tool_call_id: toolCallId,
-          }),
-        ],
-        ...patchPendingProfile(getState(), next),
-      },
-    });
-  },
-  {
-    name: "add_profile_constraint",
-    description: "用户确认的非结构性写作要求（语气、禁忌、必提信息等）。",
-    schema: z.object({
-      description: z.string(),
-    }),
-  },
-);
-
-export const updateProfileConstraintTool = tool(
-  async ({ constraint_id, description }, config) => {
-    const toolCallId = (config as ToolRunnableConfig).toolCall?.id ?? "";
-    const gate = requireProfileMode(config);
-    if (gate) {
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({ content: gate, tool_call_id: toolCallId }),
-          ],
-        },
-      });
-    }
-    const trimmed = description.trim();
-    if (!trimmed) {
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({
-              content: "写作要求不能为空。",
-              tool_call_id: toolCallId,
-            }),
-          ],
-        },
-      });
-    }
-    const profile = getProfile(getState());
-    if (findProfileConstraintIndex(profile, constraint_id) < 0) {
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({
-              content: `未找到要求 ${constraint_id}。`,
-              tool_call_id: toolCallId,
-            }),
-          ],
-        },
-      });
-    }
-    return new Command({
-      update: {
-        messages: [
-          new ToolMessage({
-            content: "已更新写作要求。",
-            tool_call_id: toolCallId,
-          }),
-        ],
-        ...patchPendingProfile(
-          getState(),
-          updateProfileConstraint(profile, constraint_id, trimmed),
-        ),
-      },
-    });
-  },
-  {
-    name: "update_profile_constraint",
-    description: "修改已有写作要求。",
-    schema: z.object({
-      constraint_id: z.string(),
-      description: z.string(),
-    }),
-  },
-);
-
-export const deleteProfileConstraintTool = tool(
-  async ({ constraint_id }, config) => {
-    const toolCallId = (config as ToolRunnableConfig).toolCall?.id ?? "";
-    const gate = requireProfileMode(config);
-    if (gate) {
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({ content: gate, tool_call_id: toolCallId }),
-          ],
-        },
-      });
-    }
-    const profile = getProfile(getState());
-    if (findProfileConstraintIndex(profile, constraint_id) < 0) {
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({
-              content: `未找到要求 ${constraint_id}。`,
-              tool_call_id: toolCallId,
-            }),
-          ],
-        },
-      });
-    }
-    return new Command({
-      update: {
-        messages: [
-          new ToolMessage({
-            content: "已删除写作要求。",
-            tool_call_id: toolCallId,
-          }),
-        ],
-        ...patchPendingProfile(
-          getState(),
-          deleteProfileConstraint(profile, constraint_id),
-        ),
-      },
-    });
-  },
-  {
-    name: "delete_profile_constraint",
-    description: "删除一条写作要求。",
-    schema: z.object({ constraint_id: z.string() }),
-  },
-);
-
-export const addProfileBeat = tool(
-  async ({ description, intent }, config) => {
-    const toolCallId = (config as ToolRunnableConfig).toolCall?.id ?? "";
-    const gate = requireProfileMode(config);
-    if (gate) {
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({ content: gate, tool_call_id: toolCallId }),
-          ],
-        },
-      });
-    }
-    const trimmed = description.trim();
-    if (!trimmed) {
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({
-              content: "节拍描述不能为空。",
-              tool_call_id: toolCallId,
-            }),
-          ],
-        },
-      });
-    }
-    const profile = getProfile(getState());
-    const next = appendProfileBeat(profile, trimmed, intent);
-    if (!next) {
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({
-              content: "该节拍已在方案中。",
-              tool_call_id: toolCallId,
-            }),
-          ],
-        },
-      });
-    }
-    return new Command({
-      update: {
-        messages: [
-          new ToolMessage({
-            content: `已添加内容节拍（共 ${next.beats.length} 节）。`,
-            tool_call_id: toolCallId,
-          }),
-        ],
-        ...patchPendingProfile(getState(), next),
-      },
-    });
-  },
-  {
-    name: "add_profile_beat",
-    description:
-      "追加单条内容节拍。仅新增一节时用；换方向后一次性写多节请用 add_profile_beats。",
-    schema: z.object({
-      description: z.string(),
-      intent: z.string().nullable().optional(),
-    }),
-  },
-);
-
-export const updateProfileBeatTool = tool(
-  async ({ beat_id, description, intent }, config) => {
-    const toolCallId = (config as ToolRunnableConfig).toolCall?.id ?? "";
-    const gate = requireProfileMode(config);
-    if (gate) {
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({ content: gate, tool_call_id: toolCallId }),
-          ],
-        },
-      });
-    }
-    const trimmed = description.trim();
-    if (!trimmed) {
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({
-              content: "节拍描述不能为空。",
-              tool_call_id: toolCallId,
-            }),
-          ],
-        },
-      });
-    }
-    const profile = getProfile(getState());
-    if (findProfileBeatIndex(profile, beat_id) < 0) {
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({
-              content: `未找到节拍 ${beat_id}。`,
-              tool_call_id: toolCallId,
-            }),
-          ],
-        },
-      });
-    }
-    return new Command({
-      update: {
-        messages: [
-          new ToolMessage({
-            content: "已更新内容节拍。",
-            tool_call_id: toolCallId,
-          }),
-        ],
-        ...patchPendingProfile(
-          getState(),
-          updateProfileBeat(profile, beat_id, trimmed, intent),
-        ),
-      },
-    });
-  },
-  {
-    name: "update_profile_beat",
-    description: "修改已有内容节拍。",
-    schema: z.object({
-      beat_id: z.string(),
-      description: z.string(),
-      intent: z.string().nullable().optional(),
-    }),
-  },
-);
-
-export const deleteProfileBeatTool = tool(
-  async ({ beat_id }, config) => {
-    const toolCallId = (config as ToolRunnableConfig).toolCall?.id ?? "";
-    const gate = requireProfileMode(config);
-    if (gate) {
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({ content: gate, tool_call_id: toolCallId }),
-          ],
-        },
-      });
-    }
-    const profile = getProfile(getState());
-    if (findProfileBeatIndex(profile, beat_id) < 0) {
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({
-              content: `未找到节拍 ${beat_id}。`,
-              tool_call_id: toolCallId,
-            }),
-          ],
-        },
-      });
-    }
-    return new Command({
-      update: {
-        messages: [
-          new ToolMessage({
-            content: "已删除内容节拍。",
-            tool_call_id: toolCallId,
-          }),
-        ],
-        ...patchPendingProfile(getState(), deleteProfileBeat(profile, beat_id)),
-      },
-    });
-  },
-  {
-    name: "delete_profile_beat",
-    description: "删除一个内容节拍。",
-    schema: z.object({ beat_id: z.string() }),
-  },
-);
-
-const profileBeatInputSchema = z.object({
+const segmentInputSchema = z.object({
   description: z.string().min(1),
-  intent: z.string().nullable().optional(),
+  role: z.string().nullable().optional(),
+  title: z.string().nullable().optional(),
 });
 
-export const addProfileBeats = tool(
-  async ({ beats }, config) => {
+const guardrailInputSchema = z.object({
+  description: z.string().min(1),
+  scope: z
+    .enum(["all", "verbal", "visual", "audio", "video"])
+    .optional()
+    .default("all"),
+});
+
+export const profileApplyPatchSchema = z.object({
+  delivery: z
+    .object({
+      topic: z.string().optional(),
+      format: z.string().optional(),
+      modalities: z.array(z.string()).optional(),
+      platform: z.string().nullable().optional(),
+      category: z.string().nullable().optional(),
+      intent: z.string().nullable().optional(),
+    })
+    .optional()
+    .describe("交付规格：主题、体裁、媒介、平台、分类、用户原话"),
+  expression: z
+    .object({
+      audience: z.string().nullable().optional(),
+      verbal_tone: z.string().nullable().optional(),
+      verbal_style: z.string().nullable().optional(),
+      verbal_persona: z.string().nullable().optional(),
+      visual_style: z.string().nullable().optional(),
+      visual_mood: z.string().nullable().optional(),
+      visual_palette: z.string().nullable().optional(),
+    })
+    .optional()
+    .describe("表达设定：受众、语气文风、画风氛围"),
+  summary: z.string().optional().describe("一句话内容定位"),
+  kind: z.enum(["text", "illustration", "video", "audio"]).optional(),
+  word_count_min: z.number().optional(),
+  word_count_max: z.number().optional(),
+  emoji_level: z.enum(["none", "light", "heavy"]).optional(),
+  aspect_ratio: z.string().optional(),
+  image_count: z.number().optional(),
+  negative_hints: z.array(z.string()).optional(),
+  duration_sec: z.number().optional(),
+  pacing: z.string().optional(),
+  segment_count: z.number().optional(),
+  clear_segments: z
+    .boolean()
+    .optional()
+    .describe("清空全部结构段；换方向时与 segments_replace 组合"),
+  segments_replace: z
+    .array(segmentInputSchema)
+    .max(8)
+    .optional()
+    .describe("按顺序整体替换结构段（3–8 条为宜）"),
+  segments_append: z
+    .array(segmentInputSchema)
+    .max(8)
+    .optional()
+    .describe("在现有结构段末尾追加"),
+  segment_updates: z
+    .array(
+      z.object({
+        segment_id: z.string(),
+        description: z.string().min(1),
+        role: z.string().nullable().optional(),
+        title: z.string().nullable().optional(),
+      }),
+    )
+    .optional()
+    .describe("按 id 修改已有结构段"),
+  segment_deletes: z.array(z.string()).optional().describe("按 id 删除结构段"),
+  clear_guardrails: z.boolean().optional().describe("清空全部创作规则"),
+  guardrails_replace: z
+    .array(guardrailInputSchema)
+    .optional()
+    .describe("整体替换创作规则列表"),
+  guardrails_append: z
+    .array(guardrailInputSchema)
+    .optional()
+    .describe("在现有规则末尾追加"),
+  guardrail_updates: z
+    .array(
+      z.object({
+        guardrail_id: z.string(),
+        description: z.string().min(1),
+      }),
+    )
+    .optional()
+    .describe("按 id 修改已有创作规则"),
+  guardrail_deletes: z
+    .array(z.string())
+    .optional()
+    .describe("按 id 删除创作规则"),
+});
+
+export type ProfileApplyPatchInput = z.infer<typeof profileApplyPatchSchema>;
+
+function buildExpressionPatch(
+  input: NonNullable<ProfileApplyPatchInput["expression"]>,
+): ProfilePatch["expression"] | undefined {
+  const hasVerbal =
+    input.verbal_tone !== undefined ||
+    input.verbal_style !== undefined ||
+    input.verbal_persona !== undefined;
+  const hasVisual =
+    input.visual_style !== undefined ||
+    input.visual_mood !== undefined ||
+    input.visual_palette !== undefined;
+
+  if (input.audience === undefined && !hasVerbal && !hasVisual) {
+    return undefined;
+  }
+
+  return {
+    audience: input.audience,
+    verbal: hasVerbal
+      ? {
+          tone: input.verbal_tone,
+          style: input.verbal_style,
+          persona: input.verbal_persona,
+        }
+      : undefined,
+    visual: hasVisual
+      ? {
+          style: input.visual_style,
+          mood: input.visual_mood,
+          palette: input.visual_palette,
+        }
+      : undefined,
+  };
+}
+
+function buildParamsPatch(
+  profile: WorkProfile,
+  input: ProfileApplyPatchInput,
+): FormatParams | undefined {
+  const hasParams =
+    input.kind !== undefined ||
+    input.word_count_min !== undefined ||
+    input.word_count_max !== undefined ||
+    input.emoji_level !== undefined ||
+    input.aspect_ratio !== undefined ||
+    input.image_count !== undefined ||
+    input.negative_hints !== undefined ||
+    input.duration_sec !== undefined ||
+    input.pacing !== undefined ||
+    input.segment_count !== undefined;
+
+  if (!hasParams) return undefined;
+
+  const kind = input.kind ?? profile.params.kind;
+  if (kind === "illustration") {
+    return {
+      kind: "illustration",
+      aspect_ratio: input.aspect_ratio,
+      image_count: input.image_count,
+      negative_hints: input.negative_hints,
+    };
+  }
+  if (kind === "video") {
+    return {
+      kind: "video",
+      duration_sec: input.duration_sec,
+      aspect_ratio: input.aspect_ratio,
+      pacing: input.pacing,
+    };
+  }
+  if (kind === "audio") {
+    return {
+      kind: "audio",
+      duration_sec: input.duration_sec,
+      segment_count: input.segment_count,
+    };
+  }
+  return {
+    kind: "text",
+    word_count:
+      input.word_count_min !== undefined || input.word_count_max !== undefined
+        ? {
+            min: input.word_count_min,
+            max: input.word_count_max,
+          }
+        : undefined,
+    emoji_level: input.emoji_level,
+  };
+}
+
+function toProfilePatch(
+  profile: WorkProfile,
+  input: ProfileApplyPatchInput,
+): ProfilePatch {
+  const delivery = input.delivery
+    ? Object.fromEntries(
+        Object.entries(input.delivery).filter(
+          ([, value]) => value !== undefined,
+        ),
+      )
+    : undefined;
+
+  return {
+    delivery:
+      delivery && Object.keys(delivery).length > 0 ? delivery : undefined,
+    expression: input.expression
+      ? buildExpressionPatch(input.expression)
+      : undefined,
+    summary: input.summary,
+    params: buildParamsPatch(profile, input),
+    clear_segments: input.clear_segments,
+    segments_replace: input.segments_replace,
+    segments_append: input.segments_append,
+    segment_updates: input.segment_updates,
+    segment_deletes: input.segment_deletes,
+    clear_guardrails: input.clear_guardrails,
+    guardrails_replace: input.guardrails_replace,
+    guardrails_append: input.guardrails_append,
+    guardrail_updates: input.guardrail_updates,
+    guardrail_deletes: input.guardrail_deletes,
+  };
+}
+
+export const profileApplyPatch = tool(
+  async (input, config) => {
     const toolCallId = (config as ToolRunnableConfig).toolCall?.id ?? "";
-    const gate = requireProfileMode(config);
-    if (gate) {
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({ content: gate, tool_call_id: toolCallId }),
-          ],
-        },
-      });
-    }
-    if (!beats.length) {
+    const state = getState();
+
+    const profile = getProfile(state);
+    const result = applyProfilePatch(profile, toProfilePatch(profile, input));
+    if (!result) {
       return new Command({
         update: {
           messages: [
             new ToolMessage({
-              content: "至少提供一条节拍。",
+              content: "未提供可应用的方案变更。",
               tool_call_id: toolCallId,
             }),
           ],
@@ -574,110 +261,36 @@ export const addProfileBeats = tool(
       });
     }
 
-    const profile = getProfile(getState());
-    const next = appendProfileBeats(profile, beats);
-    if (next.beats.length === profile.beats.length) {
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({
-              content: "未添加新节拍（均为空或已存在）。",
-              tool_call_id: toolCallId,
-            }),
-          ],
-        },
-      });
+    const messageParts = [`已更新：${result.changes.join("、")}。`];
+    if (result.profile.blueprint.segments.length) {
+      messageParts.push(
+        `结构段共 ${result.profile.blueprint.segments.length} 节。`,
+      );
     }
-    return new Command({
-      update: {
-        messages: [
-          new ToolMessage({
-            content: `已添加 ${next.beats.length - profile.beats.length} 条内容节拍（共 ${next.beats.length} 节）。`,
-            tool_call_id: toolCallId,
-          }),
-        ],
-        ...patchPendingProfile(getState(), next),
-      },
-    });
-  },
-  {
-    name: "add_profile_beats",
-    description:
-      "按顺序批量追加多条内容节拍。换方向且已 clear_profile_beats 后，用本工具一次写入新结构。",
-    schema: z.object({
-      beats: z
-        .array(profileBeatInputSchema)
-        .min(1)
-        .max(8)
-        .describe("有序节拍列表，3–8 条为宜"),
-    }),
-  },
-);
+    if (result.profile.guardrails.length) {
+      messageParts.push(`创作规则共 ${result.profile.guardrails.length} 条。`);
+    }
+    const message =
+      result.warnings.length > 0
+        ? `${messageParts.join(" ")} 注意：${result.warnings.join("；")}`
+        : messageParts.join(" ");
 
-export const clearProfileConstraintsTool = tool(
-  async (_input, config) => {
-    const toolCallId = (config as ToolRunnableConfig).toolCall?.id ?? "";
-    const gate = requireProfileMode(config);
-    if (gate) {
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({ content: gate, tool_call_id: toolCallId }),
-          ],
-        },
-      });
-    }
-    const profile = getProfile(getState());
     return new Command({
       update: {
         messages: [
           new ToolMessage({
-            content: "已清空写作要求。",
+            content: message,
             tool_call_id: toolCallId,
           }),
         ],
-        ...patchPendingProfile(getState(), clearProfileConstraints(profile)),
+        ...patchPendingProfile(state, result.profile),
       },
     });
   },
   {
-    name: "clear_profile_constraints",
+    name: "profile_apply_patch",
     description:
-      "清空全部写作要求。换选题/换方向且旧要求不再适用时使用。",
-    schema: z.object({}),
-  },
-);
-
-export const clearProfileBeatsTool = tool(
-  async (_input, config) => {
-    const toolCallId = (config as ToolRunnableConfig).toolCall?.id ?? "";
-    const gate = requireProfileMode(config);
-    if (gate) {
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({ content: gate, tool_call_id: toolCallId }),
-          ],
-        },
-      });
-    }
-    const profile = getProfile(getState());
-    return new Command({
-      update: {
-        messages: [
-          new ToolMessage({
-            content: "已清空内容节拍。",
-            tool_call_id: toolCallId,
-          }),
-        ],
-        ...patchPendingProfile(getState(), clearProfileBeats(profile)),
-      },
-    });
-  },
-  {
-    name: "clear_profile_beats",
-    description:
-      "清空全部内容节拍。换选题/换方向、准备重写结构前使用，之后 set_profile_premise + add_profile_beats。",
-    schema: z.object({}),
+      "读写作品方案（唯一入口）。字段：delivery、expression、summary、体裁参数、结构段与创作规则。参考素材由 reference 子图维护，勿在此写入。",
+    schema: profileApplyPatchSchema,
   },
 );

@@ -2,8 +2,10 @@ import { Prisma, type Work } from "../db.js";
 import {
   EMPTY_WORK_PROFILE,
   EMPTY_WORK_PRODUCTION_PLAN,
+  EMPTY_WORK_REFERENCES,
   normalizeWorkDto,
   resolveProfileFromWork,
+  resolveReferencesFromWork,
 } from "@yougan/domain";
 
 import { prisma } from "../db.js";
@@ -11,15 +13,15 @@ import type { WorkDTO } from "../schemas.js";
 import { getWorkGroup } from "./work-groups.js";
 import {
   applyAgentRunToWork,
-  duplicateWorkFromRevision,
+  duplicateWorkFromVersion,
   parseSnapshot,
-} from "./work-revisions.js";
+} from "./work-versions.js";
 import {
   materializeWorkColumns,
   parsePreview,
   parseProductionPlanJson as parsePlan,
   parseProfileJson,
-} from "./revisions.js";
+} from "./versions.js";
 import {
   hasMaterializedAgentFields,
   materializedFieldsFromWorkUpdate,
@@ -32,11 +34,15 @@ function toWorkDTO(work: Work): WorkDTO {
     title: work.title,
     groupId: work.groupId,
     profile: resolveProfileFromWork({ profile: work.profile }),
+    references: resolveReferencesFromWork({
+      references: (work as Work & { references?: unknown }).references,
+      profile: work.profile,
+    }),
     productionPlan: parsePlan(work.productionPlan),
     preview: parsePreview(work.preview),
-    headRevisionId: work.headRevisionId,
+    headVersionId: work.headVersionId,
     sourceWorkId: work.sourceWorkId,
-    sourceRevisionId: work.sourceRevisionId,
+    sourceVersionId: work.sourceVersionId,
     createdAt: work.createdAt.toISOString(),
     updatedAt: work.updatedAt.toISOString(),
   }) as WorkDTO;
@@ -69,6 +75,7 @@ export async function createWork(
         groupId: groupId ?? null,
         title: title?.trim() || "未命名作品",
         profile: EMPTY_WORK_PROFILE as unknown as Prisma.InputJsonValue,
+        references: EMPTY_WORK_REFERENCES as unknown as Prisma.InputJsonValue,
         productionPlan: EMPTY_WORK_PRODUCTION_PLAN as unknown as Prisma.InputJsonValue,
       },
     });
@@ -95,10 +102,10 @@ export async function duplicateWork(
   options?: {
     title?: string;
     groupId?: string | null;
-    revisionId?: string;
+    versionId?: string;
   },
 ) {
-  const work = await duplicateWorkFromRevision(userId, sourceWorkId, options);
+  const work = await duplicateWorkFromVersion(userId, sourceWorkId, options);
   if (!work) return null;
   return toWorkDTO(work);
 }
@@ -116,6 +123,7 @@ export async function updateWork(
     title: string;
     groupId: string | null;
     profile: unknown;
+    references: unknown;
     productionPlan: unknown;
     preview: unknown | null;
   }>,
@@ -144,6 +152,11 @@ export async function updateWork(
       data.profile,
     ) as unknown as Prisma.InputJsonValue;
   }
+  if (data.references !== undefined) {
+    updateData.references = resolveReferencesFromWork({
+      references: data.references,
+    }) as unknown as Prisma.InputJsonValue;
+  }
   if (data.productionPlan !== undefined) {
     updateData.productionPlan = data.productionPlan as Prisma.InputJsonValue;
   }
@@ -164,6 +177,7 @@ export async function updateWork(
   if (hasMaterializedAgentFields(agentFields)) {
     const syncFields: typeof agentFields = {};
     if (agentFields.profile !== undefined) syncFields.profile = dto.profile;
+    if (agentFields.references !== undefined) syncFields.references = dto.references;
     if (agentFields.preview !== undefined) syncFields.preview = dto.preview;
     await syncMaterializedStateToAgentThreads(workId, syncFields, {
       conversationId: options?.conversationId,
@@ -210,8 +224,9 @@ export async function getAgentContext(
   return {
     workId: work.id,
     conversationId: resolvedConversationId,
-    headRevisionId: work.headRevisionId,
+    headVersionId: work.headVersionId,
     profile: dto.profile,
+    references: dto.references,
     productionPlan: dto.productionPlan,
     preview: dto.preview,
     threadId,
@@ -220,7 +235,7 @@ export async function getAgentContext(
   };
 }
 
-export async function applyAgentRunRevision(input: {
+export async function applyAgentRunVersion(input: {
   userId: string;
   workId: string;
   conversationId?: string;

@@ -9,7 +9,7 @@ import { createChatModel } from "#agent/llm/providers/index.js";
 import {
   profileSummary,
   productionPlanSummary,
-  referencesSummary,
+  profileReferencesSummary,
 } from "@yougan/domain";
 import { YOUGAN_USER_LABEL } from "#agent/system-prompt.js";
 import { departmentsBrief } from "../spawn-specialist/helpers/department-brief.js";
@@ -18,13 +18,14 @@ import {
   isPlanReady,
   isProfileActionable,
   newProductionPlanTask,
-  resolveContentSpecFromProfile,
+  resolveDeliveryFromProfile,
   type ProductionDepartment,
   type WorkProductionPlan,
 } from "@yougan/domain";
 import {
   getProductionPlan,
   getProfile,
+  getReferences,
 } from "#agent/state-io/index.js";
 import { patchPendingProductionPlan } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
@@ -52,16 +53,17 @@ function shouldRunScheduleProduction(
 
 function buildScheduleProductionPrompt(state: AgentStateType): string {
   const profile = getProfile(state);
+  const references = getReferences(state);
   const plan = getProductionPlan(state);
-  const contentProfile = resolveContentSpecFromProfile(profile);
-  const industry = resolveIndustryContext(contentProfile);
+  const delivery = resolveDeliveryFromProfile(profile);
+  const industry = resolveIndustryContext(delivery);
 
   return `你是制作总监（内部角色，不对${YOUGAN_USER_LABEL}直接说话），负责将已定稿的作品方案转化为可执行的**制作计划**。
 
 ${YOUGAN_USER_LABEL}已确认作品方案：
-${profileSummary(profile)}
+${profileSummary(profile, references)}
 
-${referencesSummary(profile.references)}
+${profileReferencesSummary(references)}
 
 当前计划（如有）：
 ${productionPlanSummary(plan)}
@@ -70,8 +72,8 @@ ${productionPlanSummary(plan)}
 ${industry}
 
 请制定内部制作计划：
-1. 根据 content_format / media_modalities 决定制作部门
-2. 将方案节拍拆分为具体执行任务，每条指定 department
+1. 根据 delivery.format / modalities 决定制作部门
+2. 将方案结构段拆分为具体执行任务，每条指定 department
 3. 任务覆盖从创意到交付的完整流程
 
 只输出结构化计划，不生成正文。`;
@@ -106,7 +108,7 @@ export async function rescheduleProductionPlan(
 ): Promise<Partial<AgentStateType>> {
   if (!shouldRunScheduleProduction(state, options?.force)) {
     const profile = getProfile(state);
-    const industry = resolveIndustryContext(resolveContentSpecFromProfile(profile));
+    const industry = resolveIndustryContext(resolveDeliveryFromProfile(profile));
     const plan = getProductionPlan(state);
     if (plan.industry_context === industry) {
       return {};
@@ -118,7 +120,7 @@ export async function rescheduleProductionPlan(
   }
 
   const profile = getProfile(state);
-  const industry = resolveIndustryContext(resolveContentSpecFromProfile(profile));
+  const industry = resolveIndustryContext(resolveDeliveryFromProfile(profile));
   const existing = getProductionPlan(state);
   const llm = createChatModel({ temperature: 0.5 });
 

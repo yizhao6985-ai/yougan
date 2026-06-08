@@ -2,69 +2,77 @@
 import type { WorkProfile } from "@yougan/domain";
 
 import {
-  profileSpecSummary,
-  profileSummary,
-  profileVoiceSummary,
-  referencesSummary,
+  profileDeliverySummary,
+  profileExpressionSummary,
+  profileGuardrailsSummary,
+  profileParamsSummary,
+  profileReferencesSummary,
+  profileSegmentsSummary,
 } from "@yougan/domain";
 import {
   composeSystemPrompt,
   YOUGAN_USER_LABEL,
 } from "#agent/system-prompt.js";
-import { getProfile } from "#agent/state-io/index.js";
+import { getProfile, getReferences } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 
-function buildProfileActionPrompt(profile: WorkProfile): string {
+function buildProfileActionPrompt(
+  profile: WorkProfile,
+  references: ReturnType<typeof getReferences>,
+): string {
+  const summary = profile.blueprint.summary.trim() || "（尚无）";
+
   return `当前任务：作品方案对话（维护 WorkProfile）
 
-**职责**：与${YOUGAN_USER_LABEL}一起维护**作品方案**（创作主题、体裁形式、表达设定、定位、写作要求、有序节拍）。
+**职责**：与${YOUGAN_USER_LABEL}一起维护作品方案（交付规格、表达设定、内容定位、内容结构、创作规则、体裁参数）。参考素材已由 reference 子图分析入库，可阅读下方摘要并据此调整方案。
 
 **工具**
-- 主题/体裁/媒介形式 → update_profile_spec（用户未提发布渠道时不要主动追问 platform）
-- 受众/语气/风格 → update_profile_voice
-- 一句话定位 → set_profile_premise
-- 写作要求 → add/update/delete_profile_constraint；批量清空 → clear_profile_constraints
-- 内容节拍 → add_profile_beat（单条）/ add_profile_beats（批量）/ update/delete_profile_beat；批量清空 → clear_profile_beats
-- 参考文案 → parse_reference_text；参考图（含本条附图）→ parse_reference_image；删除参考 → delete_profile_reference（须先入库再讨论方案）
+- 作品方案 → **profile_apply_patch**（唯一入口；至少传一个字段）
+  - delivery: { topic?, format?, modalities?, platform?, category?, intent? }（未提发布渠道时不要写 platform）
+  - expression: { audience?, verbal_tone?, verbal_style?, verbal_persona?, visual_style?, visual_mood?, visual_palette? }
+  - summary: 一句话内容定位
+  - 结构段：segments_replace（整体替换）| segments_append | segment_updates[{ segment_id, description }] | segment_deletes[id] | clear_segments
+  - 创作规则：guardrails_replace（整体替换）| guardrails_append | guardrail_updates[{ guardrail_id, description }] | guardrail_deletes[id] | clear_guardrails
+  - 体裁参数：kind, word_count_min, word_count_max, emoji_level, aspect_ratio, image_count, negative_hints, duration_sec, pacing, segment_count
+  - 改/删结构段或规则时，segment_id / guardrail_id 必须从下方「含 id」列表原样复制
+- 用户要删参考素材 → 说明可在对话中提出，系统会走 reference 流程
 - 用户想出稿/改稿 → 引导继续输入，系统会根据修改对象自动路由到制作模式
 - 禁止制作执行类工具（add_plan_task、generate_draft 等）
 
-**常见场景（用增量工具组合，勿跳步）**
-- 换选题/换方向：update_profile_spec（content_topic）→ clear_profile_beats →（旧要求不适用则 clear_profile_constraints）→ set_profile_premise → add_profile_beats
-- 只改结构：clear_profile_beats → add_profile_beats，或 update/delete_profile_beat
-- 只改语气受众：update_profile_voice；单条要求：add/update/delete_profile_constraint
-- 新增参考：parse_reference_text / parse_reference_image；去掉某条参考：delete_profile_reference
+**常见场景（尽量一次 profile_apply_patch）**
+- 换选题/换方向：delivery + summary + segments_replace；规则不适用则 guardrails_replace（或 clear_guardrails + guardrails_append）
+- 删一条结构段/规则：segment_deletes / guardrail_deletes（带 id）
+- 只改结构：segments_replace，或 segment_updates / segment_deletes
+- 只改语气受众：expression
+- 只改体裁参数：kind、word_count_min/max 等顶层字段
+- 根据参考素材改画风/语气：expression（结合下方参考摘要）
 
 当前方案：
-${profileSummary(profile)}
+内容定位：${summary}
 
-spec（含 id 字段在 beats/constraints 列表）：
-${profileSpecSummary(profile)}
-${profileVoiceSummary(profile)}
+交付规格：
+${profileDeliverySummary(profile)}
 
-节拍（含 id，${profile.beats.length} 节）：
-${
-  profile.beats.length
-    ? profile.beats.map((b) => `- [${b.id}] ${b.description}`).join("\n")
-    : "（尚无）"
-}
+表达设定：
+${profileExpressionSummary(profile)}
 
-要求（含 id，${profile.constraints.length} 条）：
-${
-  profile.constraints.length
-    ? profile.constraints.map((c) => `- [${c.id}] ${c.description}`).join("\n")
-    : "（尚无）"
-}
+体裁参数：
+${profileParamsSummary(profile)}
+
+${profileSegmentsSummary(profile)}
+
+${profileGuardrailsSummary(profile)}
+
+${profileReferencesSummary(references)}
 
 **回复结构**
 1. 1–2 句承接用户对方案的关注点
 2. 给出具体调整建议
-3. 引导在侧栏查看方案，或点选快捷建议继续
-
-${referencesSummary(profile.references)}`;
+3. 引导在侧栏查看方案，或点选快捷建议继续`;
 }
 
 export function buildProfilePrompt(state: AgentStateType): string {
   const profile = getProfile(state);
-  return composeSystemPrompt(buildProfileActionPrompt(profile));
+  const references = getReferences(state);
+  return composeSystemPrompt(buildProfileActionPrompt(profile, references));
 }

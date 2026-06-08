@@ -1,7 +1,7 @@
 import { commitPending, rollbackPending } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 
-/** 提交 staging → canonical；取消则回滚 */
+/** 提交 staging → state 顶层；取消则回滚 */
 export async function commitTurnNode(
   state: AgentStateType,
 ): Promise<Partial<AgentStateType>> {

@@ -1,7 +1,7 @@
 import {
   getPlanSummary,
   profileSummary,
-  resolveContentSpecFromProfile,
+  resolveDeliveryFromProfile,
   type ProductionDepartment,
   type WorkProductionPlan,
   type WorkProfile,
@@ -17,7 +17,7 @@ export function buildSpawnSpecialistPrompt(input: {
   brief: string;
   specialistName: string;
 }): string {
-  const contentProfile = resolveContentSpecFromProfile(input.profile);
+  const delivery = resolveDeliveryFromProfile(input.profile);
   const label = DEPARTMENT_LABELS[input.department];
   const industry = input.plan.industry_context ?? "";
 
@@ -25,8 +25,8 @@ export function buildSpawnSpecialistPrompt(input: {
 
 任务说明：${input.brief}
 
-作品主题：${contentProfile.content_topic ?? "未指定"}
-体裁：${contentProfile.content_format ?? "未指定"}
+作品主题：${delivery.topic ?? "未指定"}
+体裁：${delivery.format ?? "未指定"}
 作品方案：${profileSummary(input.profile)}
 创作计划：${getPlanSummary(input.plan) ?? "无"}
 行业背景：${industry}

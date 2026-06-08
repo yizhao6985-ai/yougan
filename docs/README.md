@@ -40,7 +40,7 @@
 | [apps/api/README.md](../apps/api/README.md) | API 路由、Prisma、OpenAPI |
 | [apps/agent/README.md](../apps/agent/README.md) | LangGraph、模型分工 |
 | [technical/agent-turn-queue.md](./technical/agent-turn-queue.md) | 回合队列、子图路由、API 线程同步 |
-| [technical/revision-graph.md](./technical/revision-graph.md) | 单线版本历史、restore、duplicate |
+| [technical/version-graph.md](./technical/version-graph.md) | 单线版本历史、restore、duplicate |
 | [platform-oauth.md](./platform-oauth.md) | 第三方平台 OAuth 环境变量与回调 |
 
 ## 文档维护原则

@@ -6,7 +6,7 @@ import { env } from "../env.js";
 import type { AuthedRequest } from "../middleware/auth.js";
 import { getLangGraphThreadValues } from "../services/langgraph.js";
 import { maybeAutoTitleConversation } from "../services/conversation-auto-title.js";
-import { applyAgentRunRevision, getAgentContext } from "../services/works.js";
+import { applyAgentRunVersion, getAgentContext } from "../services/works.js";
 import { consumeAiUsage } from "../services/subscription.js";
 
 interface StreamSyncContext {
@@ -45,7 +45,7 @@ function parseStreamSyncContext(req: AuthedRequest): StreamSyncContext | null {
 }
 
 /**
- * 在转发 LangGraph run 前注入作品状态；stream 结束后 append WorkRevision。
+ * 在转发 LangGraph run 前注入作品状态；stream 结束后 append WorkVersion。
  */
 export async function injectWorkContext(
   req: AuthedRequest,
@@ -102,6 +102,7 @@ export async function injectWorkContext(
         workTitle: context.workTitle,
         conversationTitle: context.conversationTitle,
         profile: context.profile,
+        references: context.references,
         productionPlan: context.productionPlan,
         preview: context.preview,
       },
@@ -130,14 +131,14 @@ async function syncWorkAfterStream(
     if (record.turnCommitted !== true) return;
 
     try {
-      await applyAgentRunRevision({
+      await applyAgentRunVersion({
         userId: context.userId,
         workId: context.workId,
         conversationId: context.conversationId,
         values: record,
       });
     } catch (error) {
-      console.error("[agent-proxy] failed to append work revision", error);
+      console.error("[agent-proxy] failed to append work version", error);
     }
     try {
       await maybeAutoTitleConversation({

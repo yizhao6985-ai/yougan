@@ -1,7 +1,7 @@
 /**
  * LangGraph 运行时状态定义。
  *
- * - **canonical**（profile / productionPlan / preview）：commitTurn 后落库，跨回合保留
+ * - **state 顶层**（profile / references / productionPlan / preview）：commitTurn 后落库，跨回合保留
  * - **staging**：单回合工作区，子图 tools 只写 staging，commit 前前端预览读 staging
  * - **turnQueue / activeTurnKind / completedTurnKinds**：外层回合编排，见 nodes/planner、executor
  * - **nextStepSuggestions**：仅 verifyTurn 写入；orchestrateTurn 新回合开始时清空
@@ -15,13 +15,16 @@ import type { BaseMessage } from "@langchain/core/messages";
 import {
   EMPTY_WORK_PROFILE,
   EMPTY_WORK_PRODUCTION_PLAN,
+  EMPTY_WORK_REFERENCES,
   mergeProfileState,
+  mergeReferencesState,
   type NextStepSuggestions,
   type TurnQueueKind,
   type TurnStaging,
   type WorkPreview,
   type WorkProductionPlan,
   type WorkProfile,
+  type WorkReference,
 } from "@yougan/domain";
 
 import { env } from "./env.js";
@@ -73,7 +76,7 @@ export const AgentState = Annotation.Root({
       next === undefined ? (prev ?? null) : next,
     default: () => null,
   }),
-  /** canonical：已提交作品方案 */
+  /** state 顶层：已提交作品方案 */
   profile: Annotation<WorkProfile>({
     reducer: (prev: WorkProfile, next: WorkProfile | undefined) => {
       if (next === undefined) return prev ?? EMPTY_WORK_PROFILE;
@@ -81,13 +84,21 @@ export const AgentState = Annotation.Root({
     },
     default: () => EMPTY_WORK_PROFILE,
   }),
-  /** canonical：已提交制作计划 */
+  /** state 顶层：已提交参考素材 */
+  references: Annotation<WorkReference[]>({
+    reducer: (prev: WorkReference[], next: WorkReference[] | undefined) => {
+      if (next === undefined) return prev ?? [...EMPTY_WORK_REFERENCES];
+      return mergeReferencesState(prev, next);
+    },
+    default: () => [...EMPTY_WORK_REFERENCES],
+  }),
+  /** state 顶层：已提交制作计划 */
   productionPlan: Annotation<WorkProductionPlan>({
     reducer: (prev: WorkProductionPlan, next: WorkProductionPlan | undefined) =>
       next ?? EMPTY_WORK_PRODUCTION_PLAN,
     default: () => EMPTY_WORK_PRODUCTION_PLAN,
   }),
-  /** canonical：已提交作品预览 */
+  /** state 顶层：已提交作品预览 */
   preview: Annotation<WorkPreview | null>({
     reducer: (
       prev: WorkPreview | null,

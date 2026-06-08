@@ -111,16 +111,6 @@ type OutputLike = {
   images?: Array<{ url: string }>;
 };
 
-type ProfileLike = {
-  platform?: string | null;
-  content_topic?: string | null;
-  content_type?: string | null;
-  content_format?: string | null;
-  media_modalities?: string[];
-  /** @deprecated */
-  media_modality?: string | null;
-};
-
 export type PublicationFeedQuery = {
   platform?: string;
   contentFormat?: string;
@@ -250,7 +240,7 @@ async function backfillPublicationMetadata(limit = 50) {
 
   await Promise.all(
     rows.map(async (row) => {
-      const profile = (row.work?.profile ?? {}) as ProfileLike;
+      const profile = row.work?.profile;
       const metadata = buildPublicationMetadata({
         profile,
         coverUrl: row.coverUrl,
@@ -373,7 +363,7 @@ function metadataFromWork(
   overrides?: PublicationMetadataOverrides,
 ) {
   const inferred = buildPublicationMetadata({
-    profile: work.profile as ProfileLike,
+    profile: work.profile,
     output,
     coverUrl,
     body: output.body,
@@ -487,7 +477,7 @@ export async function updatePublicationStatus(
       status,
       publishedAt:
         status === "published"
-          ? existing.publishedAt ?? new Date()
+          ? (existing.publishedAt ?? new Date())
           : status === "draft"
             ? null
             : existing.publishedAt,

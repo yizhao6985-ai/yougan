@@ -1,9 +1,15 @@
 import { ChevronDownIcon } from "lucide-react";
 import { useState } from "react";
+import {
+  inferMediaKind,
+  referenceAssetUrl,
+  referenceContentLabel,
+  type WorkReference,
+} from "@yougan/domain";
 
 import { Badge } from "@/components/ui/badge";
 import {
-  ReferenceImageMedia,
+  ReferenceAssetMedia,
   ReferenceMedia,
 } from "@/components/reference/reference-media";
 import { CreativeContextListItem } from "@/components/studio/creative-context/shared";
@@ -12,32 +18,30 @@ import {
   referenceChipLabel,
   referenceDisplayText,
 } from "@/lib/reference-display";
-import type { ReferenceItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-function referenceTypeLabel(sourceType: ReferenceItem["source_type"]) {
-  return REFERENCE_PANEL.typeLabels[sourceType] ?? sourceType;
+function referenceTypeLabel(reference: WorkReference) {
+  const kind = referenceContentLabel(reference);
+  return REFERENCE_PANEL.typeLabels[kind] ?? kind;
 }
 
-function referenceCardTitle(item: ReferenceItem, index: number) {
-  if (item.title?.trim()) return item.title.trim();
-  if (item.url) {
-    try {
-      return new URL(item.url).hostname.replace(/^www\./, "");
-    } catch {
-      return item.url;
-    }
+function referenceCardTitle(reference: WorkReference, index: number) {
+  if (reference.content.kind === "asset") {
+    const name = reference.content.asset.original_name?.trim();
+    if (name) return name;
+    const kind = inferMediaKind(reference.content.asset.mime_type);
+    return REFERENCE_PANEL.typeLabels[kind] ?? REFERENCE_PANEL.typeLabels.file;
   }
-  if (item.source_type === "image") return REFERENCE_PANEL.typeLabels.image;
-  if (item.source_type === "text") return REFERENCE_PANEL.typeLabels.text;
+  const excerpt = reference.content.text.trim();
+  if (excerpt) return excerpt.slice(0, 40) + (excerpt.length > 40 ? "…" : "");
   return REFERENCE_PANEL.fallbackTitle(index + 1);
 }
 
-function ReferenceMetaChips({ item }: { item: ReferenceItem }) {
+function ReferenceMetaChips({ reference }: { reference: WorkReference }) {
   const chips = [
-    ...(item.keywords ?? []),
-    ...(item.tone_hints ?? []),
-    ...(item.hashtags ?? []).map((tag) => tag.replace(/^#/, "")),
+    ...(reference.analysis.keywords ?? []),
+    ...(reference.analysis.tone_hints ?? []),
+    ...(reference.analysis.style_hints ?? []),
   ]
     .map(referenceChipLabel)
     .filter((chip): chip is string => Boolean(chip));
@@ -62,18 +66,18 @@ export function ReferenceCard({
   item,
   index,
 }: {
-  item: ReferenceItem;
+  item: WorkReference;
   index: number;
 }) {
   const [expanded, setExpanded] = useState(false);
   const title = referenceCardTitle(item, index);
-  const summary = referenceDisplayText(item.summary);
-  const canExpand = Boolean(summary && summary.length > 120);
-  const isImage = item.source_type === "image" && Boolean(item.image_url);
-  const showInlineMedia =
-    !isImage &&
-    ((item.source_type === "text" && item.raw_excerpt?.trim()) ||
-      (item.source_type === "web" && item.url));
+  const analysis = referenceDisplayText(item.analysis.summary);
+  const intent = referenceDisplayText(item.intent.summary);
+  const canExpand = Boolean(
+    (analysis && analysis.length > 120) || (intent && intent.length > 80),
+  );
+  const hasAssetThumb =
+    item.content.kind === "asset" && Boolean(referenceAssetUrl(item));
 
   const body = (
     <>
@@ -84,7 +88,7 @@ export function ReferenceCard({
               variant="secondary"
               className="rounded-md px-1.5 py-0 text-[10px] font-medium"
             >
-              {referenceTypeLabel(item.source_type)}
+              {referenceTypeLabel(item)}
             </Badge>
             <h4 className="min-w-0 truncate text-xs font-medium text-foreground">
               {title}
@@ -109,40 +113,46 @@ export function ReferenceCard({
         ) : null}
       </div>
 
-      {showInlineMedia ? <ReferenceMedia item={item} title={title} /> : null}
+      {!hasAssetThumb ? <ReferenceMedia item={item} title={title} /> : null}
 
-      {summary ? (
+      {analysis ? (
         <p
           className={cn(
             "text-xs leading-5 text-muted-foreground",
             !expanded && "line-clamp-2",
           )}
         >
-          {summary}
+          <span className="font-medium text-foreground/80">
+            {REFERENCE_PANEL.analysisLabel}
+          </span>
+          {analysis}
         </p>
       ) : null}
 
-      <ReferenceMetaChips item={item} />
-
-      {item.url && item.source_type !== "web" ? (
-        <a
-          href={item.url}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-block text-[11px] text-primary hover:underline"
+      {intent ? (
+        <p
+          className={cn(
+            "text-xs leading-5 text-muted-foreground",
+            !expanded && "line-clamp-1",
+          )}
         >
-          {REFERENCE_PANEL.openLink}
-        </a>
+          <span className="font-medium text-foreground/80">
+            {REFERENCE_PANEL.intentLabel}
+          </span>
+          {intent}
+        </p>
       ) : null}
+
+      <ReferenceMetaChips reference={item} />
     </>
   );
 
   return (
     <CreativeContextListItem className="p-0">
       <div className="px-3 py-2.5">
-        {isImage ? (
+        {hasAssetThumb ? (
           <div className="flex gap-2.5">
-            <ReferenceImageMedia item={item} title={title} />
+            <ReferenceAssetMedia item={item} title={title} />
             <div className="min-w-0 flex-1 space-y-1.5">{body}</div>
           </div>
         ) : (

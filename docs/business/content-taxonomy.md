@@ -84,7 +84,7 @@ flowchart LR
 1. **`profile.content_type`** 自由文本 → 正则映射到 `contentFormat` / `mediaType`
 2. **`profile.content_topic`** → 正则映射到 `topicCategory`
 3. **平台 + 正文长度 + 是否有配图** → 兜底推断
-4. **发布时用户覆盖** → `applyMetadataOverrides` 校验 catalog ID 后写入
+4. **发布时用户覆盖** → `applyMetadataOverrides` 校验 taxonomy ID 后写入
 
 ### 代码位置
 
@@ -94,7 +94,7 @@ flowchart LR
 | Agent 内容规格与路由 | `apps/agent/src/lib/content-spec.ts` |
 | 创作子图 | `apps/agent/src/agents/creation/graph.ts` |
 | 体裁写作约束 | `apps/agent/src/agents/creation/format-prompts.ts` |
-| 前端 catalog 同步 | `apps/web/src/lib/discover-taxonomy.ts` |
+| 前端 taxonomy 同步 | `apps/web/src/lib/discover-taxonomy.ts` |
 | 发布入库 | `apps/api/src/services/publications.ts` |
 | 预览 API | `GET /api/publications/preview-metadata?workId=` |
 | 发布 API | `POST /api/publications`（可选 `metadata` 覆盖） |

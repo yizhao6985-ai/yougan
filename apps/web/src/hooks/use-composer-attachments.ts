@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { inferMediaKind, type MediaKind } from "@yougan/domain";
 import { nanoid } from "nanoid";
 
+import type { HumanAttachmentAsset } from "@yougan/domain";
 import { resolveReferenceAssetUrl } from "@/lib/reference-asset-url";
 import { uploadReference } from "@/services/works";
 
@@ -11,6 +13,7 @@ export type ComposerAttachment = {
   previewUrl: string;
   filename: string;
   mimeType: string;
+  mediaKind: MediaKind;
   url?: string;
   key?: string;
   status: ComposerAttachmentStatus;
@@ -18,6 +21,21 @@ export type ComposerAttachment = {
 };
 
 const MAX_ATTACHMENTS = 6;
+
+function inferMediaKindFromFile(file: File): MediaKind {
+  if (file.type) return inferMediaKind(file.type);
+  const ext = file.name.split(".").pop()?.toLowerCase();
+  if (ext === "mp3" || ext === "wav" || ext === "ogg" || ext === "m4a") {
+    return "audio";
+  }
+  if (ext === "mp4" || ext === "webm" || ext === "mov" || ext === "m4v") {
+    return "video";
+  }
+  if (ext === "jpg" || ext === "jpeg" || ext === "png" || ext === "webp" || ext === "gif") {
+    return "image";
+  }
+  return "file";
+}
 
 export function useComposerAttachments() {
   const [items, setItems] = useState<ComposerAttachment[]>([]);
@@ -67,27 +85,34 @@ export function useComposerAttachments() {
     for (const file of batch) {
       const id = nanoid();
       const previewUrl = URL.createObjectURL(file);
+      const mediaKind = inferMediaKindFromFile(file);
       setItems((prev) => [
         ...prev,
         {
           id,
           previewUrl,
           filename: file.name,
-          mimeType: file.type || "image/png",
+          mimeType: file.type || "application/octet-stream",
+          mediaKind,
           status: "uploading",
         },
       ]);
 
       try {
-        const data = await uploadReference(file);
-        const url = resolveReferenceAssetUrl(data.url) ?? data.url;
+        const asset = await uploadReference(file);
+        const url = resolveReferenceAssetUrl(asset.url) ?? asset.url;
         setItems((prev) =>
           prev.map((item) =>
             item.id === id
               ? {
                   ...item,
                   url,
-                  key: data.key,
+                  key: asset.key,
+                  mimeType: asset.mime_type || item.mimeType,
+                  mediaKind: inferMediaKind(
+                    asset.mime_type || item.mimeType,
+                  ),
+                  filename: asset.original_name || item.filename,
                   status: "ready",
                   error: undefined,
                 }
@@ -106,13 +131,15 @@ export function useComposerAttachments() {
     }
   }, []);
 
-  const readyUrls = useCallback(
-    () =>
-      items
-        .filter((item) => item.status === "ready" && item.url)
-        .map((item) => item.url!),
-    [items],
-  );
+  const readyAttachments = useCallback((): HumanAttachmentAsset[] => {
+    return items
+      .filter((item) => item.status === "ready" && item.url)
+      .map((item) => ({
+        url: item.url!,
+        mime_type: item.mimeType,
+        original_name: item.filename,
+      }));
+  }, [items]);
 
   const hasUploading = items.some((item) => item.status === "uploading");
   const hasReady = items.some((item) => item.status === "ready");
@@ -123,7 +150,7 @@ export function useComposerAttachments() {
     addFiles,
     remove,
     clear,
-    readyUrls,
+    readyAttachments,
     hasUploading,
     hasReady,
     canAddMore,

@@ -1,5 +1,5 @@
 import {
-  resolveContentSpecFromProfile,
+  resolveDeliveryFromProfile,
   routeProductionPipeline,
 } from "@yougan/domain";
 
@@ -14,10 +14,10 @@ export type CreatorPipelineTarget = "llm-call" | "design-llm-call";
 export function selectCreatorPipelineByModality(
   state: AgentStateType,
 ): CreatorPipelineTarget {
-  const resolved = resolveContentSpecFromProfile(getProfile(state));
+  const delivery = resolveDeliveryFromProfile(getProfile(state));
   const pipeline = routeProductionPipeline(
-    resolved.media_modalities,
-    resolved.content_format,
+    delivery.modalities,
+    delivery.format,
   );
   return pipeline === "design" ? "design-llm-call" : "llm-call";
 }

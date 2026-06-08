@@ -799,7 +799,7 @@ export const PromptInput = ({
         ref={formRef}
         {...props}
       >
-        <InputGroup className="overflow-hidden">{children}</InputGroup>
+        <InputGroup>{children}</InputGroup>
       </form>
     </>
   );
@@ -1034,7 +1034,7 @@ export const PromptInputButton = ({
   return (
     <Tooltip>
       <TooltipTrigger asChild>{button}</TooltipTrigger>
-      <TooltipContent side={side}>
+      <TooltipContent side={side} sideOffset={6} collisionPadding={12}>
         {tooltipContent}
         {shortcut && (
           <span className="ml-2 text-muted-foreground">{shortcut}</span>

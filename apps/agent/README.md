@@ -20,7 +20,7 @@ Checkpoint：**Agent 专用 Postgres**（`POSTGRES_URI`，默认 `:5433`）。
 |------|------|------|------|
 | 计划者 | `nodes/orchestrate-turn/` | `orchestrateTurn` | 解析用户意图 → `turnQueue[]`，fork `staging` |
 | 执行者 | `state-graph/` | `dispatchTurnQueue` / `advanceTurnQueue` + 子图 | 按队列路由并执行 profile / production / ask |
-| 验收者 | `nodes/verify-turn/` | `verifyTurn` / `commitTurn` | 验收通过 → 生成 `nextStepSuggestions` → 提交 canonical |
+| 验收者 | `nodes/verify-turn/` | `verifyTurn` / `commitTurn` | 验收通过 → 生成 `nextStepSuggestions` → 提交 state 顶层 |
 
 图接线：`src/graph.ts`；`state-graph/` 含 `nodes/`、`conditional-edges/`、`subgraphs/*/graph.ts`
 
@@ -28,7 +28,7 @@ Checkpoint：**Agent 专用 Postgres**（`POSTGRES_URI`，默认 `:5433`）。
 
 **production**：`ensure-profile` → `resolve-content-spec` → `schedule-production` → `llm-call` / `design-llm-call` ⇄ `tool-node` →（work）`generate-draft` / `spawn-specialist` → `inspect-production`。tool 仅入队或改 state，LLM 重活在 work node。
 
-**profile**：`llm-call` ⇄ `tool-node` →（work）`parse-reference-text` / `parse-reference-image` → 回 `llm-call`。
+**profile**：`llm-call` ⇄ `tool-node`（`profile_apply_patch` 同步写方案与删参考）→ 若本轮 tool args 含 `reference.analyze` 则 `analyzeReference` → 回 `llm-call`。
 
 **ask**：`llm-call` ⇄ `tool-node`（`ToolNode` + `toolsCondition`）。
 
@@ -107,4 +107,4 @@ START
 ## 相关文档
 
 - [agent-turn-queue.md](../../docs/technical/agent-turn-queue.md)
-- [revision-graph.md](../../docs/technical/revision-graph.md)
+- [version-graph.md](../../docs/technical/version-graph.md)

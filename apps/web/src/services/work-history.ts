@@ -1,14 +1,10 @@
 import { apiFetch } from "@/services/client";
-import type {
-  Work,
-  WorkRevisionDTO,
-  WorkRevisionSnapshot,
-} from "@/lib/types";
+import type { Work, WorkVersion, WorkWire } from "@/services/types";
 
 export interface WorkAgentContext {
   workId: string;
   conversationId?: string;
-  headRevisionId?: string | null;
+  headVersionId?: string | null;
   profile: Work["profile"];
   productionPlan: Work["productionPlan"];
   preview: Work["preview"];
@@ -29,15 +25,15 @@ export async function getWorkAgentContext(
   );
 }
 
-export async function listWorkRevisions(workId: string) {
-  return apiFetch<{ revisions: WorkRevisionDTO[] }>(
-    `/api/works/${workId}/revisions`,
+export async function listWorkVersions(workId: string) {
+  return apiFetch<{ versions: WorkVersion[] }>(
+    `/api/works/${workId}/versions`,
   );
 }
 
-export async function restoreWorkRevision(workId: string, revisionId: string) {
-  return apiFetch<{ revision: WorkRevisionDTO; work: Work }>(
-    `/api/works/${workId}/restore/${revisionId}`,
+export async function restoreWorkVersion(workId: string, versionId: string) {
+  return apiFetch<{ version: WorkVersion; work: WorkWire }>(
+    `/api/works/${workId}/restore/${versionId}`,
     { method: "POST" },
   );
 }
@@ -47,13 +43,13 @@ export async function duplicateWork(
   options?: {
     title?: string;
     groupId?: string | null;
-    revisionId?: string;
+    versionId?: string;
   },
 ) {
-  return apiFetch<{ work: Work }>(`/api/works/${workId}/duplicate`, {
+  return apiFetch<{ work: WorkWire }>(`/api/works/${workId}/duplicate`, {
     method: "POST",
     body: JSON.stringify(options ?? {}),
   });
 }
 
-export type { WorkRevisionSnapshot };
+export type { WorkVersionSnapshot } from "@/services/types";

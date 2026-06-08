@@ -9,7 +9,7 @@ import {
   patchConversationsCache,
   useInvalidateWorkConversations,
 } from "@/hooks/queries/conversations";
-import { useInvalidateRevisionQueries } from "@/hooks/queries/revisions";
+import { useInvalidateVersionQueries } from "@/hooks/queries/versions";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   countHumanCheckpointMessages,
@@ -47,13 +47,13 @@ function ConversationStreamKeyed({
   const queryClient = useQueryClient();
   const temperatureControl = useModelTemperature(worksStore.activeWork?.id);
   const workId = worksStore.activeWork?.id ?? null;
-  const invalidateRevisionQueries = useInvalidateRevisionQueries(workId);
+  const invalidateVersionQueries = useInvalidateVersionQueries(workId);
   const invalidateConversations = useInvalidateWorkConversations(workId);
 
   const handleRunComplete = useCallback(
     (completedWorkId: string, values: YouganValues) => {
       worksStore.applyStreamValuesToCache(completedWorkId, values);
-      void invalidateRevisionQueries();
+      void invalidateVersionQueries();
 
       const conversationId = conversationsStore.activeConversation?.id;
       const activeTitle = conversationsStore.activeConversation?.title ?? "";
@@ -91,7 +91,7 @@ function ConversationStreamKeyed({
     [
       conversationsStore.activeConversation?.id,
       invalidateConversations,
-      invalidateRevisionQueries,
+      invalidateVersionQueries,
       queryClient,
       workId,
       worksStore,

@@ -1,4 +1,4 @@
-/** 判断是否已有作品进展（canonical + staging，staging 经 get* 已优先） */
+/** 判断是否已有作品进展（state 顶层 + staging，staging 经 get* 已优先） */
 import {
   productionPlanSummary,
   profileSummary,

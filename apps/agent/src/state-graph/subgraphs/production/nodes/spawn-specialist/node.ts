@@ -4,7 +4,7 @@ import { HumanMessage } from "@langchain/core/messages";
 import { invokeStructured } from "#agent/llm/invoke/index.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
 import {
-  resolveContentSpecFromProfile,
+  resolveDeliveryFromProfile,
   type WorkPreview,
 } from "@yougan/domain";
 import {
@@ -50,7 +50,7 @@ export async function spawnSpecialistNode(
   }
 
   const profile = getProfile(state);
-  const contentProfile = resolveContentSpecFromProfile(profile);
+  const delivery = resolveDeliveryFromProfile(profile);
   const { department, brief, specialist_name } = pending;
   const name = specialistDisplayName(department, specialist_name);
 
@@ -86,8 +86,8 @@ export async function spawnSpecialistNode(
         notes: (existing.notes ?? "") + section,
       }
     : {
-        platform: contentProfile.platform ?? "yougan",
-        title: contentProfile.content_topic ?? null,
+        platform: delivery.platform ?? "yougan",
+        title: delivery.topic ?? null,
         body: output,
         notes: section,
       };
