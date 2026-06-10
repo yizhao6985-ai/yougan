@@ -27,7 +27,4 @@ export const cacheKeys = {
   user(userId: string) {
     return `${PREFIX}:user:${userId}`;
   },
-  integrations(userId: string) {
-    return `${PREFIX}:integrations:${userId}`;
-  },
 } as const;

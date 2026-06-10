@@ -141,7 +141,7 @@ pnpm generate:api       # 生成 apps/web/src/services/generated/schema.d.ts
 
 ## 创作流程
 
-一件 **作品（Work）** 对应一段持续对话与一个 LangGraph `threadId`。Agent 每条用户消息经 **回合队列** 自动编排，路由到灵感 / 大纲 / 创作 / 提问等对话子图（详见 [docs/technical/agent-turn-queue.md](./docs/technical/agent-turn-queue.md)）。
+一件 **作品（Work）** 对应一段持续对话与一个 LangGraph `threadId`。Agent 每条用户消息经 **回合队列** 自动 workflow，路由到灵感 / 大纲 / 创作 / 提问等对话子图（详见 [docs/technical/agent-turn-queue.md](./docs/technical/agent-turn-queue.md)）。
 
 | 阶段 | 行为 |
 | ---- | ---- |
@@ -159,7 +159,6 @@ pnpm generate:api       # 生成 apps/web/src/services/generated/schema.d.ts
 - 内容发布与公开阅读（`/content`）
 - 用户主页与资料设置
 - 会员订阅与账单（免费版 / Pro）
-- 第三方平台 OAuth 绑定与发布（见 [docs/platform-oauth.md](./docs/platform-oauth.md)）
 - 本地或 S3 兼容对象存储上传
 
 ## 技术栈

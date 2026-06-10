@@ -5,11 +5,11 @@ import { invokeStructured } from "#agent/llm/invoke/index.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
 import {
   getPlanSummary,
-  profileSummary,
   resolveDeliveryFromProfile,
   type ProductionDepartment,
   type WorkPreview,
 } from "@yougan/domain";
+import { profileSummary } from "#agent/prompts/profile-summary.js";
 import {
   getPreview,
   getProductionPlan,

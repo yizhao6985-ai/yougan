@@ -1,14 +1,8 @@
 import type {
   HumanAssetContentPart,
   HumanAttachmentAsset,
-  HumanImageUrlContentPart,
   HumanMessageContentPart,
 } from "../../models/messages/human-content.js";
-
-/** LLM 视觉调用边界：将 URL 转为 LangChain image part（不用于 human message 存储）。 */
-export function humanImageFromUrl(url: string): HumanImageUrlContentPart {
-  return { type: "image", source_type: "url", url };
-}
 
 export function humanAssetContentPart(
   input: HumanAttachmentAsset,

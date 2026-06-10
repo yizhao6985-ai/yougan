@@ -4,16 +4,21 @@ import { toolsCondition } from "@langchain/langgraph/prebuilt";
 import { AgentState } from "#agent/state.js";
 
 import * as llmToolCalls from "./conditional-edges/llm-tool-calls.js";
-import { analyzeReferenceNode } from "./nodes/analyze-reference/node.js";
+import * as routeReferenceEntry from "./conditional-edges/route-reference-entry.js";
+import { ingestReferencesNode } from "./nodes/ingest-references/node.js";
 import { referenceTurnNode } from "./nodes/reference-turn/node.js";
 import { toolNode } from "./nodes/tool-node/node.js";
 
 export const referenceGraph = new StateGraph(AgentState)
-  .addNode("analyze-reference", analyzeReferenceNode)
-  .addNode("reference-turn", referenceTurnNode)
-  .addNode("tool-node", toolNode)
-  .addEdge(START, "analyze-reference")
-  .addEdge("analyze-reference", "reference-turn")
+  .addNode("ingestReferences", ingestReferencesNode)
+  .addNode("referenceTurn", referenceTurnNode)
+  .addNode("toolNode", toolNode)
+  .addConditionalEdges(
+    START,
+    routeReferenceEntry.selectReferenceEntry,
+    routeReferenceEntry.paths,
+  )
+  .addEdge("ingestReferences", "referenceTurn")
   .addConditionalEdges(llmToolCalls.from, toolsCondition, llmToolCalls.paths)
-  .addEdge("tool-node", "reference-turn")
+  .addEdge("toolNode", "referenceTurn")
   .compile();

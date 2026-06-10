@@ -107,13 +107,6 @@ export async function invalidateUserCache(userId: string) {
   await cacheDel(cacheKeys.user(userId));
 }
 
-export async function invalidateIntegrationsCache(userId: string) {
-  await cacheDel(cacheKeys.integrations(userId));
-}
-
 export async function invalidateSessionCaches(userId: string) {
-  await Promise.all([
-    invalidateUserCache(userId),
-    invalidateIntegrationsCache(userId),
-  ]);
+  await invalidateUserCache(userId);
 }

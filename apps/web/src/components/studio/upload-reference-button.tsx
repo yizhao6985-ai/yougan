@@ -104,6 +104,3 @@ export function UploadReferenceButtons() {
     </>
   );
 }
-
-/** @deprecated 使用 UploadReferenceButtons */
-export const UploadReferenceButton = UploadReferenceButtons;

@@ -28,7 +28,7 @@
 - 产品文案：`apps/web/src/lib/site-copy.ts`、`product-capabilities.ts`
 - 商业规则：`apps/api/src/lib/subscription-plans.ts`、计费与订阅服务
 - 数据模型：`apps/api/prisma/schema.prisma`、`packages/domain`
-- Agent 编排：`apps/agent/src/graph.ts`、[agent-turn-queue.md](../technical/agent-turn-queue.md)
+- Agent workflow：`apps/agent/src/graph.ts`、[agent-turn-queue.md](../technical/agent-turn-queue.md)
 - 平台能力：`apps/api/src/lib/publish-platforms.ts`
 
 若代码变更，请同步更新对应业务文档。

@@ -1,7 +1,7 @@
-/** llm-call：有 tool_calls 则进 tool-node */
+/** llmCall：有 tool_calls 则进 toolNode */
 import { END } from "@langchain/langgraph";
 
-export const from = "llm-call" as const;
+export const from = "llmCall" as const;
 
-/** toolsCondition 返回 "tools"，本图节点名为 tool-node */
-export const paths = { tools: "tool-node", __end__: END } as const;
+/** toolsCondition 返回 "tools"，本图节点名为 toolNode */
+export const paths = { tools: "toolNode", __end__: END } as const;

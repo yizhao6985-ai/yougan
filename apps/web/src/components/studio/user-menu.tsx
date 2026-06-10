@@ -8,7 +8,6 @@ import {
   LogOutIcon,
   MessageSquarePlusIcon,
   NewspaperIcon,
-  Share2Icon,
   UserRoundIcon,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -53,12 +52,6 @@ const USER_MENU_GROUPS: Array<{ label: string; items: UserMenuItem[] }> = [
     items: [
       { to: "/settings/works", label: "作品管理", icon: FolderKanbanIcon },
       { to: "/settings/publications", label: "发布管理", icon: NewspaperIcon },
-    ],
-  },
-  {
-    label: SETTINGS.navGroups.connect,
-    items: [
-      { to: "/settings/integrations", label: "平台集成发布", icon: Share2Icon },
     ],
   },
 ];

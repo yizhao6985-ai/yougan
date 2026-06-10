@@ -1,6 +1,6 @@
 /**
  * 单轮用户消息解析出的有序子图队列（FIFO）。
- * orchestrateTurn 产出 kinds；带附件时系统会自动前置 reference。
+ * workflowTurn 产出 kinds；带附件时系统会自动前置 reference 分析新素材；无附件时删/改参考由模型输出 reference。
  */
 export const TURN_QUEUE_KINDS = ["reference", "profile", "production", "ask"] as const;
 

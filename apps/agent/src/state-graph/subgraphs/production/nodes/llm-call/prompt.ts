@@ -4,13 +4,15 @@ import {
   getPlanSummary,
   isPlanReady,
   isProfileActionable,
-  profileSummary,
-  productionPlanSummary,
-  profileReferencesSummary,
   resolveDeliveryFromProfile,
   type ContentFormatId,
   type ProfileDelivery,
 } from "@yougan/domain";
+import {
+  profileSummary,
+  profileReferencesSummary,
+} from "#agent/prompts/profile-summary.js";
+import { productionPlanSummary } from "../schedule-production/helpers/plan-prompt.js";
 import {
   composeSystemPrompt,
   YOUGAN_USER_LABEL,
@@ -121,12 +123,6 @@ export function buildProductionLlmPrompt(state: AgentStateType): string {
 
 前提：使用当前作品方案（见下方）。制作总监已制定内部制作计划（不对${YOUGAN_USER_LABEL}复述计划细节）。
 
-内部分工：
-- 文案 → generate_draft / spawn_specialist(writing)
-- 设计 → spawn_specialist(design)
-- 音频 → spawn_specialist(audio)
-- 视频 → spawn_specialist(video)
-
 ${formatHint ? `体裁写作要求：${formatHint}` : ""}
 
 行业经验：
@@ -135,10 +131,8 @@ ${industry}
 执行流程（每次${YOUGAN_USER_LABEL}发消息时必须按序）：
 1. 进入制作时系统已尝试补全方案缺口；若仍不可执行再引导${YOUGAN_USER_LABEL}补充说明。
 2. 若内部计划尚未就绪，等待制作总监编排（勿对用户说「计划」一词，可说「步骤排好了」）。
-3. 将${YOUGAN_USER_LABEL}本条诉求作为新任务 → add_plan_task（可指定 department）。
-4. 按部门调用 generate_draft 或 spawn_specialist。
-5. 执行完成后 complete_execution(summary)。
-6. 整体方向变化 → revise_production_plan。
+3. add_plan_task → 按部门执行 → complete_execution。
+4. 整体方向变化 → revise_production_plan。
 
 禁止跳过 add_plan_task 直接生成；禁止向${YOUGAN_USER_LABEL}展示任务列表或部门分工细节。
 

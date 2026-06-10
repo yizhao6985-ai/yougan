@@ -21,10 +21,11 @@ import {
   mediaTypeLabel,
   topicCategoryLabel,
 } from "@/lib/discover-taxonomy";
-import type { WorkProfile } from "@/lib/types";
+import type { WorkProfile, ProfileSettingKind } from "@/lib/types";
 
 function EditableTextItem({
   description,
+  heading,
   confirmedAt,
   editable,
   onEdit,
@@ -33,6 +34,7 @@ function EditableTextItem({
   deleteLabel,
 }: {
   description: string;
+  heading?: string;
   confirmedAt: string;
   editable: boolean;
   onEdit: (next: string) => void;
@@ -85,6 +87,9 @@ function EditableTextItem({
         </div>
       ) : (
         <>
+          {heading ? (
+            <p className="text-xs font-medium text-primary">{heading}</p>
+          ) : null}
           <p className="text-pretty leading-6">{description}</p>
           <div className="mt-1 flex items-center justify-between gap-2">
             <p className="text-xs text-muted-foreground/70">
@@ -280,10 +285,27 @@ function formatParamsRows(profile: WorkProfile) {
   return rows;
 }
 
+function formatSettingHeading(item: {
+  kind: ProfileSettingKind;
+  title?: string | null;
+}) {
+  const kindLabel = PROFILE_PANEL.settingKindLabels[item.kind] ?? item.kind;
+  const name = item.title?.trim();
+  return name ? `${kindLabel} · ${name}` : kindLabel;
+}
+
+function formatSettingDescription(item: {
+  kind: ProfileSettingKind;
+  title?: string | null;
+  description: string;
+}) {
+  return item.description;
+}
+
 const EMPTY_PROFILE: WorkProfile = {
   delivery: { topic: "", format: "short_post", modalities: ["text"] },
   expression: {},
-  blueprint: { summary: "", segments: [] },
+  blueprint: { summary: "", settings: [], segments: [] },
   guardrails: [],
   params: { kind: "text" },
 };
@@ -294,9 +316,12 @@ export function ProfilePanel({
   compact = false,
   onUpdateGuardrail,
   onDeleteGuardrail,
+  onUpdateSetting,
+  onDeleteSetting,
   onUpdateSegment,
   onDeleteSegment,
   onClearGuardrails,
+  onClearSettings,
   onClearSegments,
 }: {
   profile?: WorkProfile;
@@ -304,9 +329,12 @@ export function ProfilePanel({
   compact?: boolean;
   onUpdateGuardrail?: (id: string, description: string) => void;
   onDeleteGuardrail?: (id: string) => void;
+  onUpdateSetting?: (id: string, description: string) => void;
+  onDeleteSetting?: (id: string) => void;
   onUpdateSegment?: (id: string, description: string) => void;
   onDeleteSegment?: (id: string) => void;
   onClearGuardrails?: () => void;
+  onClearSettings?: () => void;
   onClearSegments?: () => void;
 }) {
   const data = profile ?? EMPTY_PROFILE;
@@ -314,6 +342,7 @@ export function ProfilePanel({
   const expressionRows = formatExpressionRows(data);
   const paramsRows = formatParamsRows(data);
   const summary = data.blueprint.summary.trim();
+  const settings = data.blueprint.settings;
   const segments = data.blueprint.segments;
   const guardrails = data.guardrails;
 
@@ -348,6 +377,40 @@ export function ProfilePanel({
           <CreativeContextInset>
             <p className="text-pretty leading-6">{summary}</p>
           </CreativeContextInset>
+        </ProfileSubsection>
+
+        <ProfileSubsection
+          title={PROFILE_PANEL.settingsLabel}
+          count={settings.length > 0 ? settings.length : undefined}
+          hasContent={settings.length > 0}
+          empty={PROFILE_PANEL.settingsEmpty}
+          action={
+            editable && settings.length > 0 ? (
+              <button
+                type="button"
+                className="text-xs text-muted-foreground transition hover:text-red-600"
+                onClick={onClearSettings}
+              >
+                {PROFILE_PANEL.clearSettings}
+              </button>
+            ) : null
+          }
+        >
+          <CreativeContextList>
+            {settings.map((item) => (
+              <EditableTextItem
+                key={item.id}
+                description={formatSettingDescription(item)}
+                heading={formatSettingHeading(item)}
+                confirmedAt={item.confirmed_at}
+                editable={editable}
+                editLabel="修改创作设定"
+                deleteLabel="删除创作设定"
+                onEdit={(next) => onUpdateSetting?.(item.id, next)}
+                onDelete={() => onDeleteSetting?.(item.id)}
+              />
+            ))}
+          </CreativeContextList>
         </ProfileSubsection>
 
         <ProfileSubsection

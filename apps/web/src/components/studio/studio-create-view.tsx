@@ -15,6 +15,9 @@ export function StudioCreateView() {
     updateProfileSegment,
     deleteProfileSegment,
     clearWorkProfileSegments,
+    updateProfileSetting,
+    deleteProfileSetting,
+    clearWorkProfileSettings,
   } = useYouganStreamContext();
 
   const staging = stream.values?.staging;
@@ -77,6 +80,20 @@ export function StudioCreateView() {
       }
       onClearSegments={
         activeWork ? () => clearWorkProfileSegments(activeWork.id) : undefined
+      }
+      onUpdateSetting={
+        activeWork
+          ? (settingId, description) =>
+              updateProfileSetting(activeWork.id, settingId, description)
+          : undefined
+      }
+      onDeleteSetting={
+        activeWork
+          ? (settingId) => deleteProfileSetting(activeWork.id, settingId)
+          : undefined
+      }
+      onClearSettings={
+        activeWork ? () => clearWorkProfileSettings(activeWork.id) : undefined
       }
     />
   );

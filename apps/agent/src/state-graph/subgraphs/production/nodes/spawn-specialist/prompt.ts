@@ -1,11 +1,11 @@
 import {
   getPlanSummary,
-  profileSummary,
   resolveDeliveryFromProfile,
   type ProductionDepartment,
   type WorkProductionPlan,
   type WorkProfile,
 } from "@yougan/domain";
+import { profileSummary } from "#agent/prompts/profile-summary.js";
 
 import { departmentBrief } from "./helpers/department-brief.js";
 import { DEPARTMENT_LABELS } from "./helpers/department-labels.js";

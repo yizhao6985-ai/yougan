@@ -19,10 +19,13 @@ import { normalizeWork } from "@/lib/normalize-work";
 import {
   clearGuardrails,
   clearSegments,
+  clearSettings,
   deleteGuardrail,
   deleteSegment,
+  deleteSetting,
   updateGuardrail,
   updateSegment,
+  updateSetting,
 } from "@yougan/domain";
 import type { YouganValues, Work, WorkProfile } from "@/lib/types";
 import { useAuthToken } from "@/store/auth";
@@ -231,6 +234,41 @@ export function useWorksStore() {
     [patchProfile, queryClient],
   );
 
+  const updateProfileSettingItem = useCallback(
+    (workId: string, settingId: string, description: string) => {
+      const current = queryClient
+        .getQueryData<Work[]>(queryKeys.works.list)
+        ?.find((work) => work.id === workId);
+      if (!current) return;
+      const next = updateSetting(current.profile, settingId, description);
+      patchProfile(workId, next);
+    },
+    [patchProfile, queryClient],
+  );
+
+  const deleteProfileSettingItem = useCallback(
+    (workId: string, settingId: string) => {
+      const current = queryClient
+        .getQueryData<Work[]>(queryKeys.works.list)
+        ?.find((work) => work.id === workId);
+      if (!current) return;
+      const next = deleteSetting(current.profile, settingId);
+      patchProfile(workId, next);
+    },
+    [patchProfile, queryClient],
+  );
+
+  const clearWorkProfileSettings = useCallback(
+    (workId: string) => {
+      const current = queryClient
+        .getQueryData<Work[]>(queryKeys.works.list)
+        ?.find((work) => work.id === workId);
+      if (!current) return;
+      patchProfile(workId, clearSettings(current.profile));
+    },
+    [patchProfile, queryClient],
+  );
+
   const renameWork = useCallback(
     async (workId: string, title: string) => {
       const trimmed = title.trim();
@@ -270,6 +308,9 @@ export function useWorksStore() {
     updateProfileSegment: updateProfileSegmentItem,
     deleteProfileSegment: deleteProfileSegmentItem,
     clearWorkProfileSegments,
+    updateProfileSetting: updateProfileSettingItem,
+    deleteProfileSetting: deleteProfileSettingItem,
+    clearWorkProfileSettings,
     renameWork,
     moveWorkToGroup,
   };

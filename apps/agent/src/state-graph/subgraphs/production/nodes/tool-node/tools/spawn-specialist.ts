@@ -50,16 +50,17 @@ export const spawnSpecialist = tool(
   {
     name: "spawn_specialist",
     description:
-      "临时创建部门专员执行任务。design=配图；audio=口播；video=分镜；writing 请用 generate_draft。",
+      "委派部门专员执行任务。须先 add_plan_task。writing 请用 generate_draft。",
     schema: z.object({
       department: z
         .enum(["writing", "design", "audio", "video"])
-        .describe("部门"),
-      brief: z.string().describe("交给专员的具体任务说明"),
-      specialist_name: z
+        .describe(
+          "部门：design=配图/封面/视觉，audio=口播/音频，video=分镜/视频，writing 勿用",
+        ),
+      brief: z
         .string()
-        .optional()
-        .describe("专员称呼"),
+        .describe("交给专员的具体任务说明，含风格、用途与交付要求"),
+      specialist_name: z.string().optional().describe("专员称呼，可省略"),
     }),
   },
 );

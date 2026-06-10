@@ -18,9 +18,9 @@ import {
   buildDiscoverSearchParams,
   EMPTY_DISCOVER_FILTERS,
   parseDiscoverFilters,
-  type DiscoverFacets,
   type DiscoverFilters,
-} from "@/lib/discover-taxonomy";
+} from "@/lib/discover-filters";
+import { type DiscoverFacets } from "@/lib/discover-taxonomy";
 import type { Publication } from "@/lib/publication-types";
 
 const EMPTY_FACETS: DiscoverFacets = {

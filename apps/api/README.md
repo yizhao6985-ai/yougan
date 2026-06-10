@@ -120,7 +120,7 @@ apps/api/
 - **PlatformIntegration** — 第三方平台 OAuth 令牌
 - **UserSubscription** / **BillingOrder** — 会员与账单
 
-`WorkConversation` 与 LangGraph `threadId` 一一对应；创作阶段由 Agent 回合队列编排，不再持久化对话模式字段。
+`WorkConversation` 与 LangGraph `threadId` 一一对应；创作阶段由 Agent 回合队列 workflow，不再持久化对话模式字段。
 
 ## LangGraph 代理
 

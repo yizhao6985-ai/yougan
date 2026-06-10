@@ -32,7 +32,7 @@
 | 结构化灵感选项 | 点选即发送 | 已实现 | `inspirationChoices`（当轮有效） |
 | 创意度滑杆 | 控制 AI 新颖度 | 已实现 | `modelTemperature` 0.1–1.0 |
 | 流式对话 | 实时反馈 | 已实现 | LangGraph SDK `useStream` |
-| 参考素材汇总 | 对标与引用 | 已实现 | `ReferenceItem`，text/image/web |
+| 参考素材汇总 | 对标与引用 | 已实现 | `WorkReference`，text/image/web |
 | 发布到有感 | 进入公域 | 已实现 | `PublishConfirmDialog` 确认分类后发布 |
 | 参考文案/图片解析 | 上传或粘贴参考素材 | 已实现 | 百炼 qwen3.7-max |
 

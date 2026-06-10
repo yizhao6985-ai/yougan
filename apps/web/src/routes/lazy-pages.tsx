@@ -84,7 +84,3 @@ export const SettingsPublicationsPage = lazyNamed(
   () => import("@/pages/settings/settings-publications-page"),
   "SettingsPublicationsPage",
 );
-export const SettingsIntegrationsPage = lazyNamed(
-  () => import("@/pages/settings/settings-integrations-page"),
-  "SettingsIntegrationsPage",
-);

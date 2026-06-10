@@ -1,4 +1,4 @@
-/** tool-node：按 staging 待办进入 work 节点或回创作者 */
+/** toolNode：按 staging 待办进入 work 节点或回创作者 */
 import { getProductionStagingMeta } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 
@@ -7,11 +7,11 @@ import {
   canAutoSpawnDesign,
 } from "../helpers/deliverable.js";
 
-export const from = "tool-node" as const;
+export const from = "toolNode" as const;
 
 export type PendingProductionWorkTarget =
-  | "llm-call"
-  | "design-llm-call"
+  | "llmCall"
+  | "designLlmCall"
   | "generateDraft"
   | "spawnSpecialist"
   | "inspectProduction";
@@ -36,14 +36,14 @@ export function dispatchPendingProductionWork(
     return "spawnSpecialist";
   }
   if (meta?.inspectPipeline === "design") {
-    return "design-llm-call";
+    return "designLlmCall";
   }
-  return "llm-call";
+  return "llmCall";
 }
 
 export const paths: PendingProductionWorkTarget[] = [
-  "llm-call",
-  "design-llm-call",
+  "llmCall",
+  "designLlmCall",
   "generateDraft",
   "spawnSpecialist",
   "inspectProduction",

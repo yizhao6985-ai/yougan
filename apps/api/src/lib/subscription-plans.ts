@@ -44,7 +44,6 @@ export const SUBSCRIPTION_PLANS: Record<
       "每月 500 次 AI 创作",
       "增强出稿质量与更长上下文",
       "优先响应与更多参考素材容量",
-      "平台集成发布",
     ],
   },
 };

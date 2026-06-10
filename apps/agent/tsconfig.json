@@ -15,7 +15,8 @@
       "#agent/llm/*": ["./src/llm/*"],
       "#agent/system-prompt.js": ["./src/system-prompt.ts"],
       "#agent/state.js": ["./src/state.ts"],
-      "#agent/env.js": ["./src/env.ts"]
+      "#agent/env.js": ["./src/env.ts"],
+      "#agent/prompts/*": ["./src/prompts/*"]
     }
   },
   "include": ["src/**/*.ts"]

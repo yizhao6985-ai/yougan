@@ -303,117 +303,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/integrations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Platform integration catalog */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            platforms: components["schemas"]["PlatformCatalogItem"][];
-                        };
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/integrations/{platform}/authorize": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    platform: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OAuth authorization URL */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            authorizationUrl: string;
-                        };
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/integrations/{platform}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    platform: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Disconnected */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/work-groups": {
         parameters: {
             query?: never;
@@ -1218,25 +1107,6 @@ export interface components {
             currentPassword?: string;
             newPassword?: string;
         };
-        PlatformIntegration: {
-            id: string;
-            platform: string;
-            accountName: string | null;
-            accountId: string | null;
-            status: string;
-            scopes: string[];
-            tokenExpiresAt: string | null;
-            connectedAt: string;
-            updatedAt: string;
-        } | null;
-        PlatformCatalogItem: {
-            id: string;
-            label: string;
-            description: string;
-            oauthConfigured: boolean;
-            connected: boolean;
-            integration: components["schemas"]["PlatformIntegration"];
-        };
         WorkGroup: {
             id: string;
             title: string;
@@ -1267,6 +1137,14 @@ export interface components {
             };
             blueprint: {
                 summary: string;
+                settings: {
+                    id: string;
+                    confirmed_at: string;
+                    /** @enum {string} */
+                    kind: "character" | "world" | "other";
+                    title?: string | null;
+                    description: string;
+                }[];
                 segments: {
                     id: string;
                     confirmed_at: string;

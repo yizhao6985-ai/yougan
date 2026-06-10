@@ -29,13 +29,13 @@ export interface YouganAgentState {
   /** 用户停止生成：本轮变更不落库 */
   turnCancelled?: boolean;
   interruptedMessageIds?: string[];
-  /** 本轮待执行子图队列（orchestrateTurn → dispatchTurnQueue） */
+  /** 本轮待执行子图队列（workflowTurn → dispatchTurnQueue） */
   turnQueue?: TurnQueueKind[];
   activeTurnKind?: TurnQueueKind | null;
   completedTurnKinds?: TurnQueueKind[];
   nextStepSuggestions: NextStepSuggestions | null;
-  /** 首条消息后建议的对话标题（verifyTurn 写入） */
-  suggestedConversationTitle?: string;
+  /** 首条消息后生成的对话标题（verify 节点写入） */
+  generatedConversationTitle?: string | null;
 }
 
 /**
@@ -59,7 +59,7 @@ export type YouganStreamValues = Partial<
     | "activeTurnKind"
     | "completedTurnKinds"
     | "nextStepSuggestions"
-    | "suggestedConversationTitle"
+    | "generatedConversationTitle"
   >
 > & {
   messages?: unknown[];

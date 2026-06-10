@@ -1,13 +1,13 @@
 import {
   getProfileSummary,
   getPlanSummary,
-  profileSummary,
   resolveDeliveryFromProfile,
   type ContentFormatId,
   type WorkProductionPlan,
   type WorkProfile,
   type WorkReference,
 } from "@yougan/domain";
+import { profileSummary } from "#agent/prompts/profile-summary.js";
 
 import { buildFormatGenerationGuidance } from "../llm-call/format-guidance.js";
 
@@ -35,6 +35,14 @@ export function buildGenerateDraftPrompt(input: {
     .filter((g) => g.scope === "all" || g.scope === "verbal")
     .map((g) => `- ${g.description}`)
     .join("\n");
+  const settings = profile.blueprint.settings
+    .map((s) => {
+      const kind =
+        s.kind === "character" ? "对象" : s.kind === "world" ? "背景" : "设定";
+      const name = s.title?.trim();
+      return `- [${kind}${name ? ` · ${name}` : ""}] ${s.description}`;
+    })
+    .join("\n");
 
   return `生成创作成稿（文案总监执行）。
 
@@ -51,6 +59,9 @@ ${pending}
 受众：${profile.expression.audience ?? "未指定"}
 行业背景：${industry || "无"}
 参考：${refSummaries || "无"}
+
+创作设定：
+${settings || "无"}
 
 创作规则：
 ${guardrails || "无"}

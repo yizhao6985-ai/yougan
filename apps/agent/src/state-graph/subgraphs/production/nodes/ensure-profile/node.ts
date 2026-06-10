@@ -21,7 +21,7 @@ import { resolveIndustryContext } from "../llm-call/prompt.js";
 import {
   profileSummary,
   profileReferencesSummary,
-} from "@yougan/domain";
+} from "#agent/prompts/profile-summary.js";
 import { YOUGAN_USER_LABEL } from "#agent/system-prompt.js";
 import { getProfile, getReferences } from "#agent/state-io/index.js";
 import { patchPendingProfile } from "#agent/state-io/index.js";

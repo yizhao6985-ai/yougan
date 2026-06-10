@@ -5,10 +5,8 @@ import type { ToolRunnableConfig } from "@langchain/core/tools";
 import { Command } from "@langchain/langgraph";
 import { z } from "zod";
 
-import {
-  newProductionPlanTask,
-  type ProductionDepartment,
-} from "@yougan/domain";
+import type { ProductionDepartment } from "@yougan/domain";
+import { newProductionPlanTask } from "../../schedule-production/helpers/plan-tasks.js";
 import {
   getActiveTurnKind,
   getProductionPlan,
@@ -71,13 +69,18 @@ export const addPlanTask = tool(
   },
   {
     name: "add_plan_task",
-    description: "向内部创作计划追加任务（不对用户展示）。",
+    description:
+      "将感友本条诉求追加为内部待执行任务（不对用户展示）。每次感友发消息须先调用，再执行 generate_draft 或 spawn_specialist。",
     schema: z.object({
-      description: z.string().describe("任务描述"),
+      description: z
+        .string()
+        .describe("任务描述，概括感友本轮诉求"),
       department: z
         .enum(["writing", "design", "audio", "video"])
         .optional()
-        .describe("负责部门"),
+        .describe(
+          "负责部门：writing=文案，design=配图/封面，audio=口播/音频，video=分镜/视频",
+        ),
     }),
   },
 );

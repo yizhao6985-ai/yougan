@@ -90,12 +90,10 @@ export function getToolInputSummary(
       if (Array.isArray(updates) && updates.length) {
         return `更新 ${updates.length} 条参考意图`;
       }
-      if (toolInput.update) return "更新参考意图";
       const deletes = toolInput.deletes;
       if (Array.isArray(deletes) && deletes.length) {
         return `删除 ${deletes.length} 条参考`;
       }
-      if (toolInput.delete) return "删除参考素材";
       return "更新参考素材";
     }
     case "add_plan_task":

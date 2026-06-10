@@ -18,7 +18,6 @@ import { subscriptionRouter } from "./routes/subscription.js";
 import { worksRouter } from "./routes/works.js";
 import { conversationsRouter } from "./routes/conversations.js";
 import { workGroupsRouter } from "./routes/work-groups.js";
-import { integrationsRouter } from "./routes/integrations.js";
 import { publicationsRouter } from "./routes/publications.js";
 import { usersRouter } from "./routes/users.js";
 import { uploadRouter, filesRouter } from "./routes/upload.js";
@@ -69,7 +68,6 @@ export function createApp() {
   app.use("/api/billing", billingRouter);
   app.use("/api/subscription", subscriptionRouter);
   app.use("/api/work-groups", workGroupsRouter);
-  app.use("/api/integrations", integrationsRouter);
   app.use("/api/publications", publicationsRouter);
   app.use("/api/users", usersRouter);
   app.use("/api/works", worksRouter);

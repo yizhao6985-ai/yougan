@@ -2,7 +2,7 @@
  * 有感 · Yougan 全站文案（C 端口径）
  *
  * 对外主张：帮你找灵感 → AI 团队精良制作内容。
- * 创作台按对话意图自动编排灵感、大纲、创作、提问等阶段。
+ * 创作台按对话意图自动 workflow 灵感、大纲、创作、提问等阶段。
  */
 
 export const BRAND = {
@@ -77,7 +77,7 @@ export const ABOUT_PAGE = {
     "很多工具问一句就出一篇，选题偏了就要整篇重写。有感先帮你找灵感、对齐写法，再由 AI 团队制定计划、精良制作成稿。每一步可确认、可回溯，少返工。",
   missionTitle: "我们在做什么",
   missionBody:
-    "有感（Yougan）是一款面向创作者的 AI 创作助手。好内容不是一次 Prompt 碰运气——先找灵感、再按计划精做、成稿可反复改。产品以 Web 创作台为核心，配合「发现灵感」社区与可选的外部发布集成，帮你稳定产出、少折腾。",
+    "有感（Yougan）是一款面向创作者的 AI 创作助手。好内容不是一次 Prompt 碰运气——先找灵感、再按计划精做、成稿可反复改。产品以 Web 创作台为核心，配合「发现灵感」社区，帮你稳定产出、少折腾。",
   valuesTitle: "我们坚持的原则",
   values: [
     {
@@ -99,7 +99,7 @@ export const ABOUT_PAGE = {
   ] as const,
   productTitle: "我们的产品",
   productBody:
-    "创作台围绕一件作品的一段持续对话；系统会按消息自动推进方案、创作与提问等环节，侧栏同步方案与成稿，制作计划在对话中以任务列表展示。内容可发布到「发现灵感」供他人参考，需要时也可绑定外部账号直接分发。",
+    "创作台围绕一件作品的一段持续对话；系统会按消息自动推进方案、创作与提问等环节，侧栏同步方案与成稿，制作计划在对话中以任务列表展示。内容可发布到「发现灵感」供他人参考。",
   productLink: "了解产品能力",
   contactTitle: "联系我们",
   contactBody:
@@ -247,7 +247,6 @@ export const SETTINGS = {
     account: "账户",
     billing: "会员与计费",
     content: "创作与发布",
-    connect: "连接",
     help: "帮助",
   },
   publicationsIntro: (discoverTitle: string) =>
@@ -396,21 +395,29 @@ export const WORK_HISTORY_PANEL = {
 /** 作品面板 · 作品方案 */
 export const PROFILE_PANEL = {
   title: "作品方案",
-  hint: "交付规格、表达设定、内容定位、结构段、创作规则与体裁参数；对话中确认后 Agent 会写入这里",
+  hint: "交付规格、表达设定、内容定位、创作设定、结构段、创作规则与体裁参数；对话中确认后 Agent 会写入这里",
   deliveryLabel: "交付规格",
   expressionLabel: "表达设定",
   summaryLabel: "内容定位",
+  settingsLabel: "创作设定",
   segmentsLabel: "内容结构",
   guardrailsLabel: "创作规则",
   paramsLabel: "体裁参数",
   clearGuardrails: "清空规则",
+  clearSettings: "清空设定",
   clearSegments: "清空结构",
   deliveryEmpty: "创作主题、体裁、媒介形式、发布平台与内容分类，会汇总在这里。",
   expressionEmpty: "目标受众、语气文风、叙述视角，以及画面风格与氛围，会记录在这里。",
   summaryEmpty: "这篇内容的一句话定位与核心主张，会写在这里。",
-  segmentsEmpty: "钩子、论点、案例、收尾等结构段，会按叙事顺序列在这里。",
+  settingsEmpty: "背景、对象与关键要素等固定信息，会列在这里。",
+  segmentsEmpty: "段落、步骤与情节节拍等内容走向，会按顺序列在这里。",
   guardrailsEmpty: "禁用词、必提要素、尺度边界等硬性约束，会列在这里。",
   paramsEmpty: "目标字数、画幅比例、视频时长等体裁参数，会设在这里。",
+  settingKindLabels: {
+    character: "对象",
+    world: "背景",
+    other: "其他",
+  } as const,
 } as const;
 
 /** 对话流 · 大纲进度（已移除，方案仅在侧栏展示） */
@@ -444,21 +451,6 @@ export const REFERENCE_PANEL = {
   openVideo: "播放视频",
   imageUnavailable: "图片不可用",
   mediaUnavailable: "媒体不可用",
-} as const;
-
-export const INTEGRATIONS = {
-  title: "外部发布集成",
-  intro:
-    "绑定账号后，在有感生成的内容可直接发到已连接的外部渠道，少一道复制粘贴。",
-  oauthSuccess: (label: string) =>
-    `${label} 已连接，内容可从有感直接发布。`,
-  oauthDocsLink: "查看 OAuth 配置文档",
-  oauthStatusTitle: "OAuth 配置检查",
-  oauthStatusIntro:
-    "以下变量需在 API 服务（apps/api/.env）中配置。全部就绪后平台卡片才可发起授权。",
-  oauthCallback: "授权回调地址",
-  oauthConfigured: "已配置",
-  oauthMissing: "未配置",
 } as const;
 
 export const PUBLISH = {

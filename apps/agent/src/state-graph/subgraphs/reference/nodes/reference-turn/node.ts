@@ -1,5 +1,5 @@
 /**
- * reference-turn：patch 对话（删/改意图）；新附件分析由 analyze-reference 完成。
+ * reference-turn：确认 ingest 结果；删/改意图经 reference_apply_patch（改意图由 summarizeIntent 归纳）。
  */
 import { SystemMessage } from "@langchain/core/messages";
 import type { RunnableConfig } from "@langchain/core/runnables";

@@ -107,9 +107,11 @@ export const tavilySearch = tool(
   {
     name: "tavily_search",
     description:
-      "搜索互联网获取实时信息、行业动态、数据事实与背景资料。需要时效性或外部事实时再调用。",
+      "联网搜索实时信息、行业数据与外部事实。方案与成稿知识不足以回答时再调用；勿用于修改方案或触发制作。",
     schema: z.object({
-      query: z.string().describe("搜索关键词或完整问句"),
+      query: z
+        .string()
+        .describe("搜索关键词或完整问句，尽量具体"),
     }),
   },
 );

@@ -3,8 +3,8 @@
  *
  * - **state 顶层**（profile / references / productionPlan / preview）：commitTurn 后落库，跨回合保留
  * - **staging**：单回合工作区，子图 tools 只写 staging，commit 前前端预览读 staging
- * - **turnQueue / activeTurnKind / completedTurnKinds**：外层回合编排，见 nodes/planner、executor
- * - **nextStepSuggestions**：仅 verifyTurn 写入；orchestrateTurn 新回合开始时清空
+ * - **turnQueue / activeTurnKind / completedTurnKinds**：外层回合 workflow，见 nodes/workflow-turn、dispatch-turn-queue
+ * - **nextStepSuggestions**：仅 verify 节点写入；workflowTurn 新回合开始时清空
  */
 import {
   Annotation,
@@ -49,7 +49,7 @@ export const AgentState = Annotation.Root({
     ) => (next === undefined ? (prev ?? null) : next),
     default: () => null,
   }),
-  /** 本轮已完成的队列项（advance 累积，verifyTurn 生成建议时参考） */
+  /** 本轮已完成的队列项（advance 累积，verify 节点生成建议时参考） */
   completedTurnKinds: Annotation<TurnQueueKind[]>({
     reducer: (prev: TurnQueueKind[], next: TurnQueueKind[] | undefined) =>
       next === undefined ? (prev ?? []) : next,
@@ -65,13 +65,13 @@ export const AgentState = Annotation.Root({
     reducer: (prev: string | undefined, next: string | undefined) => next,
     default: () => undefined,
   }),
-  /** API 注入：对话标题（占位「对话 N」时可被 suggestedConversationTitle 替换） */
+  /** API 注入：对话标题（占位「对话 N」时可被 generatedConversationTitle 替换） */
   conversationTitle: Annotation<string | undefined>({
     reducer: (prev: string | undefined, next: string | undefined) => next,
     default: () => undefined,
   }),
-  /** verifyTurn 产出；stream 结束后 API 写入 WorkConversation.title */
-  suggestedConversationTitle: Annotation<string | null>({
+  /** verify generateTitle 产出；stream 结束后 API 写入 WorkConversation.title */
+  generatedConversationTitle: Annotation<string | null>({
     reducer: (prev: string | null, next: string | null | undefined) =>
       next === undefined ? (prev ?? null) : next,
     default: () => null,

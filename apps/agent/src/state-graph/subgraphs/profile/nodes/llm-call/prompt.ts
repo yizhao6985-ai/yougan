@@ -8,7 +8,8 @@ import {
   profileParamsSummary,
   profileReferencesSummary,
   profileSegmentsSummary,
-} from "@yougan/domain";
+  profileSettingsSummary,
+} from "#agent/prompts/profile-summary.js";
 import {
   composeSystemPrompt,
   YOUGAN_USER_LABEL,
@@ -24,25 +25,24 @@ function buildProfileActionPrompt(
 
   return `当前任务：作品方案对话（维护 WorkProfile）
 
-**职责**：与${YOUGAN_USER_LABEL}一起维护作品方案（交付规格、表达设定、内容定位、内容结构、创作规则、体裁参数）。参考素材已由 reference 子图分析入库，可阅读下方摘要并据此调整方案。
+**职责**：与${YOUGAN_USER_LABEL}一起维护作品方案（交付规格、表达设定、内容定位、创作设定、内容结构、创作规则、体裁参数）。参考素材已由 reference 子图分析入库，可阅读下方摘要并据此调整方案。
 
-**工具**
-- 作品方案 → **profile_apply_patch**（唯一入口；至少传一个字段）
-  - delivery: { topic?, format?, modalities?, platform?, category?, intent? }（未提发布渠道时不要写 platform）
-  - expression: { audience?, verbal_tone?, verbal_style?, verbal_persona?, visual_style?, visual_mood?, visual_palette? }
-  - summary: 一句话内容定位
-  - 结构段：segments_replace（整体替换）| segments_append | segment_updates[{ segment_id, description }] | segment_deletes[id] | clear_segments
-  - 创作规则：guardrails_replace（整体替换）| guardrails_append | guardrail_updates[{ guardrail_id, description }] | guardrail_deletes[id] | clear_guardrails
-  - 体裁参数：kind, word_count_min, word_count_max, emoji_level, aspect_ratio, image_count, negative_hints, duration_sec, pacing, segment_count
-  - 改/删结构段或规则时，segment_id / guardrail_id 必须从下方「含 id」列表原样复制
-- 用户要删参考素材 → 说明可在对话中提出，系统会走 reference 流程
-- 用户想出稿/改稿 → 引导继续输入，系统会根据修改对象自动路由到制作模式
-- 禁止制作执行类工具（add_plan_task、generate_draft 等）
+**设定 vs 结构**
+- 创作设定（settings）：背景、对象、关键要素等**固定**信息，与篇幅顺序无关
+- 内容结构（segments）：段落、步骤、情节节拍等**内容走向**，按顺序排列
+- 不要把对象/背景说明写进 segments；不要把结构大纲写进 settings
 
-**常见场景（尽量一次 profile_apply_patch）**
-- 换选题/换方向：delivery + summary + segments_replace；规则不适用则 guardrails_replace（或 clear_guardrails + guardrails_append）
-- 删一条结构段/规则：segment_deletes / guardrail_deletes（带 id）
+**流程**
+- 方案变更一律调用 profile_apply_patch；尽量一次调用覆盖本轮改动
+- 删参考素材 → 说明可在对话中提出，系统会走 reference 流程
+- 出稿/改稿 → 引导继续输入，系统会根据修改对象自动路由到制作模式
+
+**常见场景**
+- 换选题/换方向：delivery + summary + settings_replace + segments_replace；规则不适用则 guardrails_replace（或 clear_guardrails + guardrails_append）
+- 背景/对象/关键要素：settings_append 或 settings_replace（kind: character / world）
+- 删一条设定/结构段/规则：setting_deletes / segment_deletes / guardrail_deletes（带 id）
 - 只改结构：segments_replace，或 segment_updates / segment_deletes
+- 只改固定设定：settings_replace，或 setting_updates / setting_deletes
 - 只改语气受众：expression
 - 只改体裁参数：kind、word_count_min/max 等顶层字段
 - 根据参考素材改画风/语气：expression（结合下方参考摘要）
@@ -58,6 +58,8 @@ ${profileExpressionSummary(profile)}
 
 体裁参数：
 ${profileParamsSummary(profile)}
+
+${profileSettingsSummary(profile)}
 
 ${profileSegmentsSummary(profile)}
 

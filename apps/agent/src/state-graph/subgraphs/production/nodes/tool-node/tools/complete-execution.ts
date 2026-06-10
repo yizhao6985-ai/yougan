@@ -112,9 +112,11 @@ export const completeExecution = tool(
   {
     name: "complete_execution",
     description:
-      "制作团队执行完成后调用：将待执行任务合并进已完成记录，记录执行摘要。",
+      "generate_draft 或 spawn_specialist 执行完成后调用：合并待执行任务并记录摘要。",
     schema: z.object({
-      summary: z.string().describe("本次执行的修改点摘要"),
+      summary: z
+        .string()
+        .describe("本次执行的修改点摘要，面向内部记录"),
     }),
   },
 );

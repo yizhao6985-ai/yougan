@@ -138,7 +138,7 @@ export const EXTRA_CAPABILITIES = [
   },
   {
     icon: SparklesIcon,
-    title: "智能回合编排",
-    body: "每条消息按你的意图自动编排：改方案、出预览或答疑，复合需求也可一步串联。",
+    title: "智能回合 workflow",
+    body: "每条消息按你的意图自动 workflow：改方案、出预览或答疑，复合需求也可一步串联。",
   },
 ] as const;

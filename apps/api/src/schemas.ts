@@ -38,9 +38,6 @@ export const WorkReferenceSchema = z
   })
   .openapi("WorkReference");
 
-/** @deprecated Use WorkReferenceSchema */
-export const ReferenceItemSchema = WorkReferenceSchema;
-
 export const WorkReferencesSchema = z
   .array(WorkReferenceSchema)
   .openapi("WorkReferences");
@@ -104,6 +101,15 @@ export const WorkProfileSchema = z
     }),
     blueprint: z.object({
       summary: z.string(),
+      settings: z.array(
+        z.object({
+          id: z.string(),
+          confirmed_at: z.string(),
+          kind: z.enum(["character", "world", "other"]),
+          title: z.string().nullable().optional(),
+          description: z.string(),
+        }),
+      ),
       segments: z.array(
         z.object({
           id: z.string(),
@@ -314,33 +320,6 @@ export const UpdateProfileSchema = z
     newPassword: z.string().min(6).optional(),
   })
   .openapi("UpdateProfile");
-
-export const PlatformIntegrationSchema = z
-  .object({
-    id: z.string(),
-    platform: z.string(),
-    accountName: z.string().nullable(),
-    accountId: z.string().nullable(),
-    status: z.string(),
-    scopes: z.array(z.string()),
-    tokenExpiresAt: z.string().nullable(),
-    connectedAt: z.string(),
-    updatedAt: z.string(),
-  })
-  .openapi("PlatformIntegration");
-
-export const PlatformCatalogItemSchema = z
-  .object({
-    id: z.string(),
-    label: z.string(),
-    description: z.string(),
-    oauthConfigured: z.boolean(),
-    connected: z.boolean(),
-    integration: PlatformIntegrationSchema.nullable(),
-  })
-  .openapi("PlatformCatalogItem");
-
-export type PlatformIntegrationDTO = z.infer<typeof PlatformIntegrationSchema>;
 
 export const PublicationStatusSchema = z.enum([
   "draft",

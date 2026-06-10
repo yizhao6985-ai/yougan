@@ -8,16 +8,16 @@ import { invokeStructured } from "#agent/llm/invoke/index.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
 import {
   profileSummary,
-  productionPlanSummary,
   profileReferencesSummary,
-} from "@yougan/domain";
+} from "#agent/prompts/profile-summary.js";
+import { productionPlanSummary } from "./helpers/plan-prompt.js";
+import { newProductionPlanTask } from "./helpers/plan-tasks.js";
 import { YOUGAN_USER_LABEL } from "#agent/system-prompt.js";
 import { departmentsBrief } from "../spawn-specialist/helpers/department-brief.js";
 import { resolveIndustryContext } from "../llm-call/prompt.js";
 import {
   isPlanReady,
   isProfileActionable,
-  newProductionPlanTask,
   resolveDeliveryFromProfile,
   type ProductionDepartment,
   type WorkProductionPlan,

@@ -1,8 +1,5 @@
-import { nanoid } from "nanoid";
 import {
   EMPTY_WORK_PRODUCTION_PLAN,
-  type ProductionDepartment,
-  type ProductionPlanTask,
   type WorkProductionPlan,
 } from "../../models/work/plan.js";
 
@@ -12,19 +9,6 @@ export function isPlanReady(plan: WorkProductionPlan): boolean {
 
 export function getPlanSummary(plan: WorkProductionPlan): string | null {
   return plan.summary ?? null;
-}
-
-export function newProductionPlanTask(
-  description: string,
-  department?: ProductionDepartment,
-): ProductionPlanTask {
-  return {
-    id: nanoid(12),
-    description,
-    created_at: new Date().toISOString(),
-    department,
-    status: "pending",
-  };
 }
 
 /** 解析 productionPlan JSON */

@@ -102,7 +102,8 @@ export const generateDraft = tool(
   },
   {
     name: "generate_draft",
-    description: "文案总监根据内部创作计划生成或更新成稿。",
+    description:
+      "文案管线专用：文案总监根据内部计划生成或更新成稿。须先 add_plan_task；设计/音频/视频请用 spawn_specialist。",
     schema: z.object({}),
   },
 );

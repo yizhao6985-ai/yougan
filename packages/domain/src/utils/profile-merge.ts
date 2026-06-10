@@ -3,11 +3,17 @@ import { isProfileEmpty, parseProfileJson } from "./work/profile.js";
 
 function isProfileAuthoritativeReplace(base: WorkProfile, next: WorkProfile): boolean {
   if (next.blueprint.segments.length < base.blueprint.segments.length) return true;
+  if (next.blueprint.settings.length < base.blueprint.settings.length) return true;
   if (next.guardrails.length < base.guardrails.length) return true;
 
   const baseSegmentIds = new Set(base.blueprint.segments.map((s) => s.id));
   for (const id of baseSegmentIds) {
     if (!next.blueprint.segments.some((s) => s.id === id)) return true;
+  }
+
+  const baseSettingIds = new Set(base.blueprint.settings.map((s) => s.id));
+  for (const id of baseSettingIds) {
+    if (!next.blueprint.settings.some((s) => s.id === id)) return true;
   }
 
   const baseGuardrailIds = new Set(base.guardrails.map((g) => g.id));
@@ -42,6 +48,9 @@ export function mergeProfileState(
     },
     blueprint: {
       summary: patch.blueprint.summary.trim() || base.blueprint.summary,
+      settings: patch.blueprint.settings.length
+        ? patch.blueprint.settings
+        : base.blueprint.settings,
       segments: patch.blueprint.segments.length
         ? patch.blueprint.segments
         : base.blueprint.segments,

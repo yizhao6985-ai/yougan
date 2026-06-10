@@ -15,8 +15,6 @@ import {
   SyncWorkStateSchema,
   UploadResponseSchema,
   UserSchema,
-  PlatformCatalogItemSchema,
-  PlatformIntegrationSchema,
   UpdateProfileSchema,
   WorkGroupSchema,
   WorkVersionSchema,
@@ -187,50 +185,6 @@ registry.registerPath({
       content: { "application/json": { schema: ErrorSchema } },
     },
   },
-});
-
-registry.registerPath({
-  method: "get",
-  path: "/api/integrations",
-  tags: ["Integrations"],
-  security,
-  responses: {
-    200: {
-      description: "Platform integration catalog",
-      content: {
-        "application/json": {
-          schema: z.object({ platforms: z.array(PlatformCatalogItemSchema) }),
-        },
-      },
-    },
-  },
-});
-
-registry.registerPath({
-  method: "post",
-  path: "/api/integrations/{platform}/authorize",
-  tags: ["Integrations"],
-  security,
-  request: { params: z.object({ platform: z.string() }) },
-  responses: {
-    200: {
-      description: "OAuth authorization URL",
-      content: {
-        "application/json": {
-          schema: z.object({ authorizationUrl: z.string() }),
-        },
-      },
-    },
-  },
-});
-
-registry.registerPath({
-  method: "delete",
-  path: "/api/integrations/{platform}",
-  tags: ["Integrations"],
-  security,
-  request: { params: z.object({ platform: z.string() }) },
-  responses: { 204: { description: "Disconnected" } },
 });
 
 registry.registerPath({

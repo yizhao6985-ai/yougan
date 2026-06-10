@@ -20,7 +20,6 @@ import {
   ResetPasswordPage,
   SettingsAccountPage,
   SettingsBillingPage,
-  SettingsIntegrationsPage,
   SettingsMembershipPage,
   SettingsProfilePage,
   SettingsPublicationsPage,
@@ -54,7 +53,6 @@ export function App() {
             <Route path="billing" element={<SettingsBillingPage />} />
             <Route path="works" element={<SettingsWorksPage />} />
             <Route path="publications" element={<SettingsPublicationsPage />} />
-            <Route path="integrations" element={<SettingsIntegrationsPage />} />
           </Route>
         </Routes>
       </Suspense>

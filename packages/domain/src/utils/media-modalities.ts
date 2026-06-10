@@ -123,10 +123,3 @@ export function routeProductionPipeline(
   if (set.has("image")) return "image";
   return "text";
 }
-
-export function publicationMatchesMediaFilter(
-  mediaTypes: MediaModalityId[] | null | undefined,
-  filter: MediaModalityId,
-) {
-  return Boolean(mediaTypes?.includes(filter));
-}

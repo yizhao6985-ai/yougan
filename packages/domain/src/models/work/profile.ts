@@ -64,9 +64,22 @@ export interface ProfileSegment {
   description: string;
 }
 
-/** 内容蓝图：一句话定位 + 结构段列表 */
+/** 固定设定类型（对象、背景等，不参与内容时序） */
+export type ProfileSettingKind = "character" | "world" | "other";
+
+/** 固定创作设定；id 供 profile 工具 update/delete 引用 */
+export interface ProfileSetting {
+  id: string;
+  confirmed_at: string;
+  kind: ProfileSettingKind;
+  title?: string | null;
+  description: string;
+}
+
+/** 内容蓝图：一句话定位 + 固定设定 + 结构段列表 */
 export interface ProfileBlueprint {
   summary: string;
+  settings: ProfileSetting[];
   segments: ProfileSegment[];
 }
 
@@ -138,7 +151,7 @@ export const EMPTY_PROFILE_DELIVERY: ProfileDelivery = {
 export const EMPTY_WORK_PROFILE: WorkProfile = {
   delivery: { ...EMPTY_PROFILE_DELIVERY },
   expression: {},
-  blueprint: { summary: "", segments: [] },
+  blueprint: { summary: "", settings: [], segments: [] },
   guardrails: [],
   params: { kind: "text" },
 };

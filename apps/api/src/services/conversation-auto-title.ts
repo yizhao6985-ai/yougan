@@ -24,20 +24,20 @@ export async function maybeAutoTitleConversation(input: {
   const humanCount = countHumanCheckpointMessages(values.messages);
   if (humanCount !== 1) return;
 
-  let suggested = sanitizeAutoConversationTitle(
-    values.suggestedConversationTitle,
+  let generatedTitle = sanitizeAutoConversationTitle(
+    values.generatedConversationTitle,
   );
-  if (!suggested) {
-    suggested = fallbackConversationTitleFromText(
+  if (!generatedTitle) {
+    generatedTitle = fallbackConversationTitleFromText(
       getFirstHumanCheckpointMessageText(values.messages),
     );
   }
-  if (!suggested) return;
+  if (!generatedTitle) return;
 
   const existing = await getWorkConversation(userId, workId, conversationId);
   if (!existing || !isDefaultConversationTitle(existing.title)) return;
 
   await updateWorkConversation(userId, workId, conversationId, {
-    title: suggested,
+    title: generatedTitle,
   });
 }

@@ -22,7 +22,7 @@ export interface ProductionStagingMeta {
   lastInspectFeedback?: string | null;
   /** 工具产出后置 true，inspect 消费后清除 */
   pendingInspect?: boolean;
-  /** 重试时回到的管线：writing → llm-call，design → design-llm-call */
+  /** 重试时回到的管线：writing → llmCall，design → designLlmCall */
   inspectPipeline?: "writing" | "design" | null;
   /** generate_draft tool 请求后由 work node 消费 */
   pendingGenerateDraft?: boolean;
@@ -33,9 +33,9 @@ export interface ProductionStagingMeta {
   } | null;
 }
 
-/** 单轮编排元数据（队列进度、验收结果） */
+/** 单轮 workflow 元数据（队列进度、验收结果） */
 export interface TurnStagingMeta {
-  /** 本轮初始队列（orchestrateTurn 产出） */
+  /** 本轮初始队列（workflowTurn 产出） */
   initialTurnQueue: TurnQueueKind[];
   completedTurns: TurnQueueKind[];
   outcome: TurnStagingOutcome;

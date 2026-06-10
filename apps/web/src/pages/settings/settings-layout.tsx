@@ -8,7 +8,6 @@ import {
   NewspaperIcon,
   MessageSquarePlusIcon,
   ReceiptIcon,
-  Share2Icon,
   UserRoundIcon,
 } from "lucide-react";
 
@@ -78,17 +77,6 @@ const NAV_GROUPS: Array<{ label: string; items: SettingsNavItem[] }> = [
         label: "发布管理",
         description: "草稿、发布与归档",
         icon: NewspaperIcon,
-      },
-    ],
-  },
-  {
-    label: SETTINGS.navGroups.connect,
-    items: [
-      {
-        to: "/settings/integrations",
-        label: "外部发布",
-        description: "连接外部渠道授权",
-        icon: Share2Icon,
       },
     ],
   },

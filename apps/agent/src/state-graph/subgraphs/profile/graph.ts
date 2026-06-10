@@ -8,9 +8,9 @@ import { llmCall } from "./nodes/llm-call/node.js";
 import { toolNode } from "./nodes/tool-node/node.js";
 
 export const profileGraph = new StateGraph(AgentState)
-  .addNode("llm-call", llmCall)
-  .addNode("tool-node", toolNode)
-  .addEdge(START, "llm-call")
+  .addNode("llmCall", llmCall)
+  .addNode("toolNode", toolNode)
+  .addEdge(START, "llmCall")
   .addConditionalEdges(llmToolCalls.from, toolsCondition, llmToolCalls.paths)
-  .addEdge("tool-node", "llm-call")
+  .addEdge("toolNode", "llmCall")
   .compile();

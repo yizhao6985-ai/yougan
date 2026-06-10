@@ -2,7 +2,7 @@
 
 有感的核心产品逻辑是**分阶段确认**，而非单次 Prompt 生成全文。每件作品采用 **单线 version** 记录对用户可见的里程碑（见 [version-graph.md](../technical/version-graph.md)）。
 
-Agent 每条用户消息先经 **回合队列**（`turnQueue`）编排（见 [agent-turn-queue.md](../technical/agent-turn-queue.md)），再路由到对话子图。**聊天中的状态变更**一律走对话子图（有回复与工具）；**侧栏直改**走 `PATCH Work` + API 同步 LangGraph thread。
+Agent 每条用户消息先经 **回合队列**（`turnQueue`）workflow（见 [agent-turn-queue.md](../technical/agent-turn-queue.md)），再路由到对话子图。**聊天中的状态变更**一律走对话子图（有回复与工具）；**侧栏直改**走 `PATCH Work` + API 同步 LangGraph thread。
 
 ## 总流程
 

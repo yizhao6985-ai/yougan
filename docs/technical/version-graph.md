@@ -37,7 +37,7 @@
          → 若仅 brief / outline / plan 等变更：只更新物化列
 ```
 
-任务编排与 UI/API 线程同步说明：[agent-turn-queue.md](./agent-turn-queue.md)。
+任务 workflow 与 UI/API 线程同步说明：[agent-turn-queue.md](./agent-turn-queue.md)。
 
 ## API
 

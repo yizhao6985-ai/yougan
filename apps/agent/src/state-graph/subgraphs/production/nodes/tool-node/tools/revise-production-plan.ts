@@ -43,9 +43,12 @@ export const reviseProductionPlan = tool(
   },
   {
     name: "revise_production_plan",
-    description: "调整整体制作方向时，由制作总监重新制定内部创作计划。",
+    description:
+      "感友调整整体制作方向时调用，由制作总监重新制定内部创作计划。",
     schema: z.object({
-      reason: z.string().describe("调整原因或新要求摘要"),
+      reason: z
+        .string()
+        .describe("调整原因或感友新要求摘要"),
     }),
   },
 );

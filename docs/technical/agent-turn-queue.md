@@ -1,6 +1,6 @@
 # Agent 回合队列与节点分工
 
-主 Graph（`apps/agent/src/graph.ts`）通过**回合队列**编排用户消息：仅路由到四条**对话子图**（有可见回复与工具）。作品物化状态（profile / brief / outline / draft）的**直改**由 Web 侧栏 `PATCH /api/works/:id` 写入数据库，并由 API 同步到各对话的 LangGraph thread checkpoint（不经 Agent run）。
+主 Graph（`apps/agent/src/graph.ts`）通过**回合队列** workflow 用户消息：仅路由到四条**对话子图**（有可见回复与工具）。作品物化状态（profile / brief / outline / draft）的**直改**由 Web 侧栏 `PATCH /api/works/:id` 写入数据库，并由 API 同步到各对话的 LangGraph thread checkpoint（不经 Agent run）。
 
 ## 状态变更的两条路径
 
@@ -16,7 +16,7 @@
 ```text
 START
   ├─ 空 thread → verifyTurn（开屏选题建议 7 条）→ END
-  └─ 有消息 → orchestrateTurn（planTurnQueue → turnQueue）
+  └─ 有消息 → workflowTurn（planTurnQueue → turnQueue）
          → dispatchTurnQueue（设置 activeTurnKind）
          → 路由到对话子图
          → advanceTurnQueue（出队 → completedTurnKinds）
@@ -46,7 +46,7 @@ START
 
 ## 队列项类型（TurnQueueKind）
 
-定义于 `packages/domain/src/models/agent/turn-queue.ts`（排序工具见 `utils/turn-queue.ts`）：
+定义于 `packages/domain/src/models/agent/turn-queue.ts`（排序见 `workflow-turn/helpers/sort-turn-queue.ts`）：
 
 | kind | 主图节点 | 行为 |
 |------|----------|------|
@@ -79,7 +79,7 @@ LangGraph stream 结束后（`agent-proxy`）：`verifyTurn` 写入的 `suggeste
 ## 相关代码
 
 - `packages/domain/src/models/agent/turn-queue.ts`
-- `packages/domain/src/utils/turn-queue.ts`
+- `apps/agent/src/state-graph/nodes/workflow-turn/helpers/sort-turn-queue.ts`
 - `apps/agent/src/graph.ts`
 - `apps/agent/src/nodes/`（`planner` / `executor` / `verifier` / `edges`）
 - `apps/api/src/services/agent-thread-sync.ts`

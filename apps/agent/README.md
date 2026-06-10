@@ -1,6 +1,6 @@
 # @yougan/agent
 
-Node.js LangGraph 服务：**两层三分**编排 + 对话子图。聊天中的状态变更均经对话子图（可见回复与工具）；UI 直改作品状态由 API `PATCH Work` + 线程同步完成。
+Node.js LangGraph 服务：**两层三分** workflow + 对话子图。聊天中的状态变更均经对话子图（可见回复与工具）；UI 直改作品状态由 API `PATCH Work` + 线程同步完成。
 
 由 `@langchain/langgraph-cli` 在开发模式启动，默认 `http://localhost:2024`。生产环境由 `apps/api` 的 `/langgraph` 代理访问，不应对公网直接暴露（无 JWT 层）。
 
@@ -18,19 +18,19 @@ Checkpoint：**Agent 专用 Postgres**（`POSTGRES_URI`，默认 `:5433`）。
 
 | 角色 | 目录 | 节点 | 职责 |
 |------|------|------|------|
-| 计划者 | `nodes/orchestrate-turn/` | `orchestrateTurn` | 解析用户意图 → `turnQueue[]`，fork `staging` |
+| 计划者 | `nodes/workflow-turn/` | `workflowTurn` | 解析用户意图 → `turnQueue[]`，fork `staging` |
 | 执行者 | `state-graph/` | `dispatchTurnQueue` / `advanceTurnQueue` + 子图 | 按队列路由并执行 profile / production / ask |
-| 验收者 | `nodes/verify-turn/` | `verifyTurn` / `commitTurn` | 验收通过 → 生成 `nextStepSuggestions` → 提交 state 顶层 |
+| 验收者 | `generate-suggestions` 等 | `routeTurnEnd` → `generateSuggestions` ∥ `generateTitle` → `commitTurn` | 取消回合跳过验收，直接 `commitTurn` rollback |
 
 图接线：`src/graph.ts`；`state-graph/` 含 `nodes/`、`conditional-edges/`、`subgraphs/*/graph.ts`
 
 ### 内层子图（`state-graph/subgraphs/`）
 
-**production**：`ensure-profile` → `resolve-content-spec` → `schedule-production` → `llm-call` / `design-llm-call` ⇄ `tool-node` →（work）`generate-draft` / `spawn-specialist` → `inspect-production`。tool 仅入队或改 state，LLM 重活在 work node。
+**production**：`ensureProfile` → `resolveContentSpec` → `scheduleProduction` → `llmCall` / `designLlmCall` ⇄ `toolNode` →（work）`generateDraft` / `spawnSpecialist` → `inspectProduction`。tool 仅入队或改 state，LLM 重活在 work node。
 
-**profile**：`llm-call` ⇄ `tool-node`（`profile_apply_patch` 同步写方案与删参考）→ 若本轮 tool args 含 `reference.analyze` 则 `analyzeReference` → 回 `llm-call`。
+**profile**：`llmCall` ⇄ `toolNode`（`profile_apply_patch` 同步写方案与删参考）。
 
-**ask**：`llm-call` ⇄ `tool-node`（`ToolNode` + `toolsCondition`）。
+**ask**：`llmCall` ⇄ `toolNode`（`ToolNode` + `toolsCondition`）。
 
 LLM 环：`nodes/llm-call/node.ts`（bindTools + stream）+ `nodes/tool-node/`（`ToolNode` + `tools/`）+ `conditional-edges/llm-tool-calls.ts`（`toolsCondition`）。
 
@@ -71,9 +71,9 @@ src/
 
 ```text
 START
-  ├─ 空 thread → verifyTurn（开屏 7 条建议）→ END
-  └─ 有消息 → orchestrateTurn → dispatchTurnQueue → [*Graph] → advanceTurnQueue
-         → verifyTurn（对话流 4 条建议）→ commitTurn → END
+  ├─ 空 thread → generateSuggestions（开屏 7 条建议）→ END
+  └─ 有消息 → workflowTurn → dispatchTurnQueue → [*Graph] → advanceTurnQueue
+         → routeTurnEnd → generateSuggestions ∥ generateTitle → commitTurn → END
 ```
 
 | TurnQueueKind | 子图 | 说明 |

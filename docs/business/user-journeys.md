@@ -81,7 +81,7 @@ sequenceDiagram
 | M4 首版成稿 | 创作模式执行 | `draft` 有正文预览 |
 | M5 修改闭环 | 提出修改 → 执行 | plan 执行记录更新 |
 
-**回合编排**：每条消息先解析 `turnQueue`（如 `inspiration` 记需求，再 `outline` 讨论结构）；侧栏直改走 `PATCH Work` + 线程同步。
+**回合 workflow**：每条消息先解析 `turnQueue`（如 `inspiration` 记需求，再 `outline` 讨论结构）；侧栏直改走 `PATCH Work` + 线程同步。
 
 **阶段路由**：Agent 按消息内容自动解析 `turnQueue`；无需手动切换模式，一条消息可串联多个阶段。
 

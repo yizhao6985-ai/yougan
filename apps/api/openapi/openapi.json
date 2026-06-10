@@ -117,87 +117,6 @@
           }
         }
       },
-      "PlatformIntegration": {
-        "type": "object",
-        "nullable": true,
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "platform": {
-            "type": "string"
-          },
-          "accountName": {
-            "type": "string",
-            "nullable": true
-          },
-          "accountId": {
-            "type": "string",
-            "nullable": true
-          },
-          "status": {
-            "type": "string"
-          },
-          "scopes": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "tokenExpiresAt": {
-            "type": "string",
-            "nullable": true
-          },
-          "connectedAt": {
-            "type": "string"
-          },
-          "updatedAt": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "platform",
-          "accountName",
-          "accountId",
-          "status",
-          "scopes",
-          "tokenExpiresAt",
-          "connectedAt",
-          "updatedAt"
-        ]
-      },
-      "PlatformCatalogItem": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "label": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "oauthConfigured": {
-            "type": "boolean"
-          },
-          "connected": {
-            "type": "boolean"
-          },
-          "integration": {
-            "$ref": "#/components/schemas/PlatformIntegration"
-          }
-        },
-        "required": [
-          "id",
-          "label",
-          "description",
-          "oauthConfigured",
-          "connected",
-          "integration"
-        ]
-      },
       "WorkGroup": {
         "type": "object",
         "properties": {
@@ -307,6 +226,37 @@
               "summary": {
                 "type": "string"
               },
+              "settings": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "confirmed_at": {
+                      "type": "string"
+                    },
+                    "kind": {
+                      "type": "string",
+                      "enum": ["character", "world", "other"]
+                    },
+                    "title": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "description": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "confirmed_at",
+                    "kind",
+                    "description"
+                  ]
+                }
+              },
               "segments": {
                 "type": "array",
                 "items": {
@@ -340,6 +290,7 @@
             },
             "required": [
               "summary",
+              "settings",
               "segments"
             ]
           },
@@ -1475,110 +1426,6 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "/api/integrations": {
-      "get": {
-        "tags": [
-          "Integrations"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Platform integration catalog",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "platforms": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/PlatformCatalogItem"
-                      }
-                    }
-                  },
-                  "required": [
-                    "platforms"
-                  ]
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/integrations/{platform}/authorize": {
-      "post": {
-        "tags": [
-          "Integrations"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "name": "platform",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OAuth authorization URL",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "authorizationUrl": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "authorizationUrl"
-                  ]
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/integrations/{platform}": {
-      "delete": {
-        "tags": [
-          "Integrations"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "name": "platform",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Disconnected"
           }
         }
       }

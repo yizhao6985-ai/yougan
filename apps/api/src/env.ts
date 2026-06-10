@@ -82,7 +82,6 @@ const ApiEnvSchema = z
       publicationFeedTtl: 60,
       publicationSlugTtl: 300,
       userTtl: 300,
-      integrationsTtl: 120,
       backfillLockTtl: 300,
     },
     storage: {

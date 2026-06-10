@@ -27,13 +27,6 @@ export const queryKeys = {
     previewMetadata: (workId: string) =>
       ["publications", "preview-metadata", workId] as const,
   },
-  integrations: {
-    all: ["integrations"] as const,
-    platforms: ["integrations", "platforms"] as const,
-    oauthStatus: ["integrations", "oauth-status"] as const,
-    oauthCallback: (status: string, platform: string) =>
-      ["integrations", "oauth-callback", status, platform] as const,
-  },
   subscription: {
     all: ["subscription"] as const,
     plans: ["subscription", "plans"] as const,

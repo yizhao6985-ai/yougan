@@ -41,11 +41,6 @@ export async function getWorkCurrentSnapshot(workId: string) {
   return snapshotFromWorkColumns(work);
 }
 
-/** @deprecated 读取 head version 快照；Agent 同步请用 getWorkCurrentSnapshot */
-export async function getWorkHeadSnapshot(workId: string) {
-  return getWorkCurrentSnapshot(workId);
-}
-
 async function updateWorkMaterializedState(
   workId: string,
   snapshot: WorkVersionSnapshot,

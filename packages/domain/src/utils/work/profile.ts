@@ -7,6 +7,8 @@ import {
   type GuardrailScope,
   type ProfileGuardrail,
   type ProfileSegment,
+  type ProfileSetting,
+  type ProfileSettingKind,
   type SegmentRole,
   type WorkProfile,
 } from "../../models/work/profile.js";
@@ -62,6 +64,25 @@ export function newProfileSegment(
     id: newId("segment"),
     description: description.trim(),
     role: normalizedRole,
+    title: title?.trim() || null,
+    confirmed_at: new Date().toISOString(),
+  };
+}
+
+const VALID_SETTING_KINDS: ProfileSettingKind[] = ["character", "world", "other"];
+
+export function newProfileSetting(
+  description: string,
+  kind: ProfileSettingKind | string = "other",
+  title?: string | null,
+): ProfileSetting {
+  const normalizedKind = VALID_SETTING_KINDS.includes(kind as ProfileSettingKind)
+    ? (kind as ProfileSettingKind)
+    : "other";
+  return {
+    id: newId("setting"),
+    description: description.trim(),
+    kind: normalizedKind,
     title: title?.trim() || null,
     confirmed_at: new Date().toISOString(),
   };
@@ -146,9 +167,26 @@ function parseDelivery(raw: unknown): ProfileDelivery {
 
 function parseBlueprint(raw: unknown): ProfileBlueprint {
   if (!raw || typeof raw !== "object") {
-    return { summary: "", segments: [] };
+    return { summary: "", settings: [], segments: [] };
   }
   const value = raw as Record<string, unknown>;
+  const settings = Array.isArray(value.settings)
+    ? value.settings
+        .filter((item): item is Record<string, unknown> => !!item && typeof item === "object")
+        .map((item) => ({
+          id: String(item.id ?? newId("setting")),
+          confirmed_at:
+            typeof item.confirmed_at === "string"
+              ? item.confirmed_at
+              : new Date().toISOString(),
+          kind: VALID_SETTING_KINDS.includes(item.kind as ProfileSettingKind)
+            ? (item.kind as ProfileSettingKind)
+            : "other",
+          title: typeof item.title === "string" ? item.title : null,
+          description: String(item.description ?? "").trim(),
+        }))
+        .filter((item) => item.description)
+    : [];
   const segments = Array.isArray(value.segments)
     ? value.segments
         .filter((item): item is Record<string, unknown> => !!item && typeof item === "object")
@@ -170,6 +208,7 @@ function parseBlueprint(raw: unknown): ProfileBlueprint {
 
   return {
     summary: typeof value.summary === "string" ? value.summary : "",
+    settings,
     segments,
   };
 }
@@ -180,6 +219,7 @@ export function isProfileEmpty(profile: WorkProfile | undefined): boolean {
   return (
     !normalized.blueprint.summary.trim() &&
     normalized.guardrails.length === 0 &&
+    normalized.blueprint.settings.length === 0 &&
     normalized.blueprint.segments.length === 0 &&
     !normalized.delivery.platform &&
     !normalized.delivery.topic
@@ -191,6 +231,7 @@ export function hasProfileContent(profile: WorkProfile | undefined): boolean {
   const normalized = parseProfileJson(profile);
   return (
     normalized.blueprint.segments.length > 0 ||
+    normalized.blueprint.settings.length > 0 ||
     Boolean(normalized.blueprint.summary.trim())
   );
 }
@@ -236,11 +277,6 @@ export function getProfileSummary(profile: WorkProfile): string | null {
   if (summary) return summary;
   if (normalized.blueprint.segments.length === 0) return null;
   return normalized.blueprint.segments.map((s) => s.description).join("；");
-}
-
-/** @deprecated Use getProfileSummary */
-export function getProfilePremise(profile: WorkProfile): string | null {
-  return getProfileSummary(profile);
 }
 
 export function parseProfileJson(raw: unknown): WorkProfile {
@@ -311,11 +347,6 @@ export function resolveProfileFromWork(input: {
 
 export function hasProfileSegments(profile: WorkProfile): boolean {
   return profile.blueprint.segments.length > 0;
-}
-
-/** @deprecated Use hasProfileSegments */
-export function hasProfileBeats(profile: WorkProfile): boolean {
-  return hasProfileSegments(profile);
 }
 
 export function resolveDeliveryFromProfile(profile: WorkProfile): ProfileDelivery {

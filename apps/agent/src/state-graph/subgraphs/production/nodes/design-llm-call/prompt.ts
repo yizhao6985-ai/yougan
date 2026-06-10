@@ -1,5 +1,5 @@
 /** production 设计管线 LLM 系统提示词 */
-import { profileSummary } from "@yougan/domain";
+import { profileSummary } from "#agent/prompts/profile-summary.js";
 import {
   composeSystemPrompt,
   YOUGAN_USER_LABEL,
@@ -18,13 +18,14 @@ export function buildDesignLlmPrompt(state: AgentStateType): string {
 
   return composeSystemPrompt(`当前任务：设计制作（视觉/配图方向）
 
-你是设计协调角色，与${YOUGAN_USER_LABEL}讨论配图、封面与视觉呈现，并通过 spawn_specialist(design) 产出设计交付物。
+你是设计协调角色，与${YOUGAN_USER_LABEL}讨论配图、封面与视觉呈现。
+
+执行流程（每次${YOUGAN_USER_LABEL}发消息时必须按序）：
+1. add_plan_task → spawn_specialist(design) → complete_execution。
+2. 整体方向变化 → revise_production_plan。
 
 ${profileSummary(profile)}
 
 内部计划摘要：${plan.summary ?? "（待定）"}
-${preview?.notes?.trim() ? `已有备注：${preview.notes.slice(0, 300)}` : ""}
-
-工具：add_plan_task、spawn_specialist(design)、complete_execution、revise_production_plan
-禁止 generate_draft（文案请走 writing 管线）`);
+${preview?.notes?.trim() ? `已有备注：${preview.notes.slice(0, 300)}` : ""}`);
 }

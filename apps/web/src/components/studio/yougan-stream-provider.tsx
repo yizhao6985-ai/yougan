@@ -66,17 +66,19 @@ function ConversationStreamKeyed({
 
       if (!stillPlaceholderTitle || completedWorkId !== workId) return;
 
-      let suggested = sanitizeAutoConversationTitle(
-        values.suggestedConversationTitle,
+      let generatedTitle = sanitizeAutoConversationTitle(
+        values.generatedConversationTitle,
       );
-      if (!suggested) {
+      if (!generatedTitle) {
         const firstHuman = getFirstHumanCheckpointMessageText(values.messages);
-        suggested = fallbackConversationTitleFromText(firstHuman);
+        generatedTitle = fallbackConversationTitleFromText(firstHuman);
       }
-      if (conversationId && suggested) {
+      if (conversationId && generatedTitle) {
         patchConversationsCache(queryClient, completedWorkId, (items) =>
           items.map((item) =>
-            item.id === conversationId ? { ...item, title: suggested } : item,
+            item.id === conversationId
+              ? { ...item, title: generatedTitle }
+              : item,
           ),
         );
       }

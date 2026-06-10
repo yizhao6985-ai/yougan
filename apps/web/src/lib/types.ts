@@ -9,6 +9,8 @@ export type {
 
 export type {
   ProfileSegment,
+  ProfileSetting,
+  ProfileSettingKind,
   ProfileGuardrail,
   ProfileDelivery,
   FormatParams,
@@ -21,8 +23,6 @@ export type {
   HumanAttachmentAsset,
   HumanMessageContentPart,
   WorkReference,
-  /** @deprecated Use WorkReference */
-  ReferenceItem,
   WorkPreview,
   WorkProductionPlan,
   WorkProfile,
@@ -32,22 +32,7 @@ export type {
   TurnQueueKind,
 } from "@yougan/domain";
 
-export {
-  DEFAULT_NEXT_STEP_SUGGESTIONS_HINT,
-  EMPTY_WORK_PROFILE,
-  EMPTY_WORK_PRODUCTION_PLAN,
-  EMPTY_WORK_REFERENCES,
-  mergeReferencesForDisplay,
-  getProfileSummary,
-  getPlanSummary,
-  hasProfileContent,
-  hasProfileSegments,
-  isProfileActionable,
-  isPlanReady,
-  parseProfileJson,
-  parseProductionPlanJson,
-  TURN_QUEUE_KINDS,
-} from "@yougan/domain";
+export { DEFAULT_NEXT_STEP_SUGGESTIONS_HINT } from "@yougan/domain";
 
 export interface WorkConversation {
   id: string;

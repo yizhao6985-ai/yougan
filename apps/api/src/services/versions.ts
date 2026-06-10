@@ -1,19 +1,22 @@
 export {
-  emptySnapshot,
-  hasValidPreview,
-  materializeWorkColumns,
   parseReferencesJson as parseReferences,
   parseProfileJson,
   parseProductionPlanJson,
   parseProductionPlanJson as parsePlan,
   parseReferencesJson,
+  resolveProfileFromWork,
+  resolveReferencesFromWork,
+} from "@yougan/domain";
+
+export {
+  emptySnapshot,
+  hasValidPreview,
+  materializeWorkColumns,
   parseWorkPreview,
   parseWorkPreview as parsePreview,
   parseSnapshot,
   previewVersionSummary,
-  resolveProfileFromWork,
-  resolveReferencesFromWork,
   shouldAppendPreviewVersion,
   snapshotFromAgentValues,
   snapshotsEqual,
-} from "@yougan/domain";
+} from "../lib/version-snapshot.js";

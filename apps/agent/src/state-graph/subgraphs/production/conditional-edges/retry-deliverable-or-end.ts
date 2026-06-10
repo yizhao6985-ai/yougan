@@ -8,10 +8,7 @@ export const from = "inspectProduction" as const;
 
 const MAX_INSPECT_RETRIES = 2;
 
-export type DeliverableRetryTarget =
-  | "llm-call"
-  | "design-llm-call"
-  | typeof END;
+export type DeliverableRetryTarget = "llmCall" | "designLlmCall" | typeof END;
 
 export function retryDeliverableOrEnd(
   state: AgentStateType,
@@ -23,11 +20,11 @@ export function retryDeliverableOrEnd(
   if ((meta.inspectRetryCount ?? 0) > MAX_INSPECT_RETRIES) {
     return END;
   }
-  return meta.inspectPipeline === "design" ? "design-llm-call" : "llm-call";
+  return meta.inspectPipeline === "design" ? "designLlmCall" : "llmCall";
 }
 
 export const paths: DeliverableRetryTarget[] = [
-  "llm-call",
-  "design-llm-call",
+  "llmCall",
+  "designLlmCall",
   END,
 ];

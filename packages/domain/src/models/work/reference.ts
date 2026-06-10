@@ -43,6 +43,3 @@ export interface WorkReference {
 }
 
 export const EMPTY_WORK_REFERENCES: WorkReference[] = [];
-
-/** @deprecated Use WorkReference */
-export type ReferenceItem = WorkReference;

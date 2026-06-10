@@ -44,6 +44,9 @@ type CreativeContextPanelContentProps = {
   onUpdateSegment?: (segmentId: string, description: string) => void;
   onDeleteSegment?: (segmentId: string) => void;
   onClearSegments?: () => void;
+  onUpdateSetting?: (settingId: string, description: string) => void;
+  onDeleteSetting?: (settingId: string) => void;
+  onClearSettings?: () => void;
 };
 
 export function CreativeContextPanelContent({
@@ -59,6 +62,9 @@ export function CreativeContextPanelContent({
   onUpdateSegment,
   onDeleteSegment,
   onClearSegments,
+  onUpdateSetting,
+  onDeleteSetting,
+  onClearSettings,
 }: CreativeContextPanelContentProps) {
   const [activeTab, setActiveTab] = useState<CreativeContextTabId>(readStoredTab);
 
@@ -113,6 +119,9 @@ export function CreativeContextPanelContent({
               onUpdateSegment={onUpdateSegment}
               onDeleteSegment={onDeleteSegment}
               onClearSegments={onClearSegments}
+              onUpdateSetting={onUpdateSetting}
+              onDeleteSetting={onDeleteSetting}
+              onClearSettings={onClearSettings}
             />
           </div>
         ) : null}
