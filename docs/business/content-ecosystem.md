@@ -8,7 +8,7 @@
 flowchart TB
   subgraph private [私域创作]
     W[作品 Work]
-    C[成稿 creation]
+    C[作品预览 production]
   end
   subgraph public [公域]
     P[Publication 发布]
@@ -66,7 +66,7 @@ taxonomy 定义于 `packages/domain/src/models/taxonomy/`，API/前端同步于 
 
 ### 发布流程（用户视角）
 
-1. 创作模式生成 `creation.body`。
+1. production 子图生成 `preview.body`。
 2. Studio 点击「发布到有感」→ **发布确认弹窗**。
 3. 系统展示 AI 推断的分类标签（体裁 / 主题 / 媒介 / 平台），用户可修改。
 4. 确认后创建或更新 `Publication` 并发布。

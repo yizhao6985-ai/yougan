@@ -8,10 +8,12 @@ export function useTurnNextStepSuggestions(input: {
   isLoading: boolean;
 }) {
   const activeSuggestions = useMemo(() => {
-    if (input.isLoading) {
+    const suggestions = input.values?.nextStepSuggestions ?? null;
+    // 回合末 generateSuggestions 与 generateTitle 并行；建议先到时即可展示
+    if (input.isLoading && !suggestions) {
       return null;
     }
-    return input.values?.nextStepSuggestions ?? null;
+    return suggestions;
   }, [input.isLoading, input.values?.nextStepSuggestions]);
 
   return { activeSuggestions };

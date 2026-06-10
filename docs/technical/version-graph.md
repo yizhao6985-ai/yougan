@@ -1,12 +1,12 @@
 # 作品版本历史（单线）
 
-有感采用 **单线 version** 管理每件作品对用户可见的里程碑；`Work` 物化列始终反映当前进度，所有对话共享同一份 `brief / plan / draft`。
+有感采用 **单线 version** 管理每件作品对用户可见的里程碑；`Work` 物化列始终反映当前进度，所有对话共享同一份 `profile / productionPlan / preview`。
 
 ## 何时写入版本
 
 仅当创作执行产出新的**作品预览**（`preview`）时，才追加 `WorkVersion` 节点。
 
-**灵感**（profile）、**制作计划**（productionPlan）、**参考素材**（references）等变更只更新物化列，**不写入版本时间轴**。
+**制作方案**（`profile`）、**制作计划**（`productionPlan`）、**参考素材**（`references`）等变更只更新物化列，**不写入版本时间轴**。
 
 ## 核心概念
 
@@ -14,7 +14,7 @@
 |------|------|
 | `WorkVersion` | 用户可见里程碑的快照 + summary |
 | `Work.headVersionId` | 当前所处的版本节点 |
-| 物化列 | `Work.profile / brief / plan / draft` 始终反映最新进度 |
+| 物化列 | `Work.profile / references / productionPlan / preview` 始终反映最新进度 |
 | 新建作品 | 无版本记录，直到首次生成作品预览 |
 | 另存为新作品 | 复制源作品可见版本链 + 当前 snapshot |
 | 回到这一版 | 将 head 指回所选节点并物化，不追加操作记录 |
@@ -31,10 +31,10 @@
 
 ```text
 用户发消息 → LangGraph run（注入 Work 物化列）
-         → resolveTurnQueue → 各对话子图（见 agent-turn-queue.md）
+         → workflowTurn → 各对话子图（见 agent-turn-queue.md）
          → stream 结束 → applyAgentRunToWork
-         → 若 draft（作品预览）变更：append WorkVersion
-         → 若仅 brief / outline / plan 等变更：只更新物化列
+         → 若 preview 变更：append WorkVersion
+         → 若仅 profile / references / productionPlan 等变更：只更新物化列
 ```
 
 任务 workflow 与 UI/API 线程同步说明：[agent-turn-queue.md](./agent-turn-queue.md)。

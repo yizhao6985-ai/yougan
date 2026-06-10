@@ -1,5 +1,5 @@
 /**
- * 写入 pending（staging）工作区。
+ * 写入 turn.staging 工作区。
  */
 import type {
   ProductionStagingMeta,
@@ -10,57 +10,58 @@ import type {
   WorkReference,
 } from "@yougan/domain";
 
-import type { AgentStateType } from "#agent/state.js";
+import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
 import { requirePending } from "./lifecycle.js";
+import { patchTurn } from "./turn.js";
 
 export function patchPending(
   state: AgentStateType,
   patch: Partial<
     Pick<TurnStaging, "profile" | "references" | "productionPlan" | "preview">
   >,
-): { staging: TurnStaging } {
+): Pick<AgentStatePatch, "turn"> {
   const staging = requirePending(state);
-  return {
+  return patchTurn(state, {
     staging: {
       ...staging,
       ...patch,
     },
-  };
+  });
 }
 
 export function patchPendingProfile(
   state: AgentStateType,
   profile: WorkProfile,
-): { staging: TurnStaging } {
+): Pick<AgentStatePatch, "turn"> {
   return patchPending(state, { profile });
 }
 
 export function patchPendingReferences(
   state: AgentStateType,
   references: WorkReference[],
-): { staging: TurnStaging } {
+): Pick<AgentStatePatch, "turn"> {
   return patchPending(state, { references });
 }
 
 export function patchPendingProductionPlan(
   state: AgentStateType,
   productionPlan: WorkProductionPlan,
-): { staging: TurnStaging } {
+): Pick<AgentStatePatch, "turn"> {
   return patchPending(state, { productionPlan });
 }
 
 export function patchPendingPreview(
   state: AgentStateType,
   preview: WorkPreview | null,
-): { staging: TurnStaging } {
+): Pick<AgentStatePatch, "turn"> {
   return patchPending(state, { preview });
 }
 
 export function patchPendingProductionMeta(
   state: AgentStateType,
   patch: Partial<ProductionStagingMeta>,
-): { staging: TurnStaging } {
+): Pick<AgentStatePatch, "turn"> {
   const staging = requirePending(state);
   const production = {
     inspectTaskId: null,
@@ -73,43 +74,49 @@ export function patchPendingProductionMeta(
     ...staging.meta.production,
     ...patch,
   };
-  return {
+  return patchTurn(state, {
     staging: {
       ...staging,
       meta: { ...staging.meta, production },
     },
-  };
+  });
 }
 
-/** 合并多个 staging patch（同节点内多字段写入） */
-export function patchPendingBatch(
-  ...patches: Array<{ staging?: TurnStaging }>
-): { staging: TurnStaging } {
-  const last = patches.at(-1);
-  if (!last?.staging) {
-    throw new Error("patchPendingBatch: no staging patch");
-  }
-  let merged = last.staging;
-  for (const patch of patches.slice(0, -1)) {
-    if (!patch.staging) continue;
+function mergeStagingPatches(stagingPatches: TurnStaging[]): TurnStaging {
+  let merged = stagingPatches[stagingPatches.length - 1]!;
+  for (const staging of stagingPatches.slice(0, -1)) {
     merged = {
       ...merged,
-      profile: patch.staging.profile ?? merged.profile,
-      references: patch.staging.references ?? merged.references,
-      productionPlan: patch.staging.productionPlan ?? merged.productionPlan,
+      profile: staging.profile ?? merged.profile,
+      references: staging.references ?? merged.references,
+      productionPlan: staging.productionPlan ?? merged.productionPlan,
       preview:
-        patch.staging.preview !== undefined
-          ? patch.staging.preview
-          : merged.preview,
+        staging.preview !== undefined ? staging.preview : merged.preview,
       meta: {
         ...merged.meta,
-        ...patch.staging.meta,
+        ...staging.meta,
         production: {
           ...merged.meta.production,
-          ...patch.staging.meta.production,
+          ...staging.meta.production,
         },
       },
     };
   }
-  return { staging: merged };
+  return merged;
+}
+
+/** 合并多个 turn.staging patch（同节点内多字段写入） */
+export function patchPendingBatch(
+  state: AgentStateType,
+  ...patches: Array<Pick<AgentStatePatch, "turn">>
+): Pick<AgentStatePatch, "turn"> {
+  const stagingPatches = patches
+    .map((patch) => patch.turn?.staging)
+    .filter((staging): staging is TurnStaging => staging != null);
+
+  if (stagingPatches.length === 0) {
+    throw new Error("patchPendingBatch: no turn.staging patch");
+  }
+
+  return patchTurn(state, { staging: mergeStagingPatches(stagingPatches) });
 }

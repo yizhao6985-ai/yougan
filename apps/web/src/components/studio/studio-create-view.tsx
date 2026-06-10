@@ -20,9 +20,9 @@ export function StudioCreateView() {
     clearWorkProfileSettings,
   } = useYouganStreamContext();
 
-  const staging = stream.values?.staging;
+  const staging = stream.values?.turn?.staging;
   const hasPendingStaging = Boolean(
-    staging && stream.values?.turnCommitted !== true,
+    staging && stream.values?.turn?.committed !== true,
   );
   const profile = hasPendingStaging
     ? mergeProfileForDisplay(activeWork?.profile, staging?.profile)
@@ -39,7 +39,7 @@ export function StudioCreateView() {
     activeWork?.preview ??
     null;
   const previewUnsaved = Boolean(
-    staging && stream.values?.turnCommitted !== true,
+    staging && stream.values?.turn?.committed !== true,
   );
 
   const panelContent = (

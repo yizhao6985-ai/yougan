@@ -1,5 +1,5 @@
-/** LangGraph 运行时：state、staging、回合队列、下一步建议 */
+/** LangGraph 运行时：state、turn、staging、回合队列 */
 export * from "./state.js";
+export * from "./turn.js";
 export * from "./staging.js";
-export * from "./turn-queue.js";
 export * from "./suggestions.js";

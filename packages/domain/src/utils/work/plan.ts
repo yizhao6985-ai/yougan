@@ -3,10 +3,6 @@ import {
   type WorkProductionPlan,
 } from "../../models/work/plan.js";
 
-export function isPlanReady(plan: WorkProductionPlan): boolean {
-  return plan.ready;
-}
-
 export function getPlanSummary(plan: WorkProductionPlan): string | null {
   return plan.summary ?? null;
 }
@@ -21,7 +17,6 @@ export function parseProductionPlanJson(raw: unknown): WorkProductionPlan {
     pending_tasks: value.pending_tasks ?? [],
     executed_tasks: value.executed_tasks ?? [],
     last_execution_summary: value.last_execution_summary ?? null,
-    ready: value.ready ?? false,
     summary: value.summary ?? null,
     departments: value.departments ?? [],
     industry_context: value.industry_context ?? null,

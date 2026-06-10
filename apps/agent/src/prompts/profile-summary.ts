@@ -27,7 +27,6 @@ function deliverySummary(profile: WorkProfile) {
     delivery.intent ? `原话：${delivery.intent}` : null,
     format ? `体裁：${format}` : null,
     modalities ? `形式：${modalities}` : null,
-    delivery.platform ? `平台：${delivery.platform}` : null,
   ].filter(Boolean);
   return parts.length ? parts.join("；") : "尚未确定创作规格";
 }

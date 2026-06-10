@@ -1,18 +1,25 @@
 /**
- * pending 工作区生命周期：fork、提交、回滚。
+ * turn 工作区生命周期：fork、提交、回滚、归一化。
  */
 import {
+  EMPTY_TURN_RUNTIME,
   EMPTY_WORK_PROFILE,
   EMPTY_WORK_PRODUCTION_PLAN,
   EMPTY_WORK_REFERENCES,
+  mergeTurnRuntime,
+  type TurnQueueKind,
+  type TurnRuntime,
   type TurnStaging,
 } from "@yougan/domain";
 
-import type { AgentStateType } from "#agent/state.js";
+import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
+
+import { getTurn, patchTurn } from "./turn.js";
 
 /** 无 staging 时从 state 顶层 fork（工具中途写入前的兜底） */
 export function requirePending(state: AgentStateType): TurnStaging {
-  if (state.staging) return state.staging;
+  const staging = getTurn(state).staging;
+  if (staging) return staging;
   return {
     profile: structuredClone(state.profile ?? EMPTY_WORK_PROFILE),
     references: structuredClone(state.references ?? [...EMPTY_WORK_REFERENCES]),
@@ -21,8 +28,6 @@ export function requirePending(state: AgentStateType): TurnStaging {
     ),
     preview: state.preview ? structuredClone(state.preview) : null,
     meta: {
-      initialTurnQueue: [...(state.turnQueue ?? [])],
-      completedTurns: [],
       outcome: "pending",
       production: {},
     },
@@ -32,8 +37,9 @@ export function requirePending(state: AgentStateType): TurnStaging {
 /** workflowTurn：从 state 顶层 fork 新回合 staging */
 export function initPendingTurn(
   state: AgentStateType,
-  turnQueue: AgentStateType["turnQueue"],
+  queue: TurnQueueKind[],
 ): TurnStaging {
+  void queue;
   return {
     profile: structuredClone(state.profile ?? EMPTY_WORK_PROFILE),
     references: structuredClone(state.references ?? [...EMPTY_WORK_REFERENCES]),
@@ -42,41 +48,76 @@ export function initPendingTurn(
     ),
     preview: state.preview ? structuredClone(state.preview) : null,
     meta: {
-      initialTurnQueue: [...(turnQueue ?? [])],
-      completedTurns: [],
       outcome: "pending",
       production: {},
     },
   };
 }
 
-/** staging → state 顶层字段（不含 turnCommitted 等 flags） */
+/** turn.staging → state 顶层作品字段 */
 export function commitPending(
   state: AgentStateType,
 ): Partial<
   Pick<
     AgentStateType,
-    "profile" | "references" | "productionPlan" | "preview" | "staging"
+    "profile" | "references" | "productionPlan" | "preview"
   >
 > {
-  if (!state.staging) return {};
+  const staging = getTurn(state).staging;
+  if (!staging) return {};
   return {
-    profile: state.staging.profile,
-    references: state.staging.references,
-    productionPlan: state.staging.productionPlan,
-    preview: state.staging.preview,
-    staging: null,
+    profile: staging.profile,
+    references: staging.references,
+    productionPlan: staging.productionPlan,
+    preview: staging.preview,
   };
 }
 
-export function rollbackPending(): {
-  staging: null;
-  turnCommitted: false;
-  turnCancelled: true;
-} {
+export function cancelledTurnPatch(): Partial<TurnRuntime> {
   return {
     staging: null,
-    turnCommitted: false,
-    turnCancelled: true,
+    committed: false,
+    cancelled: true,
   };
+}
+
+/** 是否存在未提交完的回合临时状态 */
+export function isDirtyTurnState(state: AgentStateType): boolean {
+  const turn = getTurn(state);
+  return (
+    turn.staging != null ||
+    turn.queue.length > 0 ||
+    turn.activeKind != null ||
+    turn.completedKinds.length > 0 ||
+    turn.cancelled === true
+  );
+}
+
+/** 清空回合临时层；不修改已提交作品字段与 messages */
+export function normalizeDirtyTurnState(
+  state: AgentStateType,
+): AgentStatePatch | null {
+  if (!isDirtyTurnState(state)) return null;
+
+  return {
+    ...patchTurn(state, {
+      ...cancelledTurnPatch(),
+      queue: [],
+      activeKind: null,
+      completedKinds: [],
+    }),
+    nextStepSuggestions: null,
+    generatedConversationTitle: null,
+  };
+}
+
+export function resetTurnRuntime(): TurnRuntime {
+  return { ...EMPTY_TURN_RUNTIME };
+}
+
+export function mergeTurnPatch(
+  state: AgentStateType,
+  patch: Partial<TurnRuntime>,
+): TurnRuntime {
+  return mergeTurnRuntime(getTurn(state), patch);
 }

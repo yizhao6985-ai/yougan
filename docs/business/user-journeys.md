@@ -7,7 +7,7 @@ flowchart LR
   A[认知] --> B[注册]
   B --> C[激活：首件作品]
   C --> D[习惯：三步创作]
-  D --> E[传播：发布/发现]
+  D --> E[传播：发布与发现]
   E --> F[变现：Pro 订阅]
   F --> G[留存：多作品/多平台]
 ```
@@ -37,7 +37,7 @@ flowchart LR
 | 修改邮箱 | 设置 → 账号 | 向新邮箱发确认链接，需当前密码 |
 | 资料 | `/settings/profile` | 昵称、简介、头像、封面 |
 
-**激活指标建议**（商业计划可用）：注册后 24h 内创建 ≥1 件作品并发送 ≥1 条灵感模式消息。
+**激活指标建议**（商业计划可用）：注册后 24h 内创建 ≥1 件作品并发送 ≥1 条定方案对话消息。
 
 ---
 
@@ -52,8 +52,8 @@ sequenceDiagram
 
   U->>W: 新建作品（标题）
   W->>A: 创建 Work，分配 threadId
-  W->>G: 可选：灵感推荐 graph
-  G-->>W: 1–3 条开场建议
+  W->>G: 开屏 generateSuggestions
+  G-->>W: 7 条开场建议
   U->>W: 选择或输入首条消息
   W->>A: LangGraph 代理（扣 1 次额度）
   A->>G: 注入作品上下文
@@ -63,8 +63,8 @@ sequenceDiagram
 | 环节 | 产品行为 |
 |------|----------|
 | 新建作品 | 一件作品 = 独立对话 + LangGraph thread |
-| 灵感推荐 | 基于作品标题，百炼 deepseek-v4-pro 生成 1–3 条可点击开场白 |
-| 首次对话 | 默认灵感模式；侧栏「灵感」随确认逐步填充 |
+| 开屏建议 | 空 thread 时 `generateSuggestions` 生成 7 条可点击开场白 |
+| 首次对话 | 回合队列自动路由；侧栏「方案」随确认逐步填充 |
 | 额度消耗 | 每次经 `/langgraph` 的成功请求计 1 次「AI 创作」 |
 
 ---
@@ -75,15 +75,15 @@ sequenceDiagram
 
 | 里程碑 | 用户动作 | 系统状态 |
 |--------|----------|----------|
-| M1 brief 就绪 | 确认若干条需求 | `brief.requirements` 有内容 |
-| M2 大纲就绪 | 敲定结构条目 | `outline.sections` 有内容 |
-| M3 制作计划定稿 | 创作模式定稿 | 内部 `plan` 可执行 |
-| M4 首版成稿 | 创作模式执行 | `draft` 有正文预览 |
-| M5 修改闭环 | 提出修改 → 执行 | plan 执行记录更新 |
+| M1 方案就绪 | 确认主题、体裁与表达 | `profile.delivery` / `profile.blueprint` 有内容 |
+| M2 参考就绪 | 上传或维护参考素材 | `references` 有条目 |
+| M3 开始制作 | 用户表达开写/出稿意图 | `turn.queue` 含 `production`，`productionPlan` 已编排任务 |
+| M4 首版成稿 | production 子图执行 | `preview` 有正文 |
+| M5 修改闭环 | 提出修改 → 执行 | productionPlan 执行记录更新 |
 
-**回合 workflow**：每条消息先解析 `turnQueue`（如 `inspiration` 记需求，再 `outline` 讨论结构）；侧栏直改走 `PATCH Work` + 线程同步。
+**回合 workflow**：每条消息先解析 `turn.queue`（如 `profile` 改方案，再 `production` 出稿）；侧栏直改走 `PATCH Work` + 线程同步。
 
-**阶段路由**：Agent 按消息内容自动解析 `turnQueue`；无需手动切换模式，一条消息可串联多个阶段。
+**阶段路由**：Agent 按消息内容自动解析队列；无需手动切换模式，一条消息可串联多个子图。
 
 ---
 

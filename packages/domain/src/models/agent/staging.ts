@@ -1,4 +1,3 @@
-import type { TurnQueueKind } from "./turn-queue.js";
 import type { ProductionDepartment, WorkProductionPlan } from "../work/plan.js";
 import type { WorkPreview } from "../work/preview.js";
 import type { WorkProfile } from "../work/profile.js";
@@ -33,20 +32,17 @@ export interface ProductionStagingMeta {
   } | null;
 }
 
-/** 单轮 workflow 元数据（队列进度、验收结果） */
+/** 单轮 staging 元数据（队列进度见 TurnRuntime.queue / completedKinds） */
 export interface TurnStagingMeta {
-  /** 本轮初始队列（workflowTurn 产出） */
-  initialTurnQueue: TurnQueueKind[];
-  completedTurns: TurnQueueKind[];
   outcome: TurnStagingOutcome;
-  /** verifyTurn 记录的未决缺口（如方案不可执行） */
+  /** 单轮未决缺口（可选，供调试或后续验收扩展） */
   gaps?: string[];
   production?: ProductionStagingMeta;
 }
 
 /**
  * 单轮事务工作区。
- * 子图只写 staging；verifyTurn.commitTurn 一次性提交到 state 顶层 + Work 持久化。
+ * 子图只写 turn.staging；commitTurn 一次性提交到 state 顶层 + Work 持久化。
  */
 export interface TurnStaging {
   profile: WorkProfile;

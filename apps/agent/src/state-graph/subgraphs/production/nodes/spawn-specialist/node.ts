@@ -104,6 +104,7 @@ export async function spawnSpecialistNode(
     {};
 
   return patchPendingBatch(
+    state,
     patchPendingPreview(state, preview),
     patchPendingProductionPlan(state, {
       ...plan,

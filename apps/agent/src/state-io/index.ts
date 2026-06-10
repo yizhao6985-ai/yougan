@@ -10,10 +10,14 @@ export {
   getTurnQueue,
 } from "./get.js";
 export {
+  cancelledTurnPatch,
   commitPending,
   initPendingTurn,
+  isDirtyTurnState,
+  mergeTurnPatch,
+  normalizeDirtyTurnState,
   requirePending,
-  rollbackPending,
+  resetTurnRuntime,
 } from "./lifecycle.js";
 export {
   patchPending,
@@ -24,6 +28,7 @@ export {
   patchPendingProfile,
   patchPendingReferences,
 } from "./patch-pending.js";
+export { getTurn, patchTurn } from "./turn.js";
 import { getCurrentTaskInput } from "@langchain/langgraph";
 
 import type { AgentStateType } from "#agent/state.js";

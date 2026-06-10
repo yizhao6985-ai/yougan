@@ -127,7 +127,8 @@ export function useWorksStore() {
 
   const applyStreamValuesToCache = useCallback(
     (workId: string, values: YouganValues) => {
-      if (values.turnCommitted !== true || values.turnCancelled === true) return;
+      if (values.turn?.committed !== true || values.turn?.cancelled === true)
+        return;
 
       const patch: Partial<Work> = {};
       if (values.profile !== undefined) patch.profile = values.profile;

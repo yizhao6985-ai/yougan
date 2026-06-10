@@ -11,7 +11,7 @@ yougan/
 ├── apps/
 │   ├── web/      # Vite + React 前端（落地页 + /studio 创作台）
 │   ├── api/      # Express 中间层（鉴权、作品 CRUD、OSS、Agent 代理）
-│   └── agent/    # LangGraph Agent（回合队列 + 四对话子图）
+│   └── agent/    # LangGraph Agent（回合队列 + reference/profile/production/ask 子图）
 ├── docs/         # 运维与集成文档（如平台 OAuth）
 ├── docker-compose.yml
 ├── package.json
@@ -35,7 +35,7 @@ yougan/
 中间层 (apps/api :4000) — JWT、作品元数据、上传、LangGraph 代理
   ├─→ Postgres API (:5432) — 用户、作品、发布、订阅（Prisma）
   ├─→ Redis (:6379) — 可选缓存（未配置则直连 DB）
-  └─→ Agent (apps/agent :2024) — yougan graph（resolveTurnQueue → 对话子图）
+  └─→ Agent (apps/agent :2024) — yougan graph（workflowTurn → 对话子图）
         └─→ Postgres Agent (:5433) — LangGraph checkpoint / 会话状态
 ```
 
@@ -141,13 +141,13 @@ pnpm generate:api       # 生成 apps/web/src/services/generated/schema.d.ts
 
 ## 创作流程
 
-一件 **作品（Work）** 对应一段持续对话与一个 LangGraph `threadId`。Agent 每条用户消息经 **回合队列** 自动 workflow，路由到灵感 / 大纲 / 创作 / 提问等对话子图（详见 [docs/technical/agent-turn-queue.md](./docs/technical/agent-turn-queue.md)）。
+一件 **作品（Work）** 对应一段持续对话与一个 LangGraph `threadId`。Agent 每条用户消息经 **回合队列** 自动 workflow，路由到 reference / profile / production / ask 对话子图（详见 [docs/technical/agent-turn-queue.md](./docs/technical/agent-turn-queue.md)）。
 
 | 阶段 | 行为 |
 | ---- | ---- |
-| 灵感 | 提问、确认需求，不直接出稿 |
-| 大纲 | 确认章节结构与叙事顺序 |
-| 创作 | 创意总监制定制作计划，制作团队按任务出稿 |
+| 定方案 | 整理主题、体裁、表达与结构，不直接出稿 |
+| 备参考 | 分析新附件或维护参考素材 |
+| 制作 | 制定制作计划，AI 团队按任务产出作品预览 |
 | 提问 | 自由答疑与创作咨询 |
 
 作品 JSON 字段存于 API 库；对话 checkpoint 存于 Agent 库。

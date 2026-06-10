@@ -9,7 +9,7 @@ import {
   WandSparklesIcon,
 } from "lucide-react";
 
-/** 能力页展示的创作形态示例（非平台绑定） */
+/** 能力页展示的创作形态示例 */
 export const PRODUCTION_FORMS = [
   "观点长文",
   "清单笔记",
@@ -17,14 +17,14 @@ export const PRODUCTION_FORMS = [
   "教程干货",
   "对比评测",
   "脚本口播",
+  "插画绘画",
+  "短视频脚本",
 ] as const;
 
 export type StudioCapability = {
   anchor: string;
   icon: LucideIcon;
-  /** 能力页与首页卡片上的名称 */
   label: string;
-  /** 首页能力卡片摘要 */
   teaser: string;
   tagline: string;
   summary: string;
@@ -36,32 +36,32 @@ export const STUDIO_CAPABILITIES: StudioCapability[] = [
   {
     anchor: "profile",
     icon: ListTreeIcon,
-    label: "作品方案",
-    teaser: "整理创作主题、体裁形式与内容节拍。",
-    tagline: "定作品方案",
+    label: "定方案",
+    teaser: "整理主题、体裁、表达与结构。",
+    tagline: "制作方案",
     summary:
-      "通过对话维护一份作品方案：写什么、用什么体裁、面向谁、有哪些要求与有序节拍。方案就绪后可进入制作。",
+      "通过对话维护制作方案：做什么、什么形式、面向谁、有哪些要求与内容结构。方案确认后进入制作环节。",
     highlights: [
-      "一次对话可同时更新主题、要求与结构",
-      "确认后的方案写入侧栏「作品方案」",
-      "回合结束后自动生成可点选建议",
+      "一次对话可更新主题、要求与结构",
+      "确认后的方案写入侧栏「方案」",
+      "每轮结束提供可执行的下一步建议",
       "方案就绪后说「开始制作」进入制作",
     ],
-    avoids: ["不直接写出完整正文", "不执行制作任务"],
+    avoids: ["不直接产出作品内容", "不执行制作任务"],
   },
   {
     anchor: "production",
     icon: WandSparklesIcon,
     label: "制作",
-    teaser: "AI 团队定计划，按计划精良制作。",
-    tagline: "AI 团队精良制作",
+    teaser: "AI 团队排计划，按方案执行。",
+    tagline: "执行制作",
     summary:
-      "AI 团队制定制作计划，文案/设计/音频/视频按计划执行，精良生成与修改标题、正文等内容。",
+      "AI 团队制定制作计划并按步骤执行，覆盖文字、视觉、音频、视频等形态，产出作品内容并可反复修改。",
     highlights: [
       "自动制定制作计划",
-      "按部门调度专员（文案、设计、音频、视频）",
-      "动态加载行业经验提示词",
-      "每次执行都有摘要，方便对比版本",
+      "按专长分配文字、视觉、音频、视频任务",
+      "按体裁与媒介选用制作指引",
+      "每次执行有记录，便于版本对比",
     ],
     avoids: ["不跳过任务记录直接生成"],
   },
@@ -69,17 +69,17 @@ export const STUDIO_CAPABILITIES: StudioCapability[] = [
     anchor: "ask",
     icon: BookOpenIcon,
     label: "提问",
-    teaser: "优化建议、创作答疑、背景知识，随时可问。",
-    tagline: "有问题，随时问",
+    teaser: "制作过程中的优化与答疑。",
+    tagline: "提问答疑",
     summary:
-      "问怎么做得更好给优化建议；问创作方法帮你答疑学习；问行业、受众等背景也一并作答。若要写入方案，说明意图即可。",
+      "询问优化方向、创作方法与背景知识；需要写入方案时，说明意图即可由系统整理进制作方案。",
     highlights: [
-      "优化类：怎么改、怎么提升、哪里可以更好",
-      "学习类：创作技巧、结构、概念与方法答疑",
-      "背景类：行业趋势、受众与表达逻辑",
-      "需要落进方案时，说明后系统会帮你整理",
+      "优化：如何改进作品或方案",
+      "学习：创作技巧、结构与概念",
+      "背景：受众、表达与参考方向",
+      "需写入方案时，说明后自动整理",
     ],
-    avoids: ["不直接生成交付稿", "不制定制作计划"],
+    avoids: ["不直接产出作品内容", "不制定制作计划"],
   },
 ];
 
@@ -87,22 +87,22 @@ export const WORKFLOW_STEPS = [
   {
     step: "01",
     title: "新建作品",
-    body: "每件作品是一段独立创作对话，可分组管理，方便按栏目或系列组织内容。",
+    body: "每件作品是一段独立创作对话，可分组管理，便于按系列或栏目组织。",
   },
   {
     step: "02",
-    title: "作品方案",
-    body: "通过对话整理创作主题、体裁形式、表达设定与内容节拍，侧栏「作品方案」实时汇总。",
+    title: "定制作方案",
+    body: "对话整理主题、体裁、表达与结构，侧栏「方案」实时同步。",
   },
   {
     step: "03",
-    title: "制作 · AI 团队出稿",
-    body: "方案就绪后 AI 团队制定内部制作计划，文案/设计/音视频按任务在「作品预览」精良交付，可反复修改。",
+    title: "执行制作",
+    body: "方案确认后 AI 团队制定计划并制作，产出写入「作品」，可按版本继续修改。",
   },
   {
     step: "04",
-    title: "提问 · 随时答疑",
-    body: "优化建议、创作方法、行业背景——有需要随时问，系统会在对话里帮你处理。",
+    title: "提问答疑",
+    body: "制作全程可提问：优化建议、方法答疑与背景知识，系统按意图处理。",
   },
 ] as const;
 
@@ -110,17 +110,17 @@ export const STUDIO_PANELS = [
   {
     icon: MessageSquareTextIcon,
     title: "对话区",
-    body: "和 AI 聊方案、聊改稿、聊策略；回复都在这里。",
+    body: "推进方案、发起制作、提问答疑，回复集中在这里。",
   },
   {
     icon: ListTreeIcon,
-    title: "作品方案",
-    body: "创作主题、写作要求与内容节拍会即时汇总在这里。",
+    title: "制作方案",
+    body: "主题、要求与内容结构，确认后实时汇总。",
   },
   {
     icon: ImageIcon,
-    title: "作品预览",
-    body: "AI 团队交付的标题、正文和标签显示在这里。",
+    title: "作品内容",
+    body: "AI 团队按方案制作的文字、画面、脚本等，显示在这里。",
   },
 ] as const;
 
@@ -134,11 +134,11 @@ export const EXTRA_CAPABILITIES = [
   {
     icon: FolderKanbanIcon,
     title: "作品分组",
-    body: "按栏目或系列分组管理；也可在对话里调整分组和标题。",
+    body: "按栏目或系列分组；也可在对话中调整分组与标题。",
   },
   {
     icon: SparklesIcon,
-    title: "智能回合 workflow",
-    body: "每条消息按你的意图自动 workflow：改方案、出预览或答疑，复合需求也可一步串联。",
+    title: "智能回合",
+    body: "每条消息自动路由：更新方案、执行制作或答疑，复合需求可串联处理。",
   },
 ] as const;

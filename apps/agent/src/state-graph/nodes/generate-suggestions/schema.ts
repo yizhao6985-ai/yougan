@@ -1,3 +1,4 @@
+import { NEXT_STEP_SUGGESTION_KINDS } from "@yougan/domain";
 import { z } from "zod";
 
 /** 开屏下一步建议条数 */
@@ -7,7 +8,7 @@ export const OPENING_NEXT_STEP_SUGGESTIONS_COUNT = 7;
 export const TURN_NEXT_STEP_SUGGESTIONS_COUNT = 4;
 
 export const NextStepSuggestionItemSchema = z.object({
-  kind: z.enum(["explore", "confirm", "navigate"]),
+  kind: z.enum(NEXT_STEP_SUGGESTION_KINDS),
   label: z.string(),
   message: z
     .string()

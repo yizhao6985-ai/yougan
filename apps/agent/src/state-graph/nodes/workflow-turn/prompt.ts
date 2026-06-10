@@ -28,7 +28,7 @@ export function buildTurnQueuePrompt(
 - **ask**：纯答疑，不改方案、成稿与参考素材
 
 ## reference 入队规则
-- has_attachments=true：系统会自动前置 reference 分析新附件，**勿输出 reference**
+- has_attachments=true：系统会自动前置 reference 子图分析新附件，**勿输出 reference**
 - has_attachments=false 且感友要删/改参考素材或使用意图 → 输出 reference
 - 用参考去调整方案或画风（改的是方案，不是参考条目）→ profile，不是 reference
 
@@ -43,7 +43,7 @@ export function buildTurnQueuePrompt(
 
 歧义消解（按优先级）：
 - 明确要求「记入方案 / 写入要求 / 更新定位或节拍」→ profile，不算 ask
-- 明确要求出稿/开写 → production（方案未齐也可，制作子图会先补全）
+- 明确要求出稿/开写 → production（方案未齐也入队，制作子图基于现有数据直接执行）
 - 已有成稿且未提方案层改动 → 默认 production
 - 带参考定风格、把借鉴写进方案 → profile
 - 仅上传参考无文字 → profile（新附件时 reference 由系统前置）

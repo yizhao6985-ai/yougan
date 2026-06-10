@@ -1,16 +1,22 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 
+import { useQueryClient } from "@tanstack/react-query";
 import type { Message } from "@langchain/langgraph-sdk";
 import { useStream } from "@langchain/langgraph-sdk/react";
 
+import { queryKeys } from "@/hooks/queries/keys";
 import { useOpeningBootstrapQuery } from "@/hooks/queries/opening-bootstrap";
-import { buildTurnCancelPatch } from "@/lib/cancel-turn";
 import {
   applyGraphUpdatesToValues,
   buildSubmitHumanMessage,
 } from "@/lib/message-utils";
 import { YOUGAN_ASSISTANT_ID } from "@/lib/yougan-chat-api";
 import { LANGGRAPH_API_URL } from "@/lib/env";
+import {
+  buildTurnFinalizePatch,
+  getActiveLangGraphRunId,
+  TURN_EPHEMERAL_RESET,
+} from "@/lib/turn-lifecycle";
 import type {
   YouganValues,
   YouganSubmitInput,
@@ -21,6 +27,11 @@ import { useAuthToken } from "@/store/auth";
 
 /** 消息 chunk 走 messages-tuple；其余 state（profile、turnQueue 等）走 updates 合并，避免 values 整表覆盖。 */
 const LANGGRAPH_STREAM_MODE = ["updates", "messages-tuple"] as const;
+
+const SUBMIT_OPTIONS = {
+  streamMode: [...LANGGRAPH_STREAM_MODE],
+  multitaskStrategy: "interrupt" as const,
+};
 
 interface UseYouganStreamOptions {
   work: Work | null;
@@ -37,6 +48,7 @@ function buildStreamSubmitInput(
   messages?: Message[],
 ): YouganSubmitInput & { messages?: Message[] } {
   return {
+    ...TURN_EPHEMERAL_RESET,
     ...(messages ? { messages } : {}),
     workId: work.id,
     workTitle: work.title,
@@ -44,7 +56,6 @@ function buildStreamSubmitInput(
     profile: work.profile,
     references: work.references,
     productionPlan: work.productionPlan,
-    nextStepSuggestions: null,
     preview: work.preview,
     modelTemperature,
   };
@@ -57,6 +68,7 @@ export function useYouganStream({
   onThreadId,
   onRunComplete,
 }: UseYouganStreamOptions) {
+  const queryClient = useQueryClient();
   const threadId = conversation?.threadId ?? null;
   const workId = work?.id ?? null;
   const conversationId = conversation?.id ?? null;
@@ -65,7 +77,10 @@ export function useYouganStream({
   const onRunCompleteRef = useRef(onRunComplete);
   onRunCompleteRef.current = onRunComplete;
 
-  const [valuesOverlay, setValuesOverlay] =
+  const cancelInFlightRef = useRef<Promise<void> | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
+  /** cancel finalize 后合并到 stream.values，直至下次 submit 或 thread 重载 */
+  const [postCancelValues, setPostCancelValues] =
     useState<Partial<YouganValues> | null>(null);
 
   const defaultHeaders = useMemo(
@@ -94,7 +109,7 @@ export function useYouganStream({
         "values" in state && state.values
           ? (state.values as YouganValues)
           : (state as unknown as YouganValues);
-      if (values.turnCancelled === true || values.turnCommitted !== true)
+      if (values.turn?.cancelled === true || values.turn?.committed !== true)
         return;
       onRunCompleteRef.current?.(workId, values);
     },
@@ -108,17 +123,31 @@ export function useYouganStream({
     },
   });
 
+  const awaitCancelIfInFlight = useCallback(async () => {
+    if (cancelInFlightRef.current) {
+      await cancelInFlightRef.current;
+    }
+  }, []);
+
   const submitOpeningBootstrap = useCallback(async () => {
     if (!work || !conversation || !token) return;
     if (stream.messages.length > 0) return;
 
+    await awaitCancelIfInFlight();
+    setPostCancelValues(null);
+
     await stream.submit(
       buildStreamSubmitInput(work, conversation, modelTemperature),
-      {
-        streamMode: [...LANGGRAPH_STREAM_MODE],
-      },
+      SUBMIT_OPTIONS,
     );
-  }, [conversation, modelTemperature, stream, token, work]);
+  }, [
+    awaitCancelIfInFlight,
+    conversation,
+    modelTemperature,
+    stream,
+    token,
+    work,
+  ]);
 
   const openingBootstrapQuery = useOpeningBootstrapQuery({
     work,
@@ -126,31 +155,74 @@ export function useYouganStream({
     token,
     messageCount: stream.messages.length,
     isThreadLoading: stream.isThreadLoading,
+    isCancelling,
     submitOpeningBootstrap,
   });
 
   const cancelActiveTurn = useCallback(async () => {
-    if (!stream.isLoading) return;
+    if (!stream.isLoading || isCancelling) return;
 
-    const cancelPatch = buildTurnCancelPatch(
-      { ...stream.values, ...valuesOverlay } as YouganValues,
-      stream.messages,
-    );
-
-    await stream.stop();
-
-    setValuesOverlay(cancelPatch);
-
-    if (threadId) {
-      try {
-        await stream.client.threads.updateState(threadId, {
-          values: cancelPatch,
-        });
-      } catch (error) {
-        console.error("[yougan] cancel turn updateState failed", error);
-      }
+    if (cancelInFlightRef.current) {
+      await cancelInFlightRef.current;
+      return;
     }
-  }, [stream, threadId, valuesOverlay]);
+
+    const run = (async () => {
+      setIsCancelling(true);
+
+      const cancelPatch = buildTurnFinalizePatch(
+        stream.values as YouganValues,
+        stream.messages,
+      );
+
+      const activeRunId = threadId ? getActiveLangGraphRunId(threadId) : null;
+
+      await stream.stop();
+
+      if (threadId && activeRunId) {
+        try {
+          await stream.client.runs.cancel(threadId, activeRunId, true);
+        } catch (error) {
+          console.error("[yougan] cancel run failed", error);
+        }
+      }
+
+      if (threadId) {
+        try {
+          await stream.client.threads.updateState(threadId, {
+            values: cancelPatch,
+          });
+        } catch (error) {
+          console.error("[yougan] cancel turn updateState failed", error);
+        }
+      }
+
+      setPostCancelValues(cancelPatch);
+
+      if (workId && conversationId) {
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.works.openingBootstrap(workId, conversationId),
+        });
+      }
+    })();
+
+    cancelInFlightRef.current = run;
+    try {
+      await run;
+    } finally {
+      if (cancelInFlightRef.current === run) {
+        cancelInFlightRef.current = null;
+      }
+      setIsCancelling(false);
+    }
+  }, [
+    conversationId,
+    isCancelling,
+    queryClient,
+    stream,
+    threadId,
+    workId,
+  ]);
 
   const sendMessage = useCallback(
     async (
@@ -165,17 +237,25 @@ export function useYouganStream({
           : content.length > 0;
       if (!hasText || !work || !conversation) return;
 
-      setValuesOverlay(null);
+      await awaitCancelIfInFlight();
+      setPostCancelValues(null);
 
       await stream.submit(
         buildStreamSubmitInput(work, conversation, modelTemperature, [message]),
-        {
-          streamMode: [...LANGGRAPH_STREAM_MODE],
-        },
+        SUBMIT_OPTIONS,
       );
     },
-    [conversation, modelTemperature, stream, work],
+    [
+      awaitCancelIfInFlight,
+      conversation,
+      modelTemperature,
+      stream,
+      work,
+    ],
   );
+
+  const canChat = Boolean(work && conversation && token);
+  const canSend = canChat && !stream.isLoading && !isCancelling;
 
   const isBootstrappingOpening =
     Boolean(conversation?.id) &&
@@ -183,26 +263,32 @@ export function useYouganStream({
     (openingBootstrapQuery.isFetching ||
       openingBootstrapQuery.isPending ||
       stream.isThreadLoading ||
-      stream.isLoading);
+      stream.isLoading ||
+      isCancelling);
 
-  const streamWithOverlay = useMemo(
-    () => ({
-      ...stream,
-      values: {
-        ...(stream.values ?? {}),
-        ...(valuesOverlay ?? {}),
-      } as YouganValues,
-    }),
-    [stream, valuesOverlay],
+  const streamWithPostCancel = useMemo(
+    () =>
+      postCancelValues
+        ? {
+            ...stream,
+            values: {
+              ...(stream.values ?? {}),
+              ...postCancelValues,
+            } as YouganValues,
+          }
+        : stream,
+    [postCancelValues, stream],
   );
 
   return {
-    stream: streamWithOverlay,
+    stream: streamWithPostCancel,
     threadId,
     sendMessage,
     cancelActiveTurn,
+    isCancelling,
+    canSend,
     isBootstrappingOpening,
-    canChat: Boolean(work && conversation && token),
+    canChat,
   };
 }
 

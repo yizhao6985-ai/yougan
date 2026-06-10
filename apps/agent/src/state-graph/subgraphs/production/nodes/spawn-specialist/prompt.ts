@@ -19,17 +19,15 @@ export function buildSpawnSpecialistPrompt(input: {
 }): string {
   const delivery = resolveDeliveryFromProfile(input.profile);
   const label = DEPARTMENT_LABELS[input.department];
-  const industry = input.plan.industry_context ?? "";
-
   return `你是${input.specialistName}（${departmentBrief(input.department)}），执行以下任务：
 
 任务说明：${input.brief}
 
 作品主题：${delivery.topic ?? "未指定"}
 体裁：${delivery.format ?? "未指定"}
+媒介形式：${delivery.modalities?.join(",") ?? "未指定"}
 作品方案：${profileSummary(input.profile)}
 创作计划：${getPlanSummary(input.plan) ?? "无"}
-行业背景：${industry}
 
 请输出该部门的专业交付物，用 Markdown 格式。`;
 }

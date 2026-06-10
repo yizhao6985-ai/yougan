@@ -1,21 +1,32 @@
-import { commitPending, rollbackPending } from "#agent/state-io/index.js";
-import type { AgentStateType } from "#agent/state.js";
+import {
+  cancelledTurnPatch,
+  commitPending,
+  patchTurn,
+} from "#agent/state-io/index.js";
+import { getTurn } from "#agent/state-io/turn.js";
+import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
-/** 提交 staging → state 顶层；取消则回滚 */
+/** 提交 turn.staging → state 顶层；取消则回滚 */
 export async function commitTurnNode(
   state: AgentStateType,
-): Promise<Partial<AgentStateType>> {
-  if (state.turnCancelled) {
-    return rollbackPending();
+): Promise<AgentStatePatch> {
+  const turn = getTurn(state);
+
+  // 取消可在任意节点打断，图未必会走到 commitTurn；保留作兜底。
+  if (turn.cancelled) {
+    return patchTurn(state, cancelledTurnPatch());
   }
 
-  if (!state.staging) {
-    return { turnCommitted: false };
+  if (!turn.staging) {
+    return patchTurn(state, { committed: true });
   }
 
   return {
     ...commitPending(state),
-    turnCommitted: true,
-    turnCancelled: false,
+    ...patchTurn(state, {
+      staging: null,
+      committed: true,
+      cancelled: false,
+    }),
   };
 }

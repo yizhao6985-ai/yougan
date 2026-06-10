@@ -1,17 +1,24 @@
 /**
- * 有感 · Yougan 全站文案（C 端口径）
+ * 有感 · Yougan 全站文案（C 端口径 · 制作流程）
  *
- * 对外主张：帮你找灵感 → AI 团队精良制作内容。
- * 创作台按对话意图自动 workflow 灵感、大纲、创作、提问等阶段。
+ * 语气：清楚、有步骤感，帮用户知道「现在在哪一环节、下一步是什么」。
+ *
+ * 制作流程：定方案 → 备参考 → 执行制作 → 产出作品 → 留存版本
+ *
+ * 作品面板四 Tab（简称 / 面板全称）：
+ * - 方案 / 制作方案
+ * - 参考 / 参考素材
+ * - 作品 / 作品内容
+ * - 版本 / 版本记录
  */
 
 export const BRAND = {
   full: "有感 · Yougan",
   en: "Yougan",
   taglineLanding: "AI 创作助手",
-  taglineApp: "灵感 · 创作 · 提问",
+  taglineApp: "方案 · 制作 · 提问",
   metaDescription:
-    "有感 Yougan — AI 创作助手。帮你找灵感、理清选题，AI 团队按计划精良制作内容，从方案到成稿全程可确认、可回溯。",
+    "有感 Yougan — AI 创作助手。先定制作方案，再由 AI 团队按计划制作文字、画面、音视频等作品，全程可确认、可修改、可回溯。",
   documentTitle: "有感 · Yougan — AI 创作助手",
 } as const;
 
@@ -72,41 +79,41 @@ export const FEEDBACK = {
 export const ABOUT_PAGE = {
   back: "返回首页",
   eyebrow: "关于有感",
-  title: "找灵感，让 AI 团队帮你精做内容",
+  title: "先定方案，再按计划做出作品",
   subtitle:
-    "很多工具问一句就出一篇，选题偏了就要整篇重写。有感先帮你找灵感、对齐写法，再由 AI 团队制定计划、精良制作成稿。每一步可确认、可回溯，少返工。",
+    "很多工具跳过确认直接生成，方向偏了就要重来。有感把创作拆成「定方案 → 制作 → 修改」：方案你点头，AI 团队按计划执行，每一步都能回看。",
   missionTitle: "我们在做什么",
   missionBody:
-    "有感（Yougan）是一款面向创作者的 AI 创作助手。好内容不是一次 Prompt 碰运气——先找灵感、再按计划精做、成稿可反复改。产品以 Web 创作台为核心，配合「发现灵感」社区，帮你稳定产出、少折腾。",
+    "有感是面向创作者的 AI 创作助手。一件作品走完整制作流程——先整理制作方案，再交给 AI 团队执行，作品产出后可继续修改。Web 创作台是核心工作区，「发现灵感」可浏览公开作品。",
   valuesTitle: "我们坚持的原则",
   values: [
     {
-      title: "过程先于成品",
-      body: "已确认灵感与成稿分阶段沉淀在「作品面板」里；制作计划在对话中跟进，方向偏了可及早纠正。",
+      title: "方案先于制作",
+      body: "制作方案和作品产出分开展示，都在作品面板；方向有偏差时，在方案阶段就能纠正。",
     },
     {
-      title: "人做判断，AI 团队执行",
-      body: "选题、计划与发布由你确认；系统会按对话自动整理灵感与方向，再由 AI 团队按计划出稿，过程有记录、方便回看。",
+      title: "你确认，AI 执行",
+      body: "方案、制作计划与发布由你确认；AI 团队按既定方案制作，过程有记录。",
     },
     {
-      title: "为真实工作流设计",
-      body: "面向日常写作与内容更新；支持作品分组、云端同步，以及图文、音视频等多形态制作任务。",
+      title: "覆盖多种创作形态",
+      body: "支持文字、绘画、脚本、音视频等制作任务；作品可分组、云端同步。",
     },
     {
-      title: "坦诚的产品边界",
-      body: "方案、制作、答疑各做各的事，边界清晰；你只需自然对话，其余交给系统处理。",
+      title: "环节边界清晰",
+      body: "定方案、执行制作、提问答疑各司其职；你通过对话推进，系统自动路由。",
     },
   ] as const,
   productTitle: "我们的产品",
   productBody:
-    "创作台围绕一件作品的一段持续对话；系统会按消息自动推进方案、创作与提问等环节，侧栏同步方案与成稿，制作计划在对话中以任务列表展示。内容可发布到「发现灵感」供他人参考。",
+    "每件作品对应一段持续对话。系统按消息推进方案、制作或答疑；右侧作品面板同步制作方案与作品内容，对话中可查看制作计划。完成后可发布到「发现灵感」。",
   productLink: "了解产品能力",
   contactTitle: "联系我们",
   contactBody:
     "产品反馈、商务合作或媒体咨询，欢迎发送邮件。我们会在工作日尽快回复。",
   contactEmail: "hello@yougan.com",
   ctaStudio: "开始创作",
-  ctaFeatures: "查看产品能力",
+  ctaFeatures: "了解产品能力",
 } as const;
 
 export const HOME = {
@@ -114,27 +121,27 @@ export const HOME = {
   title: "有感",
   titleSuffix: "AI 创作助手",
   subtitle:
-    "帮你找灵感、理清选题与写法；AI 团队制定制作计划，文案/设计/音视频按计划精良出稿。专注创作本身，从方案到成稿一路可改。",
+    "方案先行，制作随后。AI 团队按计划完成文章、插画、脚本与音视频创作，全程清晰，可持续打磨。",
   ctaStudio: "开始创作",
   ctaFeatures: "了解产品能力",
-  capabilitiesTitle: "写方案、做内容、随时问",
+  capabilitiesTitle: "定方案、去制作、随时问",
   capabilitiesLink: "查看说明 →",
 } as const;
 
 export const FEATURES_PAGE = {
   back: "返回首页",
   eyebrow: "产品能力",
-  title: "从找灵感到 AI 团队出稿",
+  title: "从定方案到作品产出",
   subtitle:
-    "很多 AI 工具问一句就出一篇，选题偏了就要整篇重写。有感先帮你找灵感、对齐写法，再由 AI 团队定计划、精良制作；中间随时提问、改计划，对话里一路可改。",
-  platformsIntro: "常见创作形态",
-  workflowTitle: "推荐使用方式",
-  workflowSubtitle: "从新建作品到可以发布，一般这样走",
+    "不跳过确认环节。先整理制作方案，AI 团队排计划并执行；制作中可随时提问、调整方案，对话里持续迭代。",
+  platformsIntro: "支持的创作形态",
+  workflowTitle: "推荐使用流程",
+  workflowSubtitle: "从新建作品到可以发布，建议按以下步骤",
   capabilitiesDetailTitle: "能帮你做什么",
   capabilitiesDetailSubtitle:
-    "自然对话即可，系统会在背后帮你整理方案、推进制作、回答问题。",
+    "通过对话推进各环节，系统会在背后整理方案、执行制作、回答问题。",
   studioTitle: "创作台布局",
-  studioSubtitle: "左侧作品列表、中间对话、右侧作品面板",
+  studioSubtitle: "左侧作品列表、中间对话、右侧作品面板（方案 / 参考 / 作品 / 版本）",
   capabilityBenefitsHeading: "会帮你做",
   capabilityLimitsHeading: "这一步不做",
   ctaStudio: "打开创作台",
@@ -144,9 +151,9 @@ export const FEATURES_PAGE = {
 export const MOBILE_PAGE = {
   back: "返回首页",
   eyebrow: "有感 · 手机端",
-  title: "随时记灵感，回电脑精做内容",
+  title: "记录灵感，回电脑走完整流程",
   subtitle:
-    "通勤、摸鱼、睡前有想法，用手机先记下来；回到 Web 创作台，在同一件作品里继续找灵感、看制作计划与成稿。账号与作品自动同步。",
+    "路上记下想法与参考；回到 Web 创作台，在同一件作品里继续定方案、查看制作进度与作品内容。账号与作品自动同步。",
   downloadTitle: "扫码下载",
   downloadSubtitle: "选择设备，扫码或点击按钮前往应用商店",
   downloadHint: "使用手机相机或微信扫一扫",
@@ -158,16 +165,16 @@ export const MOBILE_PAGE = {
   ctaFeatures: "了解产品能力",
   features: [
     {
-      title: "快速记灵感",
-      body: "有选题想法或片段文案，随时打开记一笔；回到电脑前在同一件作品里接着聊、接着做。",
+      title: "记录灵感与参考",
+      body: "随时记下创作方向或素材片段；回到电脑在同一件作品里继续定方案、进入制作。",
     },
     {
       title: "与 Web 同步",
-      body: "同一账号、同一件作品。手机查看和记录，电脑端由 AI 团队定计划、精良制作完整内容。",
+      body: "同一账号、同一件作品。手机端记录，电脑端由 AI 团队按方案完成制作。",
     },
     {
-      title: "方便预览交付",
-      body: "路上看看制作计划与成稿预览，确认方向对不对，不必在小屏上改长文。",
+      title: "查看制作进度",
+      body: "查看制作计划与当前作品内容，确认方向；细节修改在电脑端进行。",
     },
   ] as const,
 } as const;
@@ -176,9 +183,9 @@ export const DISCOVER_SECTION = {
   title: "发现灵感",
   navLabel: "发现灵感",
   navLabelShort: "发现",
-  description: "浏览创作者公开分享的内容，按体裁与媒介找到你想看的灵感。",
+  description: "浏览创作者公开分享的作品，按体裁与媒介筛选。",
   intentHeading: "你想看什么",
-  intentDescription: "按消费意图快速筛选，也可以在下方的详细筛选项里组合条件。",
+  intentDescription: "按类型快速筛选，也可在下方组合更多条件。",
   featuredHeading: "精选推荐",
   moreHeading: "更多内容",
   emptyFiltered: "没有符合筛选的内容，试试放宽条件。",
@@ -226,8 +233,8 @@ export const AUTH = {
   loginTitle: "登录有感",
   registerTitle: "创建账号",
   loginFormSubtitle: "使用邮箱登录，继续你的创作",
-  registerFormSubtitle: "注册后作品、灵感与制作记录将云端保存",
-  loginSubtitle: "作品、灵感与制作记录云端保存，换设备也能接着写",
+  registerFormSubtitle: "注册后作品与制作记录将云端保存",
+  loginSubtitle: "作品与制作记录云端保存，换设备可继续同一流程",
   forgotTitle: "忘记密码",
   forgotSubtitle: "输入注册邮箱，我们会发送重置链接（若该邮箱已注册）",
   forgotSent:
@@ -250,7 +257,7 @@ export const SETTINGS = {
     help: "帮助",
   },
   publicationsIntro: (discoverTitle: string) =>
-    `管理你发布到有感的内容。想逛公开作品，请前往「${discoverTitle}」。`,
+    `管理你发布到有感的内容。浏览公开作品请前往「${discoverTitle}」。`,
 } as const;
 
 export const MEMBERSHIP = {
@@ -258,11 +265,11 @@ export const MEMBERSHIP = {
   navDescription: "套餐与 AI 创作额度",
   pageTitle: "会员",
   pageDescription:
-    "查看当前套餐与 AI 创作额度。升级 Pro 获得更高额度与完整 AI 团队制作能力。",
+    "查看当前套餐与 AI 创作额度。升级 Pro 获得更高额度与完整制作能力。",
   currentPlan: "当前套餐",
   usageTitle: "本月 AI 创作额度",
   usageHint: (used: number, total: number) =>
-    `已使用 ${used} / ${total} 次，每次对话生成计 1 次`,
+    `已使用 ${used} / ${total} 次，每次对话计 1 次`,
   usageExceeded: "本月额度已用完，升级 Pro 或等待下月重置",
   plansTitle: "可选套餐",
   upgradeButton: "升级 Pro",
@@ -302,7 +309,7 @@ export const BILLING = {
 
 export const STUDIO = {
   worksTitle: "我的作品",
-  worksSlogan: "找灵感，出好稿",
+  worksSlogan: "定方案，做作品",
   createMenuLabel: "新建",
   conversationsLoading: "加载对话中…",
   newConversation: "新对话",
@@ -310,30 +317,29 @@ export const STUDIO = {
   newGroup: "新建分组",
   emptyTitle: "创建第一件作品",
   emptyBody:
-    "从一句话开始聊即可；系统会帮你找灵感、定大纲，需要时答疑，就绪后 AI 团队按计划出稿。",
-  emptyWorksList: "还没有作品或分组，先创建一件，从找灵感开始。",
-  emptyWorksFiltered: "创建第一件作品，从找灵感开始。",
+    "从定方案开始：对话整理制作方案，需要时提问答疑，方案就绪后 AI 团队按计划制作。",
+  emptyWorksList: "还没有作品，创建一件并从定方案开始。",
+  emptyWorksFiltered: "创建一件作品，从定方案开始。",
   referencesCount: (n: number) => `已添加 ${n} 条参考素材`,
   publishViewInDiscover: (sectionTitle: string) => `在${sectionTitle}查看`,
   modelTemperatureLabel: "创意度",
-  modelTemperatureScope: "仅出稿",
+  modelTemperatureScope: "制作环节",
   modelTemperatureHint:
-    "调节 AI 团队在生成成稿时的发散程度（文案、设计等）。不影响方案对话、提问答疑与制作计划编排。",
+    "调节制作环节 AI 的发散程度（文字、视觉等）。不影响定方案、提问与制作计划。",
 } as const;
 
 export const CHAT_COPY = {
   openingSuggestionsLoading: "正在生成下一步建议…",
-  openingSuggestionsEmpty: "暂无合适的下一步建议，直接在下方输入你的想法",
-  placeholder: "说说想法、提问，或告诉我要改什么…",
-  /** 开屏空态：单行标题（建议气泡上方；新对话也可能承接已有作品方案） */
-  emptyTitle: "选一个下一步，或直接输入",
+  openingSuggestionsEmpty: "暂无合适建议，请在下方输入",
+  placeholder: "说说想法、提问，或说明要改方案 / 改作品…",
+  emptyTitle: "选择下一步，或直接输入",
   status: {
     referenceProcessing: "正在分析参考素材",
-    profileExploring: "正在帮你整理作品方案",
+    profileExploring: "正在整理制作方案",
     profileEditing: (segments: number, guardrails: number) =>
-      `方案 ${segments} 节 · ${guardrails} 条规则，可在右侧随时修改`,
-    askExploring: "有问题随时问：优化、学习、行业背景都可以",
-    productionExecuting: "AI 团队正在按方案精良制作",
+      `制作方案 ${segments} 节 · ${guardrails} 条规则，可在右侧修改`,
+    askExploring: "提问答疑中：优化建议、创作方法、背景知识",
+    productionExecuting: "AI 团队正在执行制作",
   },
   replying: "正在回复…",
   interrupted: "已中断",
@@ -357,62 +363,62 @@ export const CHAT_COPY = {
 /** 创作台右侧栏 */
 export const CREATIVE_CONTEXT_PANEL = {
   title: "作品面板",
-  hint: "作品方案、参考素材、作品预览与版本记录集中在这里",
+  hint: "制作方案、参考素材、作品内容、版本记录",
   expand: "展开作品面板",
   collapse: "收起作品面板",
   tabs: {
-    profile: "作品方案",
-    preview: "作品预览",
-    references: "参考素材",
+    profile: "方案",
+    preview: "作品",
+    references: "参考",
     history: "版本",
   },
 } as const;
 
 export type CreativeContextTabId = keyof typeof CREATIVE_CONTEXT_PANEL.tabs;
 
-/** 作品面板 · 版本历史 */
+/** 作品面板 · 版本 */
 export const WORK_HISTORY_PANEL = {
   loading: "加载版本记录…",
   duplicateTitle: "另存为新作品",
   duplicateHint:
-    "适合换选题、换写法：从当前进度复制一件新作品，不会影响这件作品。",
+    "需要换主题或换方向时，从当前进度复制为新作品，不影响原作品。",
   duplicateAction: "另存为新作品",
   duplicating: "正在创建…",
   duplicateFromHere: "从此版本复制",
   timelineTitle: "版本记录",
-  timelineHint: "创作阶段生成作品预览后会记一条；可回到任意一版继续编辑。",
-  empty: "还没有版本记录。创作阶段产出作品预览后会出现。",
+  timelineHint: "每次产出作品内容后会记录一版，可回到任意版本继续编辑。",
+  empty: "还没有版本记录。制作产出作品后会出现。",
   headBadge: "当前",
   restore: "回到这一版",
   restoreTitle: "回到这一版？",
   restoreDescription:
-    "将把这件作品切回到所选版本，当前进度会被替换，历史记录仍保留。",
+    "将切换到所选版本，当前进度会被替换，历史记录保留。",
   confirmRestore: "确认回到这一版",
   restoring: "恢复中…",
   cancel: "取消",
 } as const;
 
-/** 作品面板 · 作品方案 */
+/** 作品面板 · 制作方案 */
 export const PROFILE_PANEL = {
-  title: "作品方案",
-  hint: "交付规格、表达设定、内容定位、创作设定、结构段、创作规则与体裁参数；对话中确认后 Agent 会写入这里",
-  deliveryLabel: "交付规格",
+  title: "制作方案",
+  hint: "主题、体裁、表达与结构等制作要求，对话确认后写入此处",
+  deliveryLabel: "制作规格",
   expressionLabel: "表达设定",
   summaryLabel: "内容定位",
   settingsLabel: "创作设定",
   segmentsLabel: "内容结构",
-  guardrailsLabel: "创作规则",
+  guardrailsLabel: "制作规则",
   paramsLabel: "体裁参数",
   clearGuardrails: "清空规则",
   clearSettings: "清空设定",
   clearSegments: "清空结构",
-  deliveryEmpty: "创作主题、体裁、媒介形式、发布平台与内容分类，会汇总在这里。",
-  expressionEmpty: "目标受众、语气文风、叙述视角，以及画面风格与氛围，会记录在这里。",
-  summaryEmpty: "这篇内容的一句话定位与核心主张，会写在这里。",
-  settingsEmpty: "背景、对象与关键要素等固定信息，会列在这里。",
-  segmentsEmpty: "段落、步骤与情节节拍等内容走向，会按顺序列在这里。",
-  guardrailsEmpty: "禁用词、必提要素、尺度边界等硬性约束，会列在这里。",
-  paramsEmpty: "目标字数、画幅比例、视频时长等体裁参数，会设在这里。",
+  deliveryEmpty: "创作主题、体裁与媒介形式，确认后会显示在这里。",
+  expressionEmpty: "受众、语气与视觉风格，确认后会显示在这里。",
+  summaryEmpty: "作品的核心定位，确认后会显示在这里。",
+  settingsEmpty: "背景、对象与关键设定，确认后会显示在这里。",
+  segmentsEmpty: "内容结构与节拍，确认后会按顺序显示在这里。",
+  guardrailsEmpty: "制作约束与边界，确认后会显示在这里。",
+  paramsEmpty: "字数、画幅、时长等参数，确认后会显示在这里。",
   settingKindLabels: {
     character: "对象",
     world: "背景",
@@ -420,23 +426,21 @@ export const PROFILE_PANEL = {
   } as const,
 } as const;
 
-/** 对话流 · 大纲进度（已移除，方案仅在侧栏展示） */
-
 export const PREVIEW_PANEL = {
-  title: "作品预览",
-  hint: "AI 团队交付的标题和正文显示在这里",
-  unsavedBadge: "（预览未保存）",
-  empty: "AI 团队生成文案后，会显示在这里。",
+  title: "作品内容",
+  hint: "AI 团队按方案制作的文字、画面、脚本等，显示在这里",
+  unsavedBadge: "（未保存）",
+  empty: "进入制作环节后，作品内容会显示在这里。",
 } as const;
 
 export const REFERENCE_PANEL = {
   title: "参考素材",
-  hint: "对话中上传或粘贴的参考会经 AI 分析后汇总在这里",
+  hint: "上传的参考经分析后，汇总在这里",
   empty: "添加参考素材后，会显示在这里。",
   analysisLabel: "分析：",
-  intentLabel: "意图：",
+  intentLabel: "借鉴意图：",
   typeLabels: {
-    text: "文案",
+    text: "文本",
     image: "图片",
     audio: "音频",
     video: "视频",
@@ -456,13 +460,13 @@ export const REFERENCE_PANEL = {
 export const PUBLISH = {
   checking: "正在检查发布状态…",
   publishedBadge: "已发布",
-  previewSavedBadge: "预览已保存",
+  previewSavedBadge: "作品已保存",
   publishButton: "发布到有感",
   publishing: "发布中…",
   confirmTitle: "确认发布分类",
   confirmDescription:
-    "系统已根据你的创作内容推断分类标签。你可以修改后再发布，帮助其他用户在发现页找到你的内容。",
-  inferredTags: "AI 推断标签",
+    "系统已根据作品内容推断分类标签，你可修改后发布，便于他人在发现页找到。",
+  inferredTags: "推断标签",
   previewLoading: "正在分析内容分类…",
   previewError: "无法加载分类预览，请稍后再试",
   fieldFormat: "内容体裁",
@@ -471,6 +475,6 @@ export const PUBLISH = {
   fieldPlatform: "发布渠道（可选）",
   cancel: "取消",
   confirmPublish: "确认发布",
-  goPublish: "去创作台写内容",
+  goPublish: "去创作台开始制作",
   emptyPublications: "还没有发布过的内容",
 } as const;

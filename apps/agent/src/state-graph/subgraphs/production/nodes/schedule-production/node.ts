@@ -1,6 +1,6 @@
 /**
  * 制作子图节点：制定内部制作计划。
- * 将可执行的作品方案拆为 pending_tasks 与部门分工。
+ * 将当前作品方案拆为 pending_tasks 与部门分工。
  */
 import { HumanMessage } from "@langchain/core/messages";
 
@@ -14,11 +14,7 @@ import { productionPlanSummary } from "./helpers/plan-prompt.js";
 import { newProductionPlanTask } from "./helpers/plan-tasks.js";
 import { YOUGAN_USER_LABEL } from "#agent/system-prompt.js";
 import { departmentsBrief } from "../spawn-specialist/helpers/department-brief.js";
-import { resolveIndustryContext } from "../llm-call/prompt.js";
 import {
-  isPlanReady,
-  isProfileActionable,
-  resolveDeliveryFromProfile,
   type ProductionDepartment,
   type WorkProductionPlan,
 } from "@yougan/domain";
@@ -38,29 +34,21 @@ function shouldRunScheduleProduction(
   state: AgentStateType,
   force = false,
 ): boolean {
-  const profile = getProfile(state);
-  if (!isProfileActionable(profile)) return false;
-
   if (force) return true;
   const plan = getProductionPlan(state);
-  if (isPlanReady(plan) && plan.pending_tasks.length > 0) return false;
-  if (!isPlanReady(plan)) return true;
-  if (plan.pending_tasks.length === 0 && !plan.executed_tasks.length) {
-    return true;
-  }
-  return false;
+  if (plan.pending_tasks.length > 0) return false;
+  return plan.executed_tasks.length === 0;
 }
 
 function buildScheduleProductionPrompt(state: AgentStateType): string {
   const profile = getProfile(state);
   const references = getReferences(state);
   const plan = getProductionPlan(state);
-  const delivery = resolveDeliveryFromProfile(profile);
-  const industry = resolveIndustryContext(delivery);
+  return `你是制作总监（内部角色，不对${YOUGAN_USER_LABEL}直接说话），负责将当前作品方案转化为可执行的**制作计划**。
 
-  return `你是制作总监（内部角色，不对${YOUGAN_USER_LABEL}直接说话），负责将已定稿的作品方案转化为可执行的**制作计划**。
+${YOUGAN_USER_LABEL}已表达开始创作意图；方案可能尚不完整，请基于已有信息与用户意图制定计划。
 
-${YOUGAN_USER_LABEL}已确认作品方案：
+当前作品方案：
 ${profileSummary(profile, references)}
 
 ${profileReferencesSummary(references)}
@@ -68,13 +56,10 @@ ${profileReferencesSummary(references)}
 当前计划（如有）：
 ${productionPlanSummary(plan)}
 
-行业经验：
-${industry}
-
 请制定内部制作计划：
 1. 根据 delivery.format / modalities 决定制作部门
-2. 将方案结构段拆分为具体执行任务，每条指定 department
-3. 任务覆盖从创意到交付的完整流程
+2. 将方案结构段（如有）与用户意图拆分为具体执行任务，每条指定 department
+3. 方案缺项时据体裁与用户消息合理推断，任务覆盖从创意到交付的完整流程
 
 只输出结构化计划，不生成正文。`;
 }
@@ -94,7 +79,6 @@ function applyProductionPlan(
   return {
     ...existing,
     pending_tasks: tasks,
-    ready: true,
     summary: response.summary,
     departments: response.departments,
     director_notes: response.director_notes ?? null,
@@ -107,20 +91,9 @@ export async function rescheduleProductionPlan(
   options?: { force?: boolean },
 ): Promise<Partial<AgentStateType>> {
   if (!shouldRunScheduleProduction(state, options?.force)) {
-    const profile = getProfile(state);
-    const industry = resolveIndustryContext(resolveDeliveryFromProfile(profile));
-    const plan = getProductionPlan(state);
-    if (plan.industry_context === industry) {
-      return {};
-    }
-    return patchPendingProductionPlan(state, {
-      ...plan,
-      industry_context: industry,
-    });
+    return {};
   }
 
-  const profile = getProfile(state);
-  const industry = resolveIndustryContext(resolveDeliveryFromProfile(profile));
   const existing = getProductionPlan(state);
   const llm = createChatModel({ temperature: 0.5 });
 
@@ -133,21 +106,18 @@ export async function rescheduleProductionPlan(
     )) as ProductionPlanResponse;
 
     const plan = applyProductionPlan(existing, parsed);
-    plan.industry_context = industry;
 
     return patchPendingProductionPlan(state, plan);
   } catch {
     const fallbackTasks = [
-      newProductionPlanTask("撰写标题与正文", "writing"),
-      newProductionPlanTask("规划话题标签与钩子", "writing"),
+      newProductionPlanTask("完成文字内容初稿", "writing"),
+      newProductionPlanTask("提炼标题与核心表达", "writing"),
     ];
     return patchPendingProductionPlan(state, {
       ...existing,
       pending_tasks: fallbackTasks,
-      ready: true,
-      summary: "基础文案制作计划",
+      summary: "基础内容制作计划",
       departments: ["writing"],
-      industry_context: industry,
       director_notes: departmentsBrief(["writing"]),
     });
   }

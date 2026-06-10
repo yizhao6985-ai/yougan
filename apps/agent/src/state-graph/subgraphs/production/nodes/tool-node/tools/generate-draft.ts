@@ -6,14 +6,7 @@ import { Command } from "@langchain/langgraph";
 import { z } from "zod";
 
 import {
-  hasProfileSegments,
-  isPlanReady,
-  isProfileActionable,
-} from "@yougan/domain";
-import {
   getActiveTurnKind,
-  getProductionPlan,
-  getProfile,
   getState,
   patchPendingProductionMeta,
 } from "#agent/state-io/index.js";
@@ -29,58 +22,6 @@ export const generateDraft = tool(
           messages: [
             new ToolMessage({
               content: "generate_draft 仅在制作模式可用。",
-              tool_call_id: toolCallId,
-            }),
-          ],
-        },
-      });
-    }
-
-    const profile = getProfile(state);
-    const plan = getProductionPlan(state);
-
-    if (!hasProfileSegments(profile)) {
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({
-              content: "生成被阻止：尚无作品方案结构段。",
-              tool_call_id: toolCallId,
-            }),
-          ],
-        },
-      });
-    }
-    if (!plan.pending_tasks.length) {
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({
-              content: "生成被阻止：内部创作计划尚无待执行任务。",
-              tool_call_id: toolCallId,
-            }),
-          ],
-        },
-      });
-    }
-    if (!isPlanReady(plan)) {
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({
-              content: "生成被阻止：创作计划尚未就绪。",
-              tool_call_id: toolCallId,
-            }),
-          ],
-        },
-      });
-    }
-    if (!isProfileActionable(profile)) {
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({
-              content: "生成被阻止：请先在作品方案中确认创作主题与结构段。",
               tool_call_id: toolCallId,
             }),
           ],

@@ -1235,7 +1235,6 @@ export interface components {
                 assignee?: string | null;
             }[];
             last_execution_summary?: string | null;
-            ready?: boolean;
             summary?: string | null;
             departments?: ("writing" | "design" | "audio" | "video")[];
             industry_context?: string | null;

@@ -75,7 +75,7 @@ export function ContentPreview({
               onClick={() => navigator.clipboard.writeText(preview.body)}
               className="rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground/90 transition hover:bg-muted"
             >
-              复制文案
+              复制内容
             </button>
           </div>
           {workId ? (

@@ -1,21 +1,13 @@
-import { END } from "@langchain/langgraph";
-
 import type { AgentStateType } from "#agent/state.js";
 
-export type OpeningOrWorkflowTarget =
-  | "workflowTurn"
-  | "generateSuggestions"
-  | typeof END;
+export type OpeningOrWorkflowTarget = "workflowTurn" | "generateSuggestions";
 
-/** START：空 thread 生成开屏建议；已取消则直接结束 */
+/** START：空 thread 走开屏建议；有消息走对话流程 */
 export function selectOpeningOrWorkflow(
   state: AgentStateType,
 ): OpeningOrWorkflowTarget {
   if ((state.messages ?? []).length > 0) {
     return "workflowTurn";
-  }
-  if (state.turnCancelled) {
-    return END;
   }
   return "generateSuggestions";
 }
@@ -23,5 +15,4 @@ export function selectOpeningOrWorkflow(
 export const paths: OpeningOrWorkflowTarget[] = [
   "workflowTurn",
   "generateSuggestions",
-  END,
 ];

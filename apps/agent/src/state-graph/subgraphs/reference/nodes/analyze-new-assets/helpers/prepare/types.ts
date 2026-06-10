@@ -1,0 +1,27 @@
+import type { MediaKind, Asset } from "@yougan/domain";
+
+export type ReferenceAnalyzeRequest = {
+  asset: Asset;
+};
+
+/** 分模态预处理后的素材，供单次 structured 分析消费 */
+export type ReferenceAssetPrep = {
+  media_kind: MediaKind;
+  descriptor: string;
+  text_excerpt?: string;
+  transcript?: string;
+  image_url?: string;
+  video_frames?: Buffer[];
+  notes: string[];
+};
+
+export type ReferenceAudioPrep = {
+  transcript?: string;
+  notes: string[];
+};
+
+export type ReferenceVideoPrep = {
+  transcript?: string;
+  frames: Buffer[];
+  notes: string[];
+};

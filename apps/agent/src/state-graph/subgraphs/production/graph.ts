@@ -7,7 +7,6 @@ import * as dispatchPendingWork from "./conditional-edges/dispatch-pending-work.
 import * as llmToolCalls from "./conditional-edges/llm-tool-calls.js";
 import * as retryDeliverableOrEnd from "./conditional-edges/retry-deliverable-or-end.js";
 import { designLlmCall } from "./nodes/design-llm-call/node.js";
-import { ensureProfileNode } from "./nodes/ensure-profile/node.js";
 import { generateDraftNode } from "./nodes/generate-draft/node.js";
 import { inspectProductionNode } from "./nodes/inspect-production/node.js";
 import { llmCall } from "./nodes/llm-call/node.js";
@@ -17,7 +16,6 @@ import { spawnSpecialistNode } from "./nodes/spawn-specialist/node.js";
 import { toolNode } from "./nodes/tool-node/node.js";
 
 export const productionGraph = new StateGraph(AgentState)
-  .addNode("ensureProfile", ensureProfileNode)
   .addNode("resolveContentSpec", resolveContentSpecNode)
   .addNode("scheduleProduction", scheduleProductionNode)
   .addNode("llmCall", llmCall)
@@ -26,8 +24,7 @@ export const productionGraph = new StateGraph(AgentState)
   .addNode("generateDraft", generateDraftNode)
   .addNode("spawnSpecialist", spawnSpecialistNode)
   .addNode("inspectProduction", inspectProductionNode)
-  .addEdge(START, "ensureProfile")
-  .addEdge("ensureProfile", "resolveContentSpec")
+  .addEdge(START, "resolveContentSpec")
   .addEdge("resolveContentSpec", "scheduleProduction")
   .addConditionalEdges(
     creatorPipelineByModality.from,

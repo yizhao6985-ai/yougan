@@ -1,9 +1,9 @@
 export const TOOL_LABELS: Record<string, string> = {
   reference_apply_patch: "更新参考素材",
-  profile_apply_patch: "更新作品方案",
+  profile_apply_patch: "更新制作方案",
   add_plan_task: "添加制作任务",
   complete_execution: "完成执行",
-  generate_preview: "AI 团队出稿",
+  generate_preview: "AI 团队制作",
   generate_design: "AI 团队绘画",
   spawn_specialist: "调度专员",
   revise_production_plan: "调整制作计划",
@@ -107,7 +107,7 @@ export function getToolInputSummary(
     case "tavily_search":
       return readString(toolInput.query);
     case "generate_preview":
-      return "AI 团队按制作计划出稿";
+      return "AI 团队按计划制作";
     case "generate_design":
       return "AI 团队按制作计划绘画";
     default:

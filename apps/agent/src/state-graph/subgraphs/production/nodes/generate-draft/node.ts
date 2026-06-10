@@ -4,9 +4,6 @@ import { HumanMessage } from "@langchain/core/messages";
 import { invokeStructured } from "#agent/llm/invoke/index.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
 import {
-  hasProfileSegments,
-  isPlanReady,
-  isProfileActionable,
   resolveDeliveryFromProfile,
   type WorkPreview,
 } from "@yougan/domain";
@@ -34,17 +31,6 @@ export async function generateDraftNode(
   const references = getReferences(state);
   const plan = getProductionPlan(state);
   const delivery = resolveDeliveryFromProfile(profile);
-
-  if (
-    !hasProfileSegments(profile) ||
-    !plan.pending_tasks.length ||
-    !isPlanReady(plan) ||
-    !isProfileActionable(profile)
-  ) {
-    return patchPendingProductionMeta(state, {
-      pendingGenerateDraft: false,
-    });
-  }
 
   const llm = createChatModel({
     temperature: getModelTemperature(state),
@@ -90,6 +76,7 @@ export async function generateDraftNode(
     ) ?? {};
 
   return patchPendingBatch(
+    state,
     patchPendingPreview(state, preview),
     inspectPatch,
     patchPendingProductionMeta(state, { pendingGenerateDraft: false }),

@@ -25,11 +25,11 @@ function buildProfileActionPrompt(
 
   return `当前任务：作品方案对话（维护 WorkProfile）
 
-**职责**：与${YOUGAN_USER_LABEL}一起维护作品方案（交付规格、表达设定、内容定位、创作设定、内容结构、创作规则、体裁参数）。参考素材已由 reference 子图分析入库，可阅读下方摘要并据此调整方案。
+**职责**：与${YOUGAN_USER_LABEL}一起维护作品方案（交付规格、表达设定、内容定位、创作设定、内容结构、创作规则、体裁参数）。方案可覆盖文字、绘画、音频、视频等多形态交付；参考素材已由 reference 子图分析入库，可阅读下方摘要并据此调整方案。
 
 **设定 vs 结构**
 - 创作设定（settings）：背景、对象、关键要素等**固定**信息，与篇幅顺序无关
-- 内容结构（segments）：段落、步骤、情节节拍等**内容走向**，按顺序排列
+- 内容结构（segments）：段落、步骤、情节节拍、分镜段落等**内容走向**，按顺序排列
 - 不要把对象/背景说明写进 segments；不要把结构大纲写进 settings
 
 **流程**
@@ -38,7 +38,7 @@ function buildProfileActionPrompt(
 - 出稿/改稿 → 引导继续输入，系统会根据修改对象自动路由到制作模式
 
 **常见场景**
-- 换选题/换方向：delivery + summary + settings_replace + segments_replace；规则不适用则 guardrails_replace（或 clear_guardrails + guardrails_append）
+- 换创作主题/换方向：delivery + summary + settings_replace + segments_replace；规则不适用则 guardrails_replace（或 clear_guardrails + guardrails_append）
 - 背景/对象/关键要素：settings_append 或 settings_replace（kind: character / world）
 - 删一条设定/结构段/规则：setting_deletes / segment_deletes / guardrail_deletes（带 id）
 - 只改结构：segments_replace，或 segment_updates / segment_deletes

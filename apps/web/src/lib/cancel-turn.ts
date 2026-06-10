@@ -1,4 +1,5 @@
 import type { Message } from "@langchain/langgraph-sdk";
+import { mergeTurnRuntime, EMPTY_TURN_RUNTIME } from "@yougan/domain";
 
 import type { YouganValues } from "@/lib/types";
 
@@ -27,13 +28,17 @@ export function collectInterruptibleMessageIds(messages: Message[]): string[] {
 export function buildTurnCancelPatch(
   prev: YouganValues | null | undefined,
   messages: Message[],
-): Partial<YouganValues> {
-  const prevIds = prev?.interruptedMessageIds ?? [];
+): Pick<YouganValues, "turn"> {
+  const prevIds = prev?.turn?.interruptedMessageIds ?? [];
   const newIds = collectInterruptibleMessageIds(messages);
+  const base = mergeTurnRuntime(EMPTY_TURN_RUNTIME, prev?.turn ?? {});
+
   return {
-    staging: null,
-    turnCommitted: false,
-    turnCancelled: true,
-    interruptedMessageIds: [...new Set([...prevIds, ...newIds])],
+    turn: mergeTurnRuntime(base, {
+      staging: null,
+      committed: false,
+      cancelled: true,
+      interruptedMessageIds: [...new Set([...prevIds, ...newIds])],
+    }),
   };
 }

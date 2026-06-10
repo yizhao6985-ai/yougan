@@ -1,85 +1,119 @@
 # Agent 回合队列与节点分工
 
-主 Graph（`apps/agent/src/graph.ts`）通过**回合队列** workflow 用户消息：仅路由到四条**对话子图**（有可见回复与工具）。作品物化状态（profile / brief / outline / draft）的**直改**由 Web 侧栏 `PATCH /api/works/:id` 写入数据库，并由 API 同步到各对话的 LangGraph thread checkpoint（不经 Agent run）。
+主 Graph（`apps/agent/src/graph.ts`）通过**回合队列** workflow 用户消息：路由到四条**对话子图**（有可见回复与工具）。作品物化状态（`profile` / `references` / `productionPlan` / `preview`）的**直改**由 Web 侧栏 `PATCH /api/works/:id` 写入数据库，并由 API 同步到各对话的 LangGraph thread checkpoint（不经 Agent run）。
 
 ## 状态变更的两条路径
 
 | 来源 | 路径 | 是否有对话回复 |
 |------|------|----------------|
 | UI 侧栏 U/D | `PATCH Work` → Prisma 物化列 → `syncMaterializedStateToAgentThreads` | 否 |
-| 聊天 C/U/D | `resolveTurnQueue` → 灵感 / 大纲 / 创作 / 提问子图 | 是 |
+| 聊天 C/U/D | `workflowTurn` → `turn.queue` → 子图 | 是 |
 
-权威作品状态在 `Work` 表；多对话共享 brief/outline 等。仅改 DB 时各 `threadId` checkpoint 会陈旧，直到下次 run 的 `injectWorkContext` 或 **API 线程同步**。
+权威作品状态在 `Work` 表；多对话共享 `profile` / `references` / `preview` 等。仅改 DB 时各 `threadId` checkpoint 会陈旧，直到下次 run 的 `injectWorkContext` 或 **API 线程同步**。
 
 ## 主图拓扑
 
 ```text
 START
-  ├─ 空 thread → verifyTurn（开屏选题建议 7 条）→ END
-  └─ 有消息 → workflowTurn（planTurnQueue → turnQueue）
-         → dispatchTurnQueue（设置 activeTurnKind）
-         → 路由到对话子图
-         → advanceTurnQueue（出队 → completedTurnKinds）
+  ├─ 空 thread → generateSuggestions（开屏 7 条建议）→ END
+  └─ 有消息 → workflowTurn（解析 turn.queue + fork turn.staging）
+         → dispatchTurnQueue（设置 turn.activeKind）
+         → 路由到对话子图（reference / profile / production / ask）
+         → advanceTurnQueue（出队 → turn.completedKinds）
          → 队列非空？回到 dispatchTurnQueue
-         → 队列已空？verifyTurn（对话流建议 4 条）→ commitTurn → END
+         → 队列已空？commitTurn → afterCommit
+              ├─ generateSuggestions（回合末 4 条建议）→ END
+              └─ generateTitle（首条 human 时）→ END
 ```
+
+取消回合：`turn.cancelled` 时 `commitTurn` 执行 rollback；`generateSuggestions` / `generateTitle` 会跳过。
 
 ## 两层三分（模块划分）
 
 ### 外层 turn
 
-| 角色 | 目录 | 职责 |
-|------|------|------|
-| 计划者 | `nodes/planner/` | 解析用户消息 → `turnQueue[]` |
-| 执行者 | `nodes/executor/` | `dispatch` / `advance` + 子图 `profile` / `production` / `ask` |
-| 验收者 | `nodes/verifier/` | `verifyTurn` 生成 `nextStepSuggestions`（开屏 7 / 对话流 4）与 `suggestedConversationTitle`（首条用户消息）→ `commitTurn` |
+| 角色 | 目录 | 节点 | 职责 |
+|------|------|------|------|
+| 计划者 | `nodes/workflow-turn/` | `workflowTurn` | LLM 解析用户意图 → `turn.queue[]`；有附件时确定性前置 `reference` |
+| 执行者 | `nodes/dispatch-turn-queue/`、`advance-turn-queue/` + 子图 | `dispatchTurnQueue` / `advanceTurnQueue` | 按队列路由并执行子图 |
+| 验收者 | `generate-suggestions/`、`generate-title/` | `commitTurn` → `afterCommit` → 并行建议与标题 | `nextStepSuggestions`、`generatedConversationTitle` |
 
-路由：`nodes/edges/`
+条件边：`state-graph/conditional-edges/`（`opening-or-workflow`、`subgraph-by-turn-kind`、`after-advance-turn-queue`）
 
-### 内层 production
+### 内层子图
 
-| 角色 | 目录 | 职责 |
-|------|------|------|
-| 计划者 | `executor/subgraphs/production/planner/` | 准备回合、解析规格、制定制作计划 |
-| 创作者 | `.../creator/` | llm-call / design-llm-call ⇄ tool-node |
-| 验收者 | `.../inspector/` | 单任务质检 `inspectProduction` |
+**reference**（`subgraphs/reference/`）：`analyzeNewAssets` → `mutateReferences` → `summarizeReferences`。新附件走分析入库；无新附件时走删改参考。
+
+**profile**（`subgraphs/profile/`）：`llmCall` ⇄ `toolNode`（`profile_apply_patch` 批量改方案）。
+
+**production**（`subgraphs/production/`）：`resolveContentSpec` → `scheduleProduction` → `llmCall` / `designLlmCall` ⇄ `toolNode` → `generateDraft` / `spawnSpecialist` → `inspectProduction`。
+
+**ask**（`subgraphs/ask/`）：`llmCall` ⇄ `toolNode`（纯答疑）。
 
 ## 队列项类型（TurnQueueKind）
 
-定义于 `packages/domain/src/models/agent/turn-queue.ts`（排序见 `workflow-turn/helpers/sort-turn-queue.ts`）：
+定义于 `packages/domain/src/models/agent/turn.ts`；排序见 `workflow-turn/helpers/sort-turn-queue.ts`：
 
 | kind | 主图节点 | 行为 |
 |------|----------|------|
-| `profile` | `profileGraph` | 作品方案对话 |
-| `production` | `productionGraph` | 制作子图（内层三分） |
+| `reference` | `referenceGraph` | 分析新附件 / 删改参考素材 |
+| `profile` | `profileGraph` | 作品方案对话（delivery、blueprint、guardrails 等） |
+| `production` | `productionGraph` | 制作计划 + 出稿 + 质检 |
 | `ask` | `askGraph` | 提问答疑 |
 
-排序：`sortTurnQueue` → `profile` → `production` → `ask`。
+排序：`reference` → `profile` → `production` → `ask`。
+
+### reference 入队规则（`workflow-turn`）
+
+- 无附件：仅当模型判定用户要删/改参考素材时入队 `reference`
+- 有附件且队列已含 `reference`：不重复前置
+- 有附件且纯 `ask`：不前置（纯讨论不入库）
+- 有附件且非纯 `ask`：确定性前置 `reference`，供 `analyze-new-assets` 分析
 
 ## 运行时 state 字段
 
+### `turn`（单轮执行，`TurnRuntime`）
+
 | 字段 | 说明 |
 |------|------|
-| `turnQueue` | 本轮待执行队列（队首为下一项） |
-| `activeTurnKind` | 当前正在执行的队列项 |
-| `completedTurnKinds` | 本轮已完成项（回合末建议等） |
+| `turn.queue` | 本轮待执行队列（队首为下一项） |
+| `turn.activeKind` | 当前正在执行的队列项 |
+| `turn.completedKinds` | 本轮已完成项 |
+| `turn.staging` | 单轮工作区（子图写入；`commitTurn` 提交到顶层） |
+| `turn.committed` | 本回合是否已提交 |
+| `turn.cancelled` | 用户是否取消本回合 |
+| `turn.interruptedMessageIds` | 被打断的消息 id |
+
+### state 顶层（作品物化 + 验收产物）
+
+| 字段 | 说明 |
+|------|------|
+| `profile` | 作品创作方案 |
+| `references` | 参考素材 |
+| `productionPlan` | 内部制作计划（不对用户主展示） |
+| `preview` | 作品预览（标题、正文等） |
+| `nextStepSuggestions` | 开屏或回合末生成的下一步建议（不入库） |
+| `generatedConversationTitle` | 首条用户消息后的对话标题建议 |
+
+读取规则：作品字段 **staging 优先**（`state-io/get.ts`）；调度读 `turn` 顶层。
 
 ## 路由
 
-- `nodes/edges/route-by-turn-queue.ts`：`dispatchTurnQueue` 之后按 `activeTurnKind` 路由
-- `nodes/edges/route-after-turn-queue.ts`：`advanceTurnQueue` 之后继续调度或 `verifyTurn`
-- `nodes/edges/route-after-verify.ts`：开屏结束或进入 `commitTurn`
+- `conditional-edges/opening-or-workflow.ts`：START 空 thread → `generateSuggestions`，有消息 → `workflowTurn`
+- `conditional-edges/subgraph-by-turn-kind.ts`：`dispatchTurnQueue` 之后按 `turn.activeKind` 路由
+- `conditional-edges/after-advance-turn-queue.ts`：`advanceTurnQueue` 之后继续 `dispatchTurnQueue` 或 `commitTurn`
 
 ## API 线程同步
 
-`apps/api/src/services/agent-thread-sync.ts`：在 `updateWork` 更新 profile/brief/outline/draft 后，对作品下所有（或指定 `?conversationId=`）`threadId` 调用 LangGraph `threads.updateState`。
+`apps/api/src/services/agent-thread-sync.ts`：在 `updateWork` 更新 `profile` / `references` / `preview` 后，对作品下所有（或指定 `?conversationId=`）`threadId` 调用 LangGraph `threads.updateState`。
 
-LangGraph stream 结束后（`agent-proxy`）：`verifyTurn` 写入的 `suggestedConversationTitle` 经 `conversation-auto-title.ts` 落库（对话标题仍为「对话 N」且 thread 内仅 1 条 human）。
+LangGraph stream 结束后（`agent-proxy`）：`generateTitle` 写入的 `generatedConversationTitle` 经 `conversation-auto-title.ts` 落库（对话标题仍为「对话 N」且 thread 内仅 1 条 human）。
 
 ## 相关代码
 
-- `packages/domain/src/models/agent/turn-queue.ts`
+- `packages/domain/src/models/agent/turn.ts`
+- `packages/domain/src/models/agent/staging.ts`
 - `apps/agent/src/state-graph/nodes/workflow-turn/helpers/sort-turn-queue.ts`
 - `apps/agent/src/graph.ts`
-- `apps/agent/src/nodes/`（`planner` / `executor` / `verifier` / `edges`）
+- `apps/agent/src/state-io/`
 - `apps/api/src/services/agent-thread-sync.ts`

@@ -243,6 +243,12 @@ function mergeMessagesFromUpdates(
   return merged;
 }
 
+import {
+  EMPTY_TURN_RUNTIME,
+  mergeTurnRuntime,
+  type TurnRuntime,
+} from "@yougan/domain";
+
 /**
  * 将 LangGraph updates 事件合并进 values。
  * 与 streamMode `messages-tuple` 并用：正文走 messages 通道，updates 只合并 tool/human 与 AI 的 tool_calls。
@@ -265,6 +271,17 @@ export function applyGraphUpdatesToValues<T extends { messages?: Message[] }>(
         Array.isArray(incoming) ? incoming : incoming != null ? [incoming] : []
       ) as Message[];
       messages = mergeMessagesFromUpdates(messages, list);
+      continue;
+    }
+
+    if ("turn" in patch && patch.turn && typeof patch.turn === "object") {
+      const prevTurn = (
+        (next as { turn?: TurnRuntime }).turn ?? EMPTY_TURN_RUNTIME
+      ) as TurnRuntime;
+      (next as { turn?: TurnRuntime }).turn = mergeTurnRuntime(
+        prevTurn,
+        patch.turn as Partial<TurnRuntime>,
+      );
       continue;
     }
 

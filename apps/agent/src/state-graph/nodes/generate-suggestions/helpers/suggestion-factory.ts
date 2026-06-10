@@ -1,9 +1,9 @@
 import { nanoid } from "nanoid";
 
-import type { NextStepSuggestion } from "@yougan/domain";
+import type { NextStepSuggestion, NextStepSuggestionKind } from "@yougan/domain";
 
 export function newNextStepSuggestion(
-  kind: NextStepSuggestion["kind"],
+  kind: NextStepSuggestionKind,
   label: string,
   message: string,
 ): NextStepSuggestion {

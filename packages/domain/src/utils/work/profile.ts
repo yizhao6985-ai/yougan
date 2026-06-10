@@ -14,8 +14,6 @@ import {
 } from "../../models/work/profile.js";
 import { parseReferencesJson } from "./reference.js";
 import { parseFormatParams, resolveDelivery } from "../delivery.js";
-import { routeProductionPipeline } from "../media-modalities.js";
-
 function newId(prefix: string): string {
   return `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
 }
@@ -236,41 +234,6 @@ export function hasProfileContent(profile: WorkProfile | undefined): boolean {
   );
 }
 
-export function isProfileActionable(profile: WorkProfile | undefined): boolean {
-  if (!profile) return false;
-  const normalized = parseProfileJson(profile);
-  const delivery = resolveDelivery(normalized.delivery);
-  if (!delivery.topic.trim()) return false;
-
-  const pipeline = routeProductionPipeline(delivery.modalities, delivery.format);
-
-  switch (pipeline) {
-    case "text":
-    case "image":
-      return normalized.blueprint.segments.length >= 1;
-
-    case "design":
-      return (
-        normalized.blueprint.segments.length >= 1 ||
-        Boolean(normalized.expression.visual?.style) ||
-        (normalized.params.kind === "illustration" &&
-          Boolean(normalized.params.aspect_ratio))
-      );
-
-    case "audio":
-    case "video":
-      return (
-        normalized.blueprint.segments.length >= 1 ||
-        (normalized.params.kind === pipeline &&
-          "duration_sec" in normalized.params &&
-          Boolean(normalized.params.duration_sec))
-      );
-
-    default:
-      return normalized.blueprint.segments.length >= 1;
-  }
-}
-
 export function getProfileSummary(profile: WorkProfile): string | null {
   const normalized = parseProfileJson(profile);
   const summary = normalized.blueprint.summary.trim();
@@ -343,10 +306,6 @@ export function resolveProfileFromWork(input: {
   profile?: unknown;
 }): WorkProfile {
   return parseProfileJson(input.profile);
-}
-
-export function hasProfileSegments(profile: WorkProfile): boolean {
-  return profile.blueprint.segments.length > 0;
 }
 
 export function resolveDeliveryFromProfile(profile: WorkProfile): ProfileDelivery {

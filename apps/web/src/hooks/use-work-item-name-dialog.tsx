@@ -50,7 +50,7 @@ export function useWorkItemNameDialog() {
       case "create-group":
         return {
           title: "新建分组",
-          description: "用分组组织相关作品，例如系列章节或同一选题。",
+          description: "用分组组织相关作品，例如同一系列或同一制作方向。",
           placeholder: "例如：职场成长系列",
           initialName: "",
           submitLabel: "创建",

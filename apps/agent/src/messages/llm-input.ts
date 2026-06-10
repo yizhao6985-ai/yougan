@@ -4,7 +4,9 @@ import {
   isHumanAssetContentPart,
 } from "@yougan/domain";
 
+import { stripInterruptedMessagesForLlm } from "./interrupted.js";
 import { messageContentToText } from "./message-content.js";
+import type { AgentStateType } from "#agent/state.js";
 
 function attachmentLabel(count: number): string {
   if (count === 1) return "[用户附带了 1 份参考素材]";
@@ -54,4 +56,15 @@ export function sanitizeMessagesForTextChat(
       ? sanitizeHumanMessageForTextChat(message)
       : message,
   );
+}
+
+/** 子图 llm-chat：中断卫生 + human 附件压平。 */
+export function prepareChatMessagesForLlm(
+  state: AgentStateType,
+): BaseMessage[] {
+  const messages = stripInterruptedMessagesForLlm(
+    state.messages ?? [],
+    state.turn.interruptedMessageIds,
+  );
+  return sanitizeMessagesForTextChat(messages);
 }

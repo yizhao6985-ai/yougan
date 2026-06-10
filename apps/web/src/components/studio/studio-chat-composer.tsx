@@ -35,8 +35,12 @@ export function StudioChatComposer({
   onStop,
   chatStatus,
 }: StudioChatComposerProps) {
-  const { stream, modelTemperatureLevel, setModelTemperatureLevel } =
-    useYouganStreamContext();
+  const {
+    stream,
+    canSend,
+    modelTemperatureLevel,
+    setModelTemperatureLevel,
+  } = useYouganStreamContext();
   const {
     clear,
     readyAttachments,
@@ -50,7 +54,7 @@ export function StudioChatComposer({
       const trimmed = message.text.trim();
       if (
         (!trimmed && attachments.length === 0) ||
-        stream.isLoading ||
+        !canSend ||
         hasUploading
       ) {
         return;
@@ -59,11 +63,11 @@ export function StudioChatComposer({
       clear();
       await onSend({ text: trimmed, attachments });
     },
-    [clear, hasUploading, onInputChange, onSend, readyAttachments, stream.isLoading],
+    [canSend, clear, hasUploading, onInputChange, onSend, readyAttachments],
   );
 
   const canSubmit =
-    (Boolean(input.trim()) || hasReady) && !stream.isLoading && !hasUploading;
+    (Boolean(input.trim()) || hasReady) && canSend && !hasUploading;
 
   return (
     <PromptInput

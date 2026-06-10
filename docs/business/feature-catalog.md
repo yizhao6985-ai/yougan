@@ -25,16 +25,16 @@
 |------|----------|------|------|
 | 作品列表与新建 | 多内容并行创作 | 已实现 | `Work` CRUD |
 | 作品分组 | 栏目/系列管理 | 已实现 | `WorkGroup` |
-| 四模式对话 | 灵感/大纲/创作/提问 | 已实现 | LangGraph 子图 + 任务队列 |
-| 侧栏直改状态 | 改 brief/大纲/profile/draft | 已实现 | `PATCH Work` + `agent-thread-sync`，见 `agent-turn-queue.md` |
-| 创作脉络侧栏 | 状态可视化 | 已实现 | 灵感、大纲、预览、参考、版本 |
-| 可点击建议 | 回合内 AI 生成选项 | 已实现 | `verifyTurn` 统一生成 `nextStepSuggestions`（开屏 7 条 / 对话流 4 条） |
-| 结构化灵感选项 | 点选即发送 | 已实现 | `inspirationChoices`（当轮有效） |
+| 回合队列对话 | 定方案/备参考/制作/提问自动路由 | 已实现 | LangGraph 子图 + `turn.queue` |
+| 侧栏直改状态 | 改 profile/references/preview | 已实现 | `PATCH Work` + `agent-thread-sync`，见 `agent-turn-queue.md` |
+| 作品面板 | 状态可视化 | 已实现 | 方案、参考、作品、版本 |
+| 可点击建议 | 回合内 AI 生成选项 | 已实现 | `generateSuggestions` 生成 `nextStepSuggestions`（开屏 7 条 / 回合末 4 条） |
+| 下一步建议 | 点选即发送 | 已实现 | `nextStepSuggestions`（当轮有效） |
 | 创意度滑杆 | 控制 AI 新颖度 | 已实现 | `modelTemperature` 0.1–1.0 |
 | 流式对话 | 实时反馈 | 已实现 | LangGraph SDK `useStream` |
 | 参考素材汇总 | 对标与引用 | 已实现 | `WorkReference`，text/image/web |
 | 发布到有感 | 进入公域 | 已实现 | `PublishConfirmDialog` 确认分类后发布 |
-| 参考文案/图片解析 | 上传或粘贴参考素材 | 已实现 | 百炼 qwen3.7-max |
+| 参考素材解析 | 上传图片/音视频/文本参考 | 已实现 | MiniMax 多模态 + reference 子图 |
 
 ---
 
@@ -42,12 +42,11 @@
 
 | 功能 | 用户价值 | 状态 | 模型 |
 |------|----------|------|------|
-| 灵感探索对话 | 定选题、平台、受众 | 已实现 | 百炼 qwen3.7-max |
-| 大纲推敲对话 | 内容结构条目 | 已实现 | `outline` 子图 + 大纲工具 |
-| 聊天改状态 | 删改 brief/大纲、profile 等 | 已实现 | inspiration / outline 对话子图 + 工具 |
-| 灵感需求 CRUD 工具 | 侧栏即时更新（对话内） | 已实现 | inspiration 子图工具 |
-| 制作计划与出稿 | 创意总监 + 制作团队 | 已实现 | qwen3.7-max / deepseek-v4-pro |
-| 灵感→计划自动衔接 | 减少手工搬运 | 已实现 | 创作模式 `creative-director` |
+| 定方案对话 | 定选题、体裁、受众、结构 | 已实现 | profile 子图 + `profile_apply_patch` |
+| 参考素材分析 | 上传附件自动分析入库 | 已实现 | reference 子图 + MiniMax 多模态 |
+| 聊天改状态 | 改方案、参考、作品预览 | 已实现 | profile / reference / production 子图 + 工具 |
+| 制作计划与出稿 | 排计划 + AI 团队执行 | 已实现 | production 子图 |
+| 方案→制作自动衔接 | 减少手工搬运 | 已实现 | `workflowTurn` 队列 + `scheduleProduction` |
 | 按计划出稿与修改 | 可控正文生成 | 已实现 | 百炼 qwen3.7-max |
 | 执行摘要 | 版本对比可追溯 | 已实现 | `complete_execution` |
 | 会话持久化 | 断点续聊 | 已实现 | Postgres checkpoint |
@@ -125,7 +124,7 @@ OAuth 配置检查 UI：`/settings/integrations`。
 
 | 能力 | 免费版 | Pro |
 |------|--------|-----|
-| 灵感·大纲·创作·提问全流程 | ✓ | ✓ |
+| 定方案·备参考·制作·提问全流程 | ✓ | ✓ |
 | 作品分组与云端同步 | ✓ | ✓ |
 | 每月 AI 创作次数 | 30 | 500 |
 | 增强出稿 / 更长上下文 | — | ✓（文案承诺） |

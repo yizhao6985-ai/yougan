@@ -1,6 +1,5 @@
 import {
   getPlanSummary,
-  isPlanReady,
   type WorkProductionPlan,
 } from "@yougan/domain";
 
@@ -14,17 +13,14 @@ export function productionPlanSummary(plan: WorkProductionPlan): string {
     return "尚无内部创作计划";
   }
   const lines: string[] = [];
-  if (isPlanReady(plan) && getPlanSummary(plan)) {
-    lines.push(`创作计划：已定稿`);
+  if (plan.pending_tasks.length && getPlanSummary(plan)) {
+    lines.push(`创作计划：已编排`);
     lines.push(`计划摘要：${getPlanSummary(plan)}`);
   } else if (plan.pending_tasks.length) {
     lines.push(`创作计划：拟定中（${plan.pending_tasks.length} 项任务）`);
   }
   if (plan.departments?.length) {
     lines.push(`制作部门：${plan.departments.join("、")}`);
-  }
-  if (plan.industry_context) {
-    lines.push(`行业背景：${plan.industry_context}`);
   }
   if (plan.director_notes) {
     lines.push(`创意总监备注：${plan.director_notes}`);

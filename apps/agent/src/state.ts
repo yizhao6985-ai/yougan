@@ -1,10 +1,8 @@
 /**
  * LangGraph 运行时状态定义。
  *
- * - **state 顶层**（profile / references / productionPlan / preview）：commitTurn 后落库，跨回合保留
- * - **staging**：单回合工作区，子图 tools 只写 staging，commit 前前端预览读 staging
- * - **turnQueue / activeTurnKind / completedTurnKinds**：外层回合 workflow，见 nodes/workflow-turn、dispatch-turn-queue
- * - **nextStepSuggestions**：仅 verify 节点写入；workflowTurn 新回合开始时清空
+ * - **state 顶层**（profile / references / productionPlan / preview）：turn.committed 后落库
+ * - **turn**：单轮执行运行时（调度、staging、取消）
  */
 import {
   Annotation,
@@ -16,11 +14,12 @@ import {
   EMPTY_WORK_PROFILE,
   EMPTY_WORK_PRODUCTION_PLAN,
   EMPTY_WORK_REFERENCES,
+  EMPTY_TURN_RUNTIME,
   mergeProfileState,
   mergeReferencesState,
+  mergeTurnRuntime,
   type NextStepSuggestions,
-  type TurnQueueKind,
-  type TurnStaging,
+  type TurnRuntime,
   type WorkPreview,
   type WorkProductionPlan,
   type WorkProfile,
@@ -33,26 +32,6 @@ export const AgentState = Annotation.Root({
   ...MessagesAnnotation.spec,
   messages: Annotation<BaseMessage[]>({
     reducer: messagesStateReducer,
-    default: () => [],
-  }),
-  /** 本轮待执行子图队列（队首为下一项） */
-  turnQueue: Annotation<TurnQueueKind[]>({
-    reducer: (prev: TurnQueueKind[], next: TurnQueueKind[] | undefined) =>
-      next === undefined ? (prev ?? []) : next,
-    default: () => [],
-  }),
-  /** 当前正在执行的队列项（dispatch 写入） */
-  activeTurnKind: Annotation<TurnQueueKind | null>({
-    reducer: (
-      prev: TurnQueueKind | null,
-      next: TurnQueueKind | null | undefined,
-    ) => (next === undefined ? (prev ?? null) : next),
-    default: () => null,
-  }),
-  /** 本轮已完成的队列项（advance 累积，verify 节点生成建议时参考） */
-  completedTurnKinds: Annotation<TurnQueueKind[]>({
-    reducer: (prev: TurnQueueKind[], next: TurnQueueKind[] | undefined) =>
-      next === undefined ? (prev ?? []) : next,
     default: () => [],
   }),
   /** API 注入：当前作品 id */
@@ -69,12 +48,6 @@ export const AgentState = Annotation.Root({
   conversationTitle: Annotation<string | undefined>({
     reducer: (prev: string | undefined, next: string | undefined) => next,
     default: () => undefined,
-  }),
-  /** verify generateTitle 产出；stream 结束后 API 写入 WorkConversation.title */
-  generatedConversationTitle: Annotation<string | null>({
-    reducer: (prev: string | null, next: string | null | undefined) =>
-      next === undefined ? (prev ?? null) : next,
-    default: () => null,
   }),
   /** state 顶层：已提交作品方案 */
   profile: Annotation<WorkProfile>({
@@ -106,41 +79,27 @@ export const AgentState = Annotation.Root({
     ) => (next === undefined ? null : next),
     default: () => null,
   }),
-  /** 本轮工作区 */
-  staging: Annotation<TurnStaging | null>({
-    reducer: (
-      prev: TurnStaging | null,
-      next: TurnStaging | null | undefined,
-    ) => (next === undefined ? (prev ?? null) : next),
-    default: () => null,
-  }),
-  /** turn.commit 成功后为 true，API 据此物化 Work */
-  turnCommitted: Annotation<boolean>({
-    reducer: (prev: boolean, next: boolean | undefined) =>
-      next === undefined ? (prev ?? false) : next,
-    default: () => false,
-  }),
-  /** 用户取消本轮：commit 跳过，staging 回滚 */
-  turnCancelled: Annotation<boolean>({
-    reducer: (prev: boolean, next: boolean | undefined) =>
-      next === undefined ? (prev ?? false) : next,
-    default: () => false,
-  }),
-  /** 被用户中断的 assistant 消息 id（前端 stop 写入） */
-  interruptedMessageIds: Annotation<string[]>({
-    reducer: (prev: string[], next: string[] | undefined) => {
-      if (next === undefined) return prev ?? [];
-      return [...new Set([...(prev ?? []), ...next])];
-    },
-    default: () => [],
-  }),
-  /** 验收通过后生成的下一步可点击建议（开屏 7 条 / 对话流 4 条） */
+  /** 回合末或开屏生成的下一步建议 */
   nextStepSuggestions: Annotation<NextStepSuggestions | null>({
     reducer: (
       prev: NextStepSuggestions | null,
       next: NextStepSuggestions | null | undefined,
-    ) => (next === undefined ? prev : next),
+    ) => (next === undefined ? (prev ?? null) : next),
     default: () => null,
+  }),
+  /** 首条用户消息后生成的对话标题建议 */
+  generatedConversationTitle: Annotation<string | null>({
+    reducer: (prev: string | null, next: string | null | undefined) =>
+      next === undefined ? (prev ?? null) : next,
+    default: () => null,
+  }),
+  /** 单轮执行运行时 */
+  turn: Annotation<TurnRuntime>({
+    reducer: (prev: TurnRuntime, next: TurnRuntime | undefined) => {
+      if (next === undefined) return prev ?? EMPTY_TURN_RUNTIME;
+      return mergeTurnRuntime(prev ?? EMPTY_TURN_RUNTIME, next);
+    },
+    default: () => EMPTY_TURN_RUNTIME,
   }),
   /** 前端可调；子图 LLM 经 getModelTemperature 读取 */
   modelTemperature: Annotation<number>({
@@ -153,3 +112,8 @@ export const AgentState = Annotation.Root({
 });
 
 export type AgentStateType = typeof AgentState.State;
+
+/** 图节点返回的 state 增量（turn 通道为浅合并 patch，非完整 TurnRuntime） */
+export type AgentStatePatch = Partial<Omit<AgentStateType, "turn">> & {
+  turn?: Partial<TurnRuntime>;
+};

@@ -155,7 +155,6 @@ export const WorkProductionPlanSchema = z
       }),
     ),
     last_execution_summary: z.string().nullable().optional(),
-    ready: z.boolean().optional(),
     summary: z.string().nullable().optional(),
     departments: z
       .array(z.enum(["writing", "design", "audio", "video"]))

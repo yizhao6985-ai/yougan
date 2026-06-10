@@ -34,6 +34,7 @@ export function YouganChat() {
     sendMessage,
     cancelActiveTurn,
     canChat,
+    canSend,
     isBootstrappingOpening,
     activeWork,
     activeConversation,
@@ -47,9 +48,12 @@ export function YouganChat() {
 
   const streamValues = stream.values;
 
-  const activeKind = streamValues?.activeTurnKind as TurnQueueKind | undefined;
+  const activeKind = streamValues?.turn?.activeKind as
+    | TurnQueueKind
+    | undefined;
 
-  const interruptedMessageIds = streamValues?.interruptedMessageIds ?? [];
+  const interruptedMessageIds =
+    streamValues?.turn?.interruptedMessageIds ?? [];
 
   const items = useMemo(
     () =>
@@ -109,10 +113,10 @@ export function YouganChat() {
       text: string;
       attachments: Parameters<typeof sendMessage>[1];
     }) => {
-      if (stream.isLoading || !canChat) return;
+      if (!canSend) return;
       await sendMessage(text, attachments);
     },
-    [canChat, sendMessage, stream.isLoading],
+    [canSend, sendMessage],
   );
 
   const chatStatus = stream.isLoading ? "streaming" : "ready";
@@ -139,7 +143,7 @@ export function YouganChat() {
   }
 
   const profile =
-    stream.values?.staging?.profile ??
+    stream.values?.turn?.staging?.profile ??
     stream.values?.profile ??
     activeWork.profile;
   const segmentCount = profile.blueprint?.segments?.length ?? 0;
@@ -197,7 +201,7 @@ export function YouganChat() {
                       key={`${activeConversation?.id ?? ""}-${openingSuggestionsKey}`}
                       animate
                       suggestions={openingSuggestionItems}
-                      disabled={!canChat}
+                      disabled={!canSend}
                       onSelect={(value) => void sendMessage(value)}
                     />
                   ) : (
@@ -289,9 +293,7 @@ export function YouganChat() {
 
                 const isLastAi = index === lastAiIndex;
                 const showTurnSuggestions =
-                  isLastAi &&
-                  Boolean(activeSuggestions?.suggestions.length) &&
-                  !stream.isLoading;
+                  isLastAi && Boolean(activeSuggestions?.suggestions.length);
                 return (
                   <Message
                     key={item.id}
@@ -312,7 +314,7 @@ export function YouganChat() {
                         <NextStepSuggestionOptions
                           suggestions={activeSuggestions.suggestions}
                           hint={activeSuggestions.hint}
-                          disabled={stream.isLoading || !canChat}
+                          disabled={!canSend}
                           onSelect={(value) => void sendMessage(value)}
                         />
                       )}

@@ -104,12 +104,15 @@ ${preview?.notes ? `\n备注：${preview.notes.slice(0, 800)}` : ""}
   }
 
   const retried = await retryTaskDeliverable(state, task, feedback);
+  const metaPatch = patchPendingProductionMeta(state, {
+    pendingInspect: true,
+    inspectRetryCount: retryCount,
+    lastInspectFeedback: feedback,
+  });
+  if (!retried) return metaPatch;
   return patchPendingBatch(
-    retried ? patchPendingPreview(state, retried) : {},
-    patchPendingProductionMeta(state, {
-      pendingInspect: true,
-      inspectRetryCount: retryCount,
-      lastInspectFeedback: feedback,
-    }),
+    state,
+    patchPendingPreview(state, retried),
+    metaPatch,
   );
 }

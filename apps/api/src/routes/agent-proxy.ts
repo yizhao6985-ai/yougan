@@ -128,7 +128,8 @@ async function syncWorkAfterStream(
     const values = await getLangGraphThreadValues(context.threadId);
     if (!values || typeof values !== "object") return;
     const record = values as Record<string, unknown>;
-    if (record.turnCommitted !== true) return;
+    const turn = record.turn as { committed?: boolean } | undefined;
+    if (turn?.committed !== true) return;
 
     try {
       await applyAgentRunVersion({

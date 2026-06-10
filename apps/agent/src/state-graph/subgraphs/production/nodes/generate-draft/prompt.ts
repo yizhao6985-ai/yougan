@@ -26,7 +26,6 @@ export function buildGenerateDraftPrompt(input: {
     )
     .join("\n");
   const pending = plan.pending_tasks.map((c) => `- ${c.description}`).join("\n");
-  const industry = plan.industry_context ?? "";
   const formatGuidance = buildFormatGenerationGuidance(
     delivery.format as ContentFormatId | null,
     delivery.modalities?.[0] ?? null,
@@ -44,7 +43,7 @@ export function buildGenerateDraftPrompt(input: {
     })
     .join("\n");
 
-  return `生成创作成稿（文案总监执行）。
+  return `生成创作成稿（文字内容制作执行）。
 
 作品方案：${getProfileSummary(profile) ?? profileSummary(profile, references)}
 创作计划摘要：${getPlanSummary(plan) ?? "无"}
@@ -57,7 +56,6 @@ ${pending}
 媒介形式：${delivery.modalities?.join(",") ?? "未指定"}
 风格：${profile.expression.verbal?.style ?? "未指定"}；语气：${profile.expression.verbal?.tone ?? "未指定"}
 受众：${profile.expression.audience ?? "未指定"}
-行业背景：${industry || "无"}
 参考：${refSummaries || "无"}
 
 创作设定：
@@ -66,7 +64,7 @@ ${settings || "无"}
 创作规则：
 ${guardrails || "无"}
 
-写作要求：
+体裁与媒介要求：
 ${formatGuidance}
 
 请生成完整成稿，包含 title、body、hashtags、hook、notes 字段。`;

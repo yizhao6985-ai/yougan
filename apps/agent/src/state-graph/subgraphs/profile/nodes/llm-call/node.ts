@@ -5,6 +5,7 @@ import type { RunnableConfig } from "@langchain/core/runnables";
 import { env } from "#agent/env.js";
 import { streamChat } from "#agent/llm/invoke/index.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
+import { prepareChatMessagesForLlm } from "#agent/messages/llm-input.js";
 import type { AgentStateType } from "#agent/state.js";
 
 import { buildProfilePrompt } from "./prompt.js";
@@ -20,7 +21,10 @@ export async function llmCall(
 ): Promise<Partial<AgentStateType>> {
   const response = await streamChat(
     llmWithTools,
-    [new SystemMessage(buildProfilePrompt(state)), ...(state.messages ?? [])],
+    [
+      new SystemMessage(buildProfilePrompt(state)),
+      ...prepareChatMessagesForLlm(state),
+    ],
     config,
   );
   return { messages: [response] };

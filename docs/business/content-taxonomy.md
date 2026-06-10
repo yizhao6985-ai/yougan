@@ -105,7 +105,7 @@ flowchart LR
 
 ### 用户流程
 
-1. 创作模式生成 `creation.body`
+1. production 子图生成 `preview.body`
 2. 点击「发布到有感」→ 打开确认弹窗
 3. 系统调用 `preview-metadata` 展示 AI 推断标签
 4. 用户可在下拉框中修改：体裁 / 主题 / 媒介 / 平台
@@ -157,12 +157,12 @@ AI 在对话中隐式维护的 `Work.profile` 字段：
 
 | 阶段 | 入口 | 行为 |
 |------|------|------|
-| 侧栏 / API | `PATCH Work` + 线程同步 | 可更新 `profile`、brief、outline、draft |
-| 聊天 | profile / production / ask 子图 | 对话工具改方案与成稿；参考素材由 profile 子图 parse_reference_* 入库 |
-| 灵感 | `confirm_content_spec`（对话工具） | 用户明确体裁/形式时写入 |
-| 创作 | `confirm_content_spec` / profile 工具 | 补充或修正规格 |
-| 创作入口 | `resolveContentSpec` 节点 | 自动补齐缺失字段 |
-| 创作执行 | `generate_draft` 等 | 按体裁/形式约束出稿 |
+| 侧栏 / API | `PATCH Work` + 线程同步 | 可更新 `profile`、`references`、`preview` |
+| 聊天 | profile / reference / production / ask 子图 | 对话工具改方案、参考与作品预览 |
+| 定方案 | `profile_apply_patch`（对话工具） | 用户明确体裁/形式/结构时写入 |
+| 备参考 | reference 子图 `analyzeNewAssets` | 新附件分析入库 |
+| 制作入口 | `resolveContentSpec` 节点 | 自动补齐缺失 delivery 字段 |
+| 制作执行 | `generate_draft` / `spawn_specialist` 等 | 按体裁/媒介约束出稿 |
 | 发布 | 发布确认弹窗 | 用户可覆盖最终分类 |
 
 回合队列与线程同步详见 [agent-turn-queue.md](../technical/agent-turn-queue.md)。

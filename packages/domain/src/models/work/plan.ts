@@ -36,8 +36,6 @@ export interface WorkProductionPlan {
   pending_tasks: ProductionPlanTask[];
   executed_tasks: ExecutedPlanTask[];
   last_execution_summary?: string | null;
-  /** 方案 + 计划齐备，可进入执行 */
-  ready: boolean;
   summary?: string | null;
   departments?: ProductionDepartment[];
   industry_context?: string | null;
@@ -48,7 +46,6 @@ export const EMPTY_WORK_PRODUCTION_PLAN: WorkProductionPlan = {
   pending_tasks: [],
   executed_tasks: [],
   last_execution_summary: null,
-  ready: false,
   summary: null,
   departments: [],
   industry_context: null,

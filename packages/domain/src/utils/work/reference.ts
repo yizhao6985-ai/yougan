@@ -2,10 +2,13 @@ import type { Asset } from "../../models/work/asset.js";
 import { inferMediaKind, type MediaKind } from "../asset.js";
 import {
   EMPTY_WORK_REFERENCES,
+  PENDING_REFERENCE_INTENT_SUMMARY,
   type ReferenceAnalysis,
   type ReferenceIntent,
   type WorkReference,
 } from "../../models/work/reference.js";
+
+export { PENDING_REFERENCE_INTENT_SUMMARY };
 
 function newId(prefix: string): string {
   return `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
@@ -180,7 +183,54 @@ function parseReferenceIntent(raw: unknown): ReferenceIntent | null {
   if (!raw || typeof raw !== "object") return null;
   const value = raw as Record<string, unknown>;
   const summary = typeof value.summary === "string" ? value.summary.trim() : "";
-  return summary ? { summary } : null;
+  if (!summary) return null;
+  const userContext =
+    typeof value.user_context === "string" && value.user_context.trim()
+      ? value.user_context.trim()
+      : undefined;
+  return userContext ? { summary, user_context: userContext } : { summary };
+}
+
+export function pendingReferenceIntent(): ReferenceIntent {
+  return { summary: PENDING_REFERENCE_INTENT_SUMMARY };
+}
+
+export function isPendingReferenceIntent(intent: ReferenceIntent): boolean {
+  return intent.summary.trim() === PENDING_REFERENCE_INTENT_SUMMARY;
+}
+
+export function referenceNeedsAnalysis(
+  url: string,
+  references: WorkReference[],
+): boolean {
+  const trimmed = url.trim();
+  if (!trimmed) return false;
+  const existing = references.find((item) => item.asset.url === trimmed);
+  return !existing?.analysis.summary.trim();
+}
+
+export function referenceNeedsIntentSummarize(ref: WorkReference): boolean {
+  return Boolean(ref.intent.user_context?.trim());
+}
+
+export function referenceNeedsIntentPrompt(ref: WorkReference): boolean {
+  return (
+    isPendingReferenceIntent(ref.intent) && !ref.intent.user_context?.trim()
+  );
+}
+
+export function deriveReferenceDelta(
+  committed: WorkReference[],
+  staging: WorkReference[],
+) {
+  const committedIds = new Set(committed.map((r) => r.id));
+  const stagingIds = new Set(staging.map((r) => r.id));
+  return {
+    added: staging.filter((r) => !committedIds.has(r.id)),
+    removed: committed.filter((r) => !stagingIds.has(r.id)),
+    toSummarize: staging.filter(referenceNeedsIntentSummarize),
+    toPrompt: staging.filter(referenceNeedsIntentPrompt),
+  };
 }
 
 function migrateLegacyReference(raw: Record<string, unknown>): WorkReference | null {

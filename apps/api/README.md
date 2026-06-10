@@ -112,7 +112,7 @@ apps/api/
 核心实体：
 
 - **User** — 账号、资料、头像/封面
-- **Work** — 物化视图：`profile`、`brief`、`plan`、`draft`（JSON），`headVersionId`
+- **Work** — 物化视图：`profile`、`references`、`productionPlan`、`preview`（JSON），`headVersionId`
 - **WorkVersion** — 单线版本快照（仅作品预览里程碑）
 - **WorkConversation** — 多轮对话（共享作品状态）：`threadId`
 - **WorkGroup** — 作品分组
@@ -128,7 +128,7 @@ apps/api/
 
 - 校验 JWT，解析当前用户
 - 读取请求头 `X-Work-Id`、`X-Conversation-Id`，加载作品并校验归属
-- 按 `X-Work-Id`、`X-Conversation-Id` 注入作品状态（`profile`、`brief`、`outline` 等）；stream 结束后 `applyAgentRunToWork` 写 version
+- 按 `X-Work-Id`、`X-Conversation-Id` 注入作品状态（`profile`、`references`、`productionPlan`、`preview` 等）；stream 结束后 `applyAgentRunToWork` 写 version
 - 侧栏 `PATCH Work` 更新物化列后同步 LangGraph thread（`agent-thread-sync`）；聊天消息经任务队列路由对话子图，见 [agent-turn-queue.md](../../docs/technical/agent-turn-queue.md)
 
 详见 [docs/technical/version-graph.md](../../docs/technical/version-graph.md)。

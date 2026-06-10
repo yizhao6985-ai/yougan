@@ -5,6 +5,7 @@ import type { RunnableConfig } from "@langchain/core/runnables";
 import { env } from "#agent/env.js";
 import { streamChat } from "#agent/llm/invoke/index.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
+import { prepareChatMessagesForLlm } from "#agent/messages/llm-input.js";
 import type { AgentStateType } from "#agent/state.js";
 
 import { buildProductionLlmPrompt } from "./prompt.js";
@@ -22,7 +23,7 @@ export async function llmCall(
     llmWithTools,
     [
       new SystemMessage(buildProductionLlmPrompt(state)),
-      ...(state.messages ?? []),
+      ...prepareChatMessagesForLlm(state),
     ],
     config,
   );

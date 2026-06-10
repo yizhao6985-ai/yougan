@@ -9,6 +9,7 @@ interface UseOpeningBootstrapQueryOptions {
   token: string | null;
   messageCount: number;
   isThreadLoading: boolean;
+  isCancelling: boolean;
   submitOpeningBootstrap: () => Promise<void>;
 }
 
@@ -18,6 +19,7 @@ export function useOpeningBootstrapQuery({
   token,
   messageCount,
   isThreadLoading,
+  isCancelling,
   submitOpeningBootstrap,
 }: UseOpeningBootstrapQueryOptions) {
   const workId = work?.id ?? null;
@@ -26,7 +28,8 @@ export function useOpeningBootstrapQuery({
   const enabled =
     Boolean(workId && conversationId && work && conversation && token) &&
     messageCount === 0 &&
-    !isThreadLoading;
+    !isThreadLoading &&
+    !isCancelling;
 
   return useQuery({
     queryKey:

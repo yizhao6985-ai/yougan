@@ -1,6 +1,6 @@
 # @yougan/agent
 
-Node.js LangGraph 服务：**两层三分** workflow + 对话子图。聊天中的状态变更均经对话子图（可见回复与工具）；UI 直改作品状态由 API `PATCH Work` + 线程同步完成。
+Node.js LangGraph 服务：**回合队列** workflow + 四条对话子图（reference / profile / production / ask）。聊天中的状态变更均经对话子图（可见回复与工具）；UI 直改作品状态由 API `PATCH Work` + 线程同步完成。
 
 由 `@langchain/langgraph-cli` 在开发模式启动，默认 `http://localhost:2024`。生产环境由 `apps/api` 的 `/langgraph` 代理访问，不应对公网直接暴露（无 JWT 层）。
 
@@ -19,16 +19,18 @@ Checkpoint：**Agent 专用 Postgres**（`POSTGRES_URI`，默认 `:5433`）。
 | 角色 | 目录 | 节点 | 职责 |
 |------|------|------|------|
 | 计划者 | `nodes/workflow-turn/` | `workflowTurn` | 解析用户意图 → `turnQueue[]`，fork `staging` |
-| 执行者 | `state-graph/` | `dispatchTurnQueue` / `advanceTurnQueue` + 子图 | 按队列路由并执行 profile / production / ask |
-| 验收者 | `generate-suggestions` 等 | `routeTurnEnd` → `generateSuggestions` ∥ `generateTitle` → `commitTurn` | 取消回合跳过验收，直接 `commitTurn` rollback |
+| 执行者 | `state-graph/` | `dispatchTurnQueue` / `advanceTurnQueue` + 子图 | 按队列路由并执行 reference / profile / production / ask |
+| 验收者 | `generate-suggestions` 等 | `commitTurn` → `afterCommit` → `generateSuggestions` ∥ `generateTitle` | 取消回合在 `commitTurn` rollback；建议生成节点会跳过 |
 
 图接线：`src/graph.ts`；`state-graph/` 含 `nodes/`、`conditional-edges/`、`subgraphs/*/graph.ts`
 
 ### 内层子图（`state-graph/subgraphs/`）
 
-**production**：`ensureProfile` → `resolveContentSpec` → `scheduleProduction` → `llmCall` / `designLlmCall` ⇄ `toolNode` →（work）`generateDraft` / `spawnSpecialist` → `inspectProduction`。tool 仅入队或改 state，LLM 重活在 work node。
+**reference**：`analyzeNewAssets` → `mutateReferences` → `summarizeReferences`。新附件分析入库；无新附件时删改参考。
 
-**profile**：`llmCall` ⇄ `toolNode`（`profile_apply_patch` 同步写方案与删参考）。
+**profile**：`llmCall` ⇄ `toolNode`（`profile_apply_patch` 批量改方案）。
+
+**production**：`resolveContentSpec` → `scheduleProduction` → `llmCall` / `designLlmCall` ⇄ `toolNode` → `generateDraft` / `spawnSpecialist` → `inspectProduction`。进入制作由 `workflowTurn` 识别用户出稿意图；子图基于现有方案直接执行，不因方案不完整而阻断。
 
 **ask**：`llmCall` ⇄ `toolNode`（`ToolNode` + `toolsCondition`）。
 
@@ -73,11 +75,12 @@ src/
 START
   ├─ 空 thread → generateSuggestions（开屏 7 条建议）→ END
   └─ 有消息 → workflowTurn → dispatchTurnQueue → [*Graph] → advanceTurnQueue
-         → routeTurnEnd → generateSuggestions ∥ generateTitle → commitTurn → END
+         → commitTurn → afterCommit → generateSuggestions ∥ generateTitle → END
 ```
 
 | TurnQueueKind | 子图 | 说明 |
 |---------------|------|------|
+| `reference` | `referenceGraph` | 分析新附件 / 删改参考素材 |
 | `profile` | `profileGraph` | 改作品方案 |
 | `production` | `productionGraph` | 制作计划 + 出稿 + 质检 |
 | `ask` | `askGraph` | 答疑 |

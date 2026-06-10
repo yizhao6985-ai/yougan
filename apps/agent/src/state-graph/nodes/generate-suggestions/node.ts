@@ -94,6 +94,10 @@ async function resolveNextStepSuggestions(
 export async function generateSuggestionsNode(
   state: AgentStateType,
 ): Promise<Partial<AgentStateType>> {
+  if (state.turn.cancelled) {
+    return {};
+  }
+
   const nextStepSuggestions = await resolveNextStepSuggestions(state);
   return { nextStepSuggestions };
 }

@@ -12,7 +12,11 @@ import {
   getLatestHumanMessageAttachments,
   getLatestHumanMessageText,
 } from "#agent/messages/human.js";
-import { initPendingTurn } from "#agent/state-io/index.js";
+import {
+  initPendingTurn,
+  normalizeDirtyTurnState,
+  patchTurn,
+} from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 
 import { buildTurnQueuePrompt } from "./prompt.js";
@@ -25,7 +29,7 @@ const DEFAULT_QUEUE: TurnQueueKind[] = ["profile"];
  * - 无附件：原样返回（reference 仅当模型判定为删/改参考素材时才会出现）
  * - 有附件且队列已含 reference：原样返回，避免重复
  * - 有附件且纯 ask：不前置 reference（纯讨论不入库）
- * - 有附件且非纯 ask：确定性前置 reference，供 ingest-references 分析新附件
+ * - 有附件且非纯 ask：确定性前置 reference，供 analyze-new-assets 分析新附件
  */
 function withReferenceQueue(
   queue: TurnQueueKind[],
@@ -77,23 +81,30 @@ async function resolveTurnQueue(
   }
 }
 
-/** workflowTurn：解析 turnQueue 并 fork staging 工作区 */
+/** workflowTurn：归一化脏回合 → 解析 queue → fork turn.staging */
 export async function workflowTurnNode(
   state: AgentStateType,
   config?: RunnableConfig,
 ): Promise<Partial<AgentStateType>> {
-  const turnQueue = await resolveTurnQueue(state, config);
-  const staging = initPendingTurn(state, turnQueue);
+  const normalized = normalizeDirtyTurnState(state);
+  const baseState = normalized?.turn
+    ? { ...state, turn: normalized.turn }
+    : state;
+
+  const queue = await resolveTurnQueue(baseState, config);
+  const staging = initPendingTurn(baseState, queue);
 
   return {
-    turnQueue,
-    /** 新回合开始：清掉上一轮 verify 节点产出的建议与生成的标题 */
-    generatedConversationTitle: null,
+    ...(normalized ?? {}),
     nextStepSuggestions: null,
-    completedTurnKinds: [],
-    activeTurnKind: null,
-    staging,
-    turnCancelled: false,
-    turnCommitted: false,
+    generatedConversationTitle: null,
+    ...patchTurn(baseState, {
+      queue,
+      staging,
+      completedKinds: [],
+      activeKind: null,
+      committed: false,
+      cancelled: false,
+    }),
   };
 }

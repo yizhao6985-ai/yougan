@@ -10,7 +10,7 @@
 | [目标用户与场景](./target-users.md) | 市场细分、用户画像、使用场景 |
 | [用户旅程](./user-journeys.md) | 客户获取、激活、留存、变现路径 |
 | [功能目录](./feature-catalog.md) | 产品功能清单与实现状态 |
-| [创作方法论](./creation-methodology.md) | 灵感·大纲·创作·提问、侧栏与聊天分工 |
+| [创作方法论](./creation-methodology.md) | 定方案·备参考·制作·提问、侧栏与聊天分工 |
 | [内容与社区](./content-ecosystem.md) | 发现灵感、发布、主页与传播 |
 | [内容分类体系](./content-taxonomy.md) | 两层 taxonomy、推断逻辑、发布确认 |
 | [商业化与定价](./monetization.md) | 收入模式、套餐、计费规则 |
