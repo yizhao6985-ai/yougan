@@ -7,7 +7,7 @@ import {
   getReferences,
   patchPendingReferences,
 } from "#agent/state-io/index.js";
-import type { AgentStateType } from "#agent/state.js";
+import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
 import { analyzeReferenceContent } from "./helpers/analyze/analyze-content.js";
 import { mapWithConcurrency } from "./helpers/map-with-concurrency.js";
@@ -19,7 +19,7 @@ const ANALYZE_CONCURRENCY = 3;
 
 export async function analyzeNewAssetsNode(
   state: AgentStateType,
-): Promise<Partial<AgentStateType>> {
+): Promise<AgentStatePatch> {
   const adds = listNewReferenceAssets(state);
   if (!adds.length) return {};
 

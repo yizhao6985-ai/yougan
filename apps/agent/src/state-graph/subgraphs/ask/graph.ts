@@ -3,14 +3,18 @@ import { toolsCondition } from "@langchain/langgraph/prebuilt";
 
 import { AgentState } from "#agent/state.js";
 
-import * as llmToolCalls from "./conditional-edges/llm-tool-calls.js";
-import { llmCall } from "./nodes/llm-call/node.js";
-import { toolNode } from "./nodes/tool-node/node.js";
+import * as afterAnswerQuestion from "./conditional-edges/after-answer-question.js";
+import { answerQuestionNode } from "./nodes/answer-question/node.js";
+import { runAskToolsNode } from "./nodes/run-ask-tools/node.js";
 
 export const askGraph = new StateGraph(AgentState)
-  .addNode("llmCall", llmCall)
-  .addNode("toolNode", toolNode)
-  .addEdge(START, "llmCall")
-  .addConditionalEdges(llmToolCalls.from, toolsCondition, llmToolCalls.paths)
-  .addEdge("toolNode", "llmCall")
+  .addNode("answerQuestion", answerQuestionNode)
+  .addNode("runAskTools", runAskToolsNode)
+  .addEdge(START, "answerQuestion")
+  .addConditionalEdges(
+    afterAnswerQuestion.from,
+    toolsCondition,
+    afterAnswerQuestion.paths,
+  )
+  .addEdge("runAskTools", "answerQuestion")
   .compile();

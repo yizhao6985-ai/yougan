@@ -18,15 +18,15 @@ import {
   getProfile,
   getReferences,
 } from "#agent/state-io/index.js";
-import type { AgentStateType } from "#agent/state.js";
+import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
-import { markDepartmentTaskPendingInspect } from "../inspect-production/helpers/set-pending-inspect.js";
+import { markPendingInspectForDepartment } from "../inspect-deliverable/helpers/pending-inspect.js";
 import { buildGenerateDraftPrompt } from "./prompt.js";
 import { WorkPreviewPayloadSchema, type WorkPreviewPayload } from "./schema.js";
 
 export async function generateDraftNode(
   state: AgentStateType,
-): Promise<Partial<AgentStateType>> {
+): Promise<AgentStatePatch> {
   const profile = getProfile(state);
   const references = getReferences(state);
   const plan = getProductionPlan(state);
@@ -68,7 +68,7 @@ export async function generateDraftNode(
   };
 
   const inspectPatch =
-    markDepartmentTaskPendingInspect(
+    markPendingInspectForDepartment(
       state,
       plan.pending_tasks,
       "writing",

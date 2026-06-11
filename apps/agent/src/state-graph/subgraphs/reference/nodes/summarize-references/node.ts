@@ -19,7 +19,7 @@ import {
   getReferences,
   patchPendingReferences,
 } from "#agent/state-io/index.js";
-import type { AgentStateType } from "#agent/state.js";
+import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
 import { buildSummarizeReferencesPrompt } from "./prompt.js";
 import { ReferenceTurnSummarySchema } from "./schema.js";
@@ -34,7 +34,7 @@ function stripIntentUserContext(intent: {
 export async function summarizeReferencesNode(
   state: AgentStateType,
   config?: RunnableConfig,
-): Promise<Partial<AgentStateType>> {
+): Promise<AgentStatePatch> {
   const staging = getReferences(state);
   const committed = state.references ?? [];
   const delta = deriveReferenceDelta(committed, staging);

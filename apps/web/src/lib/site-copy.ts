@@ -121,7 +121,7 @@ export const HOME = {
   title: "有感",
   titleSuffix: "AI 创作助手",
   subtitle:
-    "方案先行，制作随后。AI 团队按计划完成文章、插画、脚本与音视频创作，全程清晰，可持续打磨。",
+    "先想清楚，再开始创作。文章、插画、脚本与音视频，AI 团队陪你一步步完成，过程看得明白，想改也随时能改。",
   ctaStudio: "开始创作",
   ctaFeatures: "了解产品能力",
   capabilitiesTitle: "定方案、去制作、随时问",

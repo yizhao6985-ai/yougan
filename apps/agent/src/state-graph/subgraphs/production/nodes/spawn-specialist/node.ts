@@ -20,9 +20,9 @@ import {
   getProductionStagingMeta,
   getProfile,
 } from "#agent/state-io/index.js";
-import type { AgentStateType } from "#agent/state.js";
+import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
-import { markDepartmentTaskPendingInspect } from "../inspect-production/helpers/set-pending-inspect.js";
+import { markPendingInspectForDepartment } from "../inspect-deliverable/helpers/pending-inspect.js";
 import {
   buildSpawnSpecialistPrompt,
   specialistDisplayName,
@@ -31,7 +31,7 @@ import { MarkdownDeliverableSchema } from "./schema.js";
 
 export async function spawnSpecialistNode(
   state: AgentStateType,
-): Promise<Partial<AgentStateType>> {
+): Promise<AgentStatePatch> {
   const meta = getProductionStagingMeta(state);
   let pending = meta.pendingSpawnSpecialist;
   const plan = getProductionPlan(state);
@@ -100,7 +100,7 @@ export async function spawnSpecialistNode(
 
   const pipeline = department === "design" ? "design" : "writing";
   const inspectPatch =
-    markDepartmentTaskPendingInspect(state, pendingTasks, department, pipeline) ??
+    markPendingInspectForDepartment(state, pendingTasks, department, pipeline) ??
     {};
 
   return patchPendingBatch(

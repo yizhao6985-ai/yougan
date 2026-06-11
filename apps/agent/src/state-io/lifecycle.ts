@@ -34,7 +34,7 @@ export function requirePending(state: AgentStateType): TurnStaging {
   };
 }
 
-/** workflowTurn：从 state 顶层 fork 新回合 staging */
+/** planTurnQueue：从 state 顶层 fork 新回合 staging */
 export function initPendingTurn(
   state: AgentStateType,
   queue: TurnQueueKind[],

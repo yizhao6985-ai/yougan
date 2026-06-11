@@ -11,7 +11,7 @@ import {
   getReferences,
   patchPendingReferences,
 } from "#agent/state-io/index.js";
-import type { AgentStateType } from "#agent/state.js";
+import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
 import { applyReferencePatchPlan } from "./helpers/apply-patch-plan.js";
 import { extractReferencePatch } from "./helpers/extract-patch.js";
@@ -19,7 +19,7 @@ import { extractReferencePatch } from "./helpers/extract-patch.js";
 export async function mutateReferencesNode(
   state: AgentStateType,
   config?: RunnableConfig,
-): Promise<Partial<AgentStateType>> {
+): Promise<AgentStatePatch> {
   const references = getReferences(state);
   const userMessage = getLatestHumanMessageText(state.messages).trim();
   const attachmentUrls = new Set(

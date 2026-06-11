@@ -3,12 +3,12 @@ import {
   getTurnQueue,
   patchTurn,
 } from "#agent/state-io/index.js";
-import type { AgentStateType } from "#agent/state.js";
+import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
 /** 完成当前队列项后出队，并记入 completedKinds */
 export async function advanceTurnQueueNode(
   state: AgentStateType,
-): Promise<Partial<AgentStateType>> {
+): Promise<AgentStatePatch> {
   const queue = getTurnQueue(state);
   const head = queue[0];
   if (!head) {

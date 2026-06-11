@@ -9,7 +9,7 @@ import {
 } from "@yougan/domain";
 import { profileSummary } from "#agent/prompts/profile-summary.js";
 
-import { buildFormatGenerationGuidance } from "../llm-call/format-guidance.js";
+import { buildFormatGenerationGuidance } from "../../helpers/format-guidance.js";
 
 export function buildGenerateDraftPrompt(input: {
   profile: WorkProfile;

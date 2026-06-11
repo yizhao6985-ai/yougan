@@ -23,13 +23,15 @@ src/
         └── ask/
 ```
 
-验收节点（`after-commit`、`generate-suggestions`、`generate-title` 等）与子图 workflow 并列接线在主图 `src/graph.ts`。
+验收节点（`fork-post-commit`、`generate-suggestions`、`generate-title` 等）与子图 workflow 并列接线在主图 `src/graph.ts`。
 
 主图接线在 `src/graph.ts`；各子图接线在 `state-graph/subgraphs/<name>/graph.ts`。
 
-**目录命名**：`nodes/`、`conditional-edges/` 下文件夹统一用 kebab-case（如 `llm-call`、`schedule-production`）。
+**目录命名**：`nodes/`、`conditional-edges/` 下文件夹统一用 kebab-case（如 `consult-profile`、`after-schedule-plan`）。
 
-**图节点 ID**：`addNode` / `addEdge` / 条件边路由目标统一用 **camelCase**（如 `llmCall`、`toolNode`、`generateSuggestions`），与目录名 kebab-case 区分。
+**图节点 ID**：`addNode` / `addEdge` / 条件边路由目标统一用 **camelCase**（如 `consultProfile`、`runProfileTools`、`generateSuggestions`），与目录名 kebab-case 区分。节点名按**功能**命名，避免 `llmCall` 等模糊词。
+
+**条件边命名**：`conditional-edges/` 文件按**执行位置**命名（如 `at-graph-start`、`after-dispatch-turn-queue`、`after-consult-profile`）；路由函数用 `selectAt*` / `selectAfter*`。
 
 ## graphNode kind
 
@@ -38,10 +40,10 @@ src/
 | **plain** | `node.ts` |
 | **llm-chat** | `node.ts` + `prompt.ts` |
 | **llm-work** | `node.ts` + `prompt.ts`（+ `schema.ts` + `helpers/`） |
-| **tool-node** | `node.ts` + `tools/`（tool 专属逻辑放 `tools/helpers/`） |
+| **run-tools** | `node.ts` + `tools/`（tool 专属逻辑放 `tools/helpers/`） |
 | **subgraph** | `subgraphs/<name>/graph.ts` compile → 主图 addNode |
 
-节点内辅助逻辑放在该节点目录下的 `helpers/`（与 `prompt.ts` 同级），由 `node.ts` 或同目录 `prompt.ts` import。`tool-node` 下仅 tool 使用的逻辑放 `tools/helpers/`（与 `tools/*.ts` 同级）。跨节点复用时从**归属节点**的 `helpers/` 相对路径引用（如 `../analyze-new-assets/helpers/upsert-asset-reference.js`），**不在**子图根下建 `helpers/`。
+节点内辅助逻辑放在该节点目录下的 `helpers/`（与 `prompt.ts` 同级），由 `node.ts` 或同目录 `prompt.ts` import。`run-*-tools/` 下仅 tool 使用的逻辑放 `tools/helpers/`（与 `tools/*.ts` 同级）。跨节点复用时从**归属节点**的 `helpers/` 相对路径引用（如 `../analyze-new-assets/helpers/upsert-asset-reference.js`），**不在**子图根下建 `helpers/`。
 
 **与 `@yougan/domain` 的边界**：仅 agent 使用、web/api 用不上的工具函数不放 domain `utils/`；归到对应 node 的 `helpers/`。跨多节点共用的 LLM prompt 格式化放 `src/prompts/`（`#agent/prompts/*`）。domain 保留类型/常量及 web、api、agent 共享的解析与 merge。
 

@@ -2,55 +2,53 @@ import { START, StateGraph } from "@langchain/langgraph";
 
 import { AgentState } from "#agent/state.js";
 
-import * as creatorPipelineByModality from "./conditional-edges/creator-pipeline-by-modality.js";
-import * as dispatchPendingWork from "./conditional-edges/dispatch-pending-work.js";
-import * as llmToolCalls from "./conditional-edges/llm-tool-calls.js";
-import * as retryDeliverableOrEnd from "./conditional-edges/retry-deliverable-or-end.js";
-import { designLlmCall } from "./nodes/design-llm-call/node.js";
+import * as afterDirectDesign from "./conditional-edges/after-direct-design.js";
+import * as afterDirectWriting from "./conditional-edges/after-direct-writing.js";
+import * as afterInspectDeliverable from "./conditional-edges/after-inspect-deliverable.js";
+import * as afterRunProductionTools from "./conditional-edges/after-run-production-tools.js";
+import * as afterSchedulePlan from "./conditional-edges/after-schedule-plan.js";
+import { directDesignNode } from "./nodes/direct-design/node.js";
+import { directWritingNode } from "./nodes/direct-writing/node.js";
 import { generateDraftNode } from "./nodes/generate-draft/node.js";
-import { inspectProductionNode } from "./nodes/inspect-production/node.js";
-import { llmCall } from "./nodes/llm-call/node.js";
-import { resolveContentSpecNode } from "./nodes/resolve-content-spec/node.js";
-import { scheduleProductionNode } from "./nodes/schedule-production/node.js";
+import { inspectDeliverableNode } from "./nodes/inspect-deliverable/node.js";
+import { schedulePlanNode } from "./nodes/schedule-plan/node.js";
 import { spawnSpecialistNode } from "./nodes/spawn-specialist/node.js";
-import { toolNode } from "./nodes/tool-node/node.js";
+import { runProductionToolsNode } from "./nodes/run-production-tools/node.js";
 
 export const productionGraph = new StateGraph(AgentState)
-  .addNode("resolveContentSpec", resolveContentSpecNode)
-  .addNode("scheduleProduction", scheduleProductionNode)
-  .addNode("llmCall", llmCall)
-  .addNode("designLlmCall", designLlmCall)
-  .addNode("toolNode", toolNode)
+  .addNode("schedulePlan", schedulePlanNode)
+  .addNode("directWriting", directWritingNode)
+  .addNode("directDesign", directDesignNode)
+  .addNode("runProductionTools", runProductionToolsNode)
   .addNode("generateDraft", generateDraftNode)
   .addNode("spawnSpecialist", spawnSpecialistNode)
-  .addNode("inspectProduction", inspectProductionNode)
-  .addEdge(START, "resolveContentSpec")
-  .addEdge("resolveContentSpec", "scheduleProduction")
+  .addNode("inspectDeliverable", inspectDeliverableNode)
+  .addEdge(START, "schedulePlan")
   .addConditionalEdges(
-    creatorPipelineByModality.from,
-    creatorPipelineByModality.selectCreatorPipelineByModality,
-    creatorPipelineByModality.paths,
+    afterSchedulePlan.from,
+    afterSchedulePlan.selectAfterSchedulePlan,
+    afterSchedulePlan.paths,
   )
   .addConditionalEdges(
-    llmToolCalls.fromLlm,
-    llmToolCalls.routeLlmCall,
-    llmToolCalls.llmPaths,
+    afterDirectWriting.from,
+    afterDirectWriting.selectAfterDirectWriting,
+    afterDirectWriting.paths,
   )
   .addConditionalEdges(
-    llmToolCalls.fromDesign,
-    llmToolCalls.routeDesignLlmCall,
-    llmToolCalls.designPaths,
+    afterDirectDesign.from,
+    afterDirectDesign.selectAfterDirectDesign,
+    afterDirectDesign.paths,
   )
   .addConditionalEdges(
-    dispatchPendingWork.from,
-    dispatchPendingWork.dispatchPendingProductionWork,
-    dispatchPendingWork.paths,
+    afterRunProductionTools.from,
+    afterRunProductionTools.selectAfterRunProductionTools,
+    afterRunProductionTools.paths,
   )
-  .addEdge("generateDraft", "inspectProduction")
-  .addEdge("spawnSpecialist", "inspectProduction")
+  .addEdge("generateDraft", "inspectDeliverable")
+  .addEdge("spawnSpecialist", "inspectDeliverable")
   .addConditionalEdges(
-    retryDeliverableOrEnd.from,
-    retryDeliverableOrEnd.retryDeliverableOrEnd,
-    retryDeliverableOrEnd.paths,
+    afterInspectDeliverable.from,
+    afterInspectDeliverable.selectAfterInspectDeliverable,
+    afterInspectDeliverable.paths,
   )
   .compile();

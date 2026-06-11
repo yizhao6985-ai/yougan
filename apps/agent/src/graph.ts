@@ -5,15 +5,15 @@ import { END, START, StateGraph } from "@langchain/langgraph";
 
 import { checkpointer } from "./checkpointer.js";
 import * as afterAdvanceTurnQueue from "./state-graph/conditional-edges/after-advance-turn-queue.js";
-import * as openingOrWorkflow from "./state-graph/conditional-edges/opening-or-workflow.js";
-import * as subgraphByTurnKind from "./state-graph/conditional-edges/subgraph-by-turn-kind.js";
+import * as afterDispatchTurnQueue from "./state-graph/conditional-edges/after-dispatch-turn-queue.js";
+import * as atGraphStart from "./state-graph/conditional-edges/at-graph-start.js";
 import { advanceTurnQueueNode } from "./state-graph/nodes/advance-turn-queue/node.js";
-import { afterCommitNode } from "./state-graph/nodes/after-commit/node.js";
 import { commitTurnNode } from "./state-graph/nodes/commit-turn/node.js";
 import { dispatchTurnQueueNode } from "./state-graph/nodes/dispatch-turn-queue/node.js";
+import { forkPostCommitNode } from "./state-graph/nodes/fork-post-commit/node.js";
 import { generateSuggestionsNode } from "./state-graph/nodes/generate-suggestions/node.js";
 import { generateTitleNode } from "./state-graph/nodes/generate-title/node.js";
-import { workflowTurnNode } from "./state-graph/nodes/workflow-turn/node.js";
+import { planTurnQueueNode } from "./state-graph/nodes/plan-turn-queue/node.js";
 import { askGraph } from "./state-graph/subgraphs/ask/graph.js";
 import { productionGraph } from "./state-graph/subgraphs/production/graph.js";
 import { profileGraph } from "./state-graph/subgraphs/profile/graph.js";
@@ -21,11 +21,11 @@ import { referenceGraph } from "./state-graph/subgraphs/reference/graph.js";
 import { AgentState } from "./state.js";
 
 const workflow = new StateGraph(AgentState)
-  .addNode("workflowTurn", workflowTurnNode)
+  .addNode("planTurnQueue", planTurnQueueNode)
   .addNode("dispatchTurnQueue", dispatchTurnQueueNode)
   .addNode("advanceTurnQueue", advanceTurnQueueNode)
   .addNode("commitTurn", commitTurnNode)
-  .addNode("afterCommit", afterCommitNode)
+  .addNode("forkPostCommit", forkPostCommitNode)
   .addNode("generateSuggestions", generateSuggestionsNode)
   .addNode("generateTitle", generateTitleNode)
   .addNode("referenceGraph", referenceGraph)
@@ -34,14 +34,14 @@ const workflow = new StateGraph(AgentState)
   .addNode("askGraph", askGraph)
   .addConditionalEdges(
     START,
-    openingOrWorkflow.selectOpeningOrWorkflow,
-    openingOrWorkflow.paths,
+    atGraphStart.selectAtGraphStart,
+    atGraphStart.paths,
   )
-  .addEdge("workflowTurn", "dispatchTurnQueue")
+  .addEdge("planTurnQueue", "dispatchTurnQueue")
   .addConditionalEdges(
-    subgraphByTurnKind.from,
-    subgraphByTurnKind.selectSubgraphByTurnKind,
-    subgraphByTurnKind.paths,
+    afterDispatchTurnQueue.from,
+    afterDispatchTurnQueue.selectAfterDispatchTurnQueue,
+    afterDispatchTurnQueue.paths,
   )
   .addEdge("referenceGraph", "advanceTurnQueue")
   .addEdge("profileGraph", "advanceTurnQueue")
@@ -52,9 +52,9 @@ const workflow = new StateGraph(AgentState)
     afterAdvanceTurnQueue.selectAfterAdvanceTurnQueue,
     afterAdvanceTurnQueue.paths,
   )
-  .addEdge("commitTurn", "afterCommit")
-  .addEdge("afterCommit", "generateSuggestions")
-  .addEdge("afterCommit", "generateTitle")
+  .addEdge("commitTurn", "forkPostCommit")
+  .addEdge("forkPostCommit", "generateSuggestions")
+  .addEdge("forkPostCommit", "generateTitle")
   .addEdge("generateSuggestions", END)
   .addEdge("generateTitle", END);
 

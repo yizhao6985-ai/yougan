@@ -18,9 +18,9 @@ Checkpoint：**Agent 专用 Postgres**（`POSTGRES_URI`，默认 `:5433`）。
 
 | 角色 | 目录 | 节点 | 职责 |
 |------|------|------|------|
-| 计划者 | `nodes/workflow-turn/` | `workflowTurn` | 解析用户意图 → `turnQueue[]`，fork `staging` |
+| 计划者 | `nodes/plan-turn-queue/` | `planTurnQueue` | 解析用户意图 → `turnQueue[]`，fork `staging` |
 | 执行者 | `state-graph/` | `dispatchTurnQueue` / `advanceTurnQueue` + 子图 | 按队列路由并执行 reference / profile / production / ask |
-| 验收者 | `generate-suggestions` 等 | `commitTurn` → `afterCommit` → `generateSuggestions` ∥ `generateTitle` | 取消回合在 `commitTurn` rollback；建议生成节点会跳过 |
+| 验收者 | `generate-suggestions` 等 | `commitTurn` → `forkPostCommit` → `generateSuggestions` ∥ `generateTitle` | 取消回合在 `commitTurn` rollback；建议生成节点会跳过 |
 
 图接线：`src/graph.ts`；`state-graph/` 含 `nodes/`、`conditional-edges/`、`subgraphs/*/graph.ts`
 
@@ -28,13 +28,13 @@ Checkpoint：**Agent 专用 Postgres**（`POSTGRES_URI`，默认 `:5433`）。
 
 **reference**：`analyzeNewAssets` → `mutateReferences` → `summarizeReferences`。新附件分析入库；无新附件时删改参考。
 
-**profile**：`llmCall` ⇄ `toolNode`（`profile_apply_patch` 批量改方案）。
+**profile**：`consultProfile` ⇄ `runProfileTools`（`profile_apply_patch` 批量改方案）。
 
-**production**：`resolveContentSpec` → `scheduleProduction` → `llmCall` / `designLlmCall` ⇄ `toolNode` → `generateDraft` / `spawnSpecialist` → `inspectProduction`。进入制作由 `workflowTurn` 识别用户出稿意图；子图基于现有方案直接执行，不因方案不完整而阻断。
+**production**：`schedulePlan` → `directWriting` / `directDesign` ⇄ `runProductionTools` → `generateDraft` / `spawnSpecialist` → `inspectDeliverable`。进入制作由 `planTurnQueue` 识别用户出稿意图；子图基于现有方案直接执行，不因方案不完整而阻断。
 
-**ask**：`llmCall` ⇄ `toolNode`（`ToolNode` + `toolsCondition`）。
+**ask**：`answerQuestion` ⇄ `runAskTools`（`ToolNode` + `toolsCondition`）。
 
-LLM 环：`nodes/llm-call/node.ts`（bindTools + stream）+ `nodes/tool-node/`（`ToolNode` + `tools/`）+ `conditional-edges/llm-tool-calls.ts`（`toolsCondition`）。
+对话环：`nodes/consult-profile/`、`answer-question/`、`direct-writing/`、`direct-design/`（bindTools + stream）+ `run-*-tools/`（`ToolNode` + `tools/`）+ `conditional-edges/after-*.ts`（按执行位置命名）。
 
 ## 目录结构
 
@@ -74,8 +74,8 @@ src/
 ```text
 START
   ├─ 空 thread → generateSuggestions（开屏 7 条建议）→ END
-  └─ 有消息 → workflowTurn → dispatchTurnQueue → [*Graph] → advanceTurnQueue
-         → commitTurn → afterCommit → generateSuggestions ∥ generateTitle → END
+  └─ 有消息 → planTurnQueue → dispatchTurnQueue → [*Graph] → advanceTurnQueue
+         → commitTurn → forkPostCommit → generateSuggestions ∥ generateTitle → END
 ```
 
 | TurnQueueKind | 子图 | 说明 |
