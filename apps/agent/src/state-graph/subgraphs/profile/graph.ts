@@ -1,20 +1,23 @@
-import { START, StateGraph } from "@langchain/langgraph";
+import { END, START, StateGraph } from "@langchain/langgraph";
 import { toolsCondition } from "@langchain/langgraph/prebuilt";
 
 import { AgentState } from "#agent/state.js";
 
-import * as afterConsultProfile from "./conditional-edges/after-consult-profile.js";
-import { consultProfileNode } from "./nodes/consult-profile/node.js";
+import * as afterMutateProfile from "./conditional-edges/after-mutate-profile.js";
+import { mutateProfileNode } from "./nodes/mutate-profile/node.js";
 import { runProfileToolsNode } from "./nodes/run-profile-tools/node.js";
+import { summarizeProfileNode } from "./nodes/summarize-profile/node.js";
 
 export const profileGraph = new StateGraph(AgentState)
-  .addNode("consultProfile", consultProfileNode)
+  .addNode("mutateProfile", mutateProfileNode)
   .addNode("runProfileTools", runProfileToolsNode)
-  .addEdge(START, "consultProfile")
+  .addNode("summarizeProfile", summarizeProfileNode)
+  .addEdge(START, "mutateProfile")
   .addConditionalEdges(
-    afterConsultProfile.from,
+    afterMutateProfile.from,
     toolsCondition,
-    afterConsultProfile.paths,
+    afterMutateProfile.paths,
   )
-  .addEdge("runProfileTools", "consultProfile")
+  .addEdge("runProfileTools", "mutateProfile")
+  .addEdge("summarizeProfile", END)
   .compile();

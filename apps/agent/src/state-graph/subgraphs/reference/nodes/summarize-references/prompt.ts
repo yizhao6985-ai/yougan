@@ -14,10 +14,14 @@ export function buildSummarizeReferencesPrompt(input: {
   to_prompt: WorkReference[];
 }): string {
   const addedLines = input.added.length
-    ? input.added.map((r) => `- [${r.id}] ${r.analysis.summary.trim()}`).join("\n")
+    ? input.added
+        .map((r) => `- [${r.id}] ${r.analysis.summary.trim()}`)
+        .join("\n")
     : "（无）";
   const removedLines = input.removed.length
-    ? input.removed.map((r) => `- [${r.id}] ${r.analysis.summary.trim()}`).join("\n")
+    ? input.removed
+        .map((r) => `- [${r.id}] ${r.analysis.summary.trim()}`)
+        .join("\n")
     : "（无）";
   const summarizeLines = input.to_summarize.length
     ? input.to_summarize

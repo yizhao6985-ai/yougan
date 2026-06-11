@@ -1,32 +1,32 @@
-/** 按用户意图删改参考：bind 原子工具并流式决策 */
+/** 参考素材预处理：检查未分析资源并 bind 预处理工具 */
 import { SystemMessage } from "@langchain/core/messages";
 import type { RunnableConfig } from "@langchain/core/runnables";
 
 import { env } from "#agent/env.js";
 import { streamChat } from "#agent/llm/invoke/index.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
-import { getLatestHumanMessageText } from "#agent/messages/human.js";
 import { prepareChatMessagesForLlm } from "#agent/messages/llm-input.js";
 import type { AgentStateType } from "#agent/state.js";
 
-import { buildMutateReferencesPrompt } from "./prompt.js";
-import { MUTATE_REFERENCE_TOOLS } from "../run-mutate-tools/tools/index.js";
+import { listUnprocessedReferenceJobs } from "./helpers/list-unprocessed-jobs.js";
+import { buildPreprocessReferencesPrompt } from "./prompt.js";
+import { PREPROCESS_REFERENCE_TOOLS } from "../run-preprocess-tools/tools/index.js";
 
 const llmWithTools = createChatModel({
   temperature: env.llmTemperature,
-}).bindTools(MUTATE_REFERENCE_TOOLS);
+}).bindTools(PREPROCESS_REFERENCE_TOOLS);
 
-export async function mutateReferencesNode(
+export async function preprocessReferencesNode(
   state: AgentStateType,
   config: RunnableConfig,
 ): Promise<Partial<AgentStateType>> {
-  const userMessage = getLatestHumanMessageText(state.messages).trim();
-  if (!userMessage) return {};
+  const jobs = listUnprocessedReferenceJobs(state);
+  if (!jobs.length) return {};
 
   const response = await streamChat(
     llmWithTools,
     [
-      new SystemMessage(buildMutateReferencesPrompt(state)),
+      new SystemMessage(buildPreprocessReferencesPrompt(state, jobs)),
       ...prepareChatMessagesForLlm(state),
     ],
     config,

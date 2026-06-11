@@ -30,7 +30,7 @@ const DEFAULT_QUEUE: TurnQueueKind[] = ["profile"];
  * - 无附件：原样返回（reference 仅当模型判定为删/改参考素材时才会出现）
  * - 有附件且队列已含 reference：原样返回，避免重复
  * - 有附件且纯 ask：不前置 reference（纯讨论不入库）
- * - 有附件且非纯 ask：确定性前置 reference，供 analyze-new-assets 分析新附件
+ * - 有附件且非纯 ask：确定性前置 reference，供 preprocessReferences 预处理新附件
  */
 function withReferenceQueue(
   queue: TurnQueueKind[],

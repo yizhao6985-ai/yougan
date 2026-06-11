@@ -1,4 +1,44 @@
-/** profile 子图 ToolNode 工具列表 */
-import { profileApplyPatch } from "./profile-tools.js";
+/** profile 方案修改工具（原子操作） */
+import {
+  appendProfileGuardrail,
+  appendProfileSegment,
+  appendProfileSetting,
+  clearProfileGuardrails,
+  clearProfileSegments,
+  clearProfileSettings,
+  deleteProfileGuardrail,
+  deleteProfileSegment,
+  deleteProfileSetting,
+  replaceProfileGuardrails,
+  replaceProfileSegments,
+  replaceProfileSettings,
+  updateProfileDelivery,
+  updateProfileExpression,
+  updateProfileGuardrail,
+  updateProfileParams,
+  updateProfileSegment,
+  updateProfileSetting,
+  updateProfileSummary,
+} from "./profile-mutate-tools.js";
 
-export const PROFILE_TOOLS = [profileApplyPatch];
+export const PROFILE_TOOLS = [
+  updateProfileDelivery,
+  updateProfileSummary,
+  updateProfileExpression,
+  updateProfileParams,
+  clearProfileSettings,
+  replaceProfileSettings,
+  appendProfileSetting,
+  updateProfileSetting,
+  deleteProfileSetting,
+  clearProfileSegments,
+  replaceProfileSegments,
+  appendProfileSegment,
+  updateProfileSegment,
+  deleteProfileSegment,
+  clearProfileGuardrails,
+  replaceProfileGuardrails,
+  appendProfileGuardrail,
+  updateProfileGuardrail,
+  deleteProfileGuardrail,
+];

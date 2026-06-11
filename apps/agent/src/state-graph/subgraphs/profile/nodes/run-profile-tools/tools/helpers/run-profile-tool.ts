@@ -1,0 +1,66 @@
+import { ToolMessage } from "@langchain/core/messages";
+import { tool, type ToolRunnableConfig } from "@langchain/core/tools";
+import { Command } from "@langchain/langgraph";
+import type { z } from "zod";
+
+import {
+  applyProfilePatch,
+  type ProfilePatch,
+} from "../../../mutate-profile/helpers/apply-profile-patch.js";
+import {
+  getProfile,
+  getState,
+  patchPendingProfile,
+} from "#agent/state-io/index.js";
+
+export function createProfileTool<T extends z.ZodTypeAny>(options: {
+  name: string;
+  description: string;
+  schema: T;
+  toPatch: (input: z.infer<T>) => ProfilePatch;
+  emptyMessage?: string;
+}) {
+  return tool(
+    async (input, config) => {
+      const toolCallId = (config as ToolRunnableConfig).toolCall?.id ?? "";
+      const state = getState();
+      const profile = getProfile(state);
+      const result = applyProfilePatch(profile, options.toPatch(input));
+
+      if (!result) {
+        return new Command({
+          update: {
+            messages: [
+              new ToolMessage({
+                content: options.emptyMessage ?? "未应用方案变更。",
+                tool_call_id: toolCallId,
+              }),
+            ],
+          },
+        });
+      }
+
+      const messageParts = [`已更新：${result.changes.join("、")}。`];
+      if (result.warnings.length) {
+        messageParts.push(`注意：${result.warnings.join("；")}`);
+      }
+
+      return new Command({
+        update: {
+          messages: [
+            new ToolMessage({
+              content: messageParts.join(" "),
+              tool_call_id: toolCallId,
+            }),
+          ],
+          ...patchPendingProfile(state, result.profile),
+        },
+      });
+    },
+    {
+      name: options.name,
+      description: options.description,
+      schema: options.schema,
+    },
+  );
+}

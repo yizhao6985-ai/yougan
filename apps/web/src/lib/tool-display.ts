@@ -1,6 +1,24 @@
 export const TOOL_LABELS: Record<string, string> = {
   reference_apply_patch: "更新参考素材",
-  profile_apply_patch: "更新制作方案",
+  update_profile_delivery: "更新交付规格",
+  update_profile_summary: "更新内容定位",
+  update_profile_expression: "更新表达设定",
+  update_profile_params: "更新体裁参数",
+  append_profile_setting: "追加创作设定",
+  update_profile_setting: "修改创作设定",
+  delete_profile_setting: "删除创作设定",
+  replace_profile_settings: "替换创作设定",
+  clear_profile_settings: "清空创作设定",
+  append_profile_segment: "追加结构段",
+  update_profile_segment: "修改结构段",
+  delete_profile_segment: "删除结构段",
+  replace_profile_segments: "替换结构段",
+  clear_profile_segments: "清空结构段",
+  append_profile_guardrail: "追加创作规则",
+  update_profile_guardrail: "修改创作规则",
+  delete_profile_guardrail: "删除创作规则",
+  replace_profile_guardrails: "替换创作规则",
+  clear_profile_guardrails: "清空创作规则",
   add_plan_task: "添加制作任务",
   complete_execution: "完成执行",
   generate_preview: "AI 团队制作",
@@ -65,26 +83,25 @@ export function getToolInputSummary(
   options?: { full?: boolean },
 ) {
   switch (toolName) {
-    case "profile_apply_patch": {
-      const parts: string[] = [];
-      const delivery = toolInput.delivery as Record<string, unknown> | undefined;
-      if (delivery?.topic) parts.push(readString(delivery.topic));
-      if (toolInput.summary) parts.push(readString(toolInput.summary));
-      const segments =
-        summarizePatchList(toolInput.segments_replace, "结构") ??
-        summarizePatchList(toolInput.segments_append, "结构");
-      if (segments) parts.push(segments);
-      const guardrails =
-        summarizePatchList(toolInput.guardrails_replace, "规则") ??
-        summarizePatchList(toolInput.guardrails_append, "规则");
-      if (guardrails) parts.push(guardrails);
-      if (!parts.length && delivery) {
-        return Object.keys(delivery)
-          .filter((key) => delivery[key] != null)
-          .join("、");
-      }
-      return parts.join(" · ");
-    }
+    case "update_profile_delivery":
+      return readString(toolInput.topic) || readString(toolInput.format);
+    case "update_profile_summary":
+      return readString(toolInput.summary);
+    case "append_profile_setting":
+    case "update_profile_setting":
+      return readString(toolInput.description) || readString(toolInput.title);
+    case "append_profile_segment":
+    case "update_profile_segment":
+      return readString(toolInput.description) || readString(toolInput.title);
+    case "append_profile_guardrail":
+    case "update_profile_guardrail":
+      return readString(toolInput.description);
+    case "replace_profile_settings":
+      return summarizePatchList(toolInput.settings, "设定") ?? "替换创作设定";
+    case "replace_profile_segments":
+      return summarizePatchList(toolInput.segments, "结构") ?? "替换结构段";
+    case "replace_profile_guardrails":
+      return summarizePatchList(toolInput.guardrails, "规则") ?? "替换创作规则";
     case "reference_apply_patch": {
       const updates = toolInput.updates;
       if (Array.isArray(updates) && updates.length) {

@@ -26,15 +26,15 @@ Checkpoint：**Agent 专用 Postgres**（`POSTGRES_URI`，默认 `:5433`）。
 
 ### 内层子图（`state-graph/subgraphs/`）
 
-**reference**：`analyzeNewAssets` → `mutateReferences` → `summarizeReferences`。新附件分析入库；无新附件时删改参考。
+**reference**：`preprocessReferences` ⇄ `runPreprocessTools` → `mutateReferences` ⇄ `runMutateTools` → `summarizeReferences`。预处理未分析资源；按意图原子工具删改参考。
 
-**profile**：`consultProfile` ⇄ `runProfileTools`（`profile_apply_patch` 批量改方案）。
+**profile**：`mutateProfile` ⇄ `runProfileTools` → `summarizeProfile`。按意图原子工具改方案；末位总结回复。
 
 **production**：`schedulePlan` → `directWriting` / `directDesign` ⇄ `runProductionTools` → `generateDraft` / `spawnSpecialist` → `inspectDeliverable`。进入制作由 `planTurnQueue` 识别用户出稿意图；子图基于现有方案直接执行，不因方案不完整而阻断。
 
 **ask**：`answerQuestion` ⇄ `runAskTools`（`ToolNode` + `toolsCondition`）。
 
-对话环：`nodes/consult-profile/`、`answer-question/`、`direct-writing/`、`direct-design/`（bindTools + stream）+ `run-*-tools/`（`ToolNode` + `tools/`）+ `conditional-edges/after-*.ts`（按执行位置命名）。
+对话环：`nodes/mutate-profile/`、`answer-question/`、`direct-writing/`、`direct-design/`（bindTools + stream）+ `run-*-tools/`（`ToolNode` + `tools/`）+ `conditional-edges/after-*.ts`（按执行位置命名）。
 
 ## 目录结构
 
