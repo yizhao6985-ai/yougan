@@ -4,6 +4,7 @@ import type { RunnableConfig } from "@langchain/core/runnables";
 import type { TurnQueueKind } from "@yougan/domain";
 
 import { sortTurnQueue } from "./helpers/sort-turn-queue.js";
+import { withSuggestionsQueue } from "./helpers/with-suggestions-queue.js";
 
 import { invokeStructured } from "#agent/llm/invoke/index.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
@@ -23,7 +24,8 @@ import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 import { buildTurnQueuePrompt } from "./prompt.js";
 import { TurnQueueDecisionSchema, type TurnQueueDecision } from "./schema.js";
 
-const DEFAULT_QUEUE: TurnQueueKind[] = ["profile"];
+const DEFAULT_QUEUE: TurnQueueKind[] = withSuggestionsQueue(["profile"]);
+const OPENING_QUEUE: TurnQueueKind[] = withSuggestionsQueue([]);
 
 /**
  * 合并模型队列与 reference 子图入队规则：
@@ -36,14 +38,20 @@ function withReferenceQueue(
   queue: TurnQueueKind[],
   hasAttachments: boolean,
 ): TurnQueueKind[] {
-  const sorted = sortTurnQueue(queue);
-  const base = sorted.length ? sorted : DEFAULT_QUEUE;
-  if (!hasAttachments || base.includes("reference")) return base;
+  const sorted = sortTurnQueue(
+    queue.filter((kind) => kind !== "suggestions") as TurnQueueKind[],
+  );
+  const base: TurnQueueKind[] = sorted.length ? sorted : ["profile"];
+  if (!hasAttachments || base.includes("reference")) {
+    return withSuggestionsQueue(base);
+  }
 
   const askOnly = base.length === 1 && base[0] === "ask";
-  if (askOnly) return base;
+  if (askOnly) return withSuggestionsQueue(base);
 
-  return sortTurnQueue(["reference", ...base]);
+  return withSuggestionsQueue(
+    sortTurnQueue(["reference", ...base] as TurnQueueKind[]),
+  );
 }
 
 async function resolveTurnQueue(
@@ -51,7 +59,7 @@ async function resolveTurnQueue(
   config?: RunnableConfig,
 ): Promise<TurnQueueKind[]> {
   if (getHumanMessageContents(state.messages).length < 1) {
-    return DEFAULT_QUEUE;
+    return OPENING_QUEUE;
   }
 
   const userMessage = getLatestHumanMessageText(state.messages);
@@ -74,11 +82,11 @@ async function resolveTurnQueue(
     )) as TurnQueueDecision;
     const queue = sortTurnQueue(parsed.kinds);
     return withReferenceQueue(
-      queue.length ? queue : DEFAULT_QUEUE,
+      queue.length ? queue : ["profile"],
       hasAttachments,
     );
   } catch {
-    return withReferenceQueue(DEFAULT_QUEUE, hasAttachments);
+    return withReferenceQueue(["profile"], hasAttachments);
   }
 }
 

@@ -1,11 +1,11 @@
 /** planTurnQueue 结构化输出：本轮子图执行队列 */
 import { z } from "zod";
 
-import { TURN_QUEUE_KINDS } from "@yougan/domain";
+import { TURN_QUEUE_PLANNER_KINDS } from "@yougan/domain";
 
 export const TurnQueueDecisionSchema = z.object({
   kinds: z
-    .array(z.enum(TURN_QUEUE_KINDS))
+    .array(z.enum(TURN_QUEUE_PLANNER_KINDS))
     .min(1)
     .max(8)
     .describe(

@@ -79,7 +79,7 @@ export const AgentState = Annotation.Root({
     ) => (next === undefined ? null : next),
     default: () => null,
   }),
-  /** 回合末或开屏生成的下一步建议 */
+  /** suggestions 子图每轮写入的下一步建议（运行时字段，不入库） */
   nextStepSuggestions: Annotation<NextStepSuggestions | null>({
     reducer: (
       prev: NextStepSuggestions | null,

@@ -9,7 +9,7 @@ export function useTurnNextStepSuggestions(input: {
 }) {
   const activeSuggestions = useMemo(() => {
     const suggestions = input.values?.nextStepSuggestions ?? null;
-    // 回合末 generateSuggestions 与 generateTitle 并行；建议先到时即可展示
+    // 建议由 suggestions 子图在 commit 前写入；标题在 commit 后生成
     if (input.isLoading && !suggestions) {
       return null;
     }

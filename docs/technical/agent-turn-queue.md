@@ -21,12 +21,10 @@ START
          → 路由到对话子图（reference / profile / production / ask）
          → advanceTurnQueue（出队 → turn.completedKinds）
          → 队列非空？回到 dispatchTurnQueue
-         → 队列已空？commitTurn → forkPostCommit
-              ├─ generateSuggestions（回合末 4 条建议）→ END
-              └─ generateTitle（首条 human 时）→ END
+         → 队列已空？commitTurn →（需系统收尾）postCommit → END
 ```
 
-取消回合：`turn.cancelled` 时 `commitTurn` 执行 rollback；`generateSuggestions` / `generateTitle` 会跳过。
+取消回合：`turn.cancelled` 时 `commitTurn` 执行 rollback；`postCommit` 会跳过。
 
 ## 两层三分（模块划分）
 
@@ -36,7 +34,7 @@ START
 |------|------|------|------|
 | 计划者 | `nodes/plan-turn-queue/` | `planTurnQueue` | LLM 解析用户意图 → `turn.queue[]`；有附件时确定性前置 `reference` |
 | 执行者 | `nodes/dispatch-turn-queue/`、`advance-turn-queue/` + 子图 | `dispatchTurnQueue` / `advanceTurnQueue` | 按队列路由并执行子图 |
-| 验收者 | `generate-suggestions/`、`generate-title/` | `commitTurn` → `forkPostCommit` → 并行建议与标题 | `nextStepSuggestions`、`generatedConversationTitle` |
+| 系统收尾 | `post-commit/` | `commitTurn` → `postCommit` | `generatedConversationTitle`（建议由 `suggestions` 子图写入 `nextStepSuggestions`） |
 
 条件边：`state-graph/conditional-edges/`（`at-graph-start`、`after-dispatch-turn-queue`、`after-advance-turn-queue`）
 
@@ -107,7 +105,7 @@ START
 
 `apps/api/src/services/agent-thread-sync.ts`：在 `updateWork` 更新 `profile` / `references` / `preview` 后，对作品下所有（或指定 `?conversationId=`）`threadId` 调用 LangGraph `threads.updateState`。
 
-LangGraph stream 结束后（`agent-proxy`）：`generateTitle` 写入的 `generatedConversationTitle` 经 `conversation-auto-title.ts` 落库（对话标题仍为「对话 N」且 thread 内仅 1 条 human）。
+LangGraph stream 结束后（`agent-proxy`）：`postCommit` 写入的 `generatedConversationTitle` 经 `conversation-auto-title.ts` 落库（对话标题仍为「对话 N」且 thread 内仅 1 条 human）。
 
 ## 相关代码
 

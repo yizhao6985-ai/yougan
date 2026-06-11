@@ -1,4 +1,3 @@
-/** 生成 generatedConversationTitle（非首条或已命名则 null） */
 import { HumanMessage } from "@langchain/core/messages";
 
 import {
@@ -15,11 +14,12 @@ import {
   getLatestHumanMessageText,
 } from "#agent/messages/human.js";
 import type { AgentStateType } from "#agent/state.js";
-import { extractLastMessages } from "../generate-suggestions/helpers/extract-last-messages.js";
-import { buildGenerateConversationTitlePrompt } from "./prompt.js";
-import { ConversationTitleResponseSchema } from "./schema.js";
 
-function shouldGenerateConversationTitle(state: AgentStateType): boolean {
+import { extractLastMessages } from "../../../subgraphs/suggestions/nodes/generate-suggestions/helpers/extract-last-messages.js";
+import { buildGenerateConversationTitlePrompt } from "./generate-conversation-title/prompt.js";
+import { ConversationTitleResponseSchema } from "./generate-conversation-title/schema.js";
+
+export function needsConversationTitle(state: AgentStateType): boolean {
   const title = state.conversationTitle?.trim() ?? "";
   if (!isDefaultConversationTitle(title)) return false;
   return getHumanMessageContents(state.messages).length === 1;
@@ -37,10 +37,11 @@ function fallbackTitle(
   return null;
 }
 
-async function resolveConversationTitle(
+/** 首条 human 且占位标题时，生成对话标题建议 */
+export async function resolveConversationTitle(
   state: AgentStateType,
 ): Promise<string | null> {
-  if (!shouldGenerateConversationTitle(state)) {
+  if (!needsConversationTitle(state)) {
     return null;
   }
 
@@ -71,11 +72,4 @@ async function resolveConversationTitle(
   } catch {
     return fallbackTitle(userMessage, hasAttachments);
   }
-}
-
-export async function generateTitleNode(
-  state: AgentStateType,
-): Promise<Partial<AgentStateType>> {
-  const generatedConversationTitle = await resolveConversationTitle(state);
-  return { generatedConversationTitle };
 }

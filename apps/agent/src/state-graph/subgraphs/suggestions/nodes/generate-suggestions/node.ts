@@ -1,4 +1,4 @@
-/** 生成 nextStepSuggestions（开屏 7 条 / 回合末 4 条） */
+/** suggestions 子图：生成 nextStepSuggestions（开屏 7 条 / 回合末 4 条） */
 import { HumanMessage } from "@langchain/core/messages";
 
 import {
@@ -8,7 +8,8 @@ import {
 
 import { invokeStructured } from "#agent/llm/invoke/index.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
-import type { AgentStateType } from "#agent/state.js";
+import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
+
 import { extractLastMessages } from "./helpers/extract-last-messages.js";
 import { hasSuggestionWorkContext } from "./helpers/has-suggestion-work-context.js";
 import { newNextStepSuggestion } from "./helpers/suggestion-factory.js";
@@ -78,10 +79,6 @@ async function resolveNextStepSuggestions(
   }
 
   const { lastAssistant, lastUser } = extractLastMessages(state);
-  if (!lastAssistant.trim()) {
-    return null;
-  }
-
   return invokeNextStepSuggestions(state, {
     count: TURN_NEXT_STEP_SUGGESTIONS_COUNT,
     isOpening: false,
@@ -93,7 +90,7 @@ async function resolveNextStepSuggestions(
 
 export async function generateSuggestionsNode(
   state: AgentStateType,
-): Promise<Partial<AgentStateType>> {
+): Promise<AgentStatePatch> {
   if (state.turn.cancelled) {
     return {};
   }

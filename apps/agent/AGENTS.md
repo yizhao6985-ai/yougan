@@ -20,10 +20,11 @@ src/
         │   ├── nodes/
         │   └── conditional-edges/
         ├── production/
-        └── ask/
+        ├── ask/
+        └── suggestions/
 ```
 
-验收节点（`fork-post-commit`、`generate-suggestions`、`generate-title` 等）与子图 workflow 并列接线在主图 `src/graph.ts`。
+系统收尾节点（`post-commit/`：对话标题等）在 `commitTurn` 之后接线；用户向任务走 turn 子图，建议由 `suggestions` 子图常驻生成。
 
 主图接线在 `src/graph.ts`；各子图接线在 `state-graph/subgraphs/<name>/graph.ts`。
 

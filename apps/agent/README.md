@@ -20,7 +20,7 @@ Checkpoint：**Agent 专用 Postgres**（`POSTGRES_URI`，默认 `:5433`）。
 |------|------|------|------|
 | 计划者 | `nodes/plan-turn-queue/` | `planTurnQueue` | 解析用户意图 → `turnQueue[]`，fork `staging` |
 | 执行者 | `state-graph/` | `dispatchTurnQueue` / `advanceTurnQueue` + 子图 | 按队列路由并执行 reference / profile / production / ask |
-| 验收者 | `generate-suggestions` 等 | `commitTurn` → `forkPostCommit` → `generateSuggestions` ∥ `generateTitle` | 取消回合在 `commitTurn` rollback；建议生成节点会跳过 |
+| 系统收尾 | `post-commit/` | `commitTurn` →（条件）`postCommit` → END | 仅首条 human 且占位标题时生成对话标题 |
 
 图接线：`src/graph.ts`；`state-graph/` 含 `nodes/`、`conditional-edges/`、`subgraphs/*/graph.ts`
 
@@ -29,6 +29,8 @@ Checkpoint：**Agent 专用 Postgres**（`POSTGRES_URI`，默认 `:5433`）。
 **reference**：`preprocessReferences` ⇄ `runPreprocessTools` → `mutateReferences` ⇄ `runMutateTools` → `summarizeReferences`。预处理未分析资源；按意图原子工具删改参考。
 
 **profile**：`mutateProfile` ⇄ `runProfileTools` → `summarizeProfile`。按意图原子工具改方案；末位总结回复。
+
+**suggestions**：`generateSuggestions`。系统队尾常驻；开屏 7 条 / 回合末 4 条，写入 `nextStepSuggestions`。
 
 **production**：`schedulePlan` → `directWriting` / `directDesign` ⇄ `runProductionTools` → `generateDraft` / `spawnSpecialist` → `inspectDeliverable`。进入制作由 `planTurnQueue` 识别用户出稿意图；子图基于现有方案直接执行，不因方案不完整而阻断。
 
@@ -72,10 +74,9 @@ src/
 ## 主图流程
 
 ```text
-START
-  ├─ 空 thread → generateSuggestions（开屏 7 条建议）→ END
-  └─ 有消息 → planTurnQueue → dispatchTurnQueue → [*Graph] → advanceTurnQueue
-         → commitTurn → forkPostCommit → generateSuggestions ∥ generateTitle → END
+START → planTurnQueue → dispatchTurnQueue → [*Graph] → advanceTurnQueue
+  → commitTurn →（需处理）postCommit → END
+（队尾常驻 suggestions；开屏仅跑 suggestions 子图）
 ```
 
 | TurnQueueKind | 子图 | 说明 |
@@ -84,6 +85,7 @@ START
 | `profile` | `profileGraph` | 改作品方案 |
 | `production` | `productionGraph` | 制作计划 + 出稿 + 质检 |
 | `ask` | `askGraph` | 答疑 |
+| `suggestions` | `suggestionsGraph` | 下一步建议（系统队尾追加，每轮生成） |
 
 详见 [docs/technical/agent-turn-queue.md](../../docs/technical/agent-turn-queue.md)。
 

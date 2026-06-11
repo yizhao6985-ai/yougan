@@ -1,4 +1,4 @@
-/** dispatchTurnQueue 之后：按队首 kind 进入 reference / profile / production / ask 子图 */
+/** dispatchTurnQueue 之后：按队首 kind 进入对应子图 */
 import type { TurnQueueKind } from "@yougan/domain";
 
 import {
@@ -13,7 +13,8 @@ export type AfterDispatchTurnQueueTarget =
   | "referenceGraph"
   | "profileGraph"
   | "productionGraph"
-  | "askGraph";
+  | "askGraph"
+  | "suggestionsGraph";
 
 function subgraphForKind(kind: TurnQueueKind): AfterDispatchTurnQueueTarget {
   switch (kind) {
@@ -25,6 +26,8 @@ function subgraphForKind(kind: TurnQueueKind): AfterDispatchTurnQueueTarget {
       return "productionGraph";
     case "ask":
       return "askGraph";
+    case "suggestions":
+      return "suggestionsGraph";
   }
 }
 
@@ -41,4 +44,5 @@ export const paths: AfterDispatchTurnQueueTarget[] = [
   "profileGraph",
   "productionGraph",
   "askGraph",
+  "suggestionsGraph",
 ];

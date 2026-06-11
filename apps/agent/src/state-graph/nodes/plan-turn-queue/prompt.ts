@@ -27,6 +27,8 @@ export function buildTurnQueuePrompt(
 - **production**：改/出成稿（正文、标题、段落、预览交付物）
 - **ask**：纯答疑，不改方案、成稿与参考素材
 
+**suggestions** 由系统在队尾自动追加，勿输出。
+
 ## reference 入队规则
 - has_attachments=true：系统会自动前置 reference 子图分析新附件，**勿输出 reference**
 - has_attachments=false 且感友要删/改参考素材或使用意图 → 输出 reference
