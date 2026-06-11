@@ -7,7 +7,7 @@
 | 来源 | 路径 | 是否有对话回复 |
 |------|------|----------------|
 | UI 侧栏 U/D | `PATCH Work` → Prisma 物化列 → `syncMaterializedStateToAgentThreads` | 否 |
-| 聊天 C/U/D | `workflowTurn` → `turn.queue` → 子图 | 是 |
+| 聊天 C/U/D | `planTurnQueue` → `turn.queue` → 子图 | 是 |
 
 权威作品状态在 `Work` 表；多对话共享 `profile` / `references` / `preview` 等。仅改 DB 时各 `threadId` checkpoint 会陈旧，直到下次 run 的 `injectWorkContext` 或 **API 线程同步**。
 
@@ -16,12 +16,12 @@
 ```text
 START
   ├─ 空 thread → generateSuggestions（开屏 7 条建议）→ END
-  └─ 有消息 → workflowTurn（解析 turn.queue + fork turn.staging）
+  └─ 有消息 → planTurnQueue（解析 turn.queue + fork turn.staging）
          → dispatchTurnQueue（设置 turn.activeKind）
          → 路由到对话子图（reference / profile / production / ask）
          → advanceTurnQueue（出队 → turn.completedKinds）
          → 队列非空？回到 dispatchTurnQueue
-         → 队列已空？commitTurn → afterCommit
+         → 队列已空？commitTurn → forkPostCommit
               ├─ generateSuggestions（回合末 4 条建议）→ END
               └─ generateTitle（首条 human 时）→ END
 ```
@@ -34,25 +34,25 @@ START
 
 | 角色 | 目录 | 节点 | 职责 |
 |------|------|------|------|
-| 计划者 | `nodes/workflow-turn/` | `workflowTurn` | LLM 解析用户意图 → `turn.queue[]`；有附件时确定性前置 `reference` |
+| 计划者 | `nodes/plan-turn-queue/` | `planTurnQueue` | LLM 解析用户意图 → `turn.queue[]`；有附件时确定性前置 `reference` |
 | 执行者 | `nodes/dispatch-turn-queue/`、`advance-turn-queue/` + 子图 | `dispatchTurnQueue` / `advanceTurnQueue` | 按队列路由并执行子图 |
-| 验收者 | `generate-suggestions/`、`generate-title/` | `commitTurn` → `afterCommit` → 并行建议与标题 | `nextStepSuggestions`、`generatedConversationTitle` |
+| 验收者 | `generate-suggestions/`、`generate-title/` | `commitTurn` → `forkPostCommit` → 并行建议与标题 | `nextStepSuggestions`、`generatedConversationTitle` |
 
-条件边：`state-graph/conditional-edges/`（`opening-or-workflow`、`subgraph-by-turn-kind`、`after-advance-turn-queue`）
+条件边：`state-graph/conditional-edges/`（`at-graph-start`、`after-dispatch-turn-queue`、`after-advance-turn-queue`）
 
 ### 内层子图
 
 **reference**（`subgraphs/reference/`）：`analyzeNewAssets` → `mutateReferences` → `summarizeReferences`。新附件走分析入库；无新附件时走删改参考。
 
-**profile**（`subgraphs/profile/`）：`llmCall` ⇄ `toolNode`（`profile_apply_patch` 批量改方案）。
+**profile**（`subgraphs/profile/`）：`consultProfile` ⇄ `runProfileTools`（`profile_apply_patch` 批量改方案）。
 
-**production**（`subgraphs/production/`）：`resolveContentSpec` → `scheduleProduction` → `llmCall` / `designLlmCall` ⇄ `toolNode` → `generateDraft` / `spawnSpecialist` → `inspectProduction`。
+**production**（`subgraphs/production/`）：`schedulePlan` → `directWriting` / `directDesign` ⇄ `runProductionTools` → `generateDraft` / `spawnSpecialist` → `inspectDeliverable`。
 
-**ask**（`subgraphs/ask/`）：`llmCall` ⇄ `toolNode`（纯答疑）。
+**ask**（`subgraphs/ask/`）：`answerQuestion` ⇄ `runAskTools`（纯答疑）。
 
 ## 队列项类型（TurnQueueKind）
 
-定义于 `packages/domain/src/models/agent/turn.ts`；排序见 `workflow-turn/helpers/sort-turn-queue.ts`：
+定义于 `packages/domain/src/models/agent/turn.ts`；排序见 `plan-turn-queue/helpers/sort-turn-queue.ts`：
 
 | kind | 主图节点 | 行为 |
 |------|----------|------|
@@ -63,7 +63,7 @@ START
 
 排序：`reference` → `profile` → `production` → `ask`。
 
-### reference 入队规则（`workflow-turn`）
+### reference 入队规则（`plan-turn-queue`）
 
 - 无附件：仅当模型判定用户要删/改参考素材时入队 `reference`
 - 有附件且队列已含 `reference`：不重复前置
@@ -99,8 +99,8 @@ START
 
 ## 路由
 
-- `conditional-edges/opening-or-workflow.ts`：START 空 thread → `generateSuggestions`，有消息 → `workflowTurn`
-- `conditional-edges/subgraph-by-turn-kind.ts`：`dispatchTurnQueue` 之后按 `turn.activeKind` 路由
+- `conditional-edges/at-graph-start.ts`：START 空 thread → `generateSuggestions`，有消息 → `planTurnQueue`
+- `conditional-edges/after-dispatch-turn-queue.ts`：`dispatchTurnQueue` 之后按 `turn.activeKind` 路由
 - `conditional-edges/after-advance-turn-queue.ts`：`advanceTurnQueue` 之后继续 `dispatchTurnQueue` 或 `commitTurn`
 
 ## API 线程同步
@@ -113,7 +113,7 @@ LangGraph stream 结束后（`agent-proxy`）：`generateTitle` 写入的 `gener
 
 - `packages/domain/src/models/agent/turn.ts`
 - `packages/domain/src/models/agent/staging.ts`
-- `apps/agent/src/state-graph/nodes/workflow-turn/helpers/sort-turn-queue.ts`
+- `apps/agent/src/state-graph/nodes/plan-turn-queue/helpers/sort-turn-queue.ts`
 - `apps/agent/src/graph.ts`
 - `apps/agent/src/state-io/`
 - `apps/api/src/services/agent-thread-sync.ts`

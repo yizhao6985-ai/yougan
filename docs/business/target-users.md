@@ -58,7 +58,7 @@
 ### 场景 B：有方向但结构不清
 
 1. 跳过部分方案讨论，直接说「开始制作」。
-2. production 子图根据现有方案自动编排制作任务（`scheduleProduction`）。
+2. production 子图根据现有方案自动编排制作任务（`schedulePlan`）。
 3. 用户补充后再次触发制作，产出 preview。
 
 ### 场景 C：成稿后反复改语气

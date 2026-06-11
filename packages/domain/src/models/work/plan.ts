@@ -8,7 +8,7 @@ export const PRODUCTION_DEPARTMENTS: ProductionDepartment[] = [
   "video",
 ];
 
-/** 待执行任务（schedule-production 入队） */
+/** 待执行任务（schedule-plan 入队） */
 export interface ProductionPlanTask {
   id: string;
   description: string;

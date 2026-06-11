@@ -55,12 +55,12 @@ Agent 每条用户消息先经 **回合队列**（`turn.queue`）workflow（见 
 **目标**：根据方案制定内部 `productionPlan`，再按计划产出 `preview`。
 
 - 入口：`production` 队列项
-- 子图：`resolveContentSpec` → `scheduleProduction` → 创作者环（llm/design ⇄ tool）→ `generateDraft` / `spawnSpecialist` → `inspectProduction`
-- 进入制作由 `workflowTurn` 识别用户出稿意图；子图基于现有方案直接执行，不因方案不完整而阻断
+- 子图：`schedulePlan` → 创作者环（writing/design ⇄ tool）→ `generateDraft` / `spawnSpecialist` → `inspectDeliverable`
+- 进入制作由 `planTurnQueue` 识别用户出稿意图；子图基于现有方案直接执行，不因方案不完整而阻断
 
 ## 阶段四：提问（ask）
 
-答疑与咨询；用户明确要求「记入方案」时由 `workflowTurn` 路由到 `profile`，**不**直接改 `preview` / `productionPlan`。
+答疑与咨询；用户明确要求「记入方案」时由 `planTurnQueue` 路由到 `profile`，**不**直接改 `preview` / `productionPlan`。
 
 ## 聊天 vs 侧栏（选型）
 

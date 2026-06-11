@@ -35,7 +35,7 @@ yougan/
 中间层 (apps/api :4000) — JWT、作品元数据、上传、LangGraph 代理
   ├─→ Postgres API (:5432) — 用户、作品、发布、订阅（Prisma）
   ├─→ Redis (:6379) — 可选缓存（未配置则直连 DB）
-  └─→ Agent (apps/agent :2024) — yougan graph（workflowTurn → 对话子图）
+  └─→ Agent (apps/agent :2024) — yougan graph（planTurnQueue → 对话子图）
         └─→ Postgres Agent (:5433) — LangGraph checkpoint / 会话状态
 ```
 

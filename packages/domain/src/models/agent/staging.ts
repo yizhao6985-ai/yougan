@@ -21,7 +21,7 @@ export interface ProductionStagingMeta {
   lastInspectFeedback?: string | null;
   /** 工具产出后置 true，inspect 消费后清除 */
   pendingInspect?: boolean;
-  /** 重试时回到的管线：writing → llmCall，design → designLlmCall */
+  /** 重试时回到的管线：writing → directWriting，design → directDesign */
   inspectPipeline?: "writing" | "design" | null;
   /** generate_draft tool 请求后由 work node 消费 */
   pendingGenerateDraft?: boolean;

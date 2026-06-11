@@ -31,7 +31,7 @@
 
 ```text
 用户发消息 → LangGraph run（注入 Work 物化列）
-         → workflowTurn → 各对话子图（见 agent-turn-queue.md）
+         → planTurnQueue → 各对话子图（见 agent-turn-queue.md）
          → stream 结束 → applyAgentRunToWork
          → 若 preview 变更：append WorkVersion
          → 若仅 profile / references / productionPlan 等变更：只更新物化列

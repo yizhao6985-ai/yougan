@@ -2,7 +2,7 @@ import type { TurnStaging } from "./staging.js";
 
 /**
  * 单轮用户消息解析出的有序子图队列（FIFO）。
- * workflowTurn 产出 kinds；带附件时系统会自动前置 reference 分析新素材；无附件时删/改参考由模型输出 reference。
+ * planTurnQueue 产出 kinds；带附件时系统会自动前置 reference 分析新素材；无附件时删/改参考由模型输出 reference。
  */
 export const TURN_QUEUE_KINDS = [
   "reference",
