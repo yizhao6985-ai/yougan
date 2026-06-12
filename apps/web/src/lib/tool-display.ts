@@ -20,10 +20,9 @@ export const TOOL_LABELS: Record<string, string> = {
   replace_profile_guardrails: "替换创作规则",
   clear_profile_guardrails: "清空创作规则",
   add_plan_task: "添加制作任务",
-  complete_execution: "完成执行",
+  execute_task: "执行任务",
   generate_preview: "AI 团队制作",
   generate_design: "AI 团队绘画",
-  spawn_specialist: "调度专员",
   revise_production_plan: "调整制作计划",
   tavily_search: "联网搜索",
 };
@@ -115,12 +114,10 @@ export function getToolInputSummary(
     }
     case "add_plan_task":
       return readString(toolInput.description);
-    case "spawn_specialist":
-      return readString(toolInput.brief) || readString(toolInput.department);
     case "revise_production_plan":
       return readString(toolInput.reason);
-    case "complete_execution":
-      return readString(toolInput.summary);
+    case "execute_task":
+      return "按任务逐项执行";
     case "tavily_search":
       return readString(toolInput.query);
     case "generate_preview":

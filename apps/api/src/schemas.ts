@@ -76,11 +76,10 @@ export const WorkProfileSchema = z
   .object({
     delivery: z.object({
       topic: z.string(),
-      format: z.string(),
+      format: z.string().nullable(),
       modalities: z.array(z.string()),
       platform: z.string().nullable().optional(),
       category: z.string().nullable().optional(),
-      intent: z.string().nullable().optional(),
     }),
     expression: z.object({
       audience: z.string().nullable().optional(),
@@ -132,38 +131,6 @@ export const WorkProfileSchema = z
   })
   .openapi("WorkProfile");
 
-export const WorkProductionPlanSchema = z
-  .object({
-    pending_tasks: z.array(
-      z.object({
-        id: z.string(),
-        description: z.string(),
-        created_at: z.string(),
-        department: z.enum(["writing", "design", "audio", "video"]).optional(),
-        status: z.enum(["pending", "in_progress", "completed"]).optional(),
-        assignee: z.string().nullable().optional(),
-      }),
-    ),
-    executed_tasks: z.array(
-      z.object({
-        id: z.string(),
-        description: z.string(),
-        executed_at: z.string(),
-        batch_summary: z.string().nullable().optional(),
-        department: z.enum(["writing", "design", "audio", "video"]).optional(),
-        assignee: z.string().nullable().optional(),
-      }),
-    ),
-    last_execution_summary: z.string().nullable().optional(),
-    summary: z.string().nullable().optional(),
-    departments: z
-      .array(z.enum(["writing", "design", "audio", "video"]))
-      .optional(),
-    industry_context: z.string().nullable().optional(),
-    director_notes: z.string().nullable().optional(),
-  })
-  .openapi("WorkProductionPlan");
-
 export const WorkPreviewSchema = z
   .object({
     platform: z.string(),
@@ -184,12 +151,42 @@ export const WorkPreviewSchema = z
   })
   .openapi("WorkPreview");
 
+export const WorkProductionSchema = z
+  .object({
+    pending_tasks: z.array(
+      z.object({
+        id: z.string(),
+        description: z.string(),
+        created_at: z.string(),
+        department: z.enum(["writing", "design", "audio", "video"]).optional(),
+        status: z
+          .enum(["pending", "in_progress", "ready", "failed"])
+          .optional(),
+        direction: z.string().nullable().optional(),
+        acceptance_criteria: z.string().nullable().optional(),
+        feedback: z.string().nullable().optional(),
+        deliverable: z
+          .object({
+            body: z.string(),
+            title: z.string().nullable().optional(),
+            notes: z.string().nullable().optional(),
+          })
+          .nullable()
+          .optional(),
+        accept_retry_count: z.number().optional(),
+        failure_message: z.string().nullable().optional(),
+      }),
+    ),
+    summary: z.string().nullable().optional(),
+    preview: WorkPreviewSchema.nullable(),
+  })
+  .openapi("WorkProduction");
+
 export const WorkVersionSnapshotSchema = z
   .object({
     profile: WorkProfileSchema,
     references: WorkReferencesSchema,
-    productionPlan: WorkProductionPlanSchema,
-    preview: WorkPreviewSchema.nullable(),
+    production: WorkProductionSchema,
   })
   .openapi("WorkVersionSnapshot");
 
@@ -221,8 +218,7 @@ export const WorkSchema = z
     groupId: z.string().nullable(),
     profile: WorkProfileSchema,
     references: WorkReferencesSchema,
-    productionPlan: WorkProductionPlanSchema,
-    preview: WorkPreviewSchema.nullable(),
+    production: WorkProductionSchema,
     headVersionId: z.string().nullable(),
     sourceWorkId: z.string().nullable(),
     sourceVersionId: z.string().nullable(),
@@ -274,8 +270,7 @@ export const SyncWorkStateSchema = z
     groupId: z.string().nullable().optional(),
     profile: WorkProfileSchema.optional(),
     references: WorkReferencesSchema.optional(),
-    productionPlan: WorkProductionPlanSchema.optional(),
-    preview: WorkPreviewSchema.nullable().optional(),
+    production: WorkProductionSchema.optional(),
     title: z.string().optional(),
   })
   .openapi("SyncWorkState");
@@ -294,8 +289,7 @@ export const AgentContextSchema = z
     headVersionId: z.string().nullable().optional(),
     profile: WorkProfileSchema,
     references: WorkReferencesSchema,
-    productionPlan: WorkProductionPlanSchema,
-    preview: WorkPreviewSchema.nullable(),
+    production: WorkProductionSchema,
     threadId: z.string().nullable().optional(),
     workTitle: z.string().optional(),
     conversationTitle: z.string().optional(),

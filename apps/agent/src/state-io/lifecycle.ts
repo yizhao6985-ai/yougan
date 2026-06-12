@@ -2,9 +2,10 @@
  * turn 工作区生命周期：fork、提交、回滚、归一化。
  */
 import {
+  committedProduction,
   EMPTY_TURN_RUNTIME,
   EMPTY_WORK_PROFILE,
-  EMPTY_WORK_PRODUCTION_PLAN,
+  EMPTY_WORK_PRODUCTION,
   EMPTY_WORK_REFERENCES,
   mergeTurnRuntime,
   type TurnQueueKind,
@@ -23,14 +24,7 @@ export function requirePending(state: AgentStateType): TurnStaging {
   return {
     profile: structuredClone(state.profile ?? EMPTY_WORK_PROFILE),
     references: structuredClone(state.references ?? [...EMPTY_WORK_REFERENCES]),
-    productionPlan: structuredClone(
-      state.productionPlan ?? EMPTY_WORK_PRODUCTION_PLAN,
-    ),
-    preview: state.preview ? structuredClone(state.preview) : null,
-    meta: {
-      outcome: "pending",
-      production: {},
-    },
+    production: structuredClone(state.production ?? EMPTY_WORK_PRODUCTION),
   };
 }
 
@@ -43,33 +37,20 @@ export function initPendingTurn(
   return {
     profile: structuredClone(state.profile ?? EMPTY_WORK_PROFILE),
     references: structuredClone(state.references ?? [...EMPTY_WORK_REFERENCES]),
-    productionPlan: structuredClone(
-      state.productionPlan ?? EMPTY_WORK_PRODUCTION_PLAN,
-    ),
-    preview: state.preview ? structuredClone(state.preview) : null,
-    meta: {
-      outcome: "pending",
-      production: {},
-    },
+    production: structuredClone(state.production ?? EMPTY_WORK_PRODUCTION),
   };
 }
 
 /** turn.staging → state 顶层作品字段 */
 export function commitPending(
   state: AgentStateType,
-): Partial<
-  Pick<
-    AgentStateType,
-    "profile" | "references" | "productionPlan" | "preview"
-  >
-> {
+): Partial<Pick<AgentStateType, "profile" | "references" | "production">> {
   const staging = getTurn(state).staging;
   if (!staging) return {};
   return {
     profile: staging.profile,
     references: staging.references,
-    productionPlan: staging.productionPlan,
-    preview: staging.preview,
+    production: committedProduction(staging.production),
   };
 }
 

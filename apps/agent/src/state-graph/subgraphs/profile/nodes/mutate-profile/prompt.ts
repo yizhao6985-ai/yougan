@@ -17,6 +17,8 @@ import { getLatestHumanMessageText } from "#agent/messages/human.js";
 import { getProfile } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 
+import { deliveryTaxonomyPrompt } from "../run-profile-tools/tools/schemas.js";
+
 function buildMutateProfileActionPrompt(profile: WorkProfile, userMessage: string): string {
   const summary = profile.blueprint.summary.trim() || "（尚无）";
 
@@ -28,6 +30,13 @@ function buildMutateProfileActionPrompt(profile: WorkProfile, userMessage: strin
 - 创作设定（settings）：背景、对象、关键要素等**固定**信息
 - 结构段（segments）：内容走向、段落节拍、分镜顺序
 - 不要把对象/背景写进 segments；不要把结构大纲写进 settings
+
+**交付规格（update_profile_delivery）与内容定位（update_profile_summary）**
+- 感友描述创作意图时：delivery 写 topic、format、modalities（及 platform/category 若可判断）；summary 写一句话内容定位（归纳创作方向与要求）
+- topic 是短题眼；summary 是完整定位句；二者勿重复堆砌
+- 当前 delivery 缺 format 或 modalities 时，只要消息含体裁/形式线索就必须补齐
+
+${deliveryTaxonomyPrompt}
 
 **工具原则**
 - 每个工具只做一件事；多种变更可一轮多次 tool_call

@@ -1,7 +1,7 @@
 import { Prisma, type Work } from "../db.js";
 import {
   EMPTY_WORK_PROFILE,
-  EMPTY_WORK_PRODUCTION_PLAN,
+  EMPTY_WORK_PRODUCTION,
   EMPTY_WORK_REFERENCES,
   normalizeWorkDto,
   resolveProfileFromWork,
@@ -18,8 +18,7 @@ import {
 } from "./work-versions.js";
 import {
   materializeWorkColumns,
-  parsePreview,
-  parseProductionPlanJson as parsePlan,
+  parseProduction,
   parseProfileJson,
 } from "./versions.js";
 import {
@@ -38,8 +37,7 @@ function toWorkDTO(work: Work): WorkDTO {
       references: (work as Work & { references?: unknown }).references,
       profile: work.profile,
     }),
-    productionPlan: parsePlan(work.productionPlan),
-    preview: parsePreview(work.preview),
+    production: parseProduction(work.production),
     headVersionId: work.headVersionId,
     sourceWorkId: work.sourceWorkId,
     sourceVersionId: work.sourceVersionId,
@@ -76,7 +74,7 @@ export async function createWork(
         title: title?.trim() || "未命名作品",
         profile: EMPTY_WORK_PROFILE as unknown as Prisma.InputJsonValue,
         references: EMPTY_WORK_REFERENCES as unknown as Prisma.InputJsonValue,
-        productionPlan: EMPTY_WORK_PRODUCTION_PLAN as unknown as Prisma.InputJsonValue,
+        production: EMPTY_WORK_PRODUCTION as unknown as Prisma.InputJsonValue,
       },
     });
 
@@ -124,8 +122,7 @@ export async function updateWork(
     groupId: string | null;
     profile: unknown;
     references: unknown;
-    productionPlan: unknown;
-    preview: unknown | null;
+    production: unknown;
   }>,
   options?: { conversationId?: string },
 ) {
@@ -157,14 +154,10 @@ export async function updateWork(
       references: data.references,
     }) as unknown as Prisma.InputJsonValue;
   }
-  if (data.productionPlan !== undefined) {
-    updateData.productionPlan = data.productionPlan as Prisma.InputJsonValue;
-  }
-  if (data.preview !== undefined) {
-    updateData.preview =
-      data.preview === null
-        ? Prisma.JsonNull
-        : (data.preview as Prisma.InputJsonValue);
+  if (data.production !== undefined) {
+    updateData.production = parseProduction(
+      data.production,
+    ) as unknown as Prisma.InputJsonValue;
   }
 
   const work = await prisma.work.update({
@@ -177,8 +170,10 @@ export async function updateWork(
   if (hasMaterializedAgentFields(agentFields)) {
     const syncFields: typeof agentFields = {};
     if (agentFields.profile !== undefined) syncFields.profile = dto.profile;
-    if (agentFields.references !== undefined) syncFields.references = dto.references;
-    if (agentFields.preview !== undefined) syncFields.preview = dto.preview;
+    if (agentFields.references !== undefined)
+      syncFields.references = dto.references;
+    if (agentFields.production !== undefined)
+      syncFields.production = dto.production;
     await syncMaterializedStateToAgentThreads(workId, syncFields, {
       conversationId: options?.conversationId,
     });
@@ -227,8 +222,7 @@ export async function getAgentContext(
     headVersionId: work.headVersionId,
     profile: dto.profile,
     references: dto.references,
-    productionPlan: dto.productionPlan,
-    preview: dto.preview,
+    production: dto.production,
     threadId,
     workTitle: work.title,
     conversationTitle,

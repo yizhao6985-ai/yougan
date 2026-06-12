@@ -6,8 +6,7 @@ import {
   emptySnapshot,
   hasValidPreview,
   materializeWorkColumns,
-  parsePreview,
-  parseProductionPlanJson as parsePlan,
+  parseProduction,
   parseProfileJson,
   parseSnapshot,
   previewVersionSummary,
@@ -21,8 +20,7 @@ import {
 function snapshotFromWorkColumns(work: {
   profile: unknown;
   references?: unknown;
-  productionPlan: unknown;
-  preview: unknown;
+  production: unknown;
 }): WorkVersionSnapshot {
   return {
     profile: resolveProfileFromWork({ profile: work.profile }),
@@ -30,8 +28,7 @@ function snapshotFromWorkColumns(work: {
       references: work.references,
       profile: work.profile,
     }),
-    productionPlan: parsePlan(work.productionPlan),
-    preview: parsePreview(work.preview),
+    production: parseProduction(work.production),
   };
 }
 
@@ -48,10 +45,7 @@ async function updateWorkMaterializedState(
   const columns = materializeWorkColumns(snapshot);
   await prisma.work.update({
     where: { id: workId },
-    data: {
-      ...columns,
-      preview: columns.preview ?? undefined,
-    },
+    data: columns,
   });
 }
 
@@ -85,7 +79,6 @@ export async function appendWorkVersion(input: {
       where: { id: input.workId },
       data: {
         ...columns,
-        preview: columns.preview ?? undefined,
         headVersionId: created.id,
       },
     });
@@ -157,7 +150,6 @@ export async function restoreWorkToVersion(
     where: { id: workId },
     data: {
       ...columns,
-      preview: columns.preview ?? undefined,
       headVersionId: version.id,
     },
   });
@@ -280,8 +272,7 @@ export async function duplicateWorkFromVersion(
         sourceVersionId,
         profile: columns.profile as object,
         references: columns.references as object,
-        productionPlan: columns.productionPlan as object,
-        preview: columns.preview ?? undefined,
+        production: columns.production as object,
       },
     });
 

@@ -1,4 +1,4 @@
-/** 制作部门职责说明（用于编排与专员 spawn） */
+/** 制作部门职责说明（用于 planProduction 编排） */
 import type { ProductionDepartment } from "@yougan/domain";
 
 const DEPARTMENT_BRIEF: Record<ProductionDepartment, string> = {
@@ -9,10 +9,20 @@ const DEPARTMENT_BRIEF: Record<ProductionDepartment, string> = {
   video: "视频部：负责分镜脚本、口播、字幕与剪辑节奏建议。",
 };
 
-export function departmentsBrief(departments: ProductionDepartment[]): string {
-  return departments.map((d) => DEPARTMENT_BRIEF[d]).join("\n");
+export function departmentsFromTasks(
+  tasks: Array<{ department?: ProductionDepartment }>,
+): ProductionDepartment[] {
+  const seen = new Set<ProductionDepartment>();
+  const result: ProductionDepartment[] = [];
+  for (const task of tasks) {
+    const dept = task.department ?? "writing";
+    if (seen.has(dept)) continue;
+    seen.add(dept);
+    result.push(dept);
+  }
+  return result;
 }
 
-export function departmentBrief(department: ProductionDepartment): string {
-  return DEPARTMENT_BRIEF[department];
+export function departmentsBrief(departments: ProductionDepartment[]): string {
+  return departments.map((d) => DEPARTMENT_BRIEF[d]).join("\n");
 }

@@ -44,7 +44,7 @@ START
 
 **profile**（`subgraphs/profile/`）：`consultProfile` ⇄ `runProfileTools`（`profile_apply_patch` 批量改方案）。
 
-**production**（`subgraphs/production/`）：`schedulePlan` → `directWriting` / `directDesign` ⇄ `runProductionTools` → `generateDraft` / `spawnSpecialist` → `inspectDeliverable`。
+**production**（`subgraphs/production/`，详见 `README.md`）：`planProduction` → `dispatchTask` → `executeWriting` / `executeDesign` → `acceptTask` → `routeProduction` →（`dispatchTask`、`assemblePreview`、计划为空或验收 3 次失败时直达 `summarizeProduction`）→ `summarizeProduction`。任务在 `Work.production.pending_tasks`（`in_progress` 为当前任务）；验收未通过带 `feedback` 自动重产，达上限标 `failed`。
 
 **ask**（`subgraphs/ask/`）：`answerQuestion` ⇄ `runAskTools`（纯答疑）。
 
@@ -68,6 +68,12 @@ START
 - 有附件且纯 `ask`：不前置（纯讨论不入库）
 - 有附件且非纯 `ask`：确定性前置 `reference`，供 `analyze-new-assets` 分析
 
+### production 入队规则（`plan-turn-queue`）
+
+- **仅**当用户明确要求出稿、开写、改稿/预览交付物时，模型才输出 `production`
+- 讨论方案、描述创作方向、补充约束、聊选题 → `profile`（即使 `has_preview=true`）
+- 不确定是否该出稿 → 只输出 `profile`，禁止因已有成稿而默认 `production`
+
 ## 运行时 state 字段
 
 ### `turn`（单轮执行，`TurnRuntime`）
@@ -88,7 +94,7 @@ START
 |------|------|
 | `profile` | 作品创作方案 |
 | `references` | 参考素材 |
-| `productionPlan` | 内部制作计划（不对用户主展示） |
+| `production` | 制作聚合（`pending_tasks`、`summary`、`preview`；不对用户主展示计划细节） |
 | `preview` | 作品预览（标题、正文等） |
 | `nextStepSuggestions` | 开屏或回合末生成的下一步建议（不入库） |
 | `generatedConversationTitle` | 首条用户消息后的对话标题建议 |

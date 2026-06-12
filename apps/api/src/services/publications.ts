@@ -380,7 +380,7 @@ export async function previewPublicationMetadata(
   const work = await getWork(userId, workId);
   if (!work) return null;
 
-  const preview = work.preview as OutputLike | null;
+  const preview = work.production.preview as OutputLike | null;
   if (!preview?.body?.trim()) {
     throw new Error("WORK_OUTPUT_EMPTY");
   }
@@ -405,7 +405,7 @@ export async function createPublicationFromWork(
   const work = await getWork(userId, input.workId);
   if (!work) return null;
 
-  const preview = work.preview as OutputLike | null;
+  const preview = work.production.preview as OutputLike | null;
   if (!preview?.body?.trim()) {
     throw new Error("WORK_OUTPUT_EMPTY");
   }

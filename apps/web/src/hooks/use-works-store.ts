@@ -133,7 +133,7 @@ export function useWorksStore() {
       const patch: Partial<Work> = {};
       if (values.profile !== undefined) patch.profile = values.profile;
       if (values.references !== undefined) patch.references = values.references;
-      if (values.preview !== undefined) patch.preview = values.preview;
+      if (values.production !== undefined) patch.production = values.production;
       if (!Object.keys(patch).length) return;
 
       patchWorksCache(queryClient, (works) =>

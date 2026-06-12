@@ -18,7 +18,7 @@ import {
 
 export const updateProfileDelivery = createProfileTool({
   name: "update_profile_delivery",
-  description: "更新交付规格（主题、体裁、媒介、平台、分类、用户原话）。",
+  description: "更新交付规格（主题、体裁、媒介、平台、分类）。",
   schema: deliveryFieldsSchema,
   toPatch: (input) => ({ delivery: buildDeliveryPatch(input) }),
   emptyMessage: "未提供可更新的交付规格字段。",

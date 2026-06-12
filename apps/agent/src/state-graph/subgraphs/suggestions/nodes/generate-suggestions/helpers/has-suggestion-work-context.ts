@@ -3,7 +3,7 @@ import { profileSummary } from "#agent/prompts/profile-summary.js";
 import type { AgentStateType } from "#agent/state.js";
 
 export function hasSuggestionWorkContext(state: AgentStateType): boolean {
-  if (state.preview?.body?.trim()) return true;
+  if (state.production?.preview?.body?.trim()) return true;
 
   const profile = state.profile;
   if (profile && profileSummary(profile) !== "尚无作品方案") return true;

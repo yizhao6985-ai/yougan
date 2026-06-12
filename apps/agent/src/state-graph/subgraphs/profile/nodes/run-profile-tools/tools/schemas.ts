@@ -1,7 +1,39 @@
-import type { FormatParams, WorkProfile } from "@yougan/domain";
+import {
+  CONTENT_FORMATS,
+  DISCOVER_PLATFORMS,
+  DISCOVER_TOPIC_CATEGORIES,
+  MEDIA_MODALITIES,
+  type FormatParams,
+  type WorkProfile,
+} from "@yougan/domain";
 import { z } from "zod";
 
 import type { ProfilePatch } from "../../mutate-profile/helpers/apply-profile-patch.js";
+
+const CONTENT_FORMAT_IDS = CONTENT_FORMATS.map((item) => item.id) as [
+  (typeof CONTENT_FORMATS)[number]["id"],
+  ...(typeof CONTENT_FORMATS)[number]["id"][],
+];
+const MEDIA_MODALITY_IDS = MEDIA_MODALITIES.map((item) => item.id) as [
+  (typeof MEDIA_MODALITIES)[number]["id"],
+  ...(typeof MEDIA_MODALITIES)[number]["id"][],
+];
+const PLATFORM_IDS = DISCOVER_PLATFORMS.map((item) => item.id) as [
+  (typeof DISCOVER_PLATFORMS)[number]["id"],
+  ...(typeof DISCOVER_PLATFORMS)[number]["id"][],
+];
+const TOPIC_CATEGORY_IDS = DISCOVER_TOPIC_CATEGORIES.map((item) => item.id) as [
+  (typeof DISCOVER_TOPIC_CATEGORIES)[number]["id"],
+  ...(typeof DISCOVER_TOPIC_CATEGORIES)[number]["id"][],
+];
+
+export const deliveryTaxonomyPrompt = [
+  "交付规格 taxonomy（update_profile_delivery 须用 id，勿用中文标签）：",
+  `体裁 format：${CONTENT_FORMATS.map((item) => `${item.id}=${item.label}`).join("、")}`,
+  `媒介 modalities：${MEDIA_MODALITIES.map((item) => `${item.id}=${item.label}`).join("、")}（可组合，如 ["text","image"]）`,
+  `平台 platform：${DISCOVER_PLATFORMS.map((item) => item.id).join("、")}`,
+  `分类 category：${DISCOVER_TOPIC_CATEGORIES.map((item) => `${item.id}=${item.label}`).join("、")}`,
+].join("\n");
 
 export const segmentInputSchema = z.object({
   description: z.string().min(1),
@@ -27,12 +59,25 @@ export const settingInputSchema = z.object({
 });
 
 export const deliveryFieldsSchema = z.object({
-  topic: z.string().optional().describe("创作主题"),
-  format: z.string().optional().describe("体裁形式，如 note、article"),
-  modalities: z.array(z.string()).optional().describe("媒介组合"),
-  platform: z.string().nullable().optional().describe("发布渠道"),
-  category: z.string().nullable().optional().describe("内容分类"),
-  intent: z.string().nullable().optional().describe("感友原话或创作意图摘要"),
+  topic: z.string().optional().describe("创作主题（一句话题眼）"),
+  format: z
+    .enum(CONTENT_FORMAT_IDS)
+    .optional()
+    .describe("体裁 id，须从 taxonomy 选取"),
+  modalities: z
+    .array(z.enum(MEDIA_MODALITY_IDS))
+    .optional()
+    .describe("媒介组合 id 数组"),
+  platform: z
+    .enum(PLATFORM_IDS)
+    .nullable()
+    .optional()
+    .describe("目标发布平台 id"),
+  category: z
+    .enum(TOPIC_CATEGORY_IDS)
+    .nullable()
+    .optional()
+    .describe("内容分类 id"),
 });
 
 export const expressionFieldsSchema = z.object({

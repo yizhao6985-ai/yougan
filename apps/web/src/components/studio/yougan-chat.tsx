@@ -22,7 +22,7 @@ import { useYouganStreamContext } from "@/components/studio/yougan-stream-provid
 import { useWorkItemNameDialog } from "@/hooks/use-work-item-name-dialog";
 import { WorksCreateMenu } from "@/components/studio/works-create-menu";
 import { HumanMessageAttachments } from "@/components/studio/human-message-attachments";
-import { buildRenderItems } from "@/lib/message-utils";
+import { buildRenderItems, mergeChatMessages } from "@/lib/message-utils";
 import { scene } from "@/lib/scene-styles";
 import { cn } from "@/lib/utils";
 import { CHAT_COPY, STUDIO } from "@/lib/site-copy";
@@ -55,14 +55,19 @@ export function YouganChat() {
   const interruptedMessageIds =
     streamValues?.turn?.interruptedMessageIds ?? [];
 
+  const chatMessages = useMemo(
+    () => mergeChatMessages(stream.messages, streamValues?.messages),
+    [stream.messages, streamValues?.messages],
+  );
+
   const items = useMemo(
     () =>
       buildRenderItems(
-        stream.messages,
+        chatMessages,
         stream.isLoading,
         interruptedMessageIds,
       ),
-    [stream.messages, stream.isLoading, interruptedMessageIds],
+    [chatMessages, stream.isLoading, interruptedMessageIds],
   );
 
   const { activeSuggestions } = useTurnNextStepSuggestions({

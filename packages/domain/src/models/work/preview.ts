@@ -7,7 +7,7 @@ export interface WorkPreviewImage {
 
 /**
  * 作品预览（制作子图交付物）。
- * 对应 Work.preview；产出后可生成 WorkVersion（phase=preview）。
+ * 嵌套于 Work.production.preview；产出后可生成 WorkVersion（kind=preview）。
  */
 export interface WorkPreview {
   platform: string;

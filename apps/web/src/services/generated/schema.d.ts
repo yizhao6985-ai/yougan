@@ -1116,11 +1116,10 @@ export interface components {
         WorkProfile: {
             delivery: {
                 topic: string;
-                format: string;
+                format: string | null;
                 modalities: string[];
                 platform?: string | null;
                 category?: string | null;
-                intent?: string | null;
             };
             expression: {
                 audience?: string | null;
@@ -1214,32 +1213,6 @@ export interface components {
             created_at: string;
         };
         WorkReferences: components["schemas"]["WorkReference"][];
-        WorkProductionPlan: {
-            pending_tasks: {
-                id: string;
-                description: string;
-                created_at: string;
-                /** @enum {string} */
-                department?: "writing" | "design" | "audio" | "video";
-                /** @enum {string} */
-                status?: "pending" | "in_progress" | "completed";
-                assignee?: string | null;
-            }[];
-            executed_tasks: {
-                id: string;
-                description: string;
-                executed_at: string;
-                batch_summary?: string | null;
-                /** @enum {string} */
-                department?: "writing" | "design" | "audio" | "video";
-                assignee?: string | null;
-            }[];
-            last_execution_summary?: string | null;
-            summary?: string | null;
-            departments?: ("writing" | "design" | "audio" | "video")[];
-            industry_context?: string | null;
-            director_notes?: string | null;
-        };
         WorkPreview: {
             platform: string;
             title?: string | null;
@@ -1254,14 +1227,36 @@ export interface components {
                 prompt?: string | null;
             }[];
         } | null;
+        WorkProduction: {
+            pending_tasks: {
+                id: string;
+                description: string;
+                created_at: string;
+                /** @enum {string} */
+                department?: "writing" | "design" | "audio" | "video";
+                /** @enum {string} */
+                status?: "pending" | "in_progress" | "ready" | "failed";
+                direction?: string | null;
+                acceptance_criteria?: string | null;
+                feedback?: string | null;
+                deliverable?: {
+                    body: string;
+                    title?: string | null;
+                    notes?: string | null;
+                } | null;
+                accept_retry_count?: number;
+                failure_message?: string | null;
+            }[];
+            summary?: string | null;
+            preview: components["schemas"]["WorkPreview"];
+        };
         Work: {
             id: string;
             title: string;
             groupId: string | null;
             profile: components["schemas"]["WorkProfile"];
             references: components["schemas"]["WorkReferences"];
-            productionPlan: components["schemas"]["WorkProductionPlan"];
-            preview: components["schemas"]["WorkPreview"];
+            production: components["schemas"]["WorkProduction"];
             headVersionId: string | null;
             sourceWorkId: string | null;
             sourceVersionId: string | null;
@@ -1272,8 +1267,7 @@ export interface components {
             groupId?: string | null;
             profile?: components["schemas"]["WorkProfile"];
             references?: components["schemas"]["WorkReferences"];
-            productionPlan?: components["schemas"]["WorkProductionPlan"];
-            preview?: components["schemas"]["WorkPreview"];
+            production?: components["schemas"]["WorkProduction"];
             title?: string;
         };
         AgentContext: {
@@ -1282,8 +1276,7 @@ export interface components {
             headVersionId?: string | null;
             profile: components["schemas"]["WorkProfile"];
             references: components["schemas"]["WorkReferences"];
-            productionPlan: components["schemas"]["WorkProductionPlan"];
-            preview: components["schemas"]["WorkPreview"];
+            production: components["schemas"]["WorkProduction"];
             threadId?: string | null;
             workTitle?: string;
             conversationTitle?: string;
@@ -1291,8 +1284,7 @@ export interface components {
         WorkVersionSnapshot: {
             profile: components["schemas"]["WorkProfile"];
             references: components["schemas"]["WorkReferences"];
-            productionPlan: components["schemas"]["WorkProductionPlan"];
-            preview: components["schemas"]["WorkPreview"];
+            production: components["schemas"]["WorkProduction"];
         };
         WorkVersion: {
             id: string;

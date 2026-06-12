@@ -17,10 +17,10 @@ export function patchDelivery(
   delivery: Partial<ProfileDelivery>,
 ): WorkProfile {
   const base = profile ?? EMPTY_WORK_PROFILE;
-  const nextFormat = delivery.format ?? base.delivery.format;
   const params =
-    delivery.format && delivery.format !== base.delivery.format
-      ? defaultParamsForFormat(nextFormat)
+    delivery.format != null &&
+    delivery.format !== base.delivery.format
+      ? defaultParamsForFormat(delivery.format)
       : base.params;
 
   return {

@@ -1,9 +1,11 @@
 export {
   parseReferencesJson as parseReferences,
   parseProfileJson,
-  parseProductionPlanJson,
-  parseProductionPlanJson as parsePlan,
+  parseProductionJson,
+  parseProductionJson as parseProduction,
   parseReferencesJson,
+  parseWorkPreview,
+  parseWorkPreview as parsePreview,
   resolveProfileFromWork,
   resolveReferencesFromWork,
 } from "@yougan/domain";
@@ -12,8 +14,6 @@ export {
   emptySnapshot,
   hasValidPreview,
   materializeWorkColumns,
-  parseWorkPreview,
-  parseWorkPreview as parsePreview,
   parseSnapshot,
   previewVersionSummary,
   shouldAppendPreviewVersion,

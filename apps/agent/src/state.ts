@@ -1,7 +1,7 @@
 /**
  * LangGraph 运行时状态定义。
  *
- * - **state 顶层**（profile / references / productionPlan / preview）：turn.committed 后落库
+ * - **state 顶层**（profile / references / production）：turn.committed 后落库
  * - **turn**：单轮执行运行时（调度、staging、取消）
  */
 import {
@@ -12,7 +12,7 @@ import {
 import type { BaseMessage } from "@langchain/core/messages";
 import {
   EMPTY_WORK_PROFILE,
-  EMPTY_WORK_PRODUCTION_PLAN,
+  EMPTY_WORK_PRODUCTION,
   EMPTY_WORK_REFERENCES,
   EMPTY_TURN_RUNTIME,
   mergeProfileState,
@@ -20,8 +20,7 @@ import {
   mergeTurnRuntime,
   type NextStepSuggestions,
   type TurnRuntime,
-  type WorkPreview,
-  type WorkProductionPlan,
+  type WorkProduction,
   type WorkProfile,
   type WorkReference,
 } from "@yougan/domain";
@@ -65,19 +64,11 @@ export const AgentState = Annotation.Root({
     },
     default: () => [...EMPTY_WORK_REFERENCES],
   }),
-  /** state 顶层：已提交制作计划 */
-  productionPlan: Annotation<WorkProductionPlan>({
-    reducer: (prev: WorkProductionPlan, next: WorkProductionPlan | undefined) =>
-      next ?? EMPTY_WORK_PRODUCTION_PLAN,
-    default: () => EMPTY_WORK_PRODUCTION_PLAN,
-  }),
-  /** state 顶层：已提交作品预览 */
-  preview: Annotation<WorkPreview | null>({
-    reducer: (
-      prev: WorkPreview | null,
-      next: WorkPreview | null | undefined,
-    ) => (next === undefined ? null : next),
-    default: () => null,
+  /** state 顶层：制作环节（计划 + 预览） */
+  production: Annotation<WorkProduction>({
+    reducer: (prev: WorkProduction, next: WorkProduction | undefined) =>
+      next ?? EMPTY_WORK_PRODUCTION,
+    default: () => EMPTY_WORK_PRODUCTION,
   }),
   /** suggestions 子图每轮写入的下一步建议（运行时字段，不入库） */
   nextStepSuggestions: Annotation<NextStepSuggestions | null>({
@@ -89,6 +80,12 @@ export const AgentState = Annotation.Root({
   }),
   /** 首条用户消息后生成的对话标题建议 */
   generatedConversationTitle: Annotation<string | null>({
+    reducer: (prev: string | null, next: string | null | undefined) =>
+      next === undefined ? (prev ?? null) : next,
+    default: () => null,
+  }),
+  /** 对话历史滚动摘要（checkpoint 内压缩更早 messages，供后续 LLM 注入） */
+  conversationSummary: Annotation<string | null>({
     reducer: (prev: string | null, next: string | null | undefined) =>
       next === undefined ? (prev ?? null) : next,
     default: () => null,

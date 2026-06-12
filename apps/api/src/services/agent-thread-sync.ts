@@ -1,9 +1,17 @@
 import { Client } from "@langchain/langgraph-sdk";
-import type { WorkPreview, WorkProfile, WorkReference } from "@yougan/domain";
+import type {
+  WorkProduction,
+  WorkProfile,
+  WorkReference,
+} from "@yougan/domain";
 
 import { env } from "../env.js";
 import { prisma } from "../db.js";
-import { parsePreview, parseProfileJson, parseReferencesJson } from "./versions.js";
+import {
+  parseProduction,
+  parseProfileJson,
+  parseReferencesJson,
+} from "./versions.js";
 
 let client: Client | null = null;
 
@@ -15,7 +23,7 @@ function getLangGraphClient() {
 export type MaterializedAgentFields = {
   profile?: WorkProfile;
   references?: WorkReference[];
-  preview?: WorkPreview | null;
+  production?: WorkProduction;
 };
 
 function buildThreadValuesPatch(
@@ -24,7 +32,7 @@ function buildThreadValuesPatch(
   const values: Record<string, unknown> = {};
   if (fields.profile !== undefined) values.profile = fields.profile;
   if (fields.references !== undefined) values.references = fields.references;
-  if (fields.preview !== undefined) values.preview = fields.preview;
+  if (fields.production !== undefined) values.production = fields.production;
   return values;
 }
 
@@ -52,9 +60,7 @@ export async function syncMaterializedStateToAgentThreads(
     where: {
       workId,
       threadId: { not: null },
-      ...(options?.conversationId
-        ? { id: options.conversationId }
-        : {}),
+      ...(options?.conversationId ? { id: options.conversationId } : {}),
     },
     select: { threadId: true },
   });
@@ -77,7 +83,7 @@ export async function syncMaterializedStateToAgentThreads(
 export function materializedFieldsFromWorkUpdate(data: {
   profile?: unknown;
   references?: unknown;
-  preview?: unknown | null;
+  production?: unknown;
 }): MaterializedAgentFields {
   const fields: MaterializedAgentFields = {};
   if (data.profile !== undefined) {
@@ -86,8 +92,8 @@ export function materializedFieldsFromWorkUpdate(data: {
   if (data.references !== undefined) {
     fields.references = parseReferencesJson(data.references);
   }
-  if (data.preview !== undefined) {
-    fields.preview = data.preview === null ? null : parsePreview(data.preview);
+  if (data.production !== undefined) {
+    fields.production = parseProduction(data.production);
   }
   return fields;
 }

@@ -11,7 +11,7 @@ export function buildWorkStateSection(state: AgentStateType): string {
   const references = state.references?.length
     ? state.references
     : [...EMPTY_WORK_REFERENCES];
-  const preview = state.preview;
+  const preview = state.production?.preview;
 
   const previewLine = preview?.body?.trim()
     ? `已有预览正文（节选）：${preview.body.slice(0, 200)}…`

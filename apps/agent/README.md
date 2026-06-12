@@ -20,7 +20,7 @@ Checkpoint：**Agent 专用 Postgres**（`POSTGRES_URI`，默认 `:5433`）。
 |------|------|------|------|
 | 计划者 | `nodes/plan-turn-queue/` | `planTurnQueue` | 解析用户意图 → `turnQueue[]`，fork `staging` |
 | 执行者 | `state-graph/` | `dispatchTurnQueue` / `advanceTurnQueue` + 子图 | 按队列路由并执行 reference / profile / production / ask |
-| 系统收尾 | `post-commit/` | `commitTurn` →（条件）`postCommit` → END | 仅首条 human 且占位标题时生成对话标题 |
+| 系统收尾 | `post-commit/`、`summarize-messages/` | `commitTurn` →（条件）`postCommit` → `summarizeMessages` → END | 首条 human 生成对话标题；messages 过多时滚动摘要 |
 
 图接线：`src/graph.ts`；`state-graph/` 含 `nodes/`、`conditional-edges/`、`subgraphs/*/graph.ts`
 
@@ -32,11 +32,11 @@ Checkpoint：**Agent 专用 Postgres**（`POSTGRES_URI`，默认 `:5433`）。
 
 **suggestions**：`generateSuggestions`。系统队尾常驻；开屏 7 条 / 回合末 4 条，写入 `nextStepSuggestions`。
 
-**production**：`schedulePlan` → `directWriting` / `directDesign` ⇄ `runProductionTools` → `generateDraft` / `spawnSpecialist` → `inspectDeliverable`。进入制作由 `planTurnQueue` 识别用户出稿意图；子图基于现有方案直接执行，不因方案不完整而阻断。
+**production**（`subgraphs/production/README.md`）：`planProduction` → `dispatchTask` → `execute*` → `acceptTask` → `routeProduction` →（`dispatchTask`、`assemblePreview`、计划为空或验收 3 次失败时直达 `summarizeProduction`）→ `summarizeProduction`。
 
 **ask**：`answerQuestion` ⇄ `runAskTools`（`ToolNode` + `toolsCondition`）。
 
-对话环：`nodes/mutate-profile/`、`answer-question/`、`direct-writing/`、`direct-design/`（bindTools + stream）+ `run-*-tools/`（`ToolNode` + `tools/`）+ `conditional-edges/after-*.ts`（按执行位置命名）。
+对话环：`nodes/mutate-profile/`、`answer-question/`、`execute-writing/`、`execute-design/`（bindTools + stream）+ `run-*-tools/`（`ToolNode` + `tools/`）+ `conditional-edges/after-*.ts`（按执行位置命名）。
 
 ## 目录结构
 
@@ -75,7 +75,7 @@ src/
 
 ```text
 START → planTurnQueue → dispatchTurnQueue → [*Graph] → advanceTurnQueue
-  → commitTurn →（需处理）postCommit → END
+  → commitTurn →（需处理）postCommit → summarizeMessages → END
 （队尾常驻 suggestions；开屏仅跑 suggestions 子图）
 ```
 

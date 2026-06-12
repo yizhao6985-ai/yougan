@@ -301,6 +301,15 @@ function findLastMessageIndex(
   return -1;
 }
 
+/** 合并 stream.messages（流式）与 values.messages（节点一次性写入，如 summarizeProduction） */
+export function mergeChatMessages(
+  streamMessages: Message[],
+  valuesMessages: Message[] | undefined,
+): Message[] {
+  if (!valuesMessages?.length) return streamMessages;
+  return mergeMessagesFromUpdates(streamMessages, valuesMessages);
+}
+
 export function buildRenderItems(
   messages: Message[],
   isLoading: boolean,

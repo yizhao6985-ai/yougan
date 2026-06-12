@@ -136,10 +136,8 @@ model Work {
   profile            Json                @default("{}")
   /// 物化视图：参考素材
   references         Json                @default("[]")
-  /// 物化视图：内部制作计划（不对用户展示）
-  productionPlan     Json                @default("{}")
-  /// 物化视图：最新作品预览
-  preview            Json?
+  /// 物化视图：制作环节（内部计划 + 作品预览）
+  production         Json                @default("{}")
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   publications       Publication[]

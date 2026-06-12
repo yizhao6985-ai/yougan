@@ -8,16 +8,14 @@ import type { DiscoverPlatformId, DiscoverTopicCategoryId } from "../taxonomy/di
 export interface ProfileDelivery {
   /** 创作主题（一句话题眼） */
   topic: string;
-  /** 体裁 id，见 CONTENT_FORMATS */
-  format: ContentFormatId;
-  /** 交付媒介组合，如 ["text"]、["text", "image"] */
+  /** 体裁 id，见 CONTENT_FORMATS；未推断前为 null */
+  format: ContentFormatId | null;
+  /** 交付媒介组合，如 ["text"]、["text", "image"]；未推断前为空数组 */
   modalities: MediaModalityId[];
   /** 目标发布平台（可选） */
   platform?: DiscoverPlatformId | null;
   /** 内容分类（发现页 taxonomy） */
   category?: DiscoverTopicCategoryId | null;
-  /** 用户原话摘录，仅展示，不参与路由 */
-  intent?: string | null;
 }
 
 /** 表达设定：受众、语气文风与画面气质 */
@@ -141,11 +139,10 @@ export interface WorkProfile {
 
 export const EMPTY_PROFILE_DELIVERY: ProfileDelivery = {
   topic: "",
-  format: "short_post",
-  modalities: ["text"],
+  format: null,
+  modalities: [],
   platform: null,
   category: null,
-  intent: null,
 };
 
 export const EMPTY_WORK_PROFILE: WorkProfile = {

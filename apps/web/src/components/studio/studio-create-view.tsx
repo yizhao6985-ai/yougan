@@ -34,9 +34,9 @@ export function StudioCreateView() {
       )
     : (activeWork?.references ?? stream.values?.references ?? []);
   const preview =
-    staging?.preview ??
-    stream.values?.preview ??
-    activeWork?.preview ??
+    staging?.production?.preview ??
+    stream.values?.production?.preview ??
+    activeWork?.production?.preview ??
     null;
   const previewUnsaved = Boolean(
     staging && stream.values?.turn?.committed !== true,

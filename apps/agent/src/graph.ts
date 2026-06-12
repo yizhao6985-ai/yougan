@@ -13,6 +13,7 @@ import { commitTurnNode } from "./state-graph/nodes/commit-turn/node.js";
 import { dispatchTurnQueueNode } from "./state-graph/nodes/dispatch-turn-queue/node.js";
 import { postCommitNode } from "./state-graph/nodes/post-commit/node.js";
 import { planTurnQueueNode } from "./state-graph/nodes/plan-turn-queue/node.js";
+import { summarizeMessagesNode } from "./state-graph/nodes/summarize-messages/node.js";
 import { askGraph } from "./state-graph/subgraphs/ask/graph.js";
 import { productionGraph } from "./state-graph/subgraphs/production/graph.js";
 import { profileGraph } from "./state-graph/subgraphs/profile/graph.js";
@@ -26,6 +27,7 @@ const workflow = new StateGraph(AgentState)
   .addNode("advanceTurnQueue", advanceTurnQueueNode)
   .addNode("commitTurn", commitTurnNode)
   .addNode("postCommit", postCommitNode)
+  .addNode("summarizeMessages", summarizeMessagesNode)
   .addNode("referenceGraph", referenceGraph)
   .addNode("profileGraph", profileGraph)
   .addNode("productionGraph", productionGraph)
@@ -57,6 +59,7 @@ const workflow = new StateGraph(AgentState)
     afterCommitTurn.selectAfterCommitTurn,
     afterCommitTurn.paths,
   )
-  .addEdge("postCommit", END);
+  .addEdge("postCommit", "summarizeMessages")
+  .addEdge("summarizeMessages", END);
 
 export const graph = workflow.compile({ checkpointer });

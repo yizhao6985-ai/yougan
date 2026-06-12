@@ -55,8 +55,7 @@ function buildStreamSubmitInput(
     conversationTitle: conversation.title,
     profile: work.profile,
     references: work.references,
-    productionPlan: work.productionPlan,
-    preview: work.preview,
+    production: work.production,
     modelTemperature,
   };
 }

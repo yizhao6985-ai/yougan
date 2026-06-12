@@ -19,16 +19,16 @@ src/
         │   ├── graph.ts
         │   ├── nodes/
         │   └── conditional-edges/
-        ├── production/
+        ├── production/          # 见 subgraphs/production/README.md；根下 helpers/ 为跨节点复用
         ├── ask/
         └── suggestions/
 ```
 
-系统收尾节点（`post-commit/`：对话标题等）在 `commitTurn` 之后接线；用户向任务走 turn 子图，建议由 `suggestions` 子图常驻生成。
+系统收尾节点（`post-commit/`：对话标题；`summarize-messages/`：对话过长滚动摘要）在 `commitTurn` 之后接线；用户向任务走 turn 子图，建议由 `suggestions` 子图常驻生成。
 
 主图接线在 `src/graph.ts`；各子图接线在 `state-graph/subgraphs/<name>/graph.ts`。
 
-**目录命名**：`nodes/`、`conditional-edges/` 下文件夹统一用 kebab-case（如 `mutate-profile`、`after-schedule-plan`）。
+**目录命名**：`nodes/`、`conditional-edges/` 下文件夹统一用 kebab-case（如 `mutate-profile`、`after-plan-production`）。
 
 **图节点 ID**：`addNode` / `addEdge` / 条件边路由目标统一用 **camelCase**（如 `mutateProfile`、`runProfileTools`、`generateSuggestions`），与目录名 kebab-case 区分。节点名按**功能**命名，避免 `llmCall` 等模糊词。
 
@@ -54,11 +54,11 @@ src/
 
 | 模块 | 函数 | 用途 |
 |------|------|------|
-| `get.ts` | `getProfile`、`getProductionPlan`、`getPreview`… | 作品字段 **staging 优先** |
-| `get.ts` | `getProductionStagingMeta` | staging.meta.production（含默认值） |
+| `get.ts` | `getProfile`、`getProduction`、`getPreview`… | 作品字段 **staging 优先** |
+| `get.ts` | `getProduction` | staging.production（任务 `in_progress` 表示当前执行） |
 | `get.ts` | `getTurnQueue`、`getActiveTurnKind`… | 控制字段，读 `turn` |
 | `turn.ts` | `getTurn`、`patchTurn` | 回合运行时读写 |
-| `patch-pending.ts` | `patchPendingProfile`、`patchPendingProductionMeta`… | 写 staging |
+| `patch-pending.ts` | `patchPendingProfile`、`patchPendingProductionFields`… | 写 staging |
 | `patch-pending.ts` | `patchPendingBatch` | 合并多个 `{ staging }` patch |
 | `lifecycle.ts` | `initPendingTurn`、`requirePending`、`commitPending`、`rollbackPending` | 回合工作区 |
 | `index.ts` | `getState`（`getCurrentTaskInput` 重导出） | LangGraph tool 内读 state |

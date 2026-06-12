@@ -6,8 +6,7 @@ export interface WorkAgentContext {
   conversationId?: string;
   headVersionId?: string | null;
   profile: Work["profile"];
-  productionPlan: Work["productionPlan"];
-  preview: Work["preview"];
+  production: Work["production"];
   threadId?: string | null;
   workTitle?: string;
   conversationTitle?: string;

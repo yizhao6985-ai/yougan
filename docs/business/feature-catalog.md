@@ -46,9 +46,9 @@
 | 参考素材分析 | 上传附件自动分析入库 | 已实现 | reference 子图 + MiniMax 多模态 |
 | 聊天改状态 | 改方案、参考、作品预览 | 已实现 | profile / reference / production 子图 + 工具 |
 | 制作计划与出稿 | 排计划 + AI 团队执行 | 已实现 | production 子图 |
-| 方案→制作自动衔接 | 减少手工搬运 | 已实现 | `planTurnQueue` 队列 + `schedulePlan` |
+| 方案→制作自动衔接 | 减少手工搬运 | 已实现 | `planTurnQueue` 队列 + `planProduction` |
 | 按计划出稿与修改 | 可控正文生成 | 已实现 | 百炼 qwen3.7-max |
-| 执行摘要 | 版本对比可追溯 | 已实现 | `complete_execution` |
+| 执行摘要 | 版本对比可追溯 | 已实现 | `assemblePreview` 归档 |
 | 会话持久化 | 断点续聊 | 已实现 | Postgres checkpoint |
 
 ---

@@ -150,7 +150,8 @@
                 "type": "string"
               },
               "format": {
-                "type": "string"
+                "type": "string",
+                "nullable": true
               },
               "modalities": {
                 "type": "array",
@@ -163,10 +164,6 @@
                 "nullable": true
               },
               "category": {
-                "type": "string",
-                "nullable": true
-              },
-              "intent": {
                 "type": "string",
                 "nullable": true
               }
@@ -239,7 +236,11 @@
                     },
                     "kind": {
                       "type": "string",
-                      "enum": ["character", "world", "other"]
+                      "enum": [
+                        "character",
+                        "world",
+                        "other"
+                      ]
                     },
                     "title": {
                       "type": "string",
@@ -552,128 +553,6 @@
           "$ref": "#/components/schemas/WorkReference"
         }
       },
-      "WorkProductionPlan": {
-        "type": "object",
-        "properties": {
-          "pending_tasks": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "description": {
-                  "type": "string"
-                },
-                "created_at": {
-                  "type": "string"
-                },
-                "department": {
-                  "type": "string",
-                  "enum": [
-                    "writing",
-                    "design",
-                    "audio",
-                    "video"
-                  ]
-                },
-                "status": {
-                  "type": "string",
-                  "enum": [
-                    "pending",
-                    "in_progress",
-                    "completed"
-                  ]
-                },
-                "assignee": {
-                  "type": "string",
-                  "nullable": true
-                }
-              },
-              "required": [
-                "id",
-                "description",
-                "created_at"
-              ]
-            }
-          },
-          "executed_tasks": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "description": {
-                  "type": "string"
-                },
-                "executed_at": {
-                  "type": "string"
-                },
-                "batch_summary": {
-                  "type": "string",
-                  "nullable": true
-                },
-                "department": {
-                  "type": "string",
-                  "enum": [
-                    "writing",
-                    "design",
-                    "audio",
-                    "video"
-                  ]
-                },
-                "assignee": {
-                  "type": "string",
-                  "nullable": true
-                }
-              },
-              "required": [
-                "id",
-                "description",
-                "executed_at"
-              ]
-            }
-          },
-          "last_execution_summary": {
-            "type": "string",
-            "nullable": true
-          },
-          "ready": {
-            "type": "boolean"
-          },
-          "summary": {
-            "type": "string",
-            "nullable": true
-          },
-          "departments": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "enum": [
-                "writing",
-                "design",
-                "audio",
-                "video"
-              ]
-            }
-          },
-          "industry_context": {
-            "type": "string",
-            "nullable": true
-          },
-          "director_notes": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "required": [
-          "pending_tasks",
-          "executed_tasks"
-        ]
-      },
       "WorkPreview": {
         "type": "object",
         "nullable": true,
@@ -731,6 +610,101 @@
           "body"
         ]
       },
+      "WorkProduction": {
+        "type": "object",
+        "properties": {
+          "pending_tasks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "created_at": {
+                  "type": "string"
+                },
+                "department": {
+                  "type": "string",
+                  "enum": [
+                    "writing",
+                    "design",
+                    "audio",
+                    "video"
+                  ]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "pending",
+                    "in_progress",
+                    "ready",
+                    "failed"
+                  ]
+                },
+                "direction": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "acceptance_criteria": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "feedback": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "deliverable": {
+                  "type": "object",
+                  "nullable": true,
+                  "properties": {
+                    "body": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "notes": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "body"
+                  ]
+                },
+                "accept_retry_count": {
+                  "type": "number"
+                },
+                "failure_message": {
+                  "type": "string",
+                  "nullable": true
+                }
+              },
+              "required": [
+                "id",
+                "description",
+                "created_at"
+              ]
+            }
+          },
+          "summary": {
+            "type": "string",
+            "nullable": true
+          },
+          "preview": {
+            "$ref": "#/components/schemas/WorkPreview"
+          }
+        },
+        "required": [
+          "pending_tasks",
+          "preview"
+        ]
+      },
       "Work": {
         "type": "object",
         "properties": {
@@ -750,11 +724,8 @@
           "references": {
             "$ref": "#/components/schemas/WorkReferences"
           },
-          "productionPlan": {
-            "$ref": "#/components/schemas/WorkProductionPlan"
-          },
-          "preview": {
-            "$ref": "#/components/schemas/WorkPreview"
+          "production": {
+            "$ref": "#/components/schemas/WorkProduction"
           },
           "headVersionId": {
             "type": "string",
@@ -781,8 +752,7 @@
           "groupId",
           "profile",
           "references",
-          "productionPlan",
-          "preview",
+          "production",
           "headVersionId",
           "sourceWorkId",
           "sourceVersionId",
@@ -803,11 +773,8 @@
           "references": {
             "$ref": "#/components/schemas/WorkReferences"
           },
-          "productionPlan": {
-            "$ref": "#/components/schemas/WorkProductionPlan"
-          },
-          "preview": {
-            "$ref": "#/components/schemas/WorkPreview"
+          "production": {
+            "$ref": "#/components/schemas/WorkProduction"
           },
           "title": {
             "type": "string"
@@ -833,11 +800,8 @@
           "references": {
             "$ref": "#/components/schemas/WorkReferences"
           },
-          "productionPlan": {
-            "$ref": "#/components/schemas/WorkProductionPlan"
-          },
-          "preview": {
-            "$ref": "#/components/schemas/WorkPreview"
+          "production": {
+            "$ref": "#/components/schemas/WorkProduction"
           },
           "threadId": {
             "type": "string",
@@ -854,8 +818,7 @@
           "workId",
           "profile",
           "references",
-          "productionPlan",
-          "preview"
+          "production"
         ]
       },
       "WorkVersionSnapshot": {
@@ -867,18 +830,14 @@
           "references": {
             "$ref": "#/components/schemas/WorkReferences"
           },
-          "productionPlan": {
-            "$ref": "#/components/schemas/WorkProductionPlan"
-          },
-          "preview": {
-            "$ref": "#/components/schemas/WorkPreview"
+          "production": {
+            "$ref": "#/components/schemas/WorkProduction"
           }
         },
         "required": [
           "profile",
           "references",
-          "productionPlan",
-          "preview"
+          "production"
         ]
       },
       "WorkVersion": {

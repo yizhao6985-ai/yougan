@@ -103,8 +103,7 @@ export async function injectWorkContext(
         conversationTitle: context.conversationTitle,
         profile: context.profile,
         references: context.references,
-        productionPlan: context.productionPlan,
-        preview: context.preview,
+        production: context.production,
       },
     };
 

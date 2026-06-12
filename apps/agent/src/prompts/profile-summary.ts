@@ -3,7 +3,6 @@ import {
   getProfileSummary,
   mediaModalitiesLabel,
   referenceContentLabel,
-  resolveDeliveryFromProfile,
   type ContentFormatId,
   type WorkProfile,
   type WorkReference,
@@ -19,12 +18,13 @@ function contentFormatLabel(id: string | null | undefined) {
 }
 
 function deliverySummary(profile: WorkProfile) {
-  const delivery = resolveDeliveryFromProfile(profile);
-  const format = contentFormatLabel(delivery.format);
-  const modalities = mediaModalitiesLabel(delivery.modalities);
+  const delivery = profile.delivery;
+  const format = delivery.format ? contentFormatLabel(delivery.format) : null;
+  const modalities = delivery.modalities?.length
+    ? mediaModalitiesLabel(delivery.modalities)
+    : null;
   const parts = [
     delivery.topic ? `主题：${delivery.topic}` : null,
-    delivery.intent ? `原话：${delivery.intent}` : null,
     format ? `体裁：${format}` : null,
     modalities ? `形式：${modalities}` : null,
   ].filter(Boolean);
@@ -175,6 +175,7 @@ export function profileSummary(
   const lines: string[] = ["创作规格"];
   if (summary) lines.push(`定位：${summary}`);
   lines.push(profileDeliverySummary(profile));
+  lines.push(`体裁参数：${profileParamsSummary(profile)}`);
   lines.push(profileExpressionSummary(profile));
   if (references?.length) {
     lines.push(profileReferencesSummary(references));

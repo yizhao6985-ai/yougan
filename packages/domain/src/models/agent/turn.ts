@@ -57,9 +57,29 @@ export const EMPTY_TURN_RUNTIME: TurnRuntime = {
   interruptedMessageIds: [],
 };
 
+function mergeTurnStaging(
+  prev: TurnStaging | null,
+  next: TurnStaging | null | undefined,
+): TurnStaging | null {
+  if (next === undefined) return prev;
+  if (next === null) return null;
+  if (!prev) return next;
+  return {
+    ...prev,
+    ...next,
+    production: next.production
+      ? { ...prev.production, ...next.production }
+      : prev.production,
+  };
+}
+
 export function mergeTurnRuntime(
   prev: TurnRuntime,
   patch: Partial<TurnRuntime>,
 ): TurnRuntime {
-  return { ...prev, ...patch };
+  const merged = { ...prev, ...patch };
+  if ("staging" in patch) {
+    merged.staging = mergeTurnStaging(prev.staging, patch.staging);
+  }
+  return merged;
 }

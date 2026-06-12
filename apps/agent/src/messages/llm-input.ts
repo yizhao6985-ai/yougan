@@ -1,4 +1,8 @@
-import { HumanMessage, type BaseMessage } from "@langchain/core/messages";
+import {
+  HumanMessage,
+  SystemMessage,
+  type BaseMessage,
+} from "@langchain/core/messages";
 import {
   extractAttachmentAssetsFromContent,
   isHumanAssetContentPart,
@@ -32,8 +36,9 @@ export function sanitizeHumanMessageForTextChat(
   if (!humanContentNeedsSanitize(message.content)) return message;
 
   let text = messageContentToText(message.content).trim();
-  const attachmentCount = extractAttachmentAssetsFromContent(message.content)
-    .length;
+  const attachmentCount = extractAttachmentAssetsFromContent(
+    message.content,
+  ).length;
 
   if (attachmentCount > 0) {
     const label = attachmentLabel(attachmentCount);
@@ -58,7 +63,7 @@ export function sanitizeMessagesForTextChat(
   );
 }
 
-/** 子图 llm-chat：中断卫生 + human 附件压平。 */
+/** 子图 llm-chat：中断卫生 + human 附件压平 + 对话滚动摘要注入。 */
 export function prepareChatMessagesForLlm(
   state: AgentStateType,
 ): BaseMessage[] {
@@ -66,5 +71,13 @@ export function prepareChatMessagesForLlm(
     state.messages ?? [],
     state.turn.interruptedMessageIds,
   );
-  return sanitizeMessagesForTextChat(messages);
+  const sanitized = sanitizeMessagesForTextChat(messages);
+
+  const summary = state.conversationSummary?.trim();
+  if (!summary) return sanitized;
+
+  return [
+    new SystemMessage(`此前对话摘要（更早的消息已压缩）：\n${summary}`),
+    ...sanitized,
+  ];
 }

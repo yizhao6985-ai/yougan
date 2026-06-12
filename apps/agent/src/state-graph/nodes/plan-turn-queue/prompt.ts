@@ -38,22 +38,36 @@ export function buildTurnQueuePrompt(
 识别${YOUGAN_USER_LABEL}想改的「创作资产层」：
 - 参考素材条目 → reference（见上条入队规则）
 - 方案层 → profile
-- 交付层 → production
+- 交付层（成稿/预览）→ production（见下条**严格**规则）
 - 只问不改 → ask
 
-同时涉及多层时，按 reference → profile → production 排序（例：「删掉那条参考，正文也改一下」→ reference, production）。
+同时涉及多层时，按 reference → profile → production 排序（例：「定位改一下，然后出稿」→ profile, production）。
 
-歧义消解（按优先级）：
-- 明确要求「记入方案 / 写入要求 / 更新定位或节拍」→ profile，不算 ask
-- 明确要求出稿/开写 → production（方案未齐也入队，制作子图基于现有数据直接执行）
-- 已有成稿且未提方案层改动 → 默认 production
+## production 入队规则（严格，宁缺勿滥）
+**仅当**感友**明确要求开始或修改成稿/预览交付物**时才输出 production。须命中以下之一：
+- **开写出稿**：开始制作、开写、出稿、生成正文/成稿、写一版、直接写、按方案制作
+- **改稿**：改正文、改标题、改段落/开头、重写预览、润色成稿、把正文…
+- **继续制作**：继续写、接着写、再出一版
+
+以下**一律 profile**，**不要** production（即使 has_preview=true）：
+- 讨论/补充/调整方案：定位、主题、体裁、媒介、受众、语气、结构、规则、设定、参考借鉴方式
+- 描述想做什么但未明确要求出稿：「帮我写个…」「想做个…」「关于…的内容」「小红书笔记讲…」
+- 上传参考后说明方向/风格（reference 由系统前置时，后续队列用 profile）
+- 对方案提要求、聊选题、确认方向、补充约束
+- **不确定本轮是否该出稿 → 只输出 profile**
+
+## 歧义消解（按优先级）
+- 明确要求「记入方案 / 写入要求 / 更新定位或节拍」→ profile
+- 纯咨询、问方法/背景、不要求改状态 → ask
+- 明确要求出稿/开写/改稿 → production（可单独 production，或与 profile 组合）
 - 带参考定风格、把借鉴写进方案 → profile
 - 仅上传参考无文字 → profile（新附件时 reference 由系统前置）
+- **禁止**因 has_preview=true 就默认 production
 
 队列至少 1 项。
 
 当前上下文：
-- has_preview: ${hasPreview}
+- has_preview: ${hasPreview}（仅表示是否已有成稿，**不能**作为本轮走 production 的默认依据）
 - has_attachments: ${hasAttachments}
 - 作品方案：${profileSummary(profile, references)}
 

@@ -79,8 +79,8 @@ function normalizeCategory(
     : null;
 }
 
-/** 补齐缺失或无效的 format / modalities */
-export function resolveDelivery(delivery: ProfileDelivery): ProfileDelivery {
+/** 补齐缺失或无效的 format / modalities（仅制作/发布等运行时推断，不写入 profile） */
+export function resolveDelivery(delivery: ProfileDelivery): ResolvedDelivery {
   const format = isValidContentFormat(delivery.format)
     ? delivery.format
     : inferFormatFromPlatform(delivery.platform);
@@ -106,12 +106,20 @@ export function resolveDelivery(delivery: ProfileDelivery): ProfileDelivery {
   };
 }
 
-export function parseFormatParams(raw: unknown, format: ContentFormatId): FormatParams {
+export function parseFormatParams(
+  raw: unknown,
+  format: ContentFormatId | null,
+): FormatParams {
   if (!raw || typeof raw !== "object") {
-    return defaultParamsForFormat(format);
+    return format ? defaultParamsForFormat(format) : { kind: "text" };
   }
   const value = raw as Record<string, unknown>;
-  const kind = typeof value.kind === "string" ? value.kind : defaultParamsForFormat(format).kind;
+  const kind =
+    typeof value.kind === "string"
+      ? value.kind
+      : format
+        ? defaultParamsForFormat(format).kind
+        : "text";
 
   if (kind === "illustration") {
     return {

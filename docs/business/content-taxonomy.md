@@ -161,8 +161,8 @@ AI 在对话中隐式维护的 `Work.profile` 字段：
 | 聊天 | profile / reference / production / ask 子图 | 对话工具改方案、参考与作品预览 |
 | 定方案 | `profile_apply_patch`（对话工具） | 用户明确体裁/形式/结构时写入 |
 | 备参考 | reference 子图 `analyzeNewAssets` | 新附件分析入库 |
-| 制作入口 | `schedulePlan` 节点 | 创意总监基于现有方案（可不完整）制定制作计划 |
-| 制作执行 | `generate_draft` / `spawn_specialist` 等 | 按体裁/媒介约束出稿 |
+| 制作入口 | `planProduction` 节点 | 创意总监基于现有方案（可不完整）制定制作计划 |
+| 制作执行 | `execute_task` 等 | 单任务执行、方向验收、备妥后整合 |
 | 发布 | 发布确认弹窗 | 用户可覆盖最终分类 |
 
 回合队列与线程同步详见 [agent-turn-queue.md](../technical/agent-turn-queue.md)。

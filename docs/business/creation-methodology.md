@@ -55,8 +55,8 @@ Agent 每条用户消息先经 **回合队列**（`turn.queue`）workflow（见 
 **目标**：根据方案制定内部 `productionPlan`，再按计划产出 `preview`。
 
 - 入口：`production` 队列项
-- 子图：`schedulePlan` → 创作者环（writing/design ⇄ tool）→ `generateDraft` / `spawnSpecialist` → `inspectDeliverable`
-- 进入制作由 `planTurnQueue` 识别用户出稿意图；子图基于现有方案直接执行，不因方案不完整而阻断
+- 子图（原子流水线）：用户一次开写 → `planProduction` → `executeWriting`/`executeDesign` 自动逐任务产出 → `acceptTask`（不过则重产，超 2 次失败结束）→ `assemblePreview`；中途不需用户交互
+- 进入制作由 `planTurnQueue` 识别用户**明确**出稿/开写/改稿意图；仅讨论方案或描述创作方向时走 `profile`
 
 ## 阶段四：提问（ask）
 

@@ -13,7 +13,13 @@ import {
   type WorkProfile,
 } from "../../models/work/profile.js";
 import { parseReferencesJson } from "./reference.js";
-import { parseFormatParams, resolveDelivery } from "../delivery.js";
+import {
+  isValidContentFormat,
+  parseFormatParams,
+  resolveDelivery,
+  type ResolvedDelivery,
+} from "../delivery.js";
+import { isMediaModalityId, sortMediaModalities } from "../media-modalities.js";
 function newId(prefix: string): string {
   return `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
 }
@@ -140,17 +146,21 @@ function parseDelivery(raw: unknown): ProfileDelivery {
     return { ...EMPTY_PROFILE_DELIVERY };
   }
   const value = raw as Record<string, unknown>;
-  const modalities = Array.isArray(value.modalities)
+  const rawModalities = Array.isArray(value.modalities)
     ? value.modalities.filter((item): item is string => typeof item === "string")
     : [];
+  const modalities = sortMediaModalities(
+    rawModalities.filter(isMediaModalityId),
+  );
 
-  return resolveDelivery({
+  const rawFormat =
+    typeof value.format === "string" ? value.format : null;
+  const format = isValidContentFormat(rawFormat) ? rawFormat : null;
+
+  return {
     topic: typeof value.topic === "string" ? value.topic : "",
-    format:
-      typeof value.format === "string"
-        ? (value.format as ProfileDelivery["format"])
-        : "short_post",
-    modalities: modalities as ProfileDelivery["modalities"],
+    format,
+    modalities,
     platform:
       typeof value.platform === "string"
         ? (value.platform as ProfileDelivery["platform"])
@@ -159,8 +169,7 @@ function parseDelivery(raw: unknown): ProfileDelivery {
       typeof value.category === "string"
         ? (value.category as ProfileDelivery["category"])
         : null,
-    intent: typeof value.intent === "string" ? value.intent : null,
-  });
+  };
 }
 
 function parseBlueprint(raw: unknown): ProfileBlueprint {
@@ -308,6 +317,6 @@ export function resolveProfileFromWork(input: {
   return parseProfileJson(input.profile);
 }
 
-export function resolveDeliveryFromProfile(profile: WorkProfile): ProfileDelivery {
+export function resolveDeliveryFromProfile(profile: WorkProfile): ResolvedDelivery {
   return resolveDelivery(parseProfileJson(profile).delivery);
 }

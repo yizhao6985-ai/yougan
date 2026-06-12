@@ -2,12 +2,11 @@
  * 写入 turn.staging 工作区。
  */
 import type {
-  ProductionStagingMeta,
   TurnStaging,
-  WorkPreview,
-  WorkProductionPlan,
+  WorkProduction,
   WorkProfile,
   WorkReference,
+  WorkPreview,
 } from "@yougan/domain";
 
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
@@ -17,9 +16,7 @@ import { patchTurn } from "./turn.js";
 
 export function patchPending(
   state: AgentStateType,
-  patch: Partial<
-    Pick<TurnStaging, "profile" | "references" | "productionPlan" | "preview">
-  >,
+  patch: Partial<Pick<TurnStaging, "profile" | "references" | "production">>,
 ): Pick<AgentStatePatch, "turn"> {
   const staging = requirePending(state);
   return patchTurn(state, {
@@ -44,41 +41,30 @@ export function patchPendingReferences(
   return patchPending(state, { references });
 }
 
-export function patchPendingProductionPlan(
+export function patchPendingProduction(
   state: AgentStateType,
-  productionPlan: WorkProductionPlan,
+  production: WorkProduction,
 ): Pick<AgentStatePatch, "turn"> {
-  return patchPending(state, { productionPlan });
+  return patchPending(state, { production });
+}
+
+export function patchPendingProductionFields(
+  state: AgentStateType,
+  patch: Partial<WorkProduction>,
+): Pick<AgentStatePatch, "turn"> {
+  const staging = requirePending(state);
+  return patchPending(state, {
+    production: { ...staging.production, ...patch },
+  });
 }
 
 export function patchPendingPreview(
   state: AgentStateType,
   preview: WorkPreview | null,
 ): Pick<AgentStatePatch, "turn"> {
-  return patchPending(state, { preview });
-}
-
-export function patchPendingProductionMeta(
-  state: AgentStateType,
-  patch: Partial<ProductionStagingMeta>,
-): Pick<AgentStatePatch, "turn"> {
   const staging = requirePending(state);
-  const production = {
-    inspectTaskId: null,
-    inspectRetryCount: 0,
-    lastInspectFeedback: null,
-    pendingInspect: false,
-    inspectPipeline: null,
-    pendingGenerateDraft: false,
-    pendingSpawnSpecialist: null,
-    ...staging.meta.production,
-    ...patch,
-  };
-  return patchTurn(state, {
-    staging: {
-      ...staging,
-      meta: { ...staging.meta, production },
-    },
+  return patchPending(state, {
+    production: { ...staging.production, preview },
   });
 }
 
@@ -89,17 +75,9 @@ function mergeStagingPatches(stagingPatches: TurnStaging[]): TurnStaging {
       ...merged,
       profile: staging.profile ?? merged.profile,
       references: staging.references ?? merged.references,
-      productionPlan: staging.productionPlan ?? merged.productionPlan,
-      preview:
-        staging.preview !== undefined ? staging.preview : merged.preview,
-      meta: {
-        ...merged.meta,
-        ...staging.meta,
-        production: {
-          ...merged.meta.production,
-          ...staging.meta.production,
-        },
-      },
+      production: staging.production
+        ? { ...merged.production, ...staging.production }
+        : merged.production,
     };
   }
   return merged;

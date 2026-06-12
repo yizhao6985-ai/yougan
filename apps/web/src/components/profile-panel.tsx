@@ -217,7 +217,6 @@ function formatDeliveryRows(profile: WorkProfile) {
       value: topicCategoryLabel(delivery.category) ?? delivery.category,
     });
   }
-  if (delivery.intent) rows.push({ label: "原话", value: delivery.intent });
   return rows;
 }
 
@@ -303,7 +302,7 @@ function formatSettingDescription(item: {
 }
 
 const EMPTY_PROFILE: WorkProfile = {
-  delivery: { topic: "", format: "short_post", modalities: ["text"] },
+  delivery: { topic: "", format: null, modalities: [] },
   expression: {},
   blueprint: { summary: "", settings: [], segments: [] },
   guardrails: [],
