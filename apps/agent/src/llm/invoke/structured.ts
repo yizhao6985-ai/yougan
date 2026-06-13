@@ -29,6 +29,11 @@ type ChatModelWithKwargs = BaseChatModel & {
   modelKwargs?: Record<string, unknown>;
 };
 
+type ChatModelWithName = BaseChatModel & {
+  model?: string;
+  modelName?: string;
+};
+
 /** LangGraph StreamMessagesHandler 同时识别这两个 tag。 */
 const NOSTREAM_TAGS = ["nostream"] as const;
 
@@ -64,12 +69,13 @@ function resolveStructuredMeteringModelId(
   options?: StructuredInvokeOptions,
 ): MeteringModelId {
   if (options?.meteringModelId) return options.meteringModelId;
+  const named = llm as ChatModelWithName;
   const modelName =
-    typeof llm.model === "string"
-      ? llm.model
-      : typeof llm.modelName === "string"
-        ? llm.modelName
-        : env.qwenModel;
+    typeof named.model === "string"
+      ? named.model
+      : typeof named.modelName === "string"
+        ? named.modelName
+        : env.dashscopeModel;
   const normalized = modelName.toLowerCase();
   if (normalized.includes("minimax")) {
     return resolveMinimaxMeteringModelId(modelName);

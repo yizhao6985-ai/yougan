@@ -24,10 +24,7 @@ function emptyToUndefined(value: unknown) {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
-const optionalString = z.preprocess(
-  emptyToUndefined,
-  z.string().optional(),
-);
+const optionalString = z.preprocess(emptyToUndefined, z.string().optional());
 
 const requiredString = z.preprocess(
   (value) => (typeof value === "string" ? value.trim() : value),
@@ -58,7 +55,7 @@ const AgentEnvSchema = z
     POSTGRES_URI: requiredString,
     DASHSCOPE_API_KEY: optionalString,
     DASHSCOPE_BASE_URL: optionalString,
-    LLM_MODEL: optionalString,
+    DASHSCOPE_MODEL: optionalString,
     LLM_MAX_TOKENS: z.coerce.number().int().positive().default(8192),
     LLM_TEMPERATURE: z.coerce.number().min(0).max(2).default(0.7),
     LLM_MODEL_IMAGE: optionalString,
@@ -79,7 +76,7 @@ const AgentEnvSchema = z
       dashscopeApiKey: env.DASHSCOPE_API_KEY ?? "",
       dashscopeBaseUrl,
       dashscopeApiBaseUrl: resolveDashScopeApiBaseUrl(dashscopeBaseUrl),
-      qwenModel: env.LLM_MODEL ?? QWEN_MODELS.default,
+      dashscopeModel: env.DASHSCOPE_MODEL ?? QWEN_MODELS.default,
       llmMaxTokens: env.LLM_MAX_TOKENS,
       llmTemperature: env.LLM_TEMPERATURE,
       llmModelImage:

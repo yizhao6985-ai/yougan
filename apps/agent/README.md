@@ -95,7 +95,7 @@ START → planTurnQueue → dispatchTurnQueue → [*Graph] → advanceTurnQueue
 
 | 模型 | 环境变量 | 用途 |
 |------|----------|------|
-| **Qwen** | `DASHSCOPE_API_KEY` + `LLM_MODEL` | 对话、结构化 work |
+| **Qwen** | `DASHSCOPE_API_KEY` + `DASHSCOPE_MODEL` | 对话、结构化 work |
 | **MiniMax** | `MINIMAX_API_KEY` + `MINIMAX_MODEL` | 多模态（参考素材分析等） |
 
 默认模型 ID 见 `src/llm/providers/catalog.ts`。文生图 / ASR 仍走百炼原生 API。

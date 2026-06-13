@@ -65,7 +65,7 @@ export async function streamChat(
   options?: StreamChatOptions,
 ): Promise<AIMessage> {
   const meteringModelId =
-    options?.meteringModelId ?? resolveQwenMeteringModelId(env.qwenModel);
+    options?.meteringModelId ?? resolveQwenMeteringModelId(env.dashscopeModel);
   const messages = sanitizeMessagesForTextChat(input);
   const stream = await model.stream(messages, withNoStreamTags(config));
   let accumulated: AIMessageChunk | undefined;

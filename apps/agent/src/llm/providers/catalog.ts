@@ -3,7 +3,7 @@
  * 仅两个对话模型：Qwen（百炼）、MiniMax（全模态）。
  */
 export const QWEN_MODELS = {
-  default: "qwen3.7-max",
+  default: "qwen3.7-max-2026-06-08",
 } as const;
 
 export const MINIMAX_MODELS = {

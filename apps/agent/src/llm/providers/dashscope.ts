@@ -26,7 +26,7 @@ export function createChatModel(options?: OpenAiCompatibleChatModelOptions) {
     {
       apiKey: env.dashscopeApiKey,
       baseURL: env.dashscopeBaseUrl,
-      model: env.qwenModel,
+      model: env.dashscopeModel,
       temperature: env.llmTemperature,
       streaming: true,
       maxTokens: env.llmMaxTokens,
