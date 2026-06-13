@@ -21,7 +21,6 @@ subscriptionRouter.get("/plans", (_req, res) => {
       id: plan.id,
       name: plan.name,
       description: plan.description,
-      monthlyAiQuota: plan.monthlyAiQuota,
       priceMonthlyLabel: formatPriceYuan(plan.priceMonthlyCents),
       priceYearlyLabel: formatPriceYuan(plan.priceYearlyCents),
       priceMonthlyCents: plan.priceMonthlyCents,

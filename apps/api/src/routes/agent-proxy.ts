@@ -4,10 +4,18 @@ import { createProxyMiddleware } from "http-proxy-middleware";
 
 import { env } from "../env.js";
 import type { AuthedRequest } from "../middleware/auth.js";
-import { getLangGraphThreadValues } from "../services/langgraph.js";
+import {
+  assertAiQuotaAvailable,
+  parseRunMetering,
+  settleAiUsage,
+} from "../services/subscription.js";
+import {
+  clearThreadRunMetering,
+  getLangGraphThreadCheckpointId,
+  getLangGraphThreadValues,
+} from "../services/langgraph.js";
 import { maybeAutoTitleConversation } from "../services/conversation-auto-title.js";
 import { applyAgentRunVersion, getAgentContext } from "../services/works.js";
-import { consumeAiUsage } from "../services/subscription.js";
 
 interface StreamSyncContext {
   userId: string;
@@ -20,14 +28,19 @@ type StreamSyncRequest = AuthedRequest & {
   youganStreamSync?: StreamSyncContext;
 };
 
-function langgraphPath(req: Request) {
-  return req.originalUrl.replace(/^\/langgraph/, "").split("?")[0] ?? req.path;
+function agentProxyPath(req: Request) {
+  return req.originalUrl.replace(/^\/agent/, "").split("?")[0] ?? req.path;
+}
+
+function parseStreamThreadId(req: Request): string | null {
+  const path = agentProxyPath(req);
+  const match = path.match(/\/threads\/([^/]+)\/runs\/stream$/);
+  return match?.[1] ?? null;
 }
 
 function parseStreamSyncContext(req: AuthedRequest): StreamSyncContext | null {
-  const path = langgraphPath(req);
-  const match = path.match(/\/threads\/([^/]+)\/runs\/stream$/);
-  if (!match) return null;
+  const threadId = parseStreamThreadId(req);
+  if (!threadId) return null;
 
   const workId = req.headers["x-work-id"];
   if (!workId || typeof workId !== "string" || !req.userId) return null;
@@ -39,13 +52,28 @@ function parseStreamSyncContext(req: AuthedRequest): StreamSyncContext | null {
   return {
     userId: req.userId,
     workId,
-    threadId: match[1]!,
+    threadId,
     conversationId,
   };
 }
 
+async function readPendingRunMeteringMicroCredits(
+  threadId: string | null,
+): Promise<number> {
+  if (!threadId) return 0;
+  try {
+    const values = await getLangGraphThreadValues(threadId);
+    if (!values || typeof values !== "object") return 0;
+    return (
+      parseRunMetering(values as Record<string, unknown>)?.microCredits ?? 0
+    );
+  } catch {
+    return 0;
+  }
+}
+
 /**
- * 在转发 LangGraph run 前注入作品状态；stream 结束后 append WorkVersion。
+ * 在转发 LangGraph run 前注入作品状态；stream 结束后结算 metering 并 append WorkVersion。
  */
 export async function injectWorkContext(
   req: AuthedRequest,
@@ -62,9 +90,9 @@ export async function injectWorkContext(
     return;
   }
 
-  const path = langgraphPath(req);
+  const path = agentProxyPath(req);
   const isStreamRun =
-    req.method === "POST" && /\/threads\/[^/]+\/runs\/stream/.test(path);
+    req.method === "POST" && /\/threads\/([^/]+)\/runs\/stream/.test(path);
 
   if (!isStreamRun || !req.body || typeof req.body !== "object") {
     next();
@@ -72,7 +100,10 @@ export async function injectWorkContext(
   }
 
   try {
-    const usage = await consumeAiUsage(req.userId);
+    const threadId = parseStreamThreadId(req);
+    const pendingMicroCredits =
+      await readPendingRunMeteringMicroCredits(threadId);
+    const usage = await assertAiQuotaAvailable(req.userId, pendingMicroCredits);
     if (!usage.allowed) {
       res.status(402).json({
         error: "AI 创作额度已用完",
@@ -104,6 +135,7 @@ export async function injectWorkContext(
         profile: context.profile,
         references: context.references,
         production: context.production,
+        usageExceeded: usage.summary.usageExceeded,
       },
     };
 
@@ -117,11 +149,33 @@ export async function injectWorkContext(
   }
 }
 
+async function settleRunMeteringAfterStream(context: StreamSyncContext) {
+  try {
+    const values = await getLangGraphThreadValues(context.threadId);
+    if (!values || typeof values !== "object") return;
+    const runMetering = parseRunMetering(values as Record<string, unknown>);
+    if (!runMetering) return;
+
+    const checkpointId =
+      (await getLangGraphThreadCheckpointId(context.threadId)) ??
+      `${context.threadId}:${runMetering.microCredits}:${runMetering.callCount}`;
+    await settleAiUsage(context.userId, {
+      microCredits: runMetering.microCredits,
+      idempotencyKey: `${context.threadId}:${checkpointId}`,
+    });
+    await clearThreadRunMetering(context.threadId);
+  } catch (error) {
+    console.error("[agent-proxy] failed to settle AI usage", error);
+  }
+}
+
 async function syncWorkAfterStream(
   context: StreamSyncContext,
   statusCode: number,
 ) {
   if (statusCode < 200 || statusCode >= 300) return;
+
+  await settleRunMeteringAfterStream(context);
 
   try {
     const values = await getLangGraphThreadValues(context.threadId);
@@ -159,7 +213,7 @@ export function createAgentProxy() {
   return createProxyMiddleware({
     target: env.agentUrl,
     changeOrigin: true,
-    pathRewrite: { "^/langgraph": "" },
+    pathRewrite: { "^/agent": "" },
     on: {
       proxyReq: (proxyReq: ClientRequest, req) => {
         const expressReq = req as Request;

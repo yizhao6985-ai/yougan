@@ -43,7 +43,7 @@ model UserSubscription {
   id                 String    @id @default(cuid())
   userId             String    @unique
   user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  /// free | pro
+  /// free | pro | pro_plus
   planId             String    @default("free")
   /// active | canceled | expired
   status             String    @default("active")
@@ -51,12 +51,24 @@ model UserSubscription {
   billingCycle       String?
   currentPeriodStart DateTime  @default(now())
   currentPeriodEnd   DateTime?
-  aiUsageThisPeriod  Int       @default(0)
+  /// 本周期已消耗 API 预算（microCredits；1 = ¥0.0001）
+  aiUsageMicroCredits Int      @default(0)
   cancelAtPeriodEnd  Boolean   @default(false)
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
   @@index([planId, status])
+}
+
+model AiUsageSettlement {
+  id              String   @id @default(cuid())
+  userId          String
+  idempotencyKey  String
+  microCredits    Int
+  createdAt       DateTime @default(now())
+
+  @@unique([userId, idempotencyKey])
+  @@index([userId, createdAt(sort: Desc)])
 }
 
 model BillingOrder {

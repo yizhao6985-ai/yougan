@@ -21,6 +21,8 @@ import { ApiError } from "@/services/client";
 import type { BillingCycle } from "@/services/billing";
 import { cn } from "@/lib/utils";
 
+type PaidPlanId = "pro" | "pro_plus";
+
 function formatPeriodEnd(iso: string | null | undefined) {
   if (!iso) return null;
   return new Date(iso).toLocaleDateString("zh-CN", {
@@ -28,6 +30,12 @@ function formatPeriodEnd(iso: string | null | undefined) {
     month: "long",
     day: "numeric",
   });
+}
+
+function planBadgeLabel(planId: string) {
+  if (planId === "pro_plus") return MEMBERSHIP.proPlusBadge;
+  if (planId === "pro" || planId === "creator") return MEMBERSHIP.proBadge;
+  return MEMBERSHIP.freeBadge;
 }
 
 export function MembershipSettingsPanel() {
@@ -38,32 +46,31 @@ export function MembershipSettingsPanel() {
   const cancelMutation = useCancelSubscriptionMutation();
   const resumeMutation = useResumeSubscriptionMutation();
 
-  const [billingCycle, setBillingCycle] = useState<BillingCycle>("yearly");
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
+  const [checkoutPlanId, setCheckoutPlanId] = useState<PaidPlanId>("pro");
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
-  const usagePercent = useMemo(() => {
-    if (!subscription?.aiQuotaThisPeriod) return 0;
-    return Math.min(
-      100,
-      Math.round(
-        (subscription.aiUsageThisPeriod / subscription.aiQuotaThisPeriod) * 100,
-      ),
-    );
-  }, [subscription]);
-
-  const isPro = subscription?.planId === "pro";
+  const usagePercent = subscription?.usagePercent ?? 0;
+  const isPaid =
+    subscription?.planId === "pro" ||
+    subscription?.planId === "pro_plus" ||
+    subscription?.planId === "creator";
   const periodEndLabel = formatPeriodEnd(subscription?.currentPeriodEnd);
+  const paidPlans = useMemo(
+    () => plans.filter((plan) => plan.id === "pro" || plan.id === "pro_plus"),
+    [plans],
+  );
 
-  const handleCheckout = async () => {
+  const handleCheckout = async (planId: PaidPlanId) => {
     setError(null);
     setNotice(null);
     try {
       await checkoutMutation.mutateAsync({
-        planId: "pro",
+        planId,
         billingCycle,
       });
-      setNotice("Pro 套餐已开通，可在「订单与支付」查看账单");
+      setNotice("套餐已开通，可在「订单与支付」查看账单");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "开通失败，请稍后再试");
     }
@@ -109,8 +116,8 @@ export function MembershipSettingsPanel() {
                   <h3 className="text-lg font-semibold text-foreground">
                     {subscription.planName}
                   </h3>
-                  <Badge variant={isPro ? "default" : "secondary"}>
-                    {isPro ? MEMBERSHIP.proBadge : MEMBERSHIP.freeBadge}
+                  <Badge variant={isPaid ? "default" : "secondary"}>
+                    {planBadgeLabel(subscription.planId)}
                   </Badge>
                   {subscription.cancelAtPeriodEnd ? (
                     <Badge variant="outline">到期降级</Badge>
@@ -126,7 +133,7 @@ export function MembershipSettingsPanel() {
                 ) : null}
               </div>
 
-              {isPro ? (
+              {isPaid ? (
                 <div className="flex flex-wrap gap-2">
                   {subscription.cancelAtPeriodEnd ? (
                     <Button
@@ -159,7 +166,7 @@ export function MembershipSettingsPanel() {
                   {MEMBERSHIP.usageTitle}
                 </span>
                 <span className="tabular-nums text-muted-foreground">
-                  {subscription.aiUsageThisPeriod} / {subscription.aiQuotaThisPeriod}
+                  已用 {usagePercent}%
                 </span>
               </div>
               <div className="mt-3 h-2 overflow-hidden rounded-md bg-muted">
@@ -176,10 +183,7 @@ export function MembershipSettingsPanel() {
                 />
               </div>
               <p className="mt-2 text-xs text-muted-foreground">
-                {MEMBERSHIP.usageHint(
-                  subscription.aiUsageThisPeriod,
-                  subscription.aiQuotaThisPeriod,
-                )}
+                {MEMBERSHIP.usageHint(usagePercent)}
               </p>
               {usagePercent >= 100 ? (
                 <p className="mt-2 text-xs text-destructive">
@@ -191,7 +195,7 @@ export function MembershipSettingsPanel() {
         )}
       </SettingsPanelCard>
 
-      {!isPro ? (
+      {!isPaid ? (
         <SettingsPanelCard title={MEMBERSHIP.plansTitle}>
           <div className="mb-4 inline-flex rounded-lg border border-border/80 bg-muted/40 p-1">
             {(["monthly", "yearly"] as const).map((cycle) => (
@@ -212,56 +216,58 @@ export function MembershipSettingsPanel() {
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
-            {plans.map((plan) => {
-              const isCurrent = subscription?.planId === plan.id;
+            {paidPlans.map((plan) => {
+              const isSelected = checkoutPlanId === plan.id;
               const priceLabel =
                 billingCycle === "yearly"
                   ? plan.priceYearlyLabel
                   : plan.priceMonthlyLabel;
               const cycleSuffix =
-                plan.id === "free"
-                  ? ""
-                  : billingCycle === "yearly"
-                    ? "/ 年"
-                    : "/ 月";
+                billingCycle === "yearly" ? "/ 年" : "/ 月";
 
               return (
                 <article
                   key={plan.id}
                   className={cn(
-                    "rounded-lg border p-5",
-                    plan.highlighted
+                    "rounded-lg border p-5 transition",
+                    isSelected
                       ? "border-primary/30 bg-primary/5 shadow-sm"
-                      : "border-border/80 bg-card",
+                      : plan.highlighted
+                        ? "border-primary/20 bg-primary/[0.03]"
+                        : "border-border/80 bg-card",
                   )}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        {plan.highlighted ? (
-                          <CrownIcon className="size-4 text-primary" />
-                        ) : (
-                          <SparklesIcon className="size-4 text-muted-foreground" />
-                        )}
-                        <h3 className="font-semibold text-foreground">
-                          {plan.name}
-                        </h3>
+                  <button
+                    type="button"
+                    className="w-full text-left"
+                    onClick={() => setCheckoutPlanId(plan.id as PaidPlanId)}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          {plan.highlighted ? (
+                            <CrownIcon className="size-4 text-primary" />
+                          ) : (
+                            <SparklesIcon className="size-4 text-muted-foreground" />
+                          )}
+                          <h3 className="font-semibold text-foreground">
+                            {plan.name}
+                          </h3>
+                        </div>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {plan.description}
+                        </p>
                       </div>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {plan.description}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xl font-semibold text-foreground">
-                        {priceLabel}
-                      </p>
-                      {cycleSuffix ? (
+                      <div className="text-right">
+                        <p className="text-xl font-semibold text-foreground">
+                          {priceLabel}
+                        </p>
                         <p className="text-xs text-muted-foreground">
                           {cycleSuffix}
                         </p>
-                      ) : null}
+                      </div>
                     </div>
-                  </div>
+                  </button>
 
                   <ul className="mt-4 space-y-2">
                     {plan.features.map((feature) => (
@@ -275,29 +281,20 @@ export function MembershipSettingsPanel() {
                     ))}
                   </ul>
 
-                  {plan.id === "pro" ? (
-                    <Button
-                      type="button"
-                      className="mt-5 w-full"
-                      disabled={checkoutMutation.isPending}
-                      onClick={() => void handleCheckout()}
-                    >
-                      {checkoutMutation.isPending
-                        ? MEMBERSHIP.checkoutPending
-                        : MEMBERSHIP.checkoutButton(
-                            billingCycle === "yearly" ? "年付" : "月付",
-                          )}
-                    </Button>
-                  ) : isCurrent ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="mt-5 w-full"
-                      disabled
-                    >
-                      当前套餐
-                    </Button>
-                  ) : null}
+                  <Button
+                    type="button"
+                    className="mt-5 w-full"
+                    variant={plan.highlighted ? "default" : "outline"}
+                    disabled={checkoutMutation.isPending}
+                    onClick={() => void handleCheckout(plan.id as PaidPlanId)}
+                  >
+                    {checkoutMutation.isPending
+                      ? MEMBERSHIP.checkoutPending
+                      : MEMBERSHIP.checkoutButton(
+                          plan.name,
+                          billingCycle === "yearly" ? "年付" : "月付",
+                        )}
+                  </Button>
                 </article>
               );
             })}

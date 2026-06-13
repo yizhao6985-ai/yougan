@@ -9,13 +9,23 @@ import {
 import type { Runnable, RunnableConfig } from "@langchain/core/runnables";
 import { pushMessage } from "@langchain/langgraph";
 import { nanoid } from "nanoid";
+import type { MeteringModelId } from "@yougan/domain";
 
 import { sanitizeMessagesForTextChat } from "#agent/messages/llm-input.js";
+import { env } from "#agent/env.js";
+import {
+  recordRunMeteringUsage,
+  resolveQwenMeteringModelId,
+} from "./metering.js";
 
 /** 关闭 LLM callback 自动 messages 流，改由 pushMessage 推增量 chunk。 */
 const NOSTREAM_TAGS = ["nostream"] as const;
 
 export type ChatModel = Runnable<BaseMessage[], AIMessageChunk, RunnableConfig>;
+
+export type StreamChatOptions = {
+  meteringModelId?: MeteringModelId;
+};
 
 function withNoStreamTags(config: RunnableConfig): RunnableConfig {
   const tags = [...new Set([...(config.tags ?? []), ...NOSTREAM_TAGS])];
@@ -52,7 +62,10 @@ export async function streamChat(
   model: ChatModel,
   input: BaseMessage[],
   config: RunnableConfig,
+  options?: StreamChatOptions,
 ): Promise<AIMessage> {
+  const meteringModelId =
+    options?.meteringModelId ?? resolveQwenMeteringModelId(env.qwenModel);
   const messages = sanitizeMessagesForTextChat(input);
   const stream = await model.stream(messages, withNoStreamTags(config));
   let accumulated: AIMessageChunk | undefined;
@@ -72,5 +85,7 @@ export async function streamChat(
   }
 
   const finalId = accumulated.id ?? messageId ?? nanoid();
-  return chunkToAIMessage(accumulated, finalId);
+  const message = chunkToAIMessage(accumulated, finalId);
+  recordRunMeteringUsage(config, meteringModelId, message.usage_metadata);
+  return message;
 }

@@ -1,7 +1,9 @@
 import { HumanMessage } from "@langchain/core/messages";
 import type { RunnableConfig } from "@langchain/core/runnables";
 
-import type { TurnQueueKind } from "@yougan/domain";
+import { type TurnQueueKind } from "@yougan/domain";
+
+import { resetRunMeteringAccumulator } from "#agent/llm/invoke/metering.js";
 
 import { sortTurnQueue } from "./helpers/sort-turn-queue.js";
 import { withSuggestionsQueue } from "./helpers/with-suggestions-queue.js";
@@ -102,6 +104,7 @@ export async function planTurnQueueNode(
 
   const queue = await resolveTurnQueue(baseState, config);
   const staging = initPendingTurn(baseState, queue);
+  resetRunMeteringAccumulator(config);
 
   return {
     ...(normalized ?? {}),

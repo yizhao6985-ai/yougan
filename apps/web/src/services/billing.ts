@@ -10,7 +10,7 @@ export async function fetchBillingOrders() {
 }
 
 export async function checkoutBillingOrder(input: {
-  planId: "pro";
+  planId: "pro" | "pro_plus";
   billingCycle: BillingCycle;
 }) {
   return apiFetch<{ orderId: string; subscription: SubscriptionSummary }>(

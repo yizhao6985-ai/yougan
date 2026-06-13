@@ -1303,7 +1303,6 @@ export interface components {
             id: string;
             name: string;
             description: string;
-            monthlyAiQuota: number;
             priceMonthlyLabel: string;
             priceYearlyLabel: string;
             priceMonthlyCents: number;
@@ -1320,8 +1319,8 @@ export interface components {
             billingCycle: "monthly" | "yearly" | null;
             currentPeriodStart: string;
             currentPeriodEnd: string | null;
-            aiUsageThisPeriod: number;
-            aiQuotaThisPeriod: number;
+            usagePercent: number;
+            usageExceeded: boolean;
             cancelAtPeriodEnd: boolean;
             features: string[];
         };
@@ -1341,7 +1340,7 @@ export interface components {
         };
         CheckoutSubscription: {
             /** @enum {string} */
-            planId: "pro";
+            planId: "pro" | "pro_plus";
             /** @enum {string} */
             billingCycle: "monthly" | "yearly";
         };

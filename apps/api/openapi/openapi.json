@@ -904,9 +904,6 @@
           "description": {
             "type": "string"
           },
-          "monthlyAiQuota": {
-            "type": "number"
-          },
           "priceMonthlyLabel": {
             "type": "string"
           },
@@ -933,7 +930,6 @@
           "id",
           "name",
           "description",
-          "monthlyAiQuota",
           "priceMonthlyLabel",
           "priceYearlyLabel",
           "priceMonthlyCents",
@@ -972,11 +968,11 @@
             "type": "string",
             "nullable": true
           },
-          "aiUsageThisPeriod": {
+          "usagePercent": {
             "type": "number"
           },
-          "aiQuotaThisPeriod": {
-            "type": "number"
+          "usageExceeded": {
+            "type": "boolean"
           },
           "cancelAtPeriodEnd": {
             "type": "boolean"
@@ -996,8 +992,8 @@
           "billingCycle",
           "currentPeriodStart",
           "currentPeriodEnd",
-          "aiUsageThisPeriod",
-          "aiQuotaThisPeriod",
+          "usagePercent",
+          "usageExceeded",
           "cancelAtPeriodEnd",
           "features"
         ]
@@ -1064,7 +1060,8 @@
           "planId": {
             "type": "string",
             "enum": [
-              "pro"
+              "pro",
+              "pro_plus"
             ]
           },
           "billingCycle": {

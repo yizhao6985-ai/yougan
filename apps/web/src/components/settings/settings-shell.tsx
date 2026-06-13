@@ -24,7 +24,10 @@ export function SettingsUserStrip() {
     bio: user.bio,
     avatarUrl: user.avatarUrl ?? null,
   };
-  const isPro = subscription?.planId === "pro";
+  const isPaid =
+    subscription?.planId === "pro" ||
+    subscription?.planId === "pro_plus" ||
+    subscription?.planId === "creator";
 
   return (
     <section className="rounded-lg border border-border/80 bg-card p-4 shadow-sm shadow-border/20 sm:p-5">
@@ -37,8 +40,13 @@ export function SettingsUserStrip() {
                 {authorDisplayName(author)}
               </p>
               {subscription ? (
-                <Badge variant={isPro ? "default" : "secondary"}>
-                  {isPro ? MEMBERSHIP.proBadge : MEMBERSHIP.freeBadge}
+                <Badge variant={isPaid ? "default" : "secondary"}>
+                  {subscription.planId === "pro_plus"
+                    ? MEMBERSHIP.proPlusBadge
+                    : subscription.planId === "pro" ||
+                        subscription.planId === "creator"
+                      ? MEMBERSHIP.proBadge
+                      : MEMBERSHIP.freeBadge}
                 </Badge>
               ) : null}
             </div>
@@ -47,7 +55,7 @@ export function SettingsUserStrip() {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {!isPro ? (
+          {!isPaid ? (
             <Button type="button" size="sm" asChild>
               <Link to="/settings/membership">{MEMBERSHIP.upgradeButton}</Link>
             </Button>

@@ -59,7 +59,7 @@ export async function checkoutBillingOrder(
   userId: string,
   input: { planId: SubscriptionPlanId; billingCycle: BillingCycle },
 ): Promise<{ orderId: string; subscription: SubscriptionSummary }> {
-  if (input.planId !== "pro") {
+  if (input.planId !== "pro" && input.planId !== "pro_plus") {
     throw new Error("INVALID_PLAN");
   }
 

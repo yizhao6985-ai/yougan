@@ -1,4 +1,5 @@
 import { Client } from "@langchain/langgraph-sdk";
+import { EMPTY_RUN_METERING } from "@yougan/domain";
 
 import { env } from "../env.js";
 
@@ -12,4 +13,16 @@ function getLangGraphClient() {
 export async function getLangGraphThreadValues(threadId: string) {
   const state = await getLangGraphClient().threads.getState(threadId);
   return state.values ?? null;
+}
+
+export async function getLangGraphThreadCheckpointId(threadId: string) {
+  const state = await getLangGraphClient().threads.getState(threadId);
+  const checkpoint = state.checkpoint as { checkpoint_id?: string } | undefined;
+  return checkpoint?.checkpoint_id ?? null;
+}
+
+export async function clearThreadRunMetering(threadId: string) {
+  await getLangGraphClient().threads.updateState(threadId, {
+    values: { runMetering: { ...EMPTY_RUN_METERING } },
+  });
 }

@@ -21,7 +21,7 @@ billingRouter.get("/orders", requireAuth, async (req: AuthedRequest, res) => {
 billingRouter.post("/checkout", requireAuth, async (req: AuthedRequest, res) => {
   const body = z
     .object({
-      planId: z.enum(["pro"]),
+      planId: z.enum(["pro", "pro_plus"]),
       billingCycle: z.enum(BILLING_CYCLES),
     })
     .safeParse(req.body);

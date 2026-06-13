@@ -75,8 +75,8 @@ export function createApp() {
   app.use("/api/upload", uploadRouter);
   app.use("/api", filesRouter);
 
-  // LangGraph SDK 兼容代理（需 JWT + X-Work-Id）
-  app.use("/langgraph", requireAuth, injectWorkContext, createAgentProxy());
+  // Agent SDK 兼容代理（需 JWT + X-Work-Id）
+  app.use("/agent", requireAuth, injectWorkContext, createAgentProxy());
 
   app.use((_req, res) => {
     res.status(404).json({ error: "Not found" });
@@ -92,7 +92,7 @@ export async function startServer() {
   const server = app.listen(env.port, () => {
     console.log(`Yougan API listening on http://localhost:${env.port}`);
     console.log(`OpenAPI docs: http://localhost:${env.port}/docs`);
-    console.log(`LangGraph proxy: http://localhost:${env.port}/langgraph`);
+    console.log(`Agent proxy: http://localhost:${env.port}/agent`);
     if (isCacheEnabled()) {
       console.log("Redis cache enabled");
     }

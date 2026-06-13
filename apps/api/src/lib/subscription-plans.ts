@@ -1,4 +1,4 @@
-export const SUBSCRIPTION_PLAN_IDS = ["free", "pro"] as const;
+export const SUBSCRIPTION_PLAN_IDS = ["free", "pro", "pro_plus"] as const;
 export type SubscriptionPlanId = (typeof SUBSCRIPTION_PLAN_IDS)[number];
 
 export const BILLING_CYCLES = ["monthly", "yearly"] as const;
@@ -8,7 +8,8 @@ export type SubscriptionPlanDefinition = {
   id: SubscriptionPlanId;
   name: string;
   description: string;
-  monthlyAiQuota: number;
+  /** 本周期 API 预算（microCredits；1 = ¥0.0001） */
+  monthlyQuotaMicroCredits: number;
   priceMonthlyCents: number;
   priceYearlyCents: number;
   features: string[];
@@ -23,36 +24,63 @@ export const SUBSCRIPTION_PLANS: Record<
     id: "free",
     name: "免费版",
     description: "体验完整创作流程，适合轻度使用",
-    monthlyAiQuota: 30,
+    monthlyQuotaMicroCredits: 800_000,
     priceMonthlyCents: 0,
     priceYearlyCents: 0,
     features: [
-      "每月 30 次 AI 创作",
+      "每月 AI 创作额度",
       "灵感 · 创作 · 提问全流程",
       "作品分组与云端同步",
     ],
   },
   pro: {
     id: "pro",
-    name: "Pro 创作者",
-    description: "更高额度与增强出稿，适合高频更新",
-    monthlyAiQuota: 500,
-    priceMonthlyCents: 2900,
-    priceYearlyCents: 28800,
+    name: "Pro",
+    description: "适合周更创作，旗舰出稿与平台发布",
+    monthlyQuotaMicroCredits: 2_550_000,
+    priceMonthlyCents: 6800,
+    priceYearlyCents: 67800,
+    features: [
+      "更高 AI 创作额度",
+      "旗舰模型出稿",
+      "平台一键发布",
+    ],
+  },
+  pro_plus: {
+    id: "pro_plus",
+    name: "Pro+",
+    description: "适合日更与高频出稿，优先响应",
+    monthlyQuotaMicroCredits: 5_200_000,
+    priceMonthlyCents: 12800,
+    priceYearlyCents: 127800,
     highlighted: true,
     features: [
-      "每月 500 次 AI 创作",
-      "增强出稿质量与更长上下文",
-      "优先响应与更多参考素材容量",
+      "充足 AI 创作额度",
+      "旗舰模型全场景",
+      "优先响应与平台发布",
     ],
   },
 };
 
-export function getPlanDefinition(planId: string): SubscriptionPlanDefinition {
+/** 旧 planId 兼容（creator → pro） */
+const LEGACY_PLAN_ALIASES: Record<string, SubscriptionPlanId> = {
+  creator: "pro",
+};
+
+export function resolvePlanId(planId: string): SubscriptionPlanId {
   if (planId in SUBSCRIPTION_PLANS) {
-    return SUBSCRIPTION_PLANS[planId as SubscriptionPlanId];
+    return planId as SubscriptionPlanId;
   }
-  return SUBSCRIPTION_PLANS.free;
+  return LEGACY_PLAN_ALIASES[planId] ?? "free";
+}
+
+export function getPlanDefinition(planId: string): SubscriptionPlanDefinition {
+  return SUBSCRIPTION_PLANS[resolvePlanId(planId)];
+}
+
+export function isPaidPlanId(planId: string): boolean {
+  const resolved = resolvePlanId(planId);
+  return resolved === "pro" || resolved === "pro_plus";
 }
 
 export function getPlanPriceCents(

@@ -367,7 +367,6 @@ export const SubscriptionPlanSchema = z
     id: z.string(),
     name: z.string(),
     description: z.string(),
-    monthlyAiQuota: z.number(),
     priceMonthlyLabel: z.string(),
     priceYearlyLabel: z.string(),
     priceMonthlyCents: z.number(),
@@ -386,8 +385,8 @@ export const SubscriptionSummarySchema = z
     billingCycle: z.enum(["monthly", "yearly"]).nullable(),
     currentPeriodStart: z.string(),
     currentPeriodEnd: z.string().nullable(),
-    aiUsageThisPeriod: z.number(),
-    aiQuotaThisPeriod: z.number(),
+    usagePercent: z.number(),
+    usageExceeded: z.boolean(),
     cancelAtPeriodEnd: z.boolean(),
     features: z.array(z.string()),
   })
@@ -411,7 +410,7 @@ export const BillingOrderSchema = z
 
 export const CheckoutSubscriptionSchema = z
   .object({
-    planId: z.enum(["pro"]),
+    planId: z.enum(["pro", "pro_plus"]),
     billingCycle: z.enum(["monthly", "yearly"]),
   })
   .openapi("CheckoutSubscription");

@@ -7,14 +7,22 @@ import type { BaseLanguageModelInput } from "@langchain/core/language_models/bas
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import type { RunnableConfig } from "@langchain/core/runnables";
 import type { z } from "zod";
+import type { MeteringModelId } from "@yougan/domain";
 
 import { sanitizeMessagesForTextChat } from "#agent/messages/llm-input.js";
+import { env } from "#agent/env.js";
+import {
+  resolveMinimaxMeteringModelId,
+  resolveQwenMeteringModelId,
+  withMeteringCallbacks,
+} from "./metering.js";
 
 type StructuredOutputMethod = "functionCalling" | "jsonMode";
 
 export type StructuredInvokeOptions = {
   name?: string;
   method?: StructuredOutputMethod;
+  meteringModelId?: MeteringModelId;
 };
 
 type ChatModelWithKwargs = BaseChatModel & {
@@ -51,6 +59,24 @@ function sanitizeStructuredInput(
   return sanitizeMessagesForTextChat(input as BaseMessage[]);
 }
 
+function resolveStructuredMeteringModelId(
+  llm: BaseChatModel,
+  options?: StructuredInvokeOptions,
+): MeteringModelId {
+  if (options?.meteringModelId) return options.meteringModelId;
+  const modelName =
+    typeof llm.model === "string"
+      ? llm.model
+      : typeof llm.modelName === "string"
+        ? llm.modelName
+        : env.qwenModel;
+  const normalized = modelName.toLowerCase();
+  if (normalized.includes("minimax")) {
+    return resolveMinimaxMeteringModelId(modelName);
+  }
+  return resolveQwenMeteringModelId(modelName);
+}
+
 /** 同步结构化输出，返回 Zod 校验后的对象。 */
 export async function invokeStructured<T extends Record<string, unknown>>(
   llm: BaseChatModel,
@@ -59,12 +85,16 @@ export async function invokeStructured<T extends Record<string, unknown>>(
   options?: StructuredInvokeOptions,
   config?: RunnableConfig,
 ): Promise<T> {
+  const meteringModelId = resolveStructuredMeteringModelId(llm, options);
+  const baseConfig = isolatedStructuredConfig(config);
+  const meteredConfig = withMeteringCallbacks(baseConfig, meteringModelId);
   const structured = forStructuredInvoke(llm).withStructuredOutput(schema, {
     name: options?.name ?? "structured_output",
     method: options?.method ?? "functionCalling",
   });
-  return structured.invoke(
+  const result = (await structured.invoke(
     sanitizeStructuredInput(input),
-    isolatedStructuredConfig(config),
-  ) as Promise<T>;
+    meteredConfig,
+  )) as T;
+  return result;
 }

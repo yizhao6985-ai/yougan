@@ -20,7 +20,7 @@ export function useCheckoutBillingMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: { planId: "pro"; billingCycle: BillingCycle }) =>
+    mutationFn: (input: { planId: "pro" | "pro_plus"; billingCycle: BillingCycle }) =>
       checkoutBillingOrder(input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.billing.all });
