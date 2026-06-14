@@ -16,9 +16,11 @@ function assertDashScopeApiKey(): void {
 const QWEN_CHAT_KWARGS = {
   enable_thinking: false,
   incremental_output: true,
+  /** 流式最后一包带上 usage，供 LLM callback / usage_metadata 计量 */
+  stream_options: { include_usage: true },
 } as const;
 
-/** 对话、结构化 work 等文本任务。 */
+/** 对话、结构化 work 等文本任务（计划/验收/建议等，默认较短输出）。 */
 export function createChatModel(options?: OpenAiCompatibleChatModelOptions) {
   assertDashScopeApiKey();
 
@@ -34,4 +36,14 @@ export function createChatModel(options?: OpenAiCompatibleChatModelOptions) {
     },
     options,
   );
+}
+
+/** 制作子图：单任务产出与 assemble 整合，允许更长 completion。 */
+export function createProductionChatModel(
+  options?: OpenAiCompatibleChatModelOptions,
+) {
+  return createChatModel({
+    ...options,
+    maxTokens: options?.maxTokens ?? env.llmProductionMaxTokens,
+  });
 }

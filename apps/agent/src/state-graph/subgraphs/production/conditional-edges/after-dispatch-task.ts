@@ -1,12 +1,12 @@
-/** dispatchTask 之后：无计划则总结；待验收则 accept；否则执行或 routeProduction */
+/** dispatchTask 之后：无计划则直接总结；否则进入执行（验收与流转在 execute → accept → route） */
 import { getProduction } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 
-import { executorNodeForTask } from "../helpers/produce-task.js";
+import { executorNodeForTask } from "../nodes/execute-writing/helpers/produce-task.js";
 import {
   currentActiveTask,
+  productionHasTerminalFailure,
   productionPlanIsEmpty,
-  taskAwaitingAccept,
   taskNeedsProduce,
 } from "../helpers/task-plan.js";
 
@@ -15,8 +15,6 @@ export const from = "dispatchTask" as const;
 export type AfterDispatchTaskTarget =
   | "executeWriting"
   | "executeDesign"
-  | "acceptTask"
-  | "routeProduction"
   | "summarizeProduction";
 
 export function selectAfterDispatchTask(
@@ -28,13 +26,13 @@ export function selectAfterDispatchTask(
     return "summarizeProduction";
   }
 
-  if (production.pending_tasks.some(taskAwaitingAccept)) {
-    return "acceptTask";
-  }
-
   const task = currentActiveTask(production);
-  if (!task || !taskNeedsProduce(task)) {
-    return "routeProduction";
+  if (
+    !task ||
+    !taskNeedsProduce(task) ||
+    productionHasTerminalFailure(production)
+  ) {
+    return "summarizeProduction";
   }
 
   const executor = executorNodeForTask(task);
@@ -45,7 +43,5 @@ export function selectAfterDispatchTask(
 export const paths = {
   executeWriting: "executeWriting",
   executeDesign: "executeDesign",
-  acceptTask: "acceptTask",
-  routeProduction: "routeProduction",
   summarizeProduction: "summarizeProduction",
 } as const;

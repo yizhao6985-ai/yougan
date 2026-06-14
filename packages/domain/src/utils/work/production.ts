@@ -1,11 +1,19 @@
 import {
   committedProduction,
   EMPTY_WORK_PRODUCTION,
-  type WorkPreview,
   type WorkProduction,
 } from "../../models/work/production.js";
+import type { WorkPreview } from "../../models/work/preview.js";
 
+/** @deprecated 使用 getUserRequirements */
 export function getPlanSummary(production: WorkProduction): string | null {
+  return getUserRequirements(production);
+}
+
+/** 用户对本轮制作的要求（production.summary） */
+export function getUserRequirements(
+  production: WorkProduction,
+): string | null {
   return production.summary ?? null;
 }
 

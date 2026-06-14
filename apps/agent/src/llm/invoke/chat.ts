@@ -14,8 +14,10 @@ import type { MeteringModelId } from "@yougan/domain";
 import { sanitizeMessagesForTextChat } from "#agent/messages/llm-input.js";
 import { env } from "#agent/env.js";
 import {
-  recordRunMeteringUsage,
+  getRunMeteringAccumulator,
+  recordRunMeteringUsageIfMissing,
   resolveQwenMeteringModelId,
+  withMeteringCallbacks,
 } from "./metering.js";
 
 /** 关闭 LLM callback 自动 messages 流，改由 pushMessage 推增量 chunk。 */
@@ -67,7 +69,13 @@ export async function streamChat(
   const meteringModelId =
     options?.meteringModelId ?? resolveQwenMeteringModelId(env.dashscopeModel);
   const messages = sanitizeMessagesForTextChat(input);
-  const stream = await model.stream(messages, withNoStreamTags(config));
+  const callCountBefore = getRunMeteringAccumulator(config).callCount;
+  const meteredConfig = withMeteringCallbacks(
+    withNoStreamTags(config),
+    meteringModelId,
+    config,
+  );
+  const stream = await model.stream(messages, meteredConfig);
   let accumulated: AIMessageChunk | undefined;
   let messageId: string | undefined;
 
@@ -86,6 +94,12 @@ export async function streamChat(
 
   const finalId = accumulated.id ?? messageId ?? nanoid();
   const message = chunkToAIMessage(accumulated, finalId);
-  recordRunMeteringUsage(config, meteringModelId, message.usage_metadata);
+  if (getRunMeteringAccumulator(config).callCount === callCountBefore) {
+    recordRunMeteringUsageIfMissing(
+      config,
+      meteringModelId,
+      message.usage_metadata,
+    );
+  }
   return message;
 }

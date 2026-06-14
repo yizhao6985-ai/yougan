@@ -149,12 +149,32 @@ export async function injectWorkContext(
   }
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function settleRunMeteringAfterStream(context: StreamSyncContext) {
   try {
-    const values = await getLangGraphThreadValues(context.threadId);
-    if (!values || typeof values !== "object") return;
-    const runMetering = parseRunMetering(values as Record<string, unknown>);
-    if (!runMetering) return;
+    let runMetering = null as ReturnType<typeof parseRunMetering>;
+    let values: Record<string, unknown> | null = null;
+
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const nextValues = await getLangGraphThreadValues(context.threadId);
+      if (nextValues && typeof nextValues === "object") {
+        values = nextValues as Record<string, unknown>;
+        runMetering = parseRunMetering(values);
+        if (runMetering) break;
+      }
+      if (attempt < 5) await sleep(200);
+    }
+
+    if (!runMetering || !values) {
+      console.warn(
+        "[agent-proxy] skip AI usage settlement: runMetering empty",
+        { threadId: context.threadId },
+      );
+      return;
+    }
 
     const checkpointId =
       (await getLangGraphThreadCheckpointId(context.threadId)) ??

@@ -17,6 +17,7 @@ export type OpenAiCompatibleProviderConfig = {
 export type OpenAiCompatibleChatModelOptions = {
   temperature?: number;
   streaming?: boolean;
+  maxTokens?: number;
   modelKwargs?: Record<string, unknown>;
 };
 
@@ -34,7 +35,7 @@ export function createOpenAiCompatibleChatModel(
     apiKey: config.apiKey,
     temperature: options?.temperature ?? config.temperature,
     streaming: options?.streaming ?? config.streaming,
-    maxTokens: config.maxTokens,
+    maxTokens: options?.maxTokens ?? config.maxTokens,
     configuration: {
       baseURL: config.baseURL,
     },

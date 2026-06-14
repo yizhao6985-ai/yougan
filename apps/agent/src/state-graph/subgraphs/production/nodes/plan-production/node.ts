@@ -1,15 +1,11 @@
 /**
  * 制作子图入口：每次进入均从零重置 production，再制定新计划。
  */
-import { HumanMessage } from "@langchain/core/messages";
+import { HumanMessage, SystemMessage } from "@langchain/core/messages";
+import type { RunnableConfig } from "@langchain/core/runnables";
 
 import { invokeStructured } from "#agent/llm/invoke/index.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
-import {
-  profileSummary,
-  profileReferencesSummary,
-} from "#agent/prompts/profile-summary.js";
-import { YOUGAN_USER_LABEL } from "#agent/system-prompt.js";
 import {
   EMPTY_WORK_PRODUCTION,
   type ProductionDepartment,
@@ -21,93 +17,108 @@ import {
   patchPendingProduction,
 } from "#agent/state-io/index.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
-
 import {
-  departmentsBrief,
-  departmentsFromTasks,
-} from "../../helpers/department-brief.js";
+  patchRunProgress,
+  withRunProgressHeartbeat,
+} from "#agent/state-io/run-progress.js";
+
+import { productionPlanProgress } from "../../helpers/progress-labels.js";
+import { captureUserRequirements } from "./helpers/capture-user-requirements.js";
 import { newPlanTask } from "./helpers/new-plan-task.js";
+import {
+  sanitizePlanTasks,
+  type PlanTaskInput,
+} from "./helpers/sanitize-plan-tasks.js";
+import {
+  buildPlanProductionHumanPrompt,
+  buildPlanProductionSystemPrompt,
+} from "./prompt.js";
 import { PlanResponseSchema, type PlanResponse } from "./schema.js";
 
-function buildPlanProductionPrompt(state: AgentStateType): string {
-  const profile = getProfile(state);
-  const references = getReferences(state);
-  return `你是制作总监（内部角色，不对${YOUGAN_USER_LABEL}直接说话），负责将当前作品方案转化为可执行的**制作计划**。
-
-${YOUGAN_USER_LABEL}已表达开始创作意图；方案可能尚不完整，请基于已有信息与用户意图制定计划。
-
-当前作品方案：
-${profileSummary(profile, references)}
-
-${profileReferencesSummary(references)}
-
-请制定内部制作计划：
-1. 根据 delivery.format / modalities 为每条任务指定 department
-2. 将方案结构段（如有）与用户意图拆分为具体执行任务
-3. 每条任务必须给出 direction（基于 profile 的产出方向指导）与 acceptance_criteria（方向性验收标准）
-4. direction 应呼应受众、风格、体裁、结构段与 guardrails；acceptance_criteria 用于验收员判断方向是否达标，不是实现 checklist
-5. 方案缺项时据体裁与用户消息合理推断，任务覆盖从创意到交付的完整流程
-6. summary 写计划整体摘要与给制作团队的编排说明（合并为一段即可）
-
-只输出结构化计划，不生成正文。`;
-}
-
-function applyPlanResponse(
+function applyPlanTasks(
   base: WorkProduction,
-  response: {
-    summary: string;
-    tasks: Array<{
-      description: string;
-      department: ProductionDepartment;
-      direction: string;
-      acceptance_criteria: string;
-    }>;
-  },
+  tasks: PlanTaskInput[],
 ): WorkProduction {
-  const tasks = response.tasks.map((t) =>
-    newPlanTask(t.description, t.department, {
-      direction: t.direction,
-      acceptance_criteria: t.acceptance_criteria,
-    }),
-  );
   return {
     ...base,
-    pending_tasks: tasks,
-    summary: response.summary,
+    pending_tasks: tasks.map((t) =>
+      newPlanTask(t.description, t.department, {
+        direction: t.direction,
+        acceptance_criteria: t.acceptance_criteria,
+      }),
+    ),
   };
+}
+
+async function planTasksWithLlm(
+  state: AgentStateType,
+  userRequirements: string,
+  config?: RunnableConfig,
+): Promise<PlanTaskInput[]> {
+  const profile = getProfile(state);
+  const references = getReferences(state);
+  const llm = createChatModel({ temperature: 0.5 });
+
+  const parsed = (await invokeStructured(
+    llm,
+    PlanResponseSchema,
+    [
+      new SystemMessage(
+        buildPlanProductionSystemPrompt({
+          profile,
+          references,
+          userRequirements,
+        }),
+      ),
+      new HumanMessage(buildPlanProductionHumanPrompt()),
+    ],
+    { name: "production_plan" },
+    config,
+  )) as PlanResponse;
+
+  return sanitizePlanTasks(parsed.tasks);
 }
 
 async function createProductionPlan(
   state: AgentStateType,
+  config?: RunnableConfig,
 ): Promise<AgentStatePatch> {
-  const fresh: WorkProduction = { ...EMPTY_WORK_PRODUCTION };
-  const llm = createChatModel({ temperature: 0.5 });
+  const userRequirements = captureUserRequirements(state);
+  const fresh: WorkProduction = {
+    ...EMPTY_WORK_PRODUCTION,
+    summary: userRequirements,
+  };
+  const progress = productionPlanProgress();
 
   try {
-    const parsed = (await invokeStructured(
-      llm,
-      PlanResponseSchema,
-      [new HumanMessage(buildPlanProductionPrompt(state))],
-      { name: "production_plan" },
-    )) as PlanResponse;
+    const tasks = await withRunProgressHeartbeat(progress, config, () =>
+      planTasksWithLlm(state, userRequirements, config),
+    );
 
-    return patchPendingProduction(state, applyPlanResponse(fresh, parsed));
+    return {
+      ...patchPendingProduction(state, applyPlanTasks(fresh, tasks)),
+      ...patchRunProgress(progress),
+    };
   } catch {
-    const pending_tasks = [
-      newPlanTask("完成文字内容初稿", "writing"),
-      newPlanTask("提炼标题与核心表达", "writing"),
-    ];
-    const deptBrief = departmentsBrief(departmentsFromTasks(pending_tasks));
-    return patchPendingProduction(state, {
-      ...fresh,
-      pending_tasks,
-      summary: `基础内容制作计划\n${deptBrief}`,
-    });
+    const pending_tasks = sanitizePlanTasks([]).map((t) =>
+      newPlanTask(t.description, t.department as ProductionDepartment, {
+        direction: t.direction,
+        acceptance_criteria: t.acceptance_criteria,
+      }),
+    );
+    return {
+      ...patchPendingProduction(state, {
+        ...fresh,
+        pending_tasks,
+      }),
+      ...patchRunProgress(progress),
+    };
   }
 }
 
 export async function planProductionNode(
   state: AgentStateType,
+  config?: RunnableConfig,
 ): Promise<AgentStatePatch> {
-  return createProductionPlan(state);
+  return createProductionPlan(state, config);
 }

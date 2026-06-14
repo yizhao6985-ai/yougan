@@ -10,6 +10,7 @@ import {
   resetRunMeteringAccumulator,
 } from "#agent/llm/invoke/metering.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
+import { clearRunProgressPatch } from "#agent/state-io/run-progress.js";
 
 export async function finalizeRunMeteringNode(
   state: AgentStateType,
@@ -23,5 +24,8 @@ export async function finalizeRunMeteringNode(
       ? mergeRunMetering(state.runMetering ?? EMPTY_RUN_METERING, flushed)
       : (state.runMetering ?? EMPTY_RUN_METERING);
 
-  return { runMetering };
+  return {
+    runMetering,
+    ...clearRunProgressPatch(),
+  };
 }

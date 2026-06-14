@@ -90,14 +90,6 @@ export function resolveDelivery(delivery: ProfileDelivery): ResolvedDelivery {
 
   const category = normalizeCategory(delivery.category);
 
-  if (
-    delivery.format === format &&
-    JSON.stringify(delivery.modalities ?? []) === JSON.stringify(modalities) &&
-    delivery.category === category
-  ) {
-    return delivery;
-  }
-
   return {
     ...delivery,
     format,

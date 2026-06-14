@@ -20,6 +20,7 @@ import {
   mergeTurnRuntime,
   EMPTY_RUN_METERING,
   type RunMetering,
+  type RunProgress,
   type NextStepSuggestions,
   type TurnRuntime,
   type WorkProduction,
@@ -120,6 +121,14 @@ export const AgentState = Annotation.Root({
       return Math.min(1, Math.max(0.1, Math.round(next * 10) / 10));
     },
     default: () => env.llmTemperature,
+  }),
+  /** 运行进度（SSE 展示 + 心跳；回合结束清空） */
+  runProgress: Annotation<RunProgress | null>({
+    reducer: (
+      prev: RunProgress | null,
+      next: RunProgress | null | undefined,
+    ) => (next === undefined ? (prev ?? null) : next),
+    default: () => null,
   }),
 });
 

@@ -2,6 +2,7 @@ import type { WorkProfile } from "../work/profile.js";
 import type { WorkProduction } from "../work/production.js";
 import type { WorkReference } from "../work/reference.js";
 import type { NextStepSuggestions } from "./suggestions.js";
+import type { RunProgress } from "./run-progress.js";
 import type { TurnRuntime } from "./turn.js";
 
 /**
@@ -24,6 +25,8 @@ export interface YouganAgentState {
   generatedConversationTitle: string | null;
   /** 单轮执行运行时（调度、staging、取消） */
   turn: TurnRuntime;
+  /** 当前运行进度（不入库；回合结束清空） */
+  runProgress?: RunProgress | null;
 }
 
 /**
@@ -42,6 +45,7 @@ export type YouganStreamValues = Partial<
     | "nextStepSuggestions"
     | "generatedConversationTitle"
     | "turn"
+    | "runProgress"
   >
 > & {
   messages?: unknown[];

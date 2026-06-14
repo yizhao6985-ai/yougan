@@ -79,6 +79,7 @@ export interface ProductionTask {
  */
 export interface WorkProduction {
   pending_tasks: ProductionTask[];
+  /** 用户对本轮制作的要求（开写/改稿意图）；进 plan 前写入，plan 环节不覆盖 */
   summary?: string | null;
   preview: WorkPreview | null;
 }

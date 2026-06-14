@@ -102,9 +102,9 @@ export async function planTurnQueueNode(
     ? { ...state, turn: mergeTurnPatch(state, normalized.turn) }
     : state;
 
+  resetRunMeteringAccumulator(config);
   const queue = await resolveTurnQueue(baseState, config);
   const staging = initPendingTurn(baseState, queue);
-  resetRunMeteringAccumulator(config);
 
   return {
     ...(normalized ?? {}),

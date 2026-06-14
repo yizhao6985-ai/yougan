@@ -7,13 +7,11 @@
 ```text
 START → planProduction → dispatchTask
                               ├─ executeWriting / executeDesign → acceptTask → routeProduction
-                              ├─ routeProduction（待验收 / 全部 ready 等）
-                              └─ summarizeProduction（计划为空）
-dispatchTask（待验收时也可直达 acceptTask，避免 dispatch ↔ route 空转）
+                              └─ summarizeProduction（计划为空 / 无法执行）
 routeProduction
-  ├─ dispatchTask（继续下一任务或重试）
+  ├─ dispatchTask（尚有未完成任务）
   ├─ assemblePreview（全部 ready）→ summarizeProduction
-  └─ summarizeProduction（验收 3 次失败）
+  └─ summarizeProduction（失败 / 卡住；跳过整合）
 summarizeProduction → END
 ```
 
@@ -21,7 +19,7 @@ summarizeProduction → END
 
 | 节点                               | 类型     | 职责                                                  |
 | ---------------------------------- | -------- | ----------------------------------------------------- |
-| `planProduction`                   | llm-work | 重置 production，LLM 生成 `pending_tasks` + `summary` |
+| `planProduction`                   | llm-work | 写入用户要求（summary），生成可执行 `pending_tasks` |
 | `dispatchTask`                     | plain    | 标记当前 `in_progress` 任务                           |
 | `executeWriting` / `executeDesign` | llm-work | 单任务产出 → `deliverable`                            |
 | `acceptTask`                       | llm-work | 方向性验收；失败重试或标 `failed`                     |
@@ -29,19 +27,26 @@ summarizeProduction → END
 | `assemblePreview`                  | llm-work | 整合片段 → `preview`，清空 `pending_tasks`            |
 | `summarizeProduction`              | plain    | 对话末位摘要（成稿 / 失败 / 空计划）                  |
 
+## LLM 调用约定
+
+内部 work 节点统一 **SystemMessage（稳定规则层）+ HumanMessage（总监工单层）**，不传对话 `messages`。
+
+| 节点 | prompt 位置 |
+| ---- | ----------- |
+| `planProduction` | `nodes/plan-production/prompt.ts` |
+| `executeWriting` / `executeDesign` | `nodes/execute-writing/prompt.ts`（共享） |
+| `acceptTask` | `nodes/accept-task/prompt.ts` |
+| `assemblePreview` | `nodes/assemble-preview/prompt.ts` |
+
 ## helpers（跨节点复用）
 
-| 文件                                                | 用途                                          |
-| --------------------------------------------------- | --------------------------------------------- |
-| `task-plan.ts`                                      | 任务状态判断、dispatch 路由、`withActiveTask` |
-| `pipeline.ts`                                       | `MAX_ACCEPT_ATTEMPTS`（验收上限）             |
-| `produce-task.ts`                                   | 执行者产出 LLM 调用                           |
-| `produce-task-prompt.ts` / `produce-task-schema.ts` | 产出 prompt 与 schema                         |
-| `run-executor.ts`                                   | `execute*` 节点入口                           |
-| `deliverable.ts`                                    | 交付物校验                                    |
-| `summarize-outcome.ts`                              | 总结节点文案                                  |
-| `department-brief.ts`                               | 计划 fallback 部门说明                        |
-| `format-guidance.ts` / `word-count-guidance.ts`     | 体裁与篇幅提示                                |
+| 文件                                            | 用途                                          |
+| ----------------------------------------------- | --------------------------------------------- |
+| `task-plan.ts`                                  | 任务状态判断、dispatch 路由、`withActiveTask` |
+| `pipeline.ts`                                   | `MAX_ACCEPT_ATTEMPTS`（验收上限）             |
+| `format-guidance.ts` / `word-count-guidance.ts` | 体裁与篇幅提示                                |
+| `resolve-production-max-tokens.ts`              | 制作 LLM 输出 token 上限                      |
+| `progress-labels.ts`                            | 运行进度文案                                  |
 
 ## 任务状态
 

@@ -1,4 +1,5 @@
 import { HumanMessage } from "@langchain/core/messages";
+import type { RunnableConfig } from "@langchain/core/runnables";
 
 import {
   fallbackConversationTitleFromText,
@@ -40,6 +41,7 @@ function fallbackTitle(
 /** 首条 human 且占位标题时，生成对话标题建议 */
 export async function resolveConversationTitle(
   state: AgentStateType,
+  config?: RunnableConfig,
 ): Promise<string | null> {
   if (!needsConversationTitle(state)) {
     return null;
@@ -64,6 +66,7 @@ export async function resolveConversationTitle(
       ConversationTitleResponseSchema,
       [new HumanMessage(prompt)],
       { name: "generate_conversation_title" },
+      config,
     );
     return (
       sanitizeAutoConversationTitle(parsed.conversationTitle) ??

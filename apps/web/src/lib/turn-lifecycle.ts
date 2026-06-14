@@ -1,4 +1,4 @@
-import type { Message } from "@langchain/langgraph-sdk";
+import type { Client, Message } from "@langchain/langgraph-sdk";
 import { EMPTY_TURN_RUNTIME, mergeTurnRuntime } from "@yougan/domain";
 
 import type { YouganValues } from "@/lib/types";
@@ -8,19 +8,64 @@ import { buildTurnCancelPatch } from "./cancel-turn";
 /** LangGraph SDK 将活跃 run id 写入 sessionStorage 的 key 前缀 */
 const LANGGRAPH_STREAM_RUN_KEY_PREFIX = "lg:stream:";
 
+const ACTIVE_LANGGRAPH_RUN_STATUSES = new Set(["pending", "running"]);
+
 /** 新 submit 前重置的回合运行时与验收产物 */
 export const TURN_EPHEMERAL_RESET: Pick<
   YouganValues,
-  "turn" | "nextStepSuggestions" | "generatedConversationTitle"
+  "turn" | "nextStepSuggestions" | "generatedConversationTitle" | "runProgress"
 > = {
   turn: { ...EMPTY_TURN_RUNTIME },
   nextStepSuggestions: null,
   generatedConversationTitle: null,
+  runProgress: null,
 };
 
 export function getActiveLangGraphRunId(threadId: string): string | null {
   if (typeof sessionStorage === "undefined") return null;
   return sessionStorage.getItem(`${LANGGRAPH_STREAM_RUN_KEY_PREFIX}${threadId}`);
+}
+
+export function clearActiveLangGraphRunId(threadId: string): void {
+  if (typeof sessionStorage === "undefined") return;
+  sessionStorage.removeItem(`${LANGGRAPH_STREAM_RUN_KEY_PREFIX}${threadId}`);
+}
+
+export function isActiveLangGraphRunStatus(status: string): boolean {
+  return ACTIVE_LANGGRAPH_RUN_STATUSES.has(status);
+}
+
+/** checkpoint 是否表示回合仍在执行（非 committed / cancelled） */
+export function isTurnInFlight(values: YouganValues | null | undefined): boolean {
+  const turn = values?.turn;
+  if (!turn || turn.committed || turn.cancelled) return false;
+  if (turn.activeKind != null || turn.queue.length > 0) return true;
+  return values?.runProgress != null;
+}
+
+/** sessionStorage 或 runs.list 解析可 join 的 run id；无则返回 null */
+export async function findResumableLangGraphRunId(
+  client: Client,
+  threadId: string,
+): Promise<string | null> {
+  const storedRunId = getActiveLangGraphRunId(threadId);
+  if (storedRunId) {
+    try {
+      const run = await client.runs.get(threadId, storedRunId);
+      if (isActiveLangGraphRunStatus(run.status)) return storedRunId;
+    } catch {
+      // stale session entry
+    }
+    clearActiveLangGraphRunId(threadId);
+  }
+
+  for (const status of ["running", "pending"] as const) {
+    const runs = await client.runs.list(threadId, { status, limit: 1 });
+    const runId = runs[0]?.run_id;
+    if (runId) return runId;
+  }
+
+  return null;
 }
 
 /** 取消完成后写入 checkpoint 的完整回合清理 patch */
@@ -29,7 +74,7 @@ export function buildTurnFinalizePatch(
   messages: Message[],
 ): Pick<
   YouganValues,
-  "turn" | "nextStepSuggestions" | "generatedConversationTitle"
+  "turn" | "nextStepSuggestions" | "generatedConversationTitle" | "runProgress"
 > {
   const { turn: cancelled } = buildTurnCancelPatch(prev, messages);
   return {
@@ -40,5 +85,6 @@ export function buildTurnFinalizePatch(
     }),
     nextStepSuggestions: null,
     generatedConversationTitle: null,
+    runProgress: null,
   };
 }

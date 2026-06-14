@@ -1,6 +1,6 @@
 import type { AgentStatePatch } from "#agent/state.js";
 
-/** 管线流转控制：路由由 afterRouteProduction 条件边读取任务状态 */
+/** 流转锚点：无状态变更，路由由 afterRouteProduction 条件边负责 */
 export async function routeProductionNode(): Promise<AgentStatePatch> {
   return {};
 }

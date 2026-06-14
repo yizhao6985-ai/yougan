@@ -1,8 +1,13 @@
 /** 执行者（executeWriting / executeDesign）单任务产出逻辑 */
-import { HumanMessage } from "@langchain/core/messages";
+import { HumanMessage, SystemMessage } from "@langchain/core/messages";
+import type { LangGraphRunnableConfig } from "@langchain/langgraph";
 
 import { invokeStructured } from "#agent/llm/invoke/index.js";
-import { createChatModel } from "#agent/llm/providers/index.js";
+import { createProductionChatModel } from "#agent/llm/providers/index.js";
+import {
+  patchRunProgress,
+  withRunProgressHeartbeat,
+} from "#agent/state-io/run-progress.js";
 import type { ProductionDepartment } from "@yougan/domain";
 import {
   getModelTemperature,
@@ -13,16 +18,24 @@ import {
 } from "#agent/state-io/index.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
-import { buildProduceTaskPrompt } from "./produce-task-prompt.js";
 import {
-  TaskDeliverablePayloadSchema,
-  type TaskDeliverablePayload,
-} from "./produce-task-schema.js";
+  productionExecuteDesignProgress,
+  productionExecuteWritingProgress,
+} from "../../../helpers/progress-labels.js";
+import { resolveProductionMaxTokens } from "../../../helpers/resolve-production-max-tokens.js";
 import {
   currentActiveTask,
   isTaskReady,
   taskNeedsProduce,
-} from "./task-plan.js";
+} from "../../../helpers/task-plan.js";
+import {
+  buildProduceTaskHumanPrompt,
+  buildProduceTaskSystemPrompt,
+} from "../prompt.js";
+import {
+  TaskDeliverablePayloadSchema,
+  type TaskDeliverablePayload,
+} from "../schema.js";
 
 export type ProductionExecutorId = "executeWriting" | "executeDesign";
 
@@ -55,6 +68,7 @@ const EXECUTOR_LABELS: Record<ProductionExecutorId, string> = {
 export async function produceNextTask(
   state: AgentStateType,
   executor: ProductionExecutorId,
+  config?: LangGraphRunnableConfig,
 ): Promise<AgentStatePatch> {
   const plan = getProduction(state);
   const task = currentActiveTask(plan);
@@ -68,23 +82,37 @@ export async function produceNextTask(
 
   const profile = getProfile(state);
   const references = getReferences(state);
-  const llm = createChatModel({ temperature: getModelTemperature(state) });
-  const prompt = buildProduceTaskPrompt({
+  const llm = createProductionChatModel({
+    temperature: getModelTemperature(state),
+    maxTokens: resolveProductionMaxTokens(profile),
+  });
+  const promptInput = {
     profile,
     references,
     task,
-    planSummary: plan.summary ?? null,
+    userRequirements: plan.summary ?? null,
     readySnippet: readyTasksSnippet(state, task.id),
     executorLabel: EXECUTOR_LABELS[executor],
-  });
+  };
 
   let payload: TaskDeliverablePayload;
+  const progress =
+    executor === "executeDesign"
+      ? productionExecuteDesignProgress(task.description)
+      : productionExecuteWritingProgress(task.description);
+
   try {
-    payload = await invokeStructured(
-      llm,
-      TaskDeliverablePayloadSchema,
-      [new HumanMessage(prompt)],
-      { name: "executor_produce_task" },
+    payload = await withRunProgressHeartbeat(progress, config, () =>
+      invokeStructured(
+        llm,
+        TaskDeliverablePayloadSchema,
+        [
+          new SystemMessage(buildProduceTaskSystemPrompt(promptInput)),
+          new HumanMessage(buildProduceTaskHumanPrompt(promptInput)),
+        ],
+        { name: "executor_produce_task" },
+        config,
+      ),
     );
   } catch {
     payload = {
@@ -109,5 +137,8 @@ export async function produceNextTask(
       : t,
   );
 
-  return patchPendingProductionFields(state, { ...plan, pending_tasks });
+  return {
+    ...patchPendingProductionFields(state, { ...plan, pending_tasks }),
+    ...patchRunProgress(progress),
+  };
 }

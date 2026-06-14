@@ -1,8 +1,13 @@
 /** work node：全部任务备妥后整理为最终 preview */
-import { HumanMessage } from "@langchain/core/messages";
+import { HumanMessage, SystemMessage } from "@langchain/core/messages";
+import type { RunnableConfig } from "@langchain/core/runnables";
 
 import { invokeStructured } from "#agent/llm/invoke/index.js";
-import { createChatModel } from "#agent/llm/providers/index.js";
+import { createProductionChatModel } from "#agent/llm/providers/index.js";
+import {
+  patchRunProgress,
+  withRunProgressHeartbeat,
+} from "#agent/state-io/run-progress.js";
 import {
   resolveDeliveryFromProfile,
   type TaskDeliverable,
@@ -17,7 +22,12 @@ import {
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
 import { allTasksReady } from "../../helpers/task-plan.js";
-import { buildConsolidatePrompt } from "./prompt.js";
+import { productionAssembleProgress } from "../../helpers/progress-labels.js";
+import { resolveProductionMaxTokens } from "../../helpers/resolve-production-max-tokens.js";
+import {
+  buildConsolidateHumanPrompt,
+  buildConsolidateSystemPrompt,
+} from "./prompt.js";
 import {
   ConsolidatedPreviewSchema,
   type ConsolidatedPreview,
@@ -25,41 +35,50 @@ import {
 
 export async function assemblePreviewNode(
   state: AgentStateType,
+  config?: RunnableConfig,
 ): Promise<AgentStatePatch> {
   const production = getProduction(state);
   if (!allTasksReady(production)) {
     return {};
   }
 
-  const deliverables: TaskDeliverable[] = production.pending_tasks
-    .map((t) => {
+  const progress = productionAssembleProgress();
+
+  const deliverables: TaskDeliverable[] = production.pending_tasks.flatMap(
+    (t) => {
       const body = t.deliverable?.body?.trim();
-      if (!body) return null;
-      return {
+      if (!body) return [];
+      const item: TaskDeliverable = {
         taskId: t.id,
         body,
-        title: t.deliverable?.title ?? null,
-        notes: t.deliverable?.notes ?? null,
+        title: t.deliverable?.title,
+        notes: t.deliverable?.notes,
       };
-    })
-    .filter((d): d is TaskDeliverable => d !== null);
+      return [item];
+    },
+  );
 
   const profile = getProfile(state);
   const delivery = resolveDeliveryFromProfile(profile);
-  const llm = createChatModel({ temperature: getModelTemperature(state) });
-  const prompt = buildConsolidatePrompt({ profile, plan: production, deliverables });
+  const llm = createProductionChatModel({
+    temperature: getModelTemperature(state),
+    maxTokens: resolveProductionMaxTokens(profile),
+  });
+  const promptInput = { profile, plan: production, deliverables };
 
   let payload: ConsolidatedPreview;
   try {
-    payload = await invokeStructured(
-      llm,
-      ConsolidatedPreviewSchema,
-      [
-        new HumanMessage(
-          `你是整理编辑，将备妥片段组织为最终成稿（以编排为主，勿大改内容）。\n\n${prompt}`,
-        ),
-      ],
-      { name: "assemble_preview" },
+    payload = await withRunProgressHeartbeat(progress, config, () =>
+      invokeStructured(
+        llm,
+        ConsolidatedPreviewSchema,
+        [
+          new SystemMessage(buildConsolidateSystemPrompt({ profile })),
+          new HumanMessage(buildConsolidateHumanPrompt(promptInput)),
+        ],
+        { name: "assemble_preview" },
+        config,
+      ),
     );
   } catch {
     const body = deliverables.map((d) => d.body).join("\n\n---\n\n");
@@ -81,9 +100,12 @@ export async function assemblePreviewNode(
     notes: payload.notes ?? null,
   };
 
-  return patchPendingProductionFields(state, {
-    ...production,
-    pending_tasks: [],
-    preview,
-  });
+  return {
+    ...patchPendingProductionFields(state, {
+      ...production,
+      pending_tasks: [],
+      preview,
+    }),
+    ...patchRunProgress(progress),
+  };
 }

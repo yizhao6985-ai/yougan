@@ -13,7 +13,7 @@ export {
   type MiniMaxModelId,
   type QwenModelId,
 } from "./catalog.js";
-export { createChatModel } from "./dashscope.js";
+export { createChatModel, createProductionChatModel } from "./dashscope.js";
 export { createMultimodalChatModel } from "./minimax.js";
 export { transcribeRemoteMedia } from "./dashscope-asr.js";
 export {

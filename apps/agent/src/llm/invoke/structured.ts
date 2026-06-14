@@ -1,8 +1,9 @@
 /**
  * 结构化输出调用（同步 invoke）。
- * 内部 LLM 默认带 nostream tag，避免 messages-tuple 泄漏到前端。
+ * 内部 LLM 默认带 nostream tag，避免 messages-tuple 泄漏到前端；
+ * 并强制 streaming: false，走一次性 completion 而非流式读 chunk。
  */
-import type { BaseMessage } from "@langchain/core/messages";
+import { AIMessage, type BaseMessage } from "@langchain/core/messages";
 import type { BaseLanguageModelInput } from "@langchain/core/language_models/base";
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import type { RunnableConfig } from "@langchain/core/runnables";
@@ -12,6 +13,8 @@ import type { MeteringModelId } from "@yougan/domain";
 import { sanitizeMessagesForTextChat } from "#agent/messages/llm-input.js";
 import { env } from "#agent/env.js";
 import {
+  getRunMeteringAccumulator,
+  recordRunMeteringUsageIfMissing,
   resolveMinimaxMeteringModelId,
   resolveQwenMeteringModelId,
   withMeteringCallbacks,
@@ -27,6 +30,8 @@ export type StructuredInvokeOptions = {
 
 type ChatModelWithKwargs = BaseChatModel & {
   modelKwargs?: Record<string, unknown>;
+  /** ChatOpenAI：结构化 invoke 走非流式，避免 _streamResponseChunks 与 AbortSignal 交织 */
+  streaming?: boolean;
 };
 
 type ChatModelWithName = BaseChatModel & {
@@ -45,9 +50,12 @@ export function isolatedStructuredConfig(
   return { ...config, tags };
 }
 
-/** Qwen：关闭 thinking，避免与 functionCalling 结构化输出冲突。 */
+/** Qwen：关闭 thinking；全模型：关闭 streaming（结构化产出专用非流式 invoke） */
 function forStructuredInvoke(llm: BaseChatModel): BaseChatModel {
   const chat = llm as ChatModelWithKwargs;
+  if ("streaming" in chat) {
+    chat.streaming = false;
+  }
   if (chat.modelKwargs !== undefined) {
     chat.modelKwargs = {
       ...chat.modelKwargs,
@@ -93,14 +101,30 @@ export async function invokeStructured<T extends Record<string, unknown>>(
 ): Promise<T> {
   const meteringModelId = resolveStructuredMeteringModelId(llm, options);
   const baseConfig = isolatedStructuredConfig(config);
-  const meteredConfig = withMeteringCallbacks(baseConfig, meteringModelId);
+  const callCountBefore = getRunMeteringAccumulator(config).callCount;
+  const meteredConfig = withMeteringCallbacks(
+    baseConfig,
+    meteringModelId,
+    config,
+  );
   const structured = forStructuredInvoke(llm).withStructuredOutput(schema, {
     name: options?.name ?? "structured_output",
     method: options?.method ?? "functionCalling",
+    includeRaw: true,
   });
   const result = (await structured.invoke(
     sanitizeStructuredInput(input),
     meteredConfig,
-  )) as T;
-  return result;
+  )) as { parsed: T; raw: BaseMessage };
+  if (getRunMeteringAccumulator(config).callCount === callCountBefore) {
+    const raw = result.raw;
+    if (raw instanceof AIMessage) {
+      recordRunMeteringUsageIfMissing(
+        config,
+        meteringModelId,
+        raw.usage_metadata,
+      );
+    }
+  }
+  return result.parsed;
 }

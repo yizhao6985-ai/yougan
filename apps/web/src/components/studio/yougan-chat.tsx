@@ -31,6 +31,7 @@ import type { TurnQueueKind } from "@/lib/types";
 export function YouganChat() {
   const {
     stream,
+    runProgress,
     sendMessage,
     cancelActiveTurn,
     canChat,
@@ -124,6 +125,10 @@ export function YouganChat() {
     [canSend, sendMessage],
   );
 
+  const loadingStatusLabel =
+    runProgress?.label ?? CHAT_COPY.replying;
+  const loadingStatusDetail = runProgress?.detail?.trim() ?? null;
+
   const chatStatus = stream.isLoading ? "streaming" : "ready";
 
   if (!activeWork) {
@@ -155,6 +160,11 @@ export function YouganChat() {
   const guardrailCount = profile.guardrails?.length ?? 0;
 
   const statusHint = (() => {
+    if (stream.isLoading && runProgress?.label) {
+      return runProgress.detail?.trim()
+        ? `${runProgress.label} · ${runProgress.detail.trim()}`
+        : runProgress.label;
+    }
     switch (activeKind) {
       case "reference":
         return CHAT_COPY.status.referenceProcessing;
@@ -333,8 +343,18 @@ export function YouganChat() {
                   <MessageContent className="w-full max-w-full p-0">
                     <ChatStreamBlock>
                       <Shimmer className={chatStreamBlock.muted}>
-                        {CHAT_COPY.replying}
+                        {loadingStatusLabel}
                       </Shimmer>
+                      {loadingStatusDetail ? (
+                        <p
+                          className={cn(
+                            chatStreamBlock.muted,
+                            "mt-1.5 text-xs leading-5",
+                          )}
+                        >
+                          {loadingStatusDetail}
+                        </p>
+                      ) : null}
                     </ChatStreamBlock>
                   </MessageContent>
                 </Message>

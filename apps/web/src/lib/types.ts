@@ -30,6 +30,7 @@ export type {
   YouganStreamValues,
   YouganAgentSubmitInput,
   TurnQueueKind,
+  RunProgress,
 } from "@yougan/domain";
 
 export { DEFAULT_NEXT_STEP_SUGGESTIONS_HINT } from "@yougan/domain";

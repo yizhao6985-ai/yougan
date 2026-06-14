@@ -1,10 +1,15 @@
 /** 单任务方向性验收；仅更新任务状态，流转由 routeProduction 负责 */
-import { HumanMessage } from "@langchain/core/messages";
+import { HumanMessage, SystemMessage } from "@langchain/core/messages";
+import type { RunnableConfig } from "@langchain/core/runnables";
 import { z } from "zod";
 
 import { invokeStructured } from "#agent/llm/invoke/index.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
-import { profileSummary } from "#agent/prompts/profile-summary.js";
+import {
+  emitRunProgress,
+  patchRunProgress,
+  withRunProgressHeartbeat,
+} from "#agent/state-io/run-progress.js";
 import {
   getProduction,
   getProfile,
@@ -13,21 +18,31 @@ import {
 } from "#agent/state-io/index.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
-import { isValidTaskDeliverable } from "../../helpers/deliverable.js";
-import { MAX_ACCEPT_ATTEMPTS } from "../../helpers/pipeline.js";
+import { acceptAttemptsExhausted, MAX_ACCEPT_ATTEMPTS } from "../../helpers/pipeline.js";
+import { productionAcceptProgress } from "../../helpers/progress-labels.js";
 import {
+  currentActiveTask,
   defaultTaskGuidance,
   taskAwaitingAccept,
 } from "../../helpers/task-plan.js";
-import { buildWordCountRequirement } from "../../helpers/word-count-guidance.js";
+import { isValidTaskDeliverable } from "./helpers/deliverable.js";
+import {
+  buildAcceptTaskHumanPrompt,
+  buildAcceptTaskSystemPrompt,
+} from "./prompt.js";
 
+/** 待验收任务：有 deliverable 或当前 in_progress（执行后无论是否产出都应验收） */
 function resolveAcceptTarget(state: AgentStateType): {
   taskId: string;
 } | null {
   const plan = getProduction(state);
-  const task = plan.pending_tasks.find(taskAwaitingAccept);
-  if (!task) return null;
-  return { taskId: task.id };
+  const withDeliverable = plan.pending_tasks.find(taskAwaitingAccept);
+  if (withDeliverable) return { taskId: withDeliverable.id };
+
+  const active = currentActiveTask(plan);
+  if (active) return { taskId: active.id };
+
+  return null;
 }
 
 const AcceptResultSchema = z.object({
@@ -35,9 +50,43 @@ const AcceptResultSchema = z.object({
   feedback: z.string().describe("未通过时的具体修改建议；通过时可简短肯定"),
 });
 
+/** 验收次数已满但状态未标 failed 时兜底，避免 dispatch ↔ route 死循环 */
+function reconcileExhaustedInProgressTask(
+  state: AgentStateType,
+): AgentStatePatch | null {
+  const plan = getProduction(state);
+  const stuck = plan.pending_tasks.find(
+    (t) =>
+      t.status === "in_progress" &&
+      acceptAttemptsExhausted(t) &&
+      !taskAwaitingAccept(t),
+  );
+  if (!stuck) return null;
+
+  return patchPendingProductionFields(state, {
+    ...plan,
+    pending_tasks: plan.pending_tasks.map((t) =>
+      t.id === stuck.id
+        ? {
+            ...t,
+            status: "failed" as const,
+            deliverable: null,
+            failure_message:
+              t.failure_message?.trim() ||
+              `任务「${t.description}」验收已达上限仍未通过，已终止。`,
+          }
+        : t,
+    ),
+  });
+}
+
 export async function acceptTaskNode(
   state: AgentStateType,
+  config?: RunnableConfig,
 ): Promise<AgentStatePatch> {
+  const reconciled = reconcileExhaustedInProgressTask(state);
+  if (reconciled) return reconciled;
+
   const target = resolveAcceptTarget(state);
   if (!target) {
     return {};
@@ -53,6 +102,10 @@ export async function acceptTaskNode(
     return {};
   }
 
+  const progress = productionAcceptProgress(task.description);
+  const progressPatch = patchRunProgress(progress);
+  emitRunProgress(progress, config);
+
   const guidance = defaultTaskGuidance(task.description);
   if (task.direction?.trim()) {
     guidance.direction = task.direction.trim();
@@ -64,46 +117,34 @@ export async function acceptTaskNode(
   let passed = true;
   let feedback = "";
 
-  const wordCountRequirement = buildWordCountRequirement(profile);
-  const wordCountNote = wordCountRequirement
-    ? `方案全文篇幅要求（${wordCountRequirement}）在 assemblePreview 整合阶段统一校验；本任务仅验收片段是否方向正确、质量达标，勿按全文字数否决单片段。`
-    : "";
-
   if (!isValidTaskDeliverable(deliverable)) {
     passed = false;
     feedback = "缺少有效任务交付物，需先完成产出后再验收。";
   } else {
     const llm = createChatModel({ temperature: 0.2 });
-    const prompt = `你是制作验收员，从**总监方向指导**层面验收单任务产出（不是只看有没有写完）。
-
-## 任务
-描述：${task.description}
-部门：${task.department ?? "writing"}
-
-## 总监方向指导
-${guidance.direction}
-
-## 方向性验收标准
-${guidance.acceptance_criteria}
-
-## 作品方案（profile 摘要）
-${profileSummary(profile, references)}
-
-计划摘要：${plan.summary ?? "无"}
-
-## 本任务交付物
-${deliverable!.body.slice(0, 2000)}
-${deliverable!.notes ? `\n备注：${deliverable!.notes.slice(0, 500)}` : ""}
-
-验收重点：是否契合作品方案的方向、体裁与规则；是否响应该任务的目标与总监指导；实现质量是否达标。
-${wordCountNote}`;
+    const promptInput = {
+      profile,
+      references,
+      task,
+      userRequirements: plan.summary ?? null,
+      direction: guidance.direction,
+      acceptanceCriteria: guidance.acceptance_criteria,
+      deliverableBody: deliverable!.body,
+      deliverableNotes: deliverable!.notes,
+    };
 
     try {
-      const parsed = await invokeStructured(
-        llm,
-        AcceptResultSchema,
-        [new HumanMessage(prompt)],
-        { name: "production_accept_task" },
+      const parsed = await withRunProgressHeartbeat(progress, config, () =>
+        invokeStructured(
+          llm,
+          AcceptResultSchema,
+          [
+            new SystemMessage(buildAcceptTaskSystemPrompt({ profile, references })),
+            new HumanMessage(buildAcceptTaskHumanPrompt(promptInput)),
+          ],
+          { name: "production_accept_task" },
+          config,
+        ),
       );
       passed = parsed.passed;
       feedback = parsed.feedback?.trim() ?? "";
@@ -114,54 +155,63 @@ ${wordCountNote}`;
   }
 
   if (passed) {
-    return patchPendingProductionFields(state, {
-      ...plan,
-      pending_tasks: plan.pending_tasks.map((t) =>
-        t.id === task.id
-          ? {
-              ...t,
-              status: "ready" as const,
-              feedback: null,
-              accept_retry_count: 0,
-              failure_message: null,
-            }
-          : t,
-      ),
-    });
+    return {
+      ...patchPendingProductionFields(state, {
+        ...plan,
+        pending_tasks: plan.pending_tasks.map((t) =>
+          t.id === task.id
+            ? {
+                ...t,
+                status: "ready" as const,
+                feedback: null,
+                accept_retry_count: 0,
+                failure_message: null,
+              }
+            : t,
+        ),
+      }),
+      ...progressPatch,
+    };
   }
 
   const attemptCount = (task.accept_retry_count ?? 0) + 1;
 
   if (attemptCount >= MAX_ACCEPT_ATTEMPTS) {
-    return patchPendingProductionFields(state, {
+    return {
+      ...patchPendingProductionFields(state, {
+        ...plan,
+        pending_tasks: plan.pending_tasks.map((t) =>
+          t.id === task.id
+            ? {
+                ...t,
+                status: "failed" as const,
+                feedback,
+                deliverable: null,
+                accept_retry_count: attemptCount,
+                failure_message: `任务「${task.description}」验收 ${attemptCount} 次仍未通过：${feedback}`,
+              }
+            : t,
+        ),
+      }),
+      ...progressPatch,
+    };
+  }
+
+  return {
+    ...patchPendingProductionFields(state, {
       ...plan,
       pending_tasks: plan.pending_tasks.map((t) =>
         t.id === task.id
           ? {
               ...t,
-              status: "failed" as const,
+              status: "in_progress" as const,
               feedback,
               deliverable: null,
               accept_retry_count: attemptCount,
-              failure_message: `任务「${task.description}」验收 ${attemptCount} 次仍未通过：${feedback}`,
             }
           : t,
       ),
-    });
-  }
-
-  return patchPendingProductionFields(state, {
-    ...plan,
-    pending_tasks: plan.pending_tasks.map((t) =>
-      t.id === task.id
-        ? {
-            ...t,
-            status: "in_progress" as const,
-            feedback,
-            deliverable: null,
-            accept_retry_count: attemptCount,
-          }
-        : t,
-    ),
-  });
+    }),
+    ...progressPatch,
+  };
 }

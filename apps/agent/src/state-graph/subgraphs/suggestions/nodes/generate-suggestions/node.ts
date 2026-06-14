@@ -1,5 +1,6 @@
 /** suggestions 子图：生成 nextStepSuggestions（开屏 7 条 / 回合末 4 条） */
 import { HumanMessage } from "@langchain/core/messages";
+import type { RunnableConfig } from "@langchain/core/runnables";
 
 import {
   DEFAULT_NEXT_STEP_SUGGESTIONS_HINT,
@@ -31,6 +32,7 @@ async function invokeNextStepSuggestions(
     lastAssistantReply?: string;
     temperature: number;
   },
+  config?: RunnableConfig,
 ): Promise<NextStepSuggestions | null> {
   const topicMode = options.isOpening && !hasSuggestionWorkContext(state);
   const llm = createChatModel({ temperature: options.temperature });
@@ -48,6 +50,7 @@ async function invokeNextStepSuggestions(
       nextStepSuggestionsResponseSchema(options.count),
       [new HumanMessage(prompt)],
       { name: "next_step_suggestions" },
+      config,
     );
     const suggestions = parsed.suggestions.map((s) =>
       newNextStepSuggestion(s.kind, s.label, s.message),
@@ -67,34 +70,44 @@ async function invokeNextStepSuggestions(
 
 async function resolveNextStepSuggestions(
   state: AgentStateType,
+  config?: RunnableConfig,
 ): Promise<NextStepSuggestions | null> {
   const isOpening = (state.messages ?? []).length === 0;
 
   if (isOpening) {
-    return invokeNextStepSuggestions(state, {
-      count: OPENING_NEXT_STEP_SUGGESTIONS_COUNT,
-      isOpening: true,
-      temperature: 0.55,
-    });
+    return invokeNextStepSuggestions(
+      state,
+      {
+        count: OPENING_NEXT_STEP_SUGGESTIONS_COUNT,
+        isOpening: true,
+        temperature: 0.55,
+      },
+      config,
+    );
   }
 
   const { lastAssistant, lastUser } = extractLastMessages(state);
-  return invokeNextStepSuggestions(state, {
-    count: TURN_NEXT_STEP_SUGGESTIONS_COUNT,
-    isOpening: false,
-    lastUserMessage: lastUser,
-    lastAssistantReply: lastAssistant,
-    temperature: 0.6,
-  });
+  return invokeNextStepSuggestions(
+    state,
+    {
+      count: TURN_NEXT_STEP_SUGGESTIONS_COUNT,
+      isOpening: false,
+      lastUserMessage: lastUser,
+      lastAssistantReply: lastAssistant,
+      temperature: 0.6,
+    },
+    config,
+  );
 }
 
 export async function generateSuggestionsNode(
   state: AgentStateType,
+  config?: RunnableConfig,
 ): Promise<AgentStatePatch> {
   if (state.turn.cancelled) {
     return {};
   }
 
-  const nextStepSuggestions = await resolveNextStepSuggestions(state);
+  const nextStepSuggestions = await resolveNextStepSuggestions(state, config);
   return { nextStepSuggestions };
 }

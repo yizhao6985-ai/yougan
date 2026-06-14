@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 
-import ffmpegPath from "ffmpeg-static";
+import ffmpegStatic from "ffmpeg-static";
 
 import { fetchReferenceAssetBuffer } from "./asset-fetch.js";
 
@@ -12,10 +12,15 @@ const execFileAsync = promisify(execFile);
 
 const MAX_FRAMES = 3;
 
+function resolveFfmpegPath(): string | null {
+  return typeof ffmpegStatic === "string" ? ffmpegStatic : null;
+}
+
 async function extractFramesFromFile(
   inputPath: string,
   outputDir: string,
 ): Promise<Buffer[]> {
+  const ffmpegPath = resolveFfmpegPath();
   if (!ffmpegPath) {
     throw new Error("FFMPEG_NOT_AVAILABLE");
   }

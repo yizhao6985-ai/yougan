@@ -57,6 +57,12 @@ const AgentEnvSchema = z
     DASHSCOPE_BASE_URL: optionalString,
     DASHSCOPE_MODEL: optionalString,
     LLM_MAX_TOKENS: z.coerce.number().int().positive().default(8192),
+    /** 制作产出 / 整合成稿：输出上限高于通用结构化调用 */
+    LLM_PRODUCTION_MAX_TOKENS: z.coerce
+      .number()
+      .int()
+      .positive()
+      .default(32768),
     LLM_TEMPERATURE: z.coerce.number().min(0).max(2).default(0.7),
     LLM_MODEL_IMAGE: optionalString,
     LLM_MODEL_ASR: optionalString,
@@ -78,6 +84,7 @@ const AgentEnvSchema = z
       dashscopeApiBaseUrl: resolveDashScopeApiBaseUrl(dashscopeBaseUrl),
       dashscopeModel: env.DASHSCOPE_MODEL ?? QWEN_MODELS.default,
       llmMaxTokens: env.LLM_MAX_TOKENS,
+      llmProductionMaxTokens: env.LLM_PRODUCTION_MAX_TOKENS,
       llmTemperature: env.LLM_TEMPERATURE,
       llmModelImage:
         env.LLM_MODEL_IMAGE ?? DASHSCOPE_IMAGE_MODELS.qwenImage20Pro,
