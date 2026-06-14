@@ -325,7 +325,6 @@ export const STUDIO = {
   referencesCount: (n: number) => `已添加 ${n} 条参考素材`,
   publishViewInDiscover: (sectionTitle: string) => `在${sectionTitle}查看`,
   modelTemperatureLabel: "创意度",
-  modelTemperatureScope: "制作环节",
   modelTemperatureHint:
     "调节制作环节 AI 的发散程度（文字、视觉等）。不影响定方案、提问与制作计划。",
 } as const;
@@ -345,6 +344,12 @@ export const CHAT_COPY = {
   },
   replying: "正在回复…",
   interrupted: "已中断",
+  productionConfirm: {
+    durationHint: "成稿制作会调用多个 AI 步骤，通常需要数分钟，请保持页面打开。",
+    confirm: "开始创作",
+    decline: "取消",
+    statusHint: "等待确认是否开始创作",
+  },
   stopRun: "停止",
   attachmentDrawer: {
     title: (count: number) => `附件 ${count}`,

@@ -4,11 +4,13 @@
 import { END, START, StateGraph } from "@langchain/langgraph";
 
 import { checkpointer } from "./checkpointer.js";
+import * as afterConfirmProductionTurn from "./state-graph/conditional-edges/after-confirm-production-turn.js";
 import * as afterAdvanceTurnQueue from "./state-graph/conditional-edges/after-advance-turn-queue.js";
 import * as afterCommitTurn from "./state-graph/conditional-edges/after-commit-turn.js";
 import * as afterDispatchTurnQueue from "./state-graph/conditional-edges/after-dispatch-turn-queue.js";
 import * as afterGateAiQuota from "./state-graph/conditional-edges/after-gate-ai-quota.js";
 import * as atGraphStart from "./state-graph/conditional-edges/at-graph-start.js";
+import { confirmProductionTurnNode } from "./state-graph/nodes/confirm-production-turn/node.js";
 import { advanceTurnQueueNode } from "./state-graph/nodes/advance-turn-queue/node.js";
 import { commitTurnNode } from "./state-graph/nodes/commit-turn/node.js";
 import { dispatchTurnQueueNode } from "./state-graph/nodes/dispatch-turn-queue/node.js";
@@ -29,6 +31,7 @@ const workflow = new StateGraph(AgentState)
   .addNode("finalizeRunMetering", finalizeRunMeteringNode)
   .addNode("planTurnQueue", planTurnQueueNode)
   .addNode("dispatchTurnQueue", dispatchTurnQueueNode)
+  .addNode("confirmProductionTurn", confirmProductionTurnNode)
   .addNode("advanceTurnQueue", advanceTurnQueueNode)
   .addNode("commitTurn", commitTurnNode)
   .addNode("postCommit", postCommitNode)
@@ -54,6 +57,11 @@ const workflow = new StateGraph(AgentState)
     afterDispatchTurnQueue.from,
     afterDispatchTurnQueue.selectAfterDispatchTurnQueue,
     afterDispatchTurnQueue.paths,
+  )
+  .addConditionalEdges(
+    "confirmProductionTurn",
+    afterConfirmProductionTurn.selectAfterConfirmProductionTurn,
+    afterConfirmProductionTurn.paths,
   )
   .addEdge("referenceGraph", "advanceTurnQueue")
   .addEdge("profileGraph", "advanceTurnQueue")

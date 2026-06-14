@@ -33,9 +33,6 @@ export function ModelTemperatureControl({
         >
           <span className="shrink-0 text-xs text-muted-foreground">
             {STUDIO.modelTemperatureLabel}
-            <span className="ml-1 text-[10px] font-normal text-muted-foreground/80">
-              {STUDIO.modelTemperatureScope}
-            </span>
           </span>
           <input
             type="range"
@@ -46,7 +43,7 @@ export function ModelTemperatureControl({
             disabled={disabled}
             onChange={(event) => onChange(Number(event.target.value))}
             className="h-1.5 w-full cursor-pointer accent-primary disabled:cursor-not-allowed"
-            aria-label={`${STUDIO.modelTemperatureLabel}（${STUDIO.modelTemperatureScope}）`}
+            aria-label={STUDIO.modelTemperatureLabel}
             aria-description={STUDIO.modelTemperatureHint}
             aria-valuemin={1}
             aria-valuemax={MODEL_TEMPERATURE_LEVELS}

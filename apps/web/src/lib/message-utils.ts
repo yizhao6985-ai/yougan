@@ -282,6 +282,10 @@ export function applyGraphUpdatesToValues<T extends { messages?: Message[] }>(
         prevTurn,
         patch.turn as Partial<TurnRuntime>,
       );
+      const { messages: _messages, turn: _turn, ...rest } = patch;
+      if (Object.keys(rest).length > 0) {
+        next = { ...next, ...(rest as Partial<T>) };
+      }
       continue;
     }
 

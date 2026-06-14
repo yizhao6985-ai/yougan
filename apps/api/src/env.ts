@@ -22,6 +22,7 @@ const ApiEnvSchema = z
       z.string().min(1),
     ),
     AGENT_URL: z.string().url().default("http://localhost:2024"),
+    RAG_SERVICE_URL: z.string().url().default("http://localhost:8000"),
     PUBLIC_BASE_URL: z.string().url().default("http://localhost:4000"),
     STORAGE_DRIVER: z.enum(["local", "s3"]).default("local"),
     STORAGE_LOCAL_DIR: z.string().default("./storage"),
@@ -62,6 +63,7 @@ const ApiEnvSchema = z
     port: env.PORT,
     jwtSecret: env.JWT_SECRET,
     agentUrl: env.AGENT_URL,
+    ragServiceUrl: env.RAG_SERVICE_URL,
     publicBaseUrl: env.PUBLIC_BASE_URL,
     webAppUrl: env.WEB_APP_URL,
     mail: {

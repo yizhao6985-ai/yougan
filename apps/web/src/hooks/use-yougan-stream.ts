@@ -18,6 +18,7 @@ import {
   findResumableLangGraphRunId,
   getActiveLangGraphRunId,
   isActiveLangGraphRunStatus,
+  isLangGraphThreadMissingError,
   isTurnInFlight,
   TURN_EPHEMERAL_RESET,
 } from "@/lib/turn-lifecycle";
@@ -28,10 +29,12 @@ import type {
   WorkConversation,
   RunProgress,
 } from "@/lib/types";
+import type { ProductionConfirmDecision } from "@yougan/domain";
 import {
   isRunProgressCustomPayload,
   pickRunProgress,
 } from "@/lib/run-progress";
+import { getProductionConfirmInterrupt } from "@/lib/production-confirm-interrupt";
 import { useAuthToken } from "@/store/auth";
 
 /** 消息 chunk 走 messages-tuple；其余 state（profile、turnQueue 等）走 updates 合并，避免 values 整表覆盖。 */
@@ -89,8 +92,12 @@ export function useYouganStream({
   const onRunCompleteRef = useRef(onRunComplete);
   onRunCompleteRef.current = onRunComplete;
 
+  const onThreadIdRef = useRef(onThreadId);
+  onThreadIdRef.current = onThreadId;
+
   const cancelInFlightRef = useRef<Promise<void> | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [isResumingInterrupt, setIsResumingInterrupt] = useState(false);
   /** cancel finalize 后合并到 stream.values，直至下次 submit 或 thread 重载 */
   const [postCancelValues, setPostCancelValues] =
     useState<Partial<YouganValues> | null>(null);
@@ -123,6 +130,18 @@ export function useYouganStream({
       if (conversationId) onThreadId?.(conversationId, id);
     },
     onError: (error) => {
+      if (isLangGraphThreadMissingError(error)) {
+        console.warn("[yougan] stale thread id, clearing", threadId);
+        if (threadId) {
+          clearActiveLangGraphRunId(threadId);
+          reconnectAttemptRef.current = null;
+        }
+        if (conversationId) {
+          void onThreadIdRef.current?.(conversationId, null);
+        }
+        return;
+      }
+
       console.error("[yougan] stream error", error);
       if (threadId) {
         clearActiveLangGraphRunId(threadId);
@@ -144,12 +163,30 @@ export function useYouganStream({
       onRunCompleteRef.current?.(workId, values);
     },
     onUpdateEvent: (update, { mutate }) => {
-      mutate((prev) =>
-        applyGraphUpdatesToValues(
-          (prev ?? {}) as YouganValues & { messages?: Message[] },
+      let committedValues: YouganValues | null = null;
+
+      mutate((prev) => {
+        const prevValues = (prev ?? {}) as YouganValues;
+        const next = applyGraphUpdatesToValues(
+          prevValues as YouganValues & { messages?: Message[] },
           update as Record<string, unknown>,
-        ),
-      );
+        );
+
+        const justCommitted =
+          prevValues.turn?.committed !== true &&
+          next.turn?.committed === true &&
+          next.turn?.cancelled !== true;
+
+        if (workId && justCommitted) {
+          committedValues = next;
+        }
+
+        return next;
+      });
+
+      if (committedValues) {
+        onRunCompleteRef.current?.(workId!, committedValues);
+      }
 
       for (const raw of Object.values(update as Record<string, unknown>)) {
         if (!raw || typeof raw !== "object" || !("runProgress" in raw)) continue;
@@ -213,7 +250,14 @@ export function useYouganStream({
           streamMode: [...LANGGRAPH_STREAM_MODE],
         });
       } catch (error) {
-        console.error("[yougan] join stream failed", error);
+        if (isLangGraphThreadMissingError(error)) {
+          console.warn("[yougan] stale thread id during join, clearing", threadId);
+          if (conversationId) {
+            void onThreadIdRef.current?.(conversationId, null);
+          }
+        } else {
+          console.error("[yougan] join stream failed", error);
+        }
         clearActiveLangGraphRunId(threadId);
       } finally {
         if (!cancelled) setIsJoiningRun(false);
@@ -401,8 +445,34 @@ export function useYouganStream({
     ],
   );
 
+  const resumeProductionConfirm = useCallback(
+    async (decision: ProductionConfirmDecision) => {
+      if (isResumingInterrupt) return;
+      setIsResumingInterrupt(true);
+      setLiveRunProgress(null);
+      try {
+        await stream.submit(null, {
+          ...SUBMIT_OPTIONS,
+          command: { resume: decision },
+        });
+      } finally {
+        setIsResumingInterrupt(false);
+      }
+    },
+    [isResumingInterrupt, stream],
+  );
+
+  const productionConfirmInterrupt = useMemo(
+    () => getProductionConfirmInterrupt(stream.interrupt),
+    [stream.interrupt],
+  );
+
   const canChat = Boolean(work && conversation && token);
-  const canSend = canChat && !hasActiveRun && !isCancelling;
+  const canSend =
+    canChat &&
+    !hasActiveRun &&
+    !isCancelling &&
+    !productionConfirmInterrupt;
 
   const isBootstrappingOpening =
     Boolean(conversation?.id) &&
@@ -445,6 +515,9 @@ export function useYouganStream({
     threadId,
     sendMessage,
     cancelActiveTurn,
+    resumeProductionConfirm,
+    productionConfirmInterrupt,
+    isResumingInterrupt,
     isCancelling,
     canSend,
     isBootstrappingOpening,

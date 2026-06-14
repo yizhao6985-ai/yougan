@@ -20,26 +20,30 @@ export function StudioCreateView() {
     clearWorkProfileSettings,
   } = useYouganStreamContext();
 
-  const staging = stream.values?.turn?.staging;
+  const streamValues = stream.values;
+  const staging = streamValues?.turn?.staging;
   const hasPendingStaging = Boolean(
-    staging && stream.values?.turn?.committed !== true,
+    staging && streamValues?.turn?.committed !== true,
   );
   const profile = hasPendingStaging
     ? mergeProfileForDisplay(activeWork?.profile, staging?.profile)
-    : activeWork?.profile;
+    : mergeProfileForDisplay(activeWork?.profile, streamValues?.profile);
   const references = hasPendingStaging
     ? mergeReferencesForDisplay(
         activeWork?.references,
-        staging?.references ?? stream.values?.references,
+        staging?.references ?? streamValues?.references,
       )
-    : (activeWork?.references ?? stream.values?.references ?? []);
+    : mergeReferencesForDisplay(
+        activeWork?.references,
+        streamValues?.references,
+      );
   const preview =
     staging?.production?.preview ??
-    stream.values?.production?.preview ??
+    streamValues?.production?.preview ??
     activeWork?.production?.preview ??
     null;
   const previewUnsaved = Boolean(
-    staging && stream.values?.turn?.committed !== true,
+    staging && streamValues?.turn?.committed !== true,
   );
 
   const panelContent = (

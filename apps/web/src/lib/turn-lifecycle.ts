@@ -35,6 +35,22 @@ export function isActiveLangGraphRunStatus(status: string): boolean {
   return ACTIVE_LANGGRAPH_RUN_STATUSES.has(status);
 }
 
+/** LangGraph checkpoint 中不存在该 thread（常见：Agent 库重置后 conversation 仍保留 threadId） */
+export function isLangGraphThreadMissingError(error: unknown): boolean {
+  const message =
+    error instanceof Error
+      ? error.message
+      : error && typeof error === "object" && "message" in error &&
+          typeof (error as { message?: unknown }).message === "string"
+        ? (error as { message: string }).message
+        : typeof error === "string"
+          ? error
+          : "";
+
+  const normalized = message.toLowerCase();
+  return normalized.includes("not found") && normalized.includes("thread");
+}
+
 /** checkpoint 是否表示回合仍在执行（非 committed / cancelled） */
 export function isTurnInFlight(values: YouganValues | null | undefined): boolean {
   const turn = values?.turn;
@@ -59,10 +75,15 @@ export async function findResumableLangGraphRunId(
     clearActiveLangGraphRunId(threadId);
   }
 
-  for (const status of ["running", "pending"] as const) {
-    const runs = await client.runs.list(threadId, { status, limit: 1 });
-    const runId = runs[0]?.run_id;
-    if (runId) return runId;
+  try {
+    for (const status of ["running", "pending"] as const) {
+      const runs = await client.runs.list(threadId, { status, limit: 1 });
+      const runId = runs[0]?.run_id;
+      if (runId) return runId;
+    }
+  } catch (error) {
+    if (isLangGraphThreadMissingError(error)) return null;
+    throw error;
   }
 
   return null;

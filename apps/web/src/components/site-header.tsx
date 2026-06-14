@@ -9,6 +9,8 @@ import {
   SmartphoneIcon,
 } from "lucide-react";
 
+import { HelpChatWidget } from "@yougan/help-chat";
+
 import { LocaleSelect } from "@/components/locale-select";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/studio/user-menu";
@@ -16,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { useIsAuthenticated } from "@/store/auth";
 import { DISCOVER_SECTION } from "@/lib/content-section";
 import { scene } from "@/lib/scene-styles";
+import { RAG_CHAT_API_URL } from "@/lib/env";
 import { BRAND, NAV, SETTINGS } from "@/lib/site-copy";
 import { cn } from "@/lib/utils";
 
@@ -27,7 +30,12 @@ function HeaderAuth() {
   }
 
   return (
-    <Button type="button" size="sm" className="h-10 shrink-0 px-4 md:h-11" asChild>
+    <Button
+      type="button"
+      size="sm"
+      className="h-10 shrink-0 px-4 md:h-11"
+      asChild
+    >
       <Link to="/login">{NAV.login}</Link>
     </Button>
   );
@@ -113,8 +121,8 @@ export function SiteHeader() {
         >
           <p
             className={cn(
-              "text-lg font-semibold leading-7 tracking-tight transition-colors group-hover:text-primary",
-              scene.titleLg,
+              "text-lg font-semibold leading-7 tracking-tight text-primary transition-colors",
+              "group-hover:text-sky-700 dark:group-hover:text-sky-500",
             )}
           >
             {BRAND.full}
@@ -165,7 +173,16 @@ export function SiteHeader() {
               active={onFeedbackPage}
               label={NAV.feedback}
               shortLabel={NAV.feedbackShort}
-              icon={<MessageSquarePlusIcon className="size-4 shrink-0" aria-hidden />}
+              icon={
+                <MessageSquarePlusIcon
+                  className="size-4 shrink-0"
+                  aria-hidden
+                />
+              }
+            />
+            <HelpChatWidget
+              apiUrl={RAG_CHAT_API_URL}
+              className={cn(scene.headerNavLink, scene.navIdle)}
             />
           </div>
         ) : null}

@@ -22,6 +22,7 @@ import { publicationsRouter } from "./routes/publications.js";
 import { usersRouter } from "./routes/users.js";
 import { uploadRouter, filesRouter } from "./routes/upload.js";
 import { createAgentProxy, injectWorkContext } from "./routes/agent-proxy.js";
+import { createRagChatProxy } from "./routes/rag-chat-proxy.js";
 import { requireAuth } from "./middleware/auth.js";
 import type { AuthedRequest } from "./middleware/auth.js";
 
@@ -75,6 +76,9 @@ export function createApp() {
   app.use("/api/upload", uploadRouter);
   app.use("/api", filesRouter);
 
+  // RAG 客服 Agent（AG-UI Protocol，无需登录）
+  app.use(createRagChatProxy());
+
   // Agent SDK 兼容代理（需 JWT + X-Work-Id）
   app.use("/agent", requireAuth, injectWorkContext, createAgentProxy());
 
@@ -93,6 +97,7 @@ export async function startServer() {
     console.log(`Yougan API listening on http://localhost:${env.port}`);
     console.log(`OpenAPI docs: http://localhost:${env.port}/docs`);
     console.log(`Agent proxy: http://localhost:${env.port}/agent`);
+    console.log(`RAG chat proxy: http://localhost:${env.port}/api/v1/chat`);
     if (isCacheEnabled()) {
       console.log("Redis cache enabled");
     }

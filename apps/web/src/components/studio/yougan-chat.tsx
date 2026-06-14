@@ -16,6 +16,7 @@ import { ChatToolActivity } from "@/components/studio/chat-tool-activity";
 import { NextStepSuggestionOptions } from "@/components/studio/next-step-suggestion-options";
 import { OpeningNextStepSuggestions } from "@/components/studio/opening-next-step-suggestions";
 import { useTurnNextStepSuggestions } from "@/hooks/use-turn-next-step-suggestions";
+import { ChatLoadingDots } from "@/components/studio/chat-loading-dots";
 import { StudioChatComposer } from "@/components/studio/studio-chat-composer";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { useYouganStreamContext } from "@/components/studio/yougan-stream-provider";
@@ -26,6 +27,7 @@ import { buildRenderItems, mergeChatMessages } from "@/lib/message-utils";
 import { scene } from "@/lib/scene-styles";
 import { cn } from "@/lib/utils";
 import { CHAT_COPY, STUDIO } from "@/lib/site-copy";
+import { ProductionConfirmPrompt } from "@/components/studio/production-confirm-prompt";
 import type { TurnQueueKind } from "@/lib/types";
 
 export function YouganChat() {
@@ -34,6 +36,9 @@ export function YouganChat() {
     runProgress,
     sendMessage,
     cancelActiveTurn,
+    resumeProductionConfirm,
+    productionConfirmInterrupt,
+    isResumingInterrupt,
     canChat,
     canSend,
     isBootstrappingOpening,
@@ -125,11 +130,8 @@ export function YouganChat() {
     [canSend, sendMessage],
   );
 
-  const loadingStatusLabel =
-    runProgress?.label ?? CHAT_COPY.replying;
-  const loadingStatusDetail = runProgress?.detail?.trim() ?? null;
-
-  const chatStatus = stream.isLoading ? "streaming" : "ready";
+  const chatStatus =
+    stream.isLoading || productionConfirmInterrupt ? "streaming" : "ready";
 
   if (!activeWork) {
     return (
@@ -160,6 +162,9 @@ export function YouganChat() {
   const guardrailCount = profile.guardrails?.length ?? 0;
 
   const statusHint = (() => {
+    if (productionConfirmInterrupt) {
+      return CHAT_COPY.productionConfirm.statusHint;
+    }
     if (stream.isLoading && runProgress?.label) {
       return runProgress.detail?.trim()
         ? `${runProgress.label} · ${runProgress.detail.trim()}`
@@ -338,24 +343,19 @@ export function YouganChat() {
                 );
               })}
 
+              {productionConfirmInterrupt ? (
+                <ProductionConfirmPrompt
+                  interrupt={productionConfirmInterrupt}
+                  disabled={isResumingInterrupt}
+                  onConfirm={() => void resumeProductionConfirm("confirm")}
+                  onDecline={() => void resumeProductionConfirm("decline")}
+                />
+              ) : null}
+
               {showShimmer && (
                 <Message from="assistant" className="max-w-full">
-                  <MessageContent className="w-full max-w-full p-0">
-                    <ChatStreamBlock>
-                      <Shimmer className={chatStreamBlock.muted}>
-                        {loadingStatusLabel}
-                      </Shimmer>
-                      {loadingStatusDetail ? (
-                        <p
-                          className={cn(
-                            chatStreamBlock.muted,
-                            "mt-1.5 text-xs leading-5",
-                          )}
-                        >
-                          {loadingStatusDetail}
-                        </p>
-                      ) : null}
-                    </ChatStreamBlock>
+                  <MessageContent>
+                    <ChatLoadingDots />
                   </MessageContent>
                 </Message>
               )}

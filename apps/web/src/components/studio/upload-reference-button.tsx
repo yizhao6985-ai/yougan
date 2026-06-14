@@ -1,4 +1,4 @@
-import { ImageIcon, MusicIcon, VideoIcon } from "lucide-react";
+import { ImageIcon } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { PromptInputButton } from "@/components/ai-elements/prompt-input";
@@ -85,20 +85,6 @@ export function UploadReferenceButtons() {
         icon={ImageIcon}
         disabled={disabled}
         tooltip={tooltipFor("image")}
-        onPick={handlePick}
-      />
-      <UploadKindButton
-        kind="audio"
-        icon={MusicIcon}
-        disabled={disabled}
-        tooltip={tooltipFor("audio")}
-        onPick={handlePick}
-      />
-      <UploadKindButton
-        kind="video"
-        icon={VideoIcon}
-        disabled={disabled}
-        tooltip={tooltipFor("video")}
         onPick={handlePick}
       />
     </>

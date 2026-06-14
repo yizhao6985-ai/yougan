@@ -1,3 +1,4 @@
+import type { ProductionConfirmDecision } from "./interrupts.js";
 import type { TurnStaging } from "./staging.js";
 
 /**
@@ -45,6 +46,8 @@ export interface TurnRuntime {
   committed: boolean;
   cancelled: boolean;
   interruptedMessageIds: string[];
+  /** confirmProductionTurn interrupt 恢复后写入；decline 时跳过 production 子图 */
+  productionConfirm: ProductionConfirmDecision | null;
 }
 
 export const EMPTY_TURN_RUNTIME: TurnRuntime = {
@@ -55,6 +58,7 @@ export const EMPTY_TURN_RUNTIME: TurnRuntime = {
   committed: false,
   cancelled: false,
   interruptedMessageIds: [],
+  productionConfirm: null,
 };
 
 function mergeTurnStaging(

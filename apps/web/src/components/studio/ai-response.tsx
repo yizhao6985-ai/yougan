@@ -1,10 +1,9 @@
 import { MessageResponse } from "@/components/ai-elements/message";
-import { Shimmer } from "@/components/ai-elements/shimmer";
+import { ChatLoadingDots } from "@/components/studio/chat-loading-dots";
 import {
   ChatStreamBlock,
   chatStreamBlock,
 } from "@/components/studio/chat-stream-block";
-import { CHAT_COPY } from "@/lib/site-copy";
 
 type AIResponseProps = {
   content: string;
@@ -21,18 +20,18 @@ export function AIResponse({
     return null;
   }
 
+  if (!hasContent && isStreaming) {
+    return <ChatLoadingDots />;
+  }
+
   return (
     <ChatStreamBlock>
-      {hasContent ? (
-        <MessageResponse
-          className={chatStreamBlock.body}
-          isAnimating={isStreaming}
-        >
-          {content}
-        </MessageResponse>
-      ) : isStreaming ? (
-        <Shimmer className={chatStreamBlock.muted}>{CHAT_COPY.replying}</Shimmer>
-      ) : null}
+      <MessageResponse
+        className={chatStreamBlock.body}
+        isAnimating={isStreaming}
+      >
+        {content}
+      </MessageResponse>
     </ChatStreamBlock>
   );
 }

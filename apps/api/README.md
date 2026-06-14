@@ -54,6 +54,7 @@ pnpm dev
 | `JWT_SECRET` | 是 | 签发/校验访问令牌 |
 | `PORT` | 否 | 默认 `4000` |
 | `AGENT_URL` | 否 | LangGraph 服务，默认 `http://localhost:2024` |
+| `RAG_SERVICE_URL` | 否 | RAG 客服上游，默认 `http://localhost:8000` |
 | `STORAGE_DRIVER` | 否 | `local`（默认）或 `s3` |
 | `STORAGE_LOCAL_DIR` | 否 | 本地上传目录，默认 `./storage` |
 | `PUBLIC_BASE_URL` | 否 | 对外 API 根 URL，默认 `http://localhost:4000` |
@@ -103,7 +104,8 @@ apps/api/
 | `/api/integrations` | `routes/integrations.ts` | 平台 OAuth 绑定 |
 | `/api/subscription` | `routes/subscription.ts` | 当前订阅与用量 |
 | `/api/billing` | `routes/billing.ts` | 订单与支付状态 |
-| `/langgraph` | `routes/agent-proxy.ts` | LangGraph SDK 代理（需登录 + `X-Work-Id`） |
+| `/api/v1/chat` | `routes/rag-chat-proxy.ts` | RAG 客服 Agent 代理（AG-UI SSE，转发至 `RAG_SERVICE_URL`） |
+| `/agent` | `routes/agent-proxy.ts` | LangGraph SDK 代理（需登录 + `X-Work-Id`） |
 | `/health` | `app.ts` | 健康检查（含 Redis 状态） |
 | `/docs` | `app.ts` | Swagger UI |
 
