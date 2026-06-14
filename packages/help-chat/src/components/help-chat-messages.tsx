@@ -1,4 +1,4 @@
-import { BookOpenIcon, MessageSquareTextIcon } from "lucide-react";
+import { BookOpenIcon, ChevronRightIcon, MessageSquareTextIcon } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -114,7 +114,11 @@ export function HelpChatMessages({
                 className={helpChatStyles.suggestionChip}
                 onClick={() => onSelectStarter?.(question)}
               >
-                {question}
+                <span>{question}</span>
+                <ChevronRightIcon
+                  className={helpChatStyles.suggestionChipHint}
+                  aria-hidden
+                />
               </button>
             ))}
           </div>

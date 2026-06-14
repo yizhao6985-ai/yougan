@@ -182,7 +182,7 @@ export function SiteHeader() {
             />
             <HelpChatWidget
               apiUrl={RAG_CHAT_API_URL}
-              className={cn(scene.headerNavLink, scene.navIdle)}
+              className={scene.headerNavLink}
             />
           </div>
         ) : null}

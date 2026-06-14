@@ -73,7 +73,7 @@ export function HelpChatPanel({ open, onOpenChange }: HelpChatPanelProps) {
         aria-label={closeLabel}
         className={cn(
           helpChatStyles.overlay,
-          "animate-in duration-200 fade-in",
+          "motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200",
         )}
         onClick={() => onOpenChange(false)}
       />
@@ -93,7 +93,7 @@ export function HelpChatPanel({ open, onOpenChange }: HelpChatPanelProps) {
           className={cn(
             "pointer-events-auto relative flex w-full max-w-3xl flex-col overflow-hidden rounded-2xl",
             helpChatStyles.shell,
-            "animate-in duration-200 fade-in zoom-in-95",
+            "motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-4 motion-safe:zoom-in-95 motion-safe:duration-200",
           )}
           onClick={(event) => event.stopPropagation()}
         >

@@ -7,9 +7,9 @@ export const scene = {
   appShell: "flex h-screen flex-col overflow-hidden bg-background",
 
   chrome:
-    "border-b border-border/80 bg-card/90 px-4 py-3.5 shadow-sm shadow-border/25 backdrop-blur sm:px-6 sm:py-4 lg:px-8",
+    "sticky top-0 z-40 border-b border-border/80 bg-card/90 px-4 py-3.5 shadow-sm shadow-border/25 backdrop-blur-md sm:px-6 sm:py-4 lg:px-8",
   headerNavLink:
-    "inline-flex h-10 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-medium transition md:h-11 md:px-3.5 lg:px-4",
+    "inline-flex h-10 shrink-0 cursor-pointer items-center gap-2 rounded-lg px-3 text-sm font-medium transition-colors duration-200 md:h-11 md:px-3.5 lg:px-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
   /** 对话区底部悬浮输入容器（透明渐变 + 绝对定位） */
   composer:
     "pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-background from-35% via-background/85 to-transparent px-4 pb-3 pt-12",
@@ -35,7 +35,7 @@ export const scene = {
 
   card: "rounded-lg border border-border/80 bg-card/95 shadow-sm shadow-border/20 backdrop-blur",
   cardInteractive:
-    "rounded-lg border border-border/80 bg-card/90 shadow-sm shadow-border/20 backdrop-blur transition hover:border-primary/20 hover:shadow-md",
+    "cursor-pointer rounded-lg border border-border/80 bg-card/90 shadow-sm shadow-border/20 backdrop-blur transition-[colors,box-shadow,border-color] duration-200 hover:border-primary/25 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30",
   cardFlat:
     "rounded-lg border border-border/80 bg-card p-4 shadow-sm shadow-border/15",
   cardPadding: "p-6",
@@ -46,21 +46,22 @@ export const scene = {
 
   eyebrow: "text-sm uppercase tracking-[0.2em] text-primary/80",
   titleLg: "text-lg font-medium text-foreground",
-  titleXl: "text-5xl font-semibold tracking-tight text-foreground",
+  titleXl:
+    "font-serif text-5xl font-semibold tracking-tight text-foreground sm:text-[3.25rem] sm:leading-[1.1]",
   titleMd: "text-2xl font-semibold text-foreground",
   subtitle: "text-lg leading-8 text-muted-foreground",
   body: "text-sm leading-6 text-muted-foreground",
   caption: "text-xs text-muted-foreground",
 
-  link: "text-primary transition hover:text-primary/85",
+  link: "text-primary transition-colors duration-200 hover:text-primary/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
   navActive: "bg-accent text-primary",
   navIdle:
     "text-muted-foreground hover:bg-secondary hover:text-foreground",
 
   ctaPrimary:
-    "rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-sm shadow-primary/20 transition hover:bg-primary/90",
+    "rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-sm shadow-primary/20 transition-colors duration-200 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
   ctaSecondary:
-    "rounded-lg border border-border bg-card/85 px-6 py-3 text-sm font-medium text-foreground/90 backdrop-blur transition hover:bg-card",
+    "rounded-lg border border-border bg-card/85 px-6 py-3 text-sm font-medium text-foreground/90 backdrop-blur transition-colors duration-200 hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
 
   tag: "rounded-md bg-accent px-2.5 py-1 text-xs font-medium text-primary",
   tagMuted:
