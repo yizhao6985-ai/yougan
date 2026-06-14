@@ -1,5 +1,27 @@
 # 有感 · 文档中心
 
+## 用户知识库（RAG）
+
+面向终端用户的帮助文档，用于 RAG 检索、产品内问答或客服知识库：
+
+→ **[docs/rag/](./rag/README.md)**
+
+| 文档 | 内容 |
+|------|------|
+| [产品概览](./rag/01-product-overview.md) | 有感是什么、与通用 AI 的差异 |
+| [快速上手](./rag/02-getting-started.md) | 注册、首件作品、推荐流程 |
+| [创作台指南](./rag/03-studio-guide.md) | 布局、面板、侧栏与对话 |
+| [定方案](./rag/04-planning-your-work.md) | 选题、平台、受众、结构 |
+| [制作与改稿](./rag/05-producing-content.md) | 出稿、修改、版本 |
+| [参考素材](./rag/06-using-references.md) | 上传、借鉴意图 |
+| [创作技巧](./rag/07-creation-best-practices.md) | 好作品方法论 |
+| [平台要点](./rag/08-platform-tips.md) | 小红书、公众号等 |
+| [发布与发现](./rag/09-publish-and-discover.md) | 公域发布、主页 |
+| [会员与额度](./rag/10-membership-and-billing.md) | 套餐、计费 |
+| [账号与设置](./rag/11-account-and-settings.md) | 资料、OAuth 绑定 |
+| [常见问题](./rag/12-faq.md) | FAQ |
+| [术语表](./rag/13-glossary.md) | 用户名词解释 |
+
 ## 业务文档（商业计划书素材）
 
 面向产品、运营、融资的**业务梳理**，均基于当前代码与文案整理：
@@ -45,6 +67,7 @@
 
 ## 文档维护原则
 
+- **RAG 用户文档**随产品文案、定价、功能门禁变更而更新；以 `site-copy.ts` 与 `subscription-plans.ts` 为 C 端准绳。
 - **业务文档**随产品文案、定价、功能门禁变更而更新。
 - **技术文档**随架构、命令、环境变量变更而更新。
 - 商业计划书中的**市场规模数字**需另行调研，业务文档不提供虚构 TAM 数据。
