@@ -1,4 +1,5 @@
 import {
+  getIntentSummary,
   resolveDeliveryFromProfile,
   type ContentFormatId,
   type ProductionTask,
@@ -43,11 +44,11 @@ export function buildProduceTaskSystemPrompt(input: {
     profile,
     { scope: "fragment" },
   );
-  const guardrails = profile.guardrails
+  const rules = profile.constraints.rules
     .filter((g) => g.scope === "all" || g.scope === "verbal")
     .map((g) => `- ${g.description}`)
     .join("\n");
-  const settings = profile.blueprint.settings
+  const settings = profile.structure.settings
     .map((s) => {
       const kind =
         s.kind === "character" ? "对象" : s.kind === "world" ? "背景" : "设定";
@@ -63,17 +64,17 @@ ${profileSummary(profile, references)}
 
 用户要求：${userRequirements ?? "无"}
 
-主题：${delivery.topic ?? "未指定"}
+主题：${getIntentSummary(profile) || "未指定"}
 体裁：${delivery.format ?? "未指定"}
 媒介：${delivery.modalities?.join(",") ?? "未指定"}
-风格：${profile.expression.verbal?.style ?? "未指定"}；语气：${profile.expression.verbal?.tone ?? "未指定"}
+风格：${profile.expression.verbal?.trim() || "未指定"}
 受众：${profile.expression.audience ?? "未指定"}
 
 创作设定：
 ${settings || "无"}
 
 创作规则（必须遵守）：
-${guardrails || "无"}
+${rules || "无"}
 
 体裁与媒介要求：
 ${formatGuidance}
@@ -82,7 +83,9 @@ ${formatGuidance}
 - 你产出的是**计划中的一个片段**，不必单独满足方案全文篇幅；整合阶段会拼接并统一控篇幅
 - 只输出本任务的交付物（body 必填；title/notes 按需）
 - 勿复述 profile 摘要或用户要求；body 必须是该任务的专业交付内容
-- 本 task 已是计划中的执行单元；勿自行补充大纲、增删章节或重写整体结构`;
+- 本 task 已是计划中的执行单元；勿自行补充大纲、增删章节或重写整体结构
+- direction 若含 **【下节起笔】**：必须从该点接续，禁止重开已结束场景；若含 **【禁止重复】**：不得用换词、扩写等方式重写所列 beat
+- direction 若含 **【本节止于】**：本节正文须收束于该情节点，勿越界写下节内容`;
 }
 
 /** 总监工单层：本任务目标、方向指导与质检反馈 */
@@ -95,7 +98,10 @@ export function buildProduceTaskHumanPrompt(input: ProduceTaskPromptInput): stri
     : "";
 
   const readyBlock = readySnippet
-    ? `\n## 已备妥的其他任务片段（勿重复，可呼应）\n${readySnippet}\n`
+    ? `\n## 已备妥的其他任务片段（仅供了解前情，勿复述）
+${readySnippet}
+- 前序片段已完成；本节只写 direction 中【下节起笔】之后的新内容
+- 禁止重开前序已写场景；禁止换词重复前序中的完整动作句或同一人物反应\n`
     : "";
 
   return `请完成以下制作任务。

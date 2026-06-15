@@ -1114,28 +1114,48 @@ export interface components {
             updatedAt: string;
         };
         WorkProfile: {
+            intent: {
+                summary: string;
+            };
             delivery: {
-                topic: string;
                 format: string | null;
                 modalities: string[];
                 platform?: string | null;
                 category?: string | null;
+                params: {
+                    /** @enum {string} */
+                    kind: "text";
+                    word_count?: {
+                        min?: number;
+                        max?: number;
+                    };
+                    /** @enum {string} */
+                    emoji_level?: "none" | "light" | "heavy";
+                } | {
+                    /** @enum {string} */
+                    kind: "illustration";
+                    aspect_ratio?: string;
+                    image_count?: number;
+                    negative_hints?: string[];
+                } | {
+                    /** @enum {string} */
+                    kind: "video";
+                    duration_sec?: number;
+                    aspect_ratio?: string;
+                    pacing?: string;
+                } | {
+                    /** @enum {string} */
+                    kind: "audio";
+                    duration_sec?: number;
+                    segment_count?: number;
+                };
             };
             expression: {
                 audience?: string | null;
-                verbal?: {
-                    tone?: string | null;
-                    style?: string | null;
-                    persona?: string | null;
-                };
-                visual?: {
-                    style?: string | null;
-                    mood?: string | null;
-                    palette?: string | null;
-                };
+                verbal?: string | null;
+                visual?: string | null;
             };
-            blueprint: {
-                summary: string;
+            structure: {
                 settings: {
                     id: string;
                     confirmed_at: string;
@@ -1152,39 +1172,14 @@ export interface components {
                     description: string;
                 }[];
             };
-            guardrails: {
-                id: string;
-                description: string;
-                /** @enum {string} */
-                scope: "all" | "verbal" | "visual" | "audio" | "video";
-                confirmed_at: string;
-            }[];
-            params: {
-                /** @enum {string} */
-                kind: "text";
-                word_count?: {
-                    min?: number;
-                    max?: number;
-                };
-                /** @enum {string} */
-                emoji_level?: "none" | "light" | "heavy";
-            } | {
-                /** @enum {string} */
-                kind: "illustration";
-                aspect_ratio?: string;
-                image_count?: number;
-                negative_hints?: string[];
-            } | {
-                /** @enum {string} */
-                kind: "video";
-                duration_sec?: number;
-                aspect_ratio?: string;
-                pacing?: string;
-            } | {
-                /** @enum {string} */
-                kind: "audio";
-                duration_sec?: number;
-                segment_count?: number;
+            constraints: {
+                rules: {
+                    id: string;
+                    description: string;
+                    /** @enum {string} */
+                    scope: "all" | "verbal" | "visual" | "audio" | "video";
+                    confirmed_at: string;
+                }[];
             };
         };
         Asset: {

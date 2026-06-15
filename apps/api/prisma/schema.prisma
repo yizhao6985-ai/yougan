@@ -144,7 +144,7 @@ model Work {
   /// 若由另存为新作品创建，记录来源
   sourceWorkId       String?
   sourceVersionId   String?
-  /// 物化视图：创作方案（delivery、blueprint、guardrails 等；不含 references）
+  /// 物化视图：创作方案（intent、delivery、expression、structure、constraints；不含 references）
   profile            Json                @default("{}")
   /// 物化视图：参考素材
   references         Json                @default("[]")

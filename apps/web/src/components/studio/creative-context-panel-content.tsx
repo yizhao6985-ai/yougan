@@ -38,9 +38,9 @@ type CreativeContextPanelContentProps = {
   preview?: WorkPreview | null;
   previewUnsaved?: boolean;
   onDuplicated?: (workId: string) => void;
-  onUpdateGuardrail?: (guardrailId: string, description: string) => void;
-  onDeleteGuardrail?: (guardrailId: string) => void;
-  onClearGuardrails?: () => void;
+  onUpdateConstraint?: (ruleId: string, description: string) => void;
+  onDeleteConstraint?: (ruleId: string) => void;
+  onClearConstraints?: () => void;
   onUpdateSegment?: (segmentId: string, description: string) => void;
   onDeleteSegment?: (segmentId: string) => void;
   onClearSegments?: () => void;
@@ -56,9 +56,9 @@ export function CreativeContextPanelContent({
   preview,
   previewUnsaved,
   onDuplicated,
-  onUpdateGuardrail,
-  onDeleteGuardrail,
-  onClearGuardrails,
+  onUpdateConstraint,
+  onDeleteConstraint,
+  onClearConstraints,
   onUpdateSegment,
   onDeleteSegment,
   onClearSegments,
@@ -113,9 +113,9 @@ export function CreativeContextPanelContent({
               profile={profile}
               editable={Boolean(activeWork)}
               compact
-              onUpdateGuardrail={onUpdateGuardrail}
-              onDeleteGuardrail={onDeleteGuardrail}
-              onClearGuardrails={onClearGuardrails}
+              onUpdateConstraint={onUpdateConstraint}
+              onDeleteConstraint={onDeleteConstraint}
+              onClearConstraints={onClearConstraints}
               onUpdateSegment={onUpdateSegment}
               onDeleteSegment={onDeleteSegment}
               onClearSegments={onClearSegments}

@@ -1,19 +1,23 @@
 import { useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 
+import { DiscoverActiveFilters } from "@/components/content/discover-active-filters";
+import { DiscoverCategoryTabs } from "@/components/content/discover-category-tabs";
+import { DiscoverEmptyState } from "@/components/content/discover-empty-state";
+import { DiscoverFeaturedHero } from "@/components/content/discover-featured-hero";
+import { DiscoverFeedCard } from "@/components/content/discover-feed-card";
+import { DiscoverFeedSkeleton } from "@/components/content/discover-feed-skeleton";
+import { DiscoverFilterDialog } from "@/components/content/discover-filter-dialog";
+import { DiscoverPageHeader } from "@/components/content/discover-page-header";
 import {
-  FeaturedPublicationCard,
-  pickFeaturedPublications,
-} from "@/components/content/featured-publication-card";
-import { DiscoverIntentEntries } from "@/components/content/discover-intent-entries";
-import { DiscoverFiltersPanel } from "@/components/content/discover-filters-panel";
-import { PublicationFeedPost } from "@/components/content/publication-feed-post";
+  MarketingPageShell,
+  MarketingSection,
+} from "@/components/marketing/marketing-page-layout";
 import { SiteHeader } from "@/components/site-header";
-import { Button } from "@/components/ui/button";
 import { usePublicationFeedQuery } from "@/hooks/queries/publications";
 import { DISCOVER_SECTION } from "@/lib/content-section";
+import { pickFeaturedPublications } from "@/lib/discover-grid-layout";
 import { scene } from "@/lib/scene-styles";
-import { BRAND } from "@/lib/site-copy";
 import {
   buildDiscoverSearchParams,
   EMPTY_DISCOVER_FILTERS,
@@ -21,7 +25,6 @@ import {
   type DiscoverFilters,
 } from "@/lib/discover-filters";
 import { type DiscoverFacets } from "@/lib/discover-taxonomy";
-import type { Publication } from "@/lib/publication-types";
 
 const EMPTY_FACETS: DiscoverFacets = {
   platform: [],
@@ -44,7 +47,7 @@ export function ContentFeedPage() {
 
   const { featured, rest } = useMemo(() => {
     if (hasActiveFilters) {
-      return { featured: [] as Publication[], rest: publications };
+      return { featured: [] as typeof publications, rest: publications };
     }
     return pickFeaturedPublications(publications);
   }, [hasActiveFilters, publications]);
@@ -54,99 +57,85 @@ export function ContentFeedPage() {
     setSearchParams(params, { replace: true });
   };
 
+  const showControls = !isLoading && !isError;
+
   return (
-    <div className={scene.app}>
+    <div className={scene.marketing}>
       <SiteHeader />
 
-      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8 sm:px-6">
-        <div className="mb-6">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-primary/80">
-            {BRAND.en}
-          </p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
-            {DISCOVER_SECTION.title}
-          </h1>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            {DISCOVER_SECTION.description}
-          </p>
-        </div>
+      <MarketingPageShell>
+        <DiscoverPageHeader total={total} loading={isLoading} />
 
-        {!isLoading && !isError ? (
-          <div className="mb-6 space-y-5">
-            <DiscoverIntentEntries
-              filters={filters}
-              onChange={handleFiltersChange}
-            />
-            <DiscoverFiltersPanel
-              filters={filters}
-              facets={facets}
-              total={total}
-              onChange={handleFiltersChange}
-            />
+        {showControls ? (
+          <div className="mt-8 border-b border-border/80">
+            <div className="flex items-start justify-between gap-4">
+              <DiscoverCategoryTabs
+                filters={filters}
+                onChange={handleFiltersChange}
+              />
+              <DiscoverFilterDialog
+                filters={filters}
+                facets={facets}
+                onChange={handleFiltersChange}
+              />
+            </div>
+            <div className="pb-4 pt-3">
+              <DiscoverActiveFilters
+                filters={filters}
+                onChange={handleFiltersChange}
+              />
+            </div>
           </div>
         ) : null}
 
-        {isLoading ? (
-          <p className="text-sm text-muted-foreground">加载中…</p>
-        ) : isError ? (
-          <p className="text-sm text-red-600">{DISCOVER_SECTION.loadError}</p>
-        ) : publications.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border bg-card/80 p-10 text-center">
-            <p className="text-sm text-muted-foreground">
-              {hasActiveFilters
-                ? DISCOVER_SECTION.emptyFiltered
-                : DISCOVER_SECTION.emptyDefault}
-            </p>
-            {hasActiveFilters ? (
-              <Button
-                type="button"
-                className="mt-4"
-                size="sm"
-                variant="outline"
-                onClick={() => handleFiltersChange({})}
-              >
-                {DISCOVER_SECTION.clearFilters}
-              </Button>
-            ) : null}
-          </div>
-        ) : (
-          <div className="space-y-8">
-            {featured.length > 0 ? (
-              <section className="space-y-4">
-                <h2 className="text-sm font-medium text-foreground/90">
-                  {DISCOVER_SECTION.featuredHeading}
-                </h2>
-                <div className="space-y-4">
-                  {featured.map((publication) => (
-                    <FeaturedPublicationCard
-                      key={publication.id}
-                      publication={publication}
-                    />
-                  ))}
-                </div>
-              </section>
-            ) : null}
+        <div className="mt-10">
+          {isLoading ? (
+            <DiscoverFeedSkeleton />
+          ) : isError ? (
+            <div className={scene.settingsPanelCard}>
+              <p className="text-sm text-destructive">
+                {DISCOVER_SECTION.loadError}
+              </p>
+            </div>
+          ) : publications.length === 0 ? (
+            <DiscoverEmptyState
+              filtered={hasActiveFilters}
+              onClearFilters={
+                hasActiveFilters
+                  ? () => handleFiltersChange({})
+                  : undefined
+              }
+            />
+          ) : (
+            <div className={scene.sectionStack}>
+              {featured[0] ? (
+                <DiscoverFeaturedHero publication={featured[0]} />
+              ) : null}
 
-            {rest.length > 0 ? (
-              <section className="space-y-4">
-                {featured.length > 0 ? (
-                  <h2 className="text-sm font-medium text-foreground/90">
-                    {DISCOVER_SECTION.moreHeading}
-                  </h2>
-                ) : null}
-                <div className="space-y-4">
-                  {rest.map((publication) => (
-                    <PublicationFeedPost
-                      key={publication.id}
-                      publication={publication}
-                    />
-                  ))}
-                </div>
-              </section>
-            ) : null}
-          </div>
-        )}
-      </main>
+              {rest.length > 0 ? (
+                <MarketingSection
+                  title={
+                    hasActiveFilters
+                      ? `筛选结果 · ${total} 篇`
+                      : featured[0]
+                        ? DISCOVER_SECTION.moreHeading
+                        : DISCOVER_SECTION.title
+                  }
+                >
+                  <div className={scene.contentGrid4}>
+                    {rest.map((publication) => (
+                      <DiscoverFeedCard
+                        key={publication.id}
+                        publication={publication}
+                      />
+                    ))}
+                  </div>
+                </MarketingSection>
+              ) : null}
+            </div>
+          )}
+        </div>
+      </MarketingPageShell>
     </div>
   );
 }

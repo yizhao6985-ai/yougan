@@ -27,6 +27,11 @@ import { buildRenderItems, mergeChatMessages } from "@/lib/message-utils";
 import { scene } from "@/lib/scene-styles";
 import { cn } from "@/lib/utils";
 import { CHAT_COPY, STUDIO } from "@/lib/site-copy";
+import {
+  profileSetupPlaceholder,
+  profileSetupStatusHint,
+  resolveStreamProfile,
+} from "@/lib/profile-setup-display";
 import { ProductionConfirmPrompt } from "@/components/studio/production-confirm-prompt";
 import type { TurnQueueKind } from "@/lib/types";
 
@@ -154,12 +159,7 @@ export function YouganChat() {
     );
   }
 
-  const profile =
-    stream.values?.turn?.staging?.profile ??
-    stream.values?.profile ??
-    activeWork.profile;
-  const segmentCount = profile.blueprint?.segments?.length ?? 0;
-  const guardrailCount = profile.guardrails?.length ?? 0;
+  const profile = resolveStreamProfile(activeWork?.profile, stream.values);
 
   const statusHint = (() => {
     if (productionConfirmInterrupt) {
@@ -179,11 +179,14 @@ export function YouganChat() {
         return CHAT_COPY.status.askExploring;
       case "profile":
       default:
-        return segmentCount > 0 || guardrailCount > 0
-          ? CHAT_COPY.status.profileEditing(segmentCount, guardrailCount)
-          : CHAT_COPY.status.profileExploring;
+        return profileSetupStatusHint(profile);
     }
   })();
+
+  const composerPlaceholder = profileSetupPlaceholder(
+    profile,
+    activeKind === "profile" || activeKind == null ? "profile" : activeKind,
+  );
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
@@ -334,6 +337,7 @@ export function YouganChat() {
                         <NextStepSuggestionOptions
                           suggestions={activeSuggestions.suggestions}
                           hint={activeSuggestions.hint}
+                          profile={profile}
                           disabled={!canSend}
                           onSelect={(value) => void sendMessage(value)}
                         />
@@ -375,6 +379,7 @@ export function YouganChat() {
                 onSend={handleSend}
                 onStop={cancelActiveTurn}
                 chatStatus={chatStatus}
+                placeholder={composerPlaceholder}
               />
             </ComposerAttachmentsProvider>
           </div>

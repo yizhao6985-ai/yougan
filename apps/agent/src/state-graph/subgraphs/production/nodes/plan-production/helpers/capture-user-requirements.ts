@@ -8,9 +8,6 @@ export function captureUserRequirements(state: AgentStateType): string {
   if (fromMessage) return fromMessage;
 
   const profile = getProfile(state);
-  const parts = [
-    profile.blueprint.summary?.trim(),
-    profile.delivery.topic?.trim(),
-  ].filter(Boolean);
+  const parts = [profile.intent.summary?.trim()].filter(Boolean);
   return parts.join("\n") || "按当前方案完成成稿";
 }

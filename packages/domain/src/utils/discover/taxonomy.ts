@@ -21,7 +21,7 @@ import {
   mediaModalityLabel,
   sortMediaModalities,
 } from "../media-modalities.js";
-import { parseProfileJson, resolveDeliveryFromProfile, getProfileSummary } from "../work/profile.js";
+import { parseProfileJson, resolveDeliveryFromProfile, getProfileSummary, getIntentSummary } from "../work/profile.js";
 
 const FORMAT_LABELS = Object.fromEntries(
   CONTENT_FORMATS.map((item) => [item.id, item.label]),
@@ -179,7 +179,7 @@ export function buildPublicationMetadata(input: {
 
   const platform =
     input.platform ?? output.platform ?? delivery?.platform ?? "yougan";
-  const contentTopic = delivery?.topic?.trim() || null;
+  const contentTopic = profile ? getIntentSummary(profile) || null : null;
   const contentType = profile ? getProfileSummary(profile) : null;
 
   const contentFormat =

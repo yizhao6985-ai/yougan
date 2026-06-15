@@ -1,5 +1,7 @@
 import type { ProductionConfirmDecision } from "./interrupts.js";
 import type { TurnStaging } from "./staging.js";
+import { mergeProfileState } from "../../utils/profile-merge.js";
+import { mergeReferencesState } from "../../utils/reference-merge.js";
 
 /**
  * 单轮用户消息解析出的有序子图队列（FIFO）。
@@ -71,6 +73,12 @@ function mergeTurnStaging(
   return {
     ...prev,
     ...next,
+    profile: next.profile
+      ? mergeProfileState(prev.profile, next.profile)
+      : prev.profile,
+    references: next.references
+      ? mergeReferencesState(prev.references, next.references)
+      : prev.references,
     production: next.production
       ? { ...prev.production, ...next.production }
       : prev.production,

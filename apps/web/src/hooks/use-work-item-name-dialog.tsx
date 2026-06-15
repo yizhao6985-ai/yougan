@@ -40,7 +40,7 @@ export function useWorkItemNameDialog() {
         return {
           title: "新建作品",
           description: "为作品取一个名字，方便在侧边栏识别与管理。",
-          placeholder: "例如：春季护肤种草笔记",
+          placeholder: "作品名称",
           initialName: "",
           submitLabel: "创建",
           onSubmit: async (name: string) => {
@@ -51,7 +51,7 @@ export function useWorkItemNameDialog() {
         return {
           title: "新建分组",
           description: "用分组组织相关作品，例如同一系列或同一制作方向。",
-          placeholder: "例如：职场成长系列",
+          placeholder: "分组名称",
           initialName: "",
           submitLabel: "创建",
           onSubmit: async (name: string) => {

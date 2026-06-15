@@ -2,23 +2,23 @@ import { EMPTY_WORK_PROFILE, type WorkProfile } from "../models/work/profile.js"
 import { isProfileEmpty, parseProfileJson } from "./work/profile.js";
 
 function isProfileAuthoritativeReplace(base: WorkProfile, next: WorkProfile): boolean {
-  if (next.blueprint.segments.length < base.blueprint.segments.length) return true;
-  if (next.blueprint.settings.length < base.blueprint.settings.length) return true;
-  if (next.guardrails.length < base.guardrails.length) return true;
+  if (next.structure.segments.length < base.structure.segments.length) return true;
+  if (next.structure.settings.length < base.structure.settings.length) return true;
+  if (next.constraints.rules.length < base.constraints.rules.length) return true;
 
-  const baseSegmentIds = new Set(base.blueprint.segments.map((s) => s.id));
+  const baseSegmentIds = new Set(base.structure.segments.map((s) => s.id));
   for (const id of baseSegmentIds) {
-    if (!next.blueprint.segments.some((s) => s.id === id)) return true;
+    if (!next.structure.segments.some((s) => s.id === id)) return true;
   }
 
-  const baseSettingIds = new Set(base.blueprint.settings.map((s) => s.id));
+  const baseSettingIds = new Set(base.structure.settings.map((s) => s.id));
   for (const id of baseSettingIds) {
-    if (!next.blueprint.settings.some((s) => s.id === id)) return true;
+    if (!next.structure.settings.some((s) => s.id === id)) return true;
   }
 
-  const baseGuardrailIds = new Set(base.guardrails.map((g) => g.id));
-  for (const id of baseGuardrailIds) {
-    if (!next.guardrails.some((g) => g.id === id)) return true;
+  const baseRuleIds = new Set(base.constraints.rules.map((g) => g.id));
+  for (const id of baseRuleIds) {
+    if (!next.constraints.rules.some((g) => g.id === id)) return true;
   }
 
   return false;
@@ -40,23 +40,41 @@ export function mergeProfileState(
   }
 
   return {
-    delivery: { ...base.delivery, ...patch.delivery },
+    intent: {
+      summary: patch.intent.summary.trim() || base.intent.summary,
+    },
+    delivery: {
+      ...base.delivery,
+      ...patch.delivery,
+      params:
+        patch.delivery.params.kind !== base.delivery.params.kind
+          ? patch.delivery.params
+          : patch.delivery.params,
+    },
     expression: {
       audience: patch.expression.audience ?? base.expression.audience,
-      verbal: { ...base.expression.verbal, ...patch.expression.verbal },
-      visual: { ...base.expression.visual, ...patch.expression.visual },
+      verbal:
+        patch.expression.verbal !== undefined
+          ? patch.expression.verbal
+          : base.expression.verbal,
+      visual:
+        patch.expression.visual !== undefined
+          ? patch.expression.visual
+          : base.expression.visual,
     },
-    blueprint: {
-      summary: patch.blueprint.summary.trim() || base.blueprint.summary,
-      settings: patch.blueprint.settings.length
-        ? patch.blueprint.settings
-        : base.blueprint.settings,
-      segments: patch.blueprint.segments.length
-        ? patch.blueprint.segments
-        : base.blueprint.segments,
+    structure: {
+      settings: patch.structure.settings.length
+        ? patch.structure.settings
+        : base.structure.settings,
+      segments: patch.structure.segments.length
+        ? patch.structure.segments
+        : base.structure.segments,
     },
-    guardrails: patch.guardrails.length ? patch.guardrails : base.guardrails,
-    params: patch.params.kind !== base.params.kind ? patch.params : patch.params,
+    constraints: {
+      rules: patch.constraints.rules.length
+        ? patch.constraints.rules
+        : base.constraints.rules,
+    },
   };
 }
 

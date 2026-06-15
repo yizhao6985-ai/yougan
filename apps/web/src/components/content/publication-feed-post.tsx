@@ -9,7 +9,9 @@ import {
   topicCategoryLabel,
 } from "@/lib/discover-taxonomy";
 import { formatPublishedAt, platformLabel } from "@/lib/platform-labels";
+import { publicationContentPath } from "@/lib/publication-path";
 import type { Publication } from "@/lib/publication-types";
+import { scene } from "@/lib/scene-styles";
 import { cn } from "@/lib/utils";
 
 function DiscoverBadges({
@@ -33,7 +35,7 @@ function DiscoverBadges({
       {badges.map((badge) => (
         <span
           key={badge}
-          className="rounded-md bg-secondary px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
+          className="rounded-full bg-secondary/80 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground"
         >
           {badge}
         </span>
@@ -84,9 +86,14 @@ export function PublicationFeedPost({
     : null;
 
   return (
-    <article className="overflow-hidden rounded-lg border border-border/80 bg-card shadow-sm shadow-border/25">
+    <article
+      className={cn(
+        scene.cardInteractive,
+        "group overflow-hidden",
+      )}
+    >
       {!hideAuthor ? (
-        <div className="flex items-start gap-3 border-b border-border/60 px-4 py-3 sm:px-5">
+        <div className="flex items-start gap-3 px-4 py-3.5 sm:px-5">
           {publication.author?.id ? (
             <Link to={`/user/${publication.author.id}`} className="shrink-0">
               <AuthorAvatar author={publication.author} size="md" />
@@ -99,7 +106,7 @@ export function PublicationFeedPost({
               {publication.author?.id ? (
                 <Link
                   to={`/user/${publication.author.id}`}
-                  className="truncate text-sm font-semibold text-foreground hover:text-primary"
+                  className="truncate text-sm font-semibold text-foreground transition-colors duration-200 hover:text-primary"
                 >
                   {authorDisplayName(publication.author)}
                 </Link>
@@ -123,8 +130,8 @@ export function PublicationFeedPost({
       ) : null}
 
       <Link
-        to={`/content/${publication.slug}`}
-        className="block px-4 py-4 transition hover:bg-muted/80 sm:px-5"
+        to={publicationContentPath(publication.slug)}
+        className="block border-t border-border/50 px-4 py-4 sm:px-5"
       >
         {hideAuthor ? (
           <PublicationMeta publication={publication} timeLabel={timeLabel} />
@@ -132,7 +139,7 @@ export function PublicationFeedPost({
         {publication.title ? (
           <h2
             className={cn(
-              "font-semibold leading-snug text-foreground",
+              "font-semibold leading-snug text-foreground transition-colors duration-200 group-hover:text-primary",
               compact ? "text-base" : "text-lg",
               hideAuthor ? "mt-2" : undefined,
             )}
@@ -157,20 +164,22 @@ export function PublicationFeedPost({
         )}
 
         {cover ? (
-          <img
-            src={cover}
-            alt=""
-            className={cn(
-              "mt-4 w-full rounded-lg border border-border object-cover",
-              compact ? "max-h-48" : "max-h-80",
-            )}
-          />
+          <div className="mt-4 overflow-hidden rounded-xl border border-border/70">
+            <img
+              src={cover}
+              alt=""
+              className={cn(
+                "w-full object-cover transition duration-500 group-hover:scale-[1.02]",
+                compact ? "max-h-48" : "max-h-80",
+              )}
+            />
+          </div>
         ) : null}
 
         {publication.hashtags?.length ? (
           <div className="mt-3 flex flex-wrap gap-2">
             {publication.hashtags.slice(0, 6).map((tag) => (
-              <span key={tag} className="text-xs text-primary">
+              <span key={tag} className="text-xs font-medium text-primary/90">
                 #{tag.replace(/^#/, "")}
               </span>
             ))}

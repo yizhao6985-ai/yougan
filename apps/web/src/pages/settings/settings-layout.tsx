@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import { OutletFallback } from "@/components/outlet-fallback";
+import { MarketingPageHeader } from "@/components/marketing/marketing-page-layout";
 import {
   SettingsPageBody,
   SettingsUserStrip,
@@ -101,78 +102,73 @@ function SettingsNavLink({ item }: { item: SettingsNavItem }) {
       to={item.to}
       className={({ isActive }) =>
         cn(
-          "inline-flex min-w-[11rem] shrink-0 flex-col rounded-lg border px-4 py-3 transition lg:min-w-0",
-          isActive
-            ? "border-primary/20 bg-card shadow-sm shadow-border/20"
-            : "border-transparent bg-card/50 hover:border-border/80 hover:bg-card",
+          scene.settingsNavLink,
+          isActive ? scene.settingsNavLinkActive : scene.settingsNavLinkIdle,
         )
       }
     >
-      <span className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
-        <Icon className="size-4 text-primary/80" />
+      <span className="inline-flex items-center gap-2.5 text-sm font-medium">
+        <Icon className="size-4 shrink-0 text-primary/80" aria-hidden />
         {item.label}
       </span>
-      <span className="mt-1 pl-6 text-xs text-muted-foreground">{item.description}</span>
+      <span className="mt-1 pl-[1.625rem] text-xs leading-5 text-muted-foreground">
+        {item.description}
+      </span>
     </NavLink>
   );
 }
 
 export function SettingsLayout() {
   return (
-    <div className={scene.app}>
+    <div className={scene.marketing}>
       <SiteHeader />
 
-      <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
-        <div className="space-y-6">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-primary/80">
-              {SETTINGS.sectionLabel}
-            </p>
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
-              创作者中心
-            </h1>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              管理个人资料、作品与发布内容，对外展示的主页会自动同步已发布作品。
-            </p>
-          </div>
+      <div className={cn(scene.settingsShell, scene.pageMainCompact)}>
+        <MarketingPageHeader
+          eyebrow={SETTINGS.sectionLabel}
+          title="创作者中心"
+          subtitle="管理个人资料、作品与发布内容，对外展示的主页会自动同步已发布作品。"
+          wide
+        />
 
+        <div className="mt-8">
           <SettingsUserStrip />
+        </div>
 
-          <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
-            <aside className="lg:w-64 lg:shrink-0">
-              <nav className="flex items-stretch gap-2 overflow-x-auto pb-1 lg:flex-col lg:gap-0 lg:overflow-visible lg:pb-0">
-                {NAV_GROUPS.map((group, groupIndex) => (
-                  <Fragment key={group.label}>
-                    {groupIndex > 0 ? (
-                      <div
-                        aria-hidden
-                        className="mx-1 w-px shrink-0 self-stretch bg-border/80 lg:mx-0 lg:my-4 lg:h-px lg:w-auto"
-                      />
-                    ) : null}
-                    <div className="flex shrink-0 gap-2 lg:shrink lg:flex-col lg:gap-1.5">
-                      <p className="flex shrink-0 items-center self-center rounded-md bg-muted/70 px-2.5 py-1 text-[10px] font-medium text-muted-foreground lg:hidden">
-                        {group.label}
-                      </p>
-                      <p className="hidden px-1 pb-0.5 text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground lg:block">
-                        {group.label}
-                      </p>
-                      {group.items.map((item) => (
-                        <SettingsNavLink key={item.to} item={item} />
-                      ))}
-                    </div>
-                  </Fragment>
-                ))}
-              </nav>
-            </aside>
+        <div className="mt-8 flex flex-col gap-8 lg:flex-row lg:items-start">
+          <aside className="lg:w-72 lg:shrink-0">
+            <nav className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:gap-6 lg:overflow-visible lg:pb-0">
+              {NAV_GROUPS.map((group, groupIndex) => (
+                <Fragment key={group.label}>
+                  {groupIndex > 0 ? (
+                    <div
+                      aria-hidden
+                      className="mx-1 w-px shrink-0 self-stretch bg-border/60 lg:mx-0 lg:my-0 lg:h-px lg:w-auto"
+                    />
+                  ) : null}
+                  <div className="flex shrink-0 flex-col gap-1 lg:shrink lg:gap-1.5">
+                    <p className="hidden px-1 pb-1 text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground lg:block">
+                      {group.label}
+                    </p>
+                    <p className="rounded-full bg-secondary/70 px-2.5 py-1 text-[10px] font-medium text-muted-foreground lg:hidden">
+                      {group.label}
+                    </p>
+                    {group.items.map((item) => (
+                      <SettingsNavLink key={item.to} item={item} />
+                    ))}
+                  </div>
+                </Fragment>
+              ))}
+            </nav>
+          </aside>
 
-            <main className="min-w-0 flex-1">
-              <SettingsPageBody>
-                <Suspense fallback={<OutletFallback />}>
-                  <Outlet />
-                </Suspense>
-              </SettingsPageBody>
-            </main>
-          </div>
+          <main className="min-w-0 flex-1">
+            <SettingsPageBody>
+              <Suspense fallback={<OutletFallback />}>
+                <Outlet />
+              </Suspense>
+            </SettingsPageBody>
+          </main>
         </div>
       </div>
     </div>

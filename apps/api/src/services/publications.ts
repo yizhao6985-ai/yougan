@@ -1,5 +1,4 @@
-import { nanoid } from "nanoid";
-import type { Prisma } from "../db.js";
+import { buildPublicationSlug } from "@yougan/domain";
 
 import {
   applyMetadataOverrides,
@@ -25,14 +24,7 @@ import type { PublicationDTO, PublicationStatus } from "../schemas.js";
 import { getWork } from "./works.js";
 
 function buildSlug(title: string) {
-  const base =
-    title
-      .trim()
-      .toLowerCase()
-      .replace(/[^\w\u4e00-\u9fff]+/g, "-")
-      .replace(/^-+|-+$/g, "")
-      .slice(0, 48) || "content";
-  return `${base}-${nanoid(8)}`;
+  return buildPublicationSlug(title);
 }
 
 type PublicationRow = {
@@ -311,19 +303,36 @@ export async function recordPublicationView(publicationId: string) {
   });
 }
 
-export async function getPublicationBySlug(slug: string) {
-  const cacheKey = cacheKeys.publicationSlug(slug);
+export async function getPublicationBySlug(slugOrId: string) {
+  const cacheKey = cacheKeys.publicationSlug(slugOrId);
   const cached = await cacheGetJson<PublicationDTO>(cacheKey);
   if (cached) return cached;
 
-  const row = await prisma.publication.findFirst({
-    where: { slug, status: "published" },
+  const publishedWhere = { status: "published" as const };
+
+  let row = await prisma.publication.findFirst({
+    where: { slug: slugOrId, ...publishedWhere },
     include: userInclude,
   });
+
+  if (!row) {
+    row = await prisma.publication.findFirst({
+      where: { id: slugOrId, ...publishedWhere },
+      include: userInclude,
+    });
+  }
+
   if (!row) return null;
 
   const publication = toPublicationDTO(row);
   await cacheSetJson(cacheKey, publication, cacheTtl.publicationSlugTtl);
+  if (publication.slug !== slugOrId) {
+    await cacheSetJson(
+      cacheKeys.publicationSlug(publication.slug),
+      publication,
+      cacheTtl.publicationSlugTtl,
+    );
+  }
   return publication;
 }
 

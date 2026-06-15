@@ -29,7 +29,12 @@ ${profileReferencesSummary(references)}
 4. **结构规划在 plan 内完成**，体现在 tasks 拆分与各 task.direction 中；禁止把「写大纲/梳结构/策划」拆成 task
 5. task.description 必须是交付动作（如「撰写…正文」），不能是过程动作（如「制定…大纲」「梳理结构」）
 6. direction 须呼应：用户要求、profile 各要素及你为本作品拟定的结构；acceptance_criteria 供验收员判断方向是否达标
-7. 根据 delivery.format / modalities 为每条任务指定 department；可据需要追加 design / audio / video 任务
+7. 根据 delivery.format / modalities 为每条 task 指定 department；可据需要追加 design / audio / video 任务
+8. **连续正文须写清段落边界**（小说、长文分节、脚本分镜等按顺序拼接成稿时）：各 task 的 direction 须互斥、可接续，不得让相邻 task 写同一场景或同一 beat。格式要求：
+   - 每条 task 的 direction 含 **【本节止于】**：本节最后一幕/情节点（供下一节接续）
+   - 第 2 条及以后的 task 另含 **【下节起笔】**（从上一节【本节止于】之后写起）与 **【禁止重复】**（与上一节已完成的动作、场景、人物反应互斥，不得换词重写）
+   - 各 task 只写本节新增信息；标题/hook/标签等元信息 task 与正文 task 须分工，禁止正文 task 写标题、禁止元信息 task 复述正文场景
+   - 单 task 或彼此独立的节点（如仅标题、仅 hashtags）可省略上述标记
 
 只输出 tasks，不生成正文。`;
 }

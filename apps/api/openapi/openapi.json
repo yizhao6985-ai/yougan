@@ -143,12 +143,20 @@
       "WorkProfile": {
         "type": "object",
         "properties": {
+          "intent": {
+            "type": "object",
+            "properties": {
+              "summary": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "summary"
+            ]
+          },
           "delivery": {
             "type": "object",
             "properties": {
-              "topic": {
-                "type": "string"
-              },
               "format": {
                 "type": "string",
                 "nullable": true
@@ -166,12 +174,118 @@
               "category": {
                 "type": "string",
                 "nullable": true
+              },
+              "params": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "text"
+                        ]
+                      },
+                      "word_count": {
+                        "type": "object",
+                        "properties": {
+                          "min": {
+                            "type": "number"
+                          },
+                          "max": {
+                            "type": "number"
+                          }
+                        }
+                      },
+                      "emoji_level": {
+                        "type": "string",
+                        "enum": [
+                          "none",
+                          "light",
+                          "heavy"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "illustration"
+                        ]
+                      },
+                      "aspect_ratio": {
+                        "type": "string"
+                      },
+                      "image_count": {
+                        "type": "number"
+                      },
+                      "negative_hints": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "video"
+                        ]
+                      },
+                      "duration_sec": {
+                        "type": "number"
+                      },
+                      "aspect_ratio": {
+                        "type": "string"
+                      },
+                      "pacing": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "type": "string",
+                        "enum": [
+                          "audio"
+                        ]
+                      },
+                      "duration_sec": {
+                        "type": "number"
+                      },
+                      "segment_count": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ]
+                  }
+                ]
               }
             },
             "required": [
-              "topic",
               "format",
-              "modalities"
+              "modalities",
+              "params"
             ]
           },
           "expression": {
@@ -182,47 +296,18 @@
                 "nullable": true
               },
               "verbal": {
-                "type": "object",
-                "properties": {
-                  "tone": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "style": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "persona": {
-                    "type": "string",
-                    "nullable": true
-                  }
-                }
+                "type": "string",
+                "nullable": true
               },
               "visual": {
-                "type": "object",
-                "properties": {
-                  "style": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "mood": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "palette": {
-                    "type": "string",
-                    "nullable": true
-                  }
-                }
+                "type": "string",
+                "nullable": true
               }
             }
           },
-          "blueprint": {
+          "structure": {
             "type": "object",
             "properties": {
-              "summary": {
-                "type": "string"
-              },
               "settings": {
                 "type": "array",
                 "items": {
@@ -290,157 +375,58 @@
               }
             },
             "required": [
-              "summary",
               "settings",
               "segments"
             ]
           },
-          "guardrails": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "description": {
-                  "type": "string"
-                },
-                "scope": {
-                  "type": "string",
-                  "enum": [
-                    "all",
-                    "verbal",
-                    "visual",
-                    "audio",
-                    "video"
-                  ]
-                },
-                "confirmed_at": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "id",
-                "description",
-                "scope",
-                "confirmed_at"
-              ]
-            }
-          },
-          "params": {
-            "oneOf": [
-              {
-                "type": "object",
-                "properties": {
-                  "kind": {
-                    "type": "string",
-                    "enum": [
-                      "text"
-                    ]
-                  },
-                  "word_count": {
-                    "type": "object",
-                    "properties": {
-                      "min": {
-                        "type": "number"
-                      },
-                      "max": {
-                        "type": "number"
-                      }
-                    }
-                  },
-                  "emoji_level": {
-                    "type": "string",
-                    "enum": [
-                      "none",
-                      "light",
-                      "heavy"
-                    ]
-                  }
-                },
-                "required": [
-                  "kind"
-                ]
-              },
-              {
-                "type": "object",
-                "properties": {
-                  "kind": {
-                    "type": "string",
-                    "enum": [
-                      "illustration"
-                    ]
-                  },
-                  "aspect_ratio": {
-                    "type": "string"
-                  },
-                  "image_count": {
-                    "type": "number"
-                  },
-                  "negative_hints": {
-                    "type": "array",
-                    "items": {
+          "constraints": {
+            "type": "object",
+            "properties": {
+              "rules": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "scope": {
+                      "type": "string",
+                      "enum": [
+                        "all",
+                        "verbal",
+                        "visual",
+                        "audio",
+                        "video"
+                      ]
+                    },
+                    "confirmed_at": {
                       "type": "string"
                     }
-                  }
-                },
-                "required": [
-                  "kind"
-                ]
-              },
-              {
-                "type": "object",
-                "properties": {
-                  "kind": {
-                    "type": "string",
-                    "enum": [
-                      "video"
-                    ]
                   },
-                  "duration_sec": {
-                    "type": "number"
-                  },
-                  "aspect_ratio": {
-                    "type": "string"
-                  },
-                  "pacing": {
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "kind"
-                ]
-              },
-              {
-                "type": "object",
-                "properties": {
-                  "kind": {
-                    "type": "string",
-                    "enum": [
-                      "audio"
-                    ]
-                  },
-                  "duration_sec": {
-                    "type": "number"
-                  },
-                  "segment_count": {
-                    "type": "number"
-                  }
-                },
-                "required": [
-                  "kind"
-                ]
+                  "required": [
+                    "id",
+                    "description",
+                    "scope",
+                    "confirmed_at"
+                  ]
+                }
               }
+            },
+            "required": [
+              "rules"
             ]
           }
         },
         "required": [
+          "intent",
           "delivery",
           "expression",
-          "blueprint",
-          "guardrails",
-          "params"
+          "structure",
+          "constraints"
         ]
       },
       "Asset": {

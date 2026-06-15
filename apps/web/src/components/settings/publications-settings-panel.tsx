@@ -19,6 +19,7 @@ import {
 } from "@/hooks/queries/publications";
 import { formatPublishedAt, platformLabel } from "@/lib/platform-labels";
 import { DISCOVER_SECTION } from "@/lib/content-section";
+import { publicationContentPath } from "@/lib/publication-path";
 import { PUBLISH, SETTINGS } from "@/lib/site-copy";
 import {
   formatLabel,
@@ -161,7 +162,7 @@ export function PublicationsSettingsPanel() {
                     <div className="flex flex-wrap gap-2 sm:w-36 sm:flex-col sm:items-stretch">
                       {publication.status === "published" ? (
                         <Button type="button" variant="outline" size="sm" asChild>
-                          <Link to={`/content/${publication.slug}`}>
+                          <Link to={publicationContentPath(publication.slug)}>
                             <ExternalLinkIcon className="size-3.5" />
                             查看
                           </Link>

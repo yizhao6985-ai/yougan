@@ -245,8 +245,10 @@ function mergeMessagesFromUpdates(
 
 import {
   EMPTY_TURN_RUNTIME,
+  mergeProfileState,
   mergeTurnRuntime,
   type TurnRuntime,
+  type WorkProfile,
 } from "@yougan/domain";
 
 /**
@@ -271,6 +273,18 @@ export function applyGraphUpdatesToValues<T extends { messages?: Message[] }>(
         Array.isArray(incoming) ? incoming : incoming != null ? [incoming] : []
       ) as Message[];
       messages = mergeMessagesFromUpdates(messages, list);
+      continue;
+    }
+
+    if ("profile" in patch && patch.profile && typeof patch.profile === "object") {
+      (next as { profile?: WorkProfile }).profile = mergeProfileState(
+        (next as { profile?: WorkProfile }).profile,
+        patch.profile as WorkProfile,
+      );
+      const { messages: _messages, profile: _profile, ...rest } = patch;
+      if (Object.keys(rest).length > 0) {
+        next = { ...next, ...(rest as Partial<T>) };
+      }
       continue;
     }
 

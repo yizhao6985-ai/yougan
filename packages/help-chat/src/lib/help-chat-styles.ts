@@ -17,7 +17,7 @@ export const helpChatStyles = {
     "border border-primary/15 bg-primary/10 text-primary shadow-sm shadow-primary/10",
   ),
   headerTitle:
-    "font-serif text-base font-semibold leading-6 tracking-tight text-foreground sm:text-lg",
+    "text-base font-semibold leading-6 tracking-tight text-foreground sm:text-lg",
   headerHint: "mt-0.5 text-sm leading-6 text-muted-foreground",
   iconButton: cn(
     "inline-flex size-9 cursor-pointer items-center justify-center rounded-lg text-muted-foreground",

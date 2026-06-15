@@ -2,30 +2,21 @@
  * suggestions 子图每轮生成的「下一步建议」气泡（agent 运行时字段，不入库）。
  */
 
-/** 下一步建议气泡的 kind 枚举值（LLM 生成约束与 UI 扩展共用） */
-export const NEXT_STEP_SUGGESTION_KINDS = [
-  "explore",
-  "confirm",
-  "navigate",
-] as const;
+/** 方案引导阶段建议角色（槽位配方写入，LLM 不产出） */
+export const PROFILE_SETUP_SUGGESTION_ROLES = ["refine", "navigate"] as const;
 
-/**
- * 下一步建议的交互意图。
- *
- * - `explore` — 继续探索或补充方案：扩写规格、改节拍、补受众/角度等，尚无明确执行动作
- * - `confirm` — 确认现有方案或结论：对已达成的规格、计划或成稿段落给出肯定并推进
- * - `navigate` — 进入下一创作阶段：用户已表达开写/出稿意图时引导开始出稿、改稿或进入制作/发布
- */
-export type NextStepSuggestionKind =
-  (typeof NEXT_STEP_SUGGESTION_KINDS)[number];
+export type ProfileSetupSuggestionRole =
+  (typeof PROFILE_SETUP_SUGGESTION_ROLES)[number];
 
 /** 单条可点击建议 */
 export interface NextStepSuggestion {
   id: string;
-  kind: NextStepSuggestionKind;
-  label: string;
   /** 点击后填入输入框的完整消息 */
   message: string;
+  /** 方案引导：巩固层 = 当前步；推进层 = 下一步（ready 表示开始制作） */
+  step?: import("../work/profile.js").ProfileStepId | "ready";
+  /** 方案引导：refine 巩固本步 / navigate 推进下一步 */
+  role?: ProfileSetupSuggestionRole;
 }
 
 export interface NextStepSuggestions {
@@ -34,6 +25,12 @@ export interface NextStepSuggestions {
 }
 
 export const DEFAULT_NEXT_STEP_SUGGESTIONS_HINT = "点一条继续，或直接输入";
+
+/** 开屏下一步建议条数 */
+export const OPENING_NEXT_STEP_SUGGESTIONS_COUNT = 7;
+
+/** 回合末下一步建议条数（方案引导：巩固 3 + 推进 1） */
+export const TURN_NEXT_STEP_SUGGESTIONS_COUNT = 4;
 
 /** 前端展示建议气泡时的参考字数（仅 UI，不截断 API 返回） */
 export const MAX_NEXT_STEP_SUGGESTION_DISPLAY_LENGTH = 48;

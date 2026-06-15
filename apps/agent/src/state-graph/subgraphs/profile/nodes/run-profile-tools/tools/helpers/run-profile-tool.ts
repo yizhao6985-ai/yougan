@@ -40,16 +40,11 @@ export function createProfileTool<T extends z.ZodTypeAny>(options: {
         });
       }
 
-      const messageParts = [`已更新：${result.changes.join("、")}。`];
-      if (result.warnings.length) {
-        messageParts.push(`注意：${result.warnings.join("；")}`);
-      }
-
       return new Command({
         update: {
           messages: [
             new ToolMessage({
-              content: messageParts.join(" "),
+              content: `已更新：${result.changes.join("、")}。`,
               tool_call_id: toolCallId,
             }),
           ],

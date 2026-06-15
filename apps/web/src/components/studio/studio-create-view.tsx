@@ -3,15 +3,16 @@ import { CreativeContextPanelContent } from "@/components/studio/creative-contex
 import { WorksAside } from "@/components/studio/works-aside";
 import { YouganChat } from "@/components/studio/yougan-chat";
 import { useYouganStreamContext } from "@/components/studio/yougan-stream-provider";
-import { mergeProfileForDisplay, mergeReferencesForDisplay } from "@yougan/domain";
+import { mergeReferencesForDisplay } from "@yougan/domain";
+import { resolveStreamProfile } from "@/lib/profile-setup-display";
 export function StudioCreateView() {
   const {
     activeWork,
     stream,
     selectWork,
-    updateProfileGuardrail,
-    deleteProfileGuardrail,
-    clearWorkProfileGuardrails,
+    updateProfileConstraint,
+    deleteProfileConstraint,
+    clearWorkProfileConstraints,
     updateProfileSegment,
     deleteProfileSegment,
     clearWorkProfileSegments,
@@ -25,9 +26,7 @@ export function StudioCreateView() {
   const hasPendingStaging = Boolean(
     staging && streamValues?.turn?.committed !== true,
   );
-  const profile = hasPendingStaging
-    ? mergeProfileForDisplay(activeWork?.profile, staging?.profile)
-    : mergeProfileForDisplay(activeWork?.profile, streamValues?.profile);
+  const profile = resolveStreamProfile(activeWork?.profile, streamValues);
   const references = hasPendingStaging
     ? mergeReferencesForDisplay(
         activeWork?.references,
@@ -54,21 +53,21 @@ export function StudioCreateView() {
       preview={preview}
       previewUnsaved={previewUnsaved}
       onDuplicated={selectWork}
-      onUpdateGuardrail={
+      onUpdateConstraint={
         activeWork
-          ? (guardrailId, description) =>
-              updateProfileGuardrail(activeWork.id, guardrailId, description)
+          ? (ruleId, description) =>
+              updateProfileConstraint(activeWork.id, ruleId, description)
           : undefined
       }
-      onDeleteGuardrail={
+      onDeleteConstraint={
         activeWork
-          ? (guardrailId) =>
-              deleteProfileGuardrail(activeWork.id, guardrailId)
+          ? (ruleId) =>
+              deleteProfileConstraint(activeWork.id, ruleId)
           : undefined
       }
-      onClearGuardrails={
+      onClearConstraints={
         activeWork
-          ? () => clearWorkProfileGuardrails(activeWork.id)
+          ? () => clearWorkProfileConstraints(activeWork.id)
           : undefined
       }
       onUpdateSegment={

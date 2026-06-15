@@ -1,6 +1,11 @@
-import { ArrowRightIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 
+import { MarketingFeatureCard } from "@/components/marketing/marketing-feature-card";
+import {
+  MarketingPageFooter,
+  MarketingPageShell,
+  MarketingSection,
+} from "@/components/marketing/marketing-page-layout";
 import { SiteHeader } from "@/components/site-header";
 import {
   HOME_FEATURE_TEASERS,
@@ -14,67 +19,62 @@ export function HomePage() {
   return (
     <div className={scene.marketing}>
       <SiteHeader />
-      <main className="relative mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center px-6 py-16">
+
+      <MarketingPageShell className="relative flex flex-col justify-center">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-8 -z-10 h-72 overflow-hidden sm:h-96"
+          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-80 overflow-hidden"
         >
-          <div className="absolute -top-16 left-1/2 size-72 -translate-x-1/2 rounded-full bg-sky-200/35 blur-3xl dark:bg-sky-900/25" />
-          <div className="absolute top-12 right-0 size-56 rounded-full bg-amber-100/50 blur-3xl dark:bg-amber-950/20" />
+          <div className="absolute -top-20 left-1/2 size-80 -translate-x-1/2 rounded-full bg-sky-200/30 blur-3xl dark:bg-sky-900/20" />
+          <div className="absolute top-8 right-[10%] size-56 rounded-full bg-amber-100/40 blur-3xl dark:bg-amber-950/15" />
         </div>
 
-        <p className={scene.eyebrow}>{HOME.eyebrow}</p>
-        <h1 className={cn("mt-4 max-w-3xl", scene.titleXl)}>
-          {HOME.title}
-          <span className="mt-2 block font-sans text-3xl font-semibold text-foreground/90 sm:text-4xl">
-            {HOME.titleSuffix}
-          </span>
-        </h1>
-        <p className={cn("mt-6 max-w-2xl", scene.subtitle)}>{HOME.subtitle}</p>
-        <div className="mt-10 flex flex-wrap gap-4">
-          <Link to="/studio" className={scene.ctaPrimary}>
-            {HOME.ctaStudio}
-          </Link>
-          <Link to="/features" className={scene.ctaSecondary}>
-            {HOME.ctaFeatures}
-          </Link>
-        </div>
+        <header className={scene.pageHeaderWide}>
+          <p className={scene.pageEyebrow}>{HOME.eyebrow}</p>
+          <h1 className={cn("mt-4 max-w-4xl", scene.pageTitleHero)}>
+            {HOME.title}
+            <span className="mt-3 block text-3xl font-semibold text-foreground/90 sm:text-4xl">
+              {HOME.titleSuffix}
+            </span>
+          </h1>
+          <p className={cn("mt-6 max-w-2xl", scene.pageSubtitle)}>
+            {HOME.subtitle}
+          </p>
+          <div className="mt-10 flex flex-wrap gap-3">
+            <Link to="/studio" className={scene.ctaPrimary}>
+              {HOME.ctaStudio}
+            </Link>
+            <Link to="/features" className={scene.ctaSecondary}>
+              {HOME.ctaFeatures}
+            </Link>
+          </div>
+        </header>
 
-        <section className="mt-24">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <h2 className={cn(scene.titleLg, "font-serif text-2xl sm:text-3xl")}>
-              {HOME.capabilitiesTitle}
-            </h2>
+        <MarketingSection
+          className="mt-24"
+          title={HOME.capabilitiesTitle}
+          action={
             <Link to="/features" className={scene.link}>
               {HOME.capabilitiesLink}
             </Link>
-          </div>
-          <div className="mt-6 grid gap-6 md:grid-cols-3">
+          }
+        >
+          <div className={scene.contentGrid3}>
             {HOME_FEATURE_TEASERS.map((item, index) => {
               const Icon = STUDIO_CAPABILITIES[index]?.icon;
               return (
-                <Link
+                <MarketingFeatureCard
                   key={item.title}
-                  to={item.href}
-                  className={cn(scene.cardInteractive, scene.cardPadding, "group")}
-                >
-                  {Icon ? (
-                    <span className="inline-flex size-11 items-center justify-center rounded-xl bg-accent text-primary transition-colors duration-200 group-hover:bg-primary/15">
-                      <Icon className="size-5" aria-hidden />
-                    </span>
-                  ) : null}
-                  <h3 className={cn("mt-4", scene.titleLg)}>{item.title}</h3>
-                  <p className={cn("mt-3", scene.body)}>{item.body}</p>
-                  <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100">
-                    了解更多
-                    <ArrowRightIcon className="size-3.5" aria-hidden />
-                  </span>
-                </Link>
+                  icon={Icon}
+                  title={item.title}
+                  body={item.body}
+                  href={item.href}
+                />
               );
             })}
           </div>
-        </section>
-      </main>
+        </MarketingSection>
+      </MarketingPageShell>
     </div>
   );
 }

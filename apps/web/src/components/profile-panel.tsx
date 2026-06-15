@@ -1,27 +1,41 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ChevronRightIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+import { CheckIcon, PencilIcon, Trash2Icon } from "lucide-react";
 
 import {
-  CreativeContextEmpty,
+  getProfileStepCopy,
+  type ProfileSetupStep,
+} from "@yougan/domain";
+
+import {
   CreativeContextInset,
   CreativeContextList,
   CreativeContextListItem,
   CreativeContextSection,
   formatContextTime,
 } from "@/components/studio/creative-context/shared";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
-import { PROFILE_PANEL } from "@/lib/site-copy";
-import {
-  formatLabel,
-  mediaTypeLabel,
-  topicCategoryLabel,
-} from "@/lib/discover-taxonomy";
+import { PROFILE_WIZARD } from "@/lib/site-copy";
+import { buildProfileSetupView } from "@/lib/profile-setup-display";
+import { formatLabel } from "@/lib/discover-taxonomy";
+import { platformLabel } from "@/lib/platform-labels";
 import type { WorkProfile, ProfileSettingKind } from "@/lib/types";
+
+function GuidedEmpty({
+  title,
+  body,
+}: {
+  title: string;
+  body: string;
+}) {
+  return (
+    <div className="min-h-[4.5rem] rounded-lg border border-dashed border-border bg-muted/50 px-4 py-4">
+      <p className="text-sm font-medium text-foreground">{title}</p>
+      <p className="mt-1.5 text-pretty text-xs leading-6 text-muted-foreground">
+        {body}
+      </p>
+    </div>
+  );
+}
 
 function EditableTextItem({
   description,
@@ -122,61 +136,6 @@ function EditableTextItem({
   );
 }
 
-function ProfileSubsection({
-  title,
-  count,
-  action,
-  hasContent,
-  empty,
-  children,
-}: {
-  title: string;
-  count?: number;
-  action?: ReactNode;
-  hasContent: boolean;
-  empty: string;
-  children: ReactNode;
-}) {
-  const [open, setOpen] = useState(hasContent);
-  const hadContentRef = useRef(hasContent);
-  const heading = count != null ? `${title} · ${count}` : title;
-
-  useEffect(() => {
-    if (hasContent && !hadContentRef.current) {
-      setOpen(true);
-    }
-    hadContentRef.current = hasContent;
-  }, [hasContent]);
-
-  return (
-    <Collapsible open={open} onOpenChange={setOpen} className="group/collapsible">
-      <div className="flex items-center justify-between gap-2">
-        <CollapsibleTrigger
-          className={cn(
-            "flex min-w-0 flex-1 items-center gap-1.5 rounded-md py-0.5 text-left",
-            "transition-colors hover:bg-muted/50",
-          )}
-          aria-label={open ? `收起${title}` : `展开${title}`}
-        >
-          <ChevronRightIcon
-            className={cn(
-              "size-3.5 shrink-0 text-muted-foreground/70 transition-transform duration-200",
-              "group-data-[state=open]/collapsible:rotate-90",
-            )}
-          />
-          <span className="text-xs font-medium uppercase tracking-wide text-primary">
-            {heading}
-          </span>
-        </CollapsibleTrigger>
-        {open ? action : null}
-      </div>
-      <CollapsibleContent className="pt-2">
-        {hasContent ? children : <CreativeContextEmpty>{empty}</CreativeContextEmpty>}
-      </CollapsibleContent>
-    </Collapsible>
-  );
-}
-
 function SpecRows({ rows }: { rows: Array<{ label: string; value: string }> }) {
   if (!rows.length) return null;
   return (
@@ -195,49 +154,18 @@ function SpecRows({ rows }: { rows: Array<{ label: string; value: string }> }) {
 
 function formatDeliveryRows(profile: WorkProfile) {
   const { delivery } = profile;
+  const { params } = delivery;
   const rows: Array<{ label: string; value: string }> = [];
-  if (delivery.topic) rows.push({ label: "主题", value: delivery.topic });
+
   if (delivery.format) {
     rows.push({
       label: "体裁",
       value: formatLabel(delivery.format) ?? delivery.format,
     });
   }
-  if (delivery.modalities?.length) {
-    rows.push({
-      label: "形式",
-      value:
-        mediaTypeLabel(delivery.modalities) ?? delivery.modalities.join(", "),
-    });
+  if (delivery.platform) {
+    rows.push({ label: "平台", value: platformLabel(delivery.platform) });
   }
-  if (delivery.platform) rows.push({ label: "平台", value: delivery.platform });
-  if (delivery.category) {
-    rows.push({
-      label: "分类",
-      value: topicCategoryLabel(delivery.category) ?? delivery.category,
-    });
-  }
-  return rows;
-}
-
-function formatExpressionRows(profile: WorkProfile) {
-  const { expression } = profile;
-  const rows: Array<{ label: string; value: string }> = [];
-  if (expression.audience) rows.push({ label: "受众", value: expression.audience });
-  if (expression.verbal?.tone) rows.push({ label: "语气", value: expression.verbal.tone });
-  if (expression.verbal?.style) rows.push({ label: "文风", value: expression.verbal.style });
-  if (expression.verbal?.persona) {
-    rows.push({ label: "叙述者", value: expression.verbal.persona });
-  }
-  if (expression.visual?.style) rows.push({ label: "画风", value: expression.visual.style });
-  if (expression.visual?.mood) rows.push({ label: "氛围", value: expression.visual.mood });
-  if (expression.visual?.palette) rows.push({ label: "色彩", value: expression.visual.palette });
-  return rows;
-}
-
-function formatParamsRows(profile: WorkProfile) {
-  const { params } = profile;
-  const rows: Array<{ label: string; value: string }> = [];
 
   if (params.kind === "text") {
     const { min, max } = params.word_count ?? {};
@@ -284,188 +212,359 @@ function formatParamsRows(profile: WorkProfile) {
   return rows;
 }
 
+function formatExpressionRows(profile: WorkProfile) {
+  const { expression } = profile;
+  const rows: Array<{ label: string; value: string }> = [];
+  if (expression.audience) rows.push({ label: "受众", value: expression.audience });
+  if (expression.verbal?.trim()) {
+    rows.push({ label: "文字风格", value: expression.verbal.trim() });
+  }
+  if (expression.visual?.trim()) {
+    rows.push({ label: "画面方向", value: expression.visual.trim() });
+  }
+  return rows;
+}
+
 function formatSettingHeading(item: {
   kind: ProfileSettingKind;
   title?: string | null;
 }) {
-  const kindLabel = PROFILE_PANEL.settingKindLabels[item.kind] ?? item.kind;
+  const kindLabel = PROFILE_WIZARD.settingKindLabels[item.kind] ?? item.kind;
   const name = item.title?.trim();
   return name ? `${kindLabel} · ${name}` : kindLabel;
 }
 
-function formatSettingDescription(item: {
-  kind: ProfileSettingKind;
-  title?: string | null;
-  description: string;
-}) {
-  return item.description;
-}
-
-const EMPTY_PROFILE: WorkProfile = {
-  delivery: { topic: "", format: null, modalities: [] },
-  expression: {},
-  blueprint: { summary: "", settings: [], segments: [] },
-  guardrails: [],
-  params: { kind: "text" },
-};
-
-export function ProfilePanel({
+function ProfileStepList({
+  steps,
   profile,
-  editable = false,
-  compact = false,
-  onUpdateGuardrail,
-  onDeleteGuardrail,
+  activeStepId,
+  editable,
+  onUpdateConstraint,
+  onDeleteConstraint,
   onUpdateSetting,
   onDeleteSetting,
   onUpdateSegment,
   onDeleteSegment,
-  onClearGuardrails,
+  onClearConstraints,
   onClearSettings,
   onClearSegments,
+  onSkipStep,
 }: {
-  profile?: WorkProfile;
-  editable?: boolean;
-  compact?: boolean;
-  onUpdateGuardrail?: (id: string, description: string) => void;
-  onDeleteGuardrail?: (id: string) => void;
+  steps: ReturnType<typeof buildProfileSetupView>["state"]["steps"];
+  profile: WorkProfile;
+  activeStepId: ProfileSetupStep;
+  editable: boolean;
+  onUpdateConstraint?: (id: string, description: string) => void;
+  onDeleteConstraint?: (id: string) => void;
   onUpdateSetting?: (id: string, description: string) => void;
   onDeleteSetting?: (id: string) => void;
   onUpdateSegment?: (id: string, description: string) => void;
   onDeleteSegment?: (id: string) => void;
-  onClearGuardrails?: () => void;
+  onClearConstraints?: () => void;
+  onClearSettings?: () => void;
+  onClearSegments?: () => void;
+  onSkipStep?: (stepId: ProfileSetupStep) => void;
+}) {
+  return (
+    <ol className="space-y-3" aria-label={PROFILE_WIZARD.stepsOverviewLabel}>
+      {steps.map((step) => {
+        const isActive = step.id === activeStepId;
+        const skipped = step.status === "skipped";
+        const done = step.status === "done";
+        const copy = getProfileStepCopy(profile, step.id);
+        const canSkip =
+          isActive &&
+          (step.id === "expression" ||
+            step.id === "structure" ||
+            step.id === "constraints") &&
+          !step.filled;
+
+        return (
+          <li
+            key={step.id}
+            className={cn(
+              "rounded-lg border px-3 py-3 transition-colors",
+              isActive
+                ? "border-primary/30 bg-primary/[0.04] ring-1 ring-primary/10"
+                : "border-border/70 bg-background/80",
+            )}
+            aria-current={isActive ? "step" : undefined}
+          >
+            <div className="flex items-start gap-2.5">
+              <span
+                className={cn(
+                  "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold tabular-nums",
+                  isActive
+                    ? "bg-primary text-primary-foreground"
+                    : done
+                      ? "bg-primary/15 text-primary"
+                      : skipped
+                        ? "bg-muted text-muted-foreground/50"
+                        : "bg-muted text-muted-foreground",
+                )}
+                aria-hidden
+              >
+                {done && !isActive ? (
+                  <CheckIcon className="size-3" />
+                ) : (
+                  step.index
+                )}
+              </span>
+              <div className="min-w-0 flex-1 space-y-3">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                      <p
+                        className={cn(
+                          "text-sm font-medium",
+                          skipped
+                            ? "text-muted-foreground/60 line-through"
+                            : "text-foreground",
+                        )}
+                      >
+                        {step.title}
+                      </p>
+                      {step.required ? (
+                        <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                          {PROFILE_WIZARD.tierRequired}
+                        </span>
+                      ) : step.id !== "ready" ? (
+                        <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground/70">
+                          {PROFILE_WIZARD.tierOptional}
+                        </span>
+                      ) : null}
+                      {isActive ? (
+                        <span className="text-[10px] font-medium text-primary">
+                          {PROFILE_WIZARD.currentStepLabel}
+                        </span>
+                      ) : null}
+                    </div>
+                    {!skipped ? (
+                      <p className="mt-1 text-pretty text-xs leading-5 text-muted-foreground">
+                        {copy.hint}
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-xs text-muted-foreground/60">
+                        已跳过，可在对话中随时补充
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {skipped ? null : (
+                  <div
+                    className={cn(
+                      !isActive && !done && "opacity-90",
+                    )}
+                  >
+                    <StepContent
+                      step={step.id}
+                      profile={profile}
+                      editable={editable}
+                      onUpdateConstraint={onUpdateConstraint}
+                      onDeleteConstraint={onDeleteConstraint}
+                      onUpdateSetting={onUpdateSetting}
+                      onDeleteSetting={onDeleteSetting}
+                      onUpdateSegment={onUpdateSegment}
+                      onDeleteSegment={onDeleteSegment}
+                      onClearConstraints={onClearConstraints}
+                      onClearSettings={onClearSettings}
+                      onClearSegments={onClearSegments}
+                    />
+                  </div>
+                )}
+
+                {canSkip && onSkipStep ? (
+                  <button
+                    type="button"
+                    className="text-xs text-muted-foreground transition hover:text-foreground"
+                    onClick={() => onSkipStep(step.id)}
+                  >
+                    {PROFILE_WIZARD.skipStep}
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function StepContent({
+  step,
+  profile,
+  editable,
+  onUpdateConstraint,
+  onDeleteConstraint,
+  onUpdateSetting,
+  onDeleteSetting,
+  onUpdateSegment,
+  onDeleteSegment,
+  onClearConstraints,
+  onClearSettings,
+  onClearSegments,
+}: {
+  step: ProfileSetupStep;
+  profile: WorkProfile;
+  editable: boolean;
+  onUpdateConstraint?: (id: string, description: string) => void;
+  onDeleteConstraint?: (id: string) => void;
+  onUpdateSetting?: (id: string, description: string) => void;
+  onDeleteSetting?: (id: string) => void;
+  onUpdateSegment?: (id: string, description: string) => void;
+  onDeleteSegment?: (id: string) => void;
+  onClearConstraints?: () => void;
   onClearSettings?: () => void;
   onClearSegments?: () => void;
 }) {
-  const data = profile ?? EMPTY_PROFILE;
-  const deliveryRows = formatDeliveryRows(data);
-  const expressionRows = formatExpressionRows(data);
-  const paramsRows = formatParamsRows(data);
-  const summary = data.blueprint.summary.trim();
-  const settings = data.blueprint.settings;
-  const segments = data.blueprint.segments;
-  const guardrails = data.guardrails;
+  const copy = getProfileStepCopy(profile, step);
 
-  return (
-    <CreativeContextSection
-      title={PROFILE_PANEL.title}
-      hint={PROFILE_PANEL.hint}
-      compact={compact}
-    >
-      <div className="space-y-4">
-        <ProfileSubsection
-          title={PROFILE_PANEL.deliveryLabel}
-          hasContent={deliveryRows.length > 0}
-          empty={PROFILE_PANEL.deliveryEmpty}
-        >
-          <SpecRows rows={deliveryRows} />
-        </ProfileSubsection>
+  if (step === "ready") {
+    return (
+      <CreativeContextInset>
+        <p className="text-sm leading-6 text-foreground">
+          {PROFILE_WIZARD.readyBody}
+        </p>
+      </CreativeContextInset>
+    );
+  }
 
-        <ProfileSubsection
-          title={PROFILE_PANEL.expressionLabel}
-          hasContent={expressionRows.length > 0}
-          empty={PROFILE_PANEL.expressionEmpty}
-        >
-          <SpecRows rows={expressionRows} />
-        </ProfileSubsection>
+  const empty = (
+    <GuidedEmpty title={copy.emptyTitle} body={copy.emptyBody} />
+  );
 
-        <ProfileSubsection
-          title={PROFILE_PANEL.summaryLabel}
-          hasContent={Boolean(summary)}
-          empty={PROFILE_PANEL.summaryEmpty}
-        >
-          <CreativeContextInset>
-            <p className="text-pretty leading-6">{summary}</p>
-          </CreativeContextInset>
-        </ProfileSubsection>
+  switch (step) {
+    case "intent": {
+      const intentText = profile.intent.summary.trim();
+      return intentText ? (
+        <CreativeContextInset>
+          <p className="text-pretty leading-6">{intentText}</p>
+        </CreativeContextInset>
+      ) : (
+        empty
+      );
+    }
 
-        <ProfileSubsection
-          title={PROFILE_PANEL.settingsLabel}
-          count={settings.length > 0 ? settings.length : undefined}
-          hasContent={settings.length > 0}
-          empty={PROFILE_PANEL.settingsEmpty}
-          action={
-            editable && settings.length > 0 ? (
-              <button
-                type="button"
-                className="text-xs text-muted-foreground transition hover:text-red-600"
-                onClick={onClearSettings}
-              >
-                {PROFILE_PANEL.clearSettings}
-              </button>
-            ) : null
-          }
-        >
-          <CreativeContextList>
-            {settings.map((item) => (
-              <EditableTextItem
-                key={item.id}
-                description={formatSettingDescription(item)}
-                heading={formatSettingHeading(item)}
-                confirmedAt={item.confirmed_at}
-                editable={editable}
-                editLabel="修改创作设定"
-                deleteLabel="删除创作设定"
-                onEdit={(next) => onUpdateSetting?.(item.id, next)}
-                onDelete={() => onDeleteSetting?.(item.id)}
+    case "delivery":
+      return formatDeliveryRows(profile).length > 0 ? (
+        <SpecRows rows={formatDeliveryRows(profile)} />
+      ) : (
+        empty
+      );
+
+    case "expression":
+      return formatExpressionRows(profile).length > 0 ? (
+        <SpecRows rows={formatExpressionRows(profile)} />
+      ) : (
+        empty
+      );
+
+    case "structure":
+      return (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {profile.structure.settings.length > 0
+                  ? `${PROFILE_WIZARD.settingsLabel} · ${profile.structure.settings.length}`
+                  : PROFILE_WIZARD.settingsLabel}
+              </p>
+              {editable && profile.structure.settings.length > 0 ? (
+                <button
+                  type="button"
+                  className="text-xs text-muted-foreground transition hover:text-red-600"
+                  onClick={onClearSettings}
+                >
+                  {PROFILE_WIZARD.clearSettings}
+                </button>
+              ) : null}
+            </div>
+            {profile.structure.settings.length > 0 ? (
+              <CreativeContextList>
+                {profile.structure.settings.map((item) => (
+                  <EditableTextItem
+                    key={item.id}
+                    description={item.description}
+                    heading={formatSettingHeading(item)}
+                    confirmedAt={item.confirmed_at}
+                    editable={editable}
+                    editLabel="修改创作设定"
+                    deleteLabel="删除创作设定"
+                    onEdit={(next) => onUpdateSetting?.(item.id, next)}
+                    onDelete={() => onDeleteSetting?.(item.id)}
+                  />
+                ))}
+              </CreativeContextList>
+            ) : (
+              <GuidedEmpty
+                title={PROFILE_WIZARD.settingsEmptyTitle}
+                body={PROFILE_WIZARD.settingsEmptyBody}
               />
-            ))}
-          </CreativeContextList>
-        </ProfileSubsection>
+            )}
+          </div>
 
-        <ProfileSubsection
-          title={PROFILE_PANEL.segmentsLabel}
-          count={segments.length > 0 ? segments.length : undefined}
-          hasContent={segments.length > 0}
-          empty={PROFILE_PANEL.segmentsEmpty}
-          action={
-            editable && segments.length > 0 ? (
-              <button
-                type="button"
-                className="text-xs text-muted-foreground transition hover:text-red-600"
-                onClick={onClearSegments}
-              >
-                {PROFILE_PANEL.clearSegments}
-              </button>
-            ) : null
-          }
-        >
-          <CreativeContextList>
-            {segments.map((item, index) => (
-              <EditableTextItem
-                key={item.id}
-                description={`${index + 1}. ${item.description}`}
-                confirmedAt={item.confirmed_at}
-                editable={editable}
-                editLabel="修改结构段"
-                deleteLabel="删除结构段"
-                onEdit={(next) =>
-                  onUpdateSegment?.(item.id, next.replace(/^\d+\.\s*/, ""))
-                }
-                onDelete={() => onDeleteSegment?.(item.id)}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {profile.structure.segments.length > 0
+                  ? `${PROFILE_WIZARD.segmentsLabel} · ${profile.structure.segments.length}`
+                  : PROFILE_WIZARD.segmentsLabel}
+              </p>
+              {editable && profile.structure.segments.length > 0 ? (
+                <button
+                  type="button"
+                  className="text-xs text-muted-foreground transition hover:text-red-600"
+                  onClick={onClearSegments}
+                >
+                  {PROFILE_WIZARD.clearSegments}
+                </button>
+              ) : null}
+            </div>
+            {profile.structure.segments.length > 0 ? (
+              <CreativeContextList>
+                {profile.structure.segments.map((item, index) => (
+                  <EditableTextItem
+                    key={item.id}
+                    description={`${index + 1}. ${item.description}`}
+                    confirmedAt={item.confirmed_at}
+                    editable={editable}
+                    editLabel="修改结构段"
+                    deleteLabel="删除结构段"
+                    onEdit={(next) =>
+                      onUpdateSegment?.(item.id, next.replace(/^\d+\.\s*/, ""))
+                    }
+                    onDelete={() => onDeleteSegment?.(item.id)}
+                  />
+                ))}
+              </CreativeContextList>
+            ) : (
+              <GuidedEmpty
+                title={PROFILE_WIZARD.segmentsEmptyTitle}
+                body={PROFILE_WIZARD.segmentsEmptyBody}
               />
-            ))}
-          </CreativeContextList>
-        </ProfileSubsection>
+            )}
+          </div>
+        </div>
+      );
 
-        <ProfileSubsection
-          title={PROFILE_PANEL.guardrailsLabel}
-          count={guardrails.length > 0 ? guardrails.length : undefined}
-          hasContent={guardrails.length > 0}
-          empty={PROFILE_PANEL.guardrailsEmpty}
-          action={
-            editable && guardrails.length > 0 ? (
+    case "constraints":
+      return profile.constraints.rules.length > 0 ? (
+        <div className="space-y-2">
+          {editable ? (
+            <div className="flex justify-end">
               <button
                 type="button"
                 className="text-xs text-muted-foreground transition hover:text-red-600"
-                onClick={onClearGuardrails}
+                onClick={onClearConstraints}
               >
-                {PROFILE_PANEL.clearGuardrails}
+                {PROFILE_WIZARD.clearConstraints}
               </button>
-            ) : null
-          }
-        >
+            </div>
+          ) : null}
           <CreativeContextList>
-            {guardrails.map((item) => (
+            {profile.constraints.rules.map((item) => (
               <EditableTextItem
                 key={item.id}
                 description={item.description}
@@ -473,20 +572,108 @@ export function ProfilePanel({
                 editable={editable}
                 editLabel="修改创作规则"
                 deleteLabel="删除创作规则"
-                onEdit={(next) => onUpdateGuardrail?.(item.id, next)}
-                onDelete={() => onDeleteGuardrail?.(item.id)}
+                onEdit={(next) => onUpdateConstraint?.(item.id, next)}
+                onDelete={() => onDeleteConstraint?.(item.id)}
               />
             ))}
           </CreativeContextList>
-        </ProfileSubsection>
+        </div>
+      ) : (
+        empty
+      );
 
-        <ProfileSubsection
-          title={PROFILE_PANEL.paramsLabel}
-          hasContent={paramsRows.length > 0}
-          empty={PROFILE_PANEL.paramsEmpty}
-        >
-          <SpecRows rows={paramsRows} />
-        </ProfileSubsection>
+    default:
+      return empty;
+  }
+}
+
+const EMPTY_PROFILE: WorkProfile = {
+  intent: { summary: "" },
+  delivery: {
+    format: null,
+    modalities: [],
+    platform: null,
+    category: null,
+    params: { kind: "text" },
+  },
+  expression: {},
+  structure: { settings: [], segments: [] },
+  constraints: { rules: [] },
+};
+
+export function ProfilePanel({
+  profile,
+  editable = false,
+  compact = false,
+  onUpdateConstraint,
+  onDeleteConstraint,
+  onUpdateSetting,
+  onDeleteSetting,
+  onUpdateSegment,
+  onDeleteSegment,
+  onClearConstraints,
+  onClearSettings,
+  onClearSegments,
+}: {
+  profile?: WorkProfile;
+  editable?: boolean;
+  compact?: boolean;
+  onUpdateConstraint?: (id: string, description: string) => void;
+  onDeleteConstraint?: (id: string) => void;
+  onUpdateSetting?: (id: string, description: string) => void;
+  onDeleteSetting?: (id: string) => void;
+  onUpdateSegment?: (id: string, description: string) => void;
+  onDeleteSegment?: (id: string) => void;
+  onClearConstraints?: () => void;
+  onClearSettings?: () => void;
+  onClearSegments?: () => void;
+}) {
+  const data = profile ?? EMPTY_PROFILE;
+  const [skippedSteps, setSkippedSteps] = useState<ProfileSetupStep[]>([]);
+
+  const setupView = useMemo(
+    () => buildProfileSetupView(data, { skippedSteps }),
+    [data, skippedSteps],
+  );
+  const { state, headline, activeStep } = setupView;
+
+  const handleSkip = useCallback((stepId: ProfileSetupStep) => {
+    if (
+      stepId !== "expression" &&
+      stepId !== "structure" &&
+      stepId !== "constraints"
+    ) {
+      return;
+    }
+    setSkippedSteps((prev) =>
+      prev.includes(stepId) ? prev : [...prev, stepId],
+    );
+  }, []);
+
+  return (
+    <CreativeContextSection
+      title={PROFILE_WIZARD.title}
+      hint={compact ? PROFILE_WIZARD.hint : undefined}
+      compact={compact}
+    >
+      <div className="space-y-4">
+        <p className="text-sm font-medium text-foreground">{headline}</p>
+        <ProfileStepList
+          steps={state.steps}
+          profile={data}
+          activeStepId={activeStep}
+          editable={editable}
+          onUpdateConstraint={onUpdateConstraint}
+          onDeleteConstraint={onDeleteConstraint}
+          onUpdateSetting={onUpdateSetting}
+          onDeleteSetting={onDeleteSetting}
+          onUpdateSegment={onUpdateSegment}
+          onDeleteSegment={onDeleteSegment}
+          onClearConstraints={onClearConstraints}
+          onClearSettings={onClearSettings}
+          onClearSegments={onClearSegments}
+          onSkipStep={handleSkip}
+        />
       </div>
     </CreativeContextSection>
   );

@@ -1,6 +1,13 @@
 import { Link } from "react-router-dom";
-import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, XIcon } from "lucide-react";
+import { ArrowLeftIcon, CheckIcon, XIcon } from "lucide-react";
 
+import {
+  MarketingBackLink,
+  MarketingPageFooter,
+  MarketingPageHeader,
+  MarketingPageShell,
+  MarketingSection,
+} from "@/components/marketing/marketing-page-layout";
 import { SiteHeader } from "@/components/site-header";
 import {
   PRODUCTION_FORMS,
@@ -26,7 +33,7 @@ function CapabilitySection({
   return (
     <section
       id={capability.anchor}
-      className={cn(scene.card, scene.cardPadding, "scroll-mt-24 sm:p-8")}
+      className={cn(scene.surface, "scroll-mt-24 p-6 sm:p-8")}
     >
       <div
         className={cn(
@@ -35,14 +42,12 @@ function CapabilitySection({
         )}
       >
         <div className="flex shrink-0 flex-col items-start gap-4 lg:w-56">
-          <span className="inline-flex size-12 items-center justify-center rounded-lg bg-accent text-primary">
+          <span className="inline-flex size-12 items-center justify-center rounded-xl bg-accent text-primary">
             <Icon className="size-6" aria-hidden />
           </span>
           <div>
-            <p className="text-xs font-medium uppercase tracking-wider text-primary/90">
-              {capability.label}
-            </p>
-            <h2 className="mt-1 text-2xl font-semibold text-foreground">
+            <p className={scene.pageEyebrow}>{capability.label}</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
               {capability.tagline}
             </h2>
           </div>
@@ -53,9 +58,9 @@ function CapabilitySection({
             {capability.summary}
           </p>
 
-          <div className="mt-8 grid gap-6 sm:grid-cols-2">
+          <div className="mt-8 grid gap-8 sm:grid-cols-2">
             <div>
-              <h3 className="text-sm font-medium text-foreground">
+              <h3 className="text-sm font-semibold text-foreground">
                 {FEATURES_PAGE.capabilityBenefitsHeading}
               </h3>
               <ul className="mt-3 space-y-2.5">
@@ -74,7 +79,7 @@ function CapabilitySection({
               </ul>
             </div>
             <div>
-              <h3 className="text-sm font-medium text-foreground">
+              <h3 className="text-sm font-semibold text-foreground">
                 {FEATURES_PAGE.capabilityLimitsHeading}
               </h3>
               <ul className="mt-3 space-y-2.5">
@@ -104,158 +109,105 @@ export function FeaturesPage() {
     <div className={scene.marketing}>
       <SiteHeader />
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-12 sm:py-16">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition hover:text-primary"
-        >
+      <MarketingPageShell>
+        <MarketingBackLink to="/" className="mb-8">
           <ArrowLeftIcon className="size-4" aria-hidden />
           {FEATURES_PAGE.back}
-        </Link>
+        </MarketingBackLink>
 
-        <p className="mt-8 text-sm uppercase tracking-[0.2em] text-primary/80">
-          {FEATURES_PAGE.eyebrow}
-        </p>
-        <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-          {FEATURES_PAGE.title}
-        </h1>
-        <p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">
-          {FEATURES_PAGE.subtitle}
-        </p>
+        <MarketingPageHeader
+          eyebrow={FEATURES_PAGE.eyebrow}
+          title={FEATURES_PAGE.title}
+          subtitle={FEATURES_PAGE.subtitle}
+          wide
+        />
 
-        <section className="mt-12">
-          <p className="text-sm font-medium text-muted-foreground">
-            {FEATURES_PAGE.platformsIntro}
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {PRODUCTION_FORMS.map((form) => (
-              <span
-                key={form}
-                className="rounded-md border border-border/80 bg-card/90 px-4 py-1.5 text-sm text-foreground/90 shadow-sm"
-              >
-                {form}
-              </span>
-            ))}
-          </div>
-        </section>
+        <div className={cn("mt-12", scene.sectionStackLoose)}>
+          <MarketingSection title={FEATURES_PAGE.platformsIntro}>
+            <div className="flex flex-wrap gap-2">
+              {PRODUCTION_FORMS.map((form) => (
+                <span key={form} className={scene.pill}>
+                  {form}
+                </span>
+              ))}
+            </div>
+          </MarketingSection>
 
-        <section className="mt-16" aria-labelledby="workflow-heading">
-          <h2
+          <MarketingSection
             id="workflow-heading"
-            className="text-2xl font-semibold text-foreground"
+            title={FEATURES_PAGE.workflowTitle}
+            hint={FEATURES_PAGE.workflowSubtitle}
+            heading
           >
-            {FEATURES_PAGE.workflowTitle}
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {FEATURES_PAGE.workflowSubtitle}
-          </p>
-          <ol className="mt-8 grid gap-4 sm:grid-cols-2">
-            {WORKFLOW_STEPS.map((item) => (
-              <li
-                key={item.step}
-                className="relative rounded-lg border border-border/80 bg-card/90 p-6 shadow-sm"
-              >
-                <span className="font-mono text-xs font-medium text-primary">
-                  {item.step}
-                </span>
-                <h3 className="mt-2 text-lg font-medium text-foreground">
-                  {item.title}
-                </h3>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  {item.body}
-                </p>
-              </li>
-            ))}
-          </ol>
+            <ol className={scene.contentGrid2}>
+              {WORKFLOW_STEPS.map((item) => (
+                <li key={item.step} className={cn(scene.featureCard, "relative")}>
+                  <span className="font-mono text-xs font-medium text-primary">
+                    {item.step}
+                  </span>
+                  <h3 className="mt-2 text-lg font-semibold text-foreground">
+                    {item.title}
+                  </h3>
+                  <p className={cn("mt-2", scene.body)}>{item.body}</p>
+                </li>
+              ))}
+            </ol>
+          </MarketingSection>
 
-          <div
-            className="mt-8 hidden items-center justify-center gap-2 text-sm text-muted-foreground/70 sm:flex"
-            aria-hidden
-          >
-            {WORKFLOW_STEPS.map((item, i) => (
-              <span key={item.step} className="inline-flex items-center gap-2">
-                <span className="rounded-md bg-secondary px-3 py-1 text-muted-foreground">
-                  {item.title}
-                </span>
-                {i < WORKFLOW_STEPS.length - 1 ? (
-                  <ArrowRightIcon className="size-4" />
-                ) : null}
-              </span>
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-20" aria-labelledby="capabilities-heading">
-          <h2
+          <MarketingSection
             id="capabilities-heading"
-            className="text-2xl font-semibold text-foreground"
+            title={FEATURES_PAGE.capabilitiesDetailTitle}
+            hint={FEATURES_PAGE.capabilitiesDetailSubtitle}
+            heading
           >
-            {FEATURES_PAGE.capabilitiesDetailTitle}
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            {FEATURES_PAGE.capabilitiesDetailSubtitle}
-          </p>
-          <div className="mt-8 space-y-8">
-            {STUDIO_CAPABILITIES.map((capability, index) => (
-              <CapabilitySection
-                key={capability.anchor}
-                capability={capability}
-                index={index}
-              />
-            ))}
-          </div>
-        </section>
+            <div className="space-y-6">
+              {STUDIO_CAPABILITIES.map((capability, index) => (
+                <CapabilitySection
+                  key={capability.anchor}
+                  capability={capability}
+                  index={index}
+                />
+              ))}
+            </div>
+          </MarketingSection>
 
-        <section className="mt-20" aria-labelledby="studio-heading">
-          <h2
+          <MarketingSection
             id="studio-heading"
-            className="text-2xl font-semibold text-foreground"
+            title={FEATURES_PAGE.studioTitle}
+            hint={FEATURES_PAGE.studioSubtitle}
+            heading
           >
-            {FEATURES_PAGE.studioTitle}
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {FEATURES_PAGE.studioSubtitle}
-          </p>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            {STUDIO_PANELS.map(({ icon: Icon, title, body }) => (
-              <article
-                key={title}
-                className="rounded-lg border border-border/80 bg-card/90 p-6 shadow-sm"
-              >
+            <div className={scene.contentGrid2}>
+              {STUDIO_PANELS.map(({ icon: Icon, title, body }) => (
+                <article key={title} className={scene.featureCard}>
+                  <Icon className="size-5 text-primary" aria-hidden />
+                  <h3 className="mt-3 font-semibold text-foreground">{title}</h3>
+                  <p className={cn("mt-2", scene.body)}>{body}</p>
+                </article>
+              ))}
+            </div>
+          </MarketingSection>
+
+          <div className={scene.contentGrid2}>
+            {EXTRA_CAPABILITIES.map(({ icon: Icon, title, body }) => (
+              <article key={title} className={scene.featureCard}>
                 <Icon className="size-5 text-primary" aria-hidden />
-                <h3 className="mt-3 font-medium text-foreground">{title}</h3>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  {body}
-                </p>
+                <h3 className="mt-3 font-semibold text-foreground">{title}</h3>
+                <p className={cn("mt-2", scene.body)}>{body}</p>
               </article>
             ))}
           </div>
-        </section>
+        </div>
 
-        <section className="mt-16 grid gap-4 sm:grid-cols-2">
-          {EXTRA_CAPABILITIES.map(({ icon: Icon, title, body }) => (
-            <article
-              key={title}
-              className="rounded-lg border border-border/80 bg-card/90 p-6 shadow-sm"
-            >
-              <Icon className="size-5 text-primary" aria-hidden />
-              <h3 className="mt-3 font-medium text-foreground">{title}</h3>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                {body}
-              </p>
-            </article>
-          ))}
-        </section>
-
-        <div className="mt-16 flex flex-wrap justify-center gap-4 border-t border-border/80 pt-12">
+        <MarketingPageFooter className="mt-16">
           <Link to="/studio" className={scene.ctaPrimary}>
             {FEATURES_PAGE.ctaStudio}
           </Link>
           <Link to="/mobile" className={scene.ctaSecondary}>
             {FEATURES_PAGE.ctaMobile}
           </Link>
-        </div>
-      </main>
+        </MarketingPageFooter>
+      </MarketingPageShell>
     </div>
   );
 }

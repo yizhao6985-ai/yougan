@@ -6,6 +6,7 @@ import {
   topicCategoryLabel,
 } from "@/lib/discover-taxonomy";
 import { formatPublishedAt, platformLabel } from "@/lib/platform-labels";
+import { publicationContentPath } from "@/lib/publication-path";
 import type { Publication } from "@/lib/publication-types";
 import { cn } from "@/lib/utils";
 
@@ -27,7 +28,7 @@ export function AccountPublicationCard({
 
   return (
     <Link
-      to={`/content/${publication.slug}`}
+      to={publicationContentPath(publication.slug)}
       className="group flex h-full flex-col overflow-hidden rounded-lg border border-border/80 bg-card shadow-sm shadow-border/20 transition hover:border-primary/20 hover:shadow-md"
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-secondary/40">

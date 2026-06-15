@@ -1,7 +1,6 @@
 import {
   CONTENT_FORMATS,
   getProfileSummary,
-  mediaModalitiesLabel,
   referenceContentLabel,
   type ContentFormatId,
   type WorkProfile,
@@ -17,18 +16,14 @@ function contentFormatLabel(id: string | null | undefined) {
   return FORMAT_LABELS[id as ContentFormatId] ?? id;
 }
 
-function deliverySummary(profile: WorkProfile) {
+function deliveryStepSummary(profile: WorkProfile) {
   const delivery = profile.delivery;
   const format = delivery.format ? contentFormatLabel(delivery.format) : null;
-  const modalities = delivery.modalities?.length
-    ? mediaModalitiesLabel(delivery.modalities)
-    : null;
   const parts = [
-    delivery.topic ? `主题：${delivery.topic}` : null,
     format ? `体裁：${format}` : null,
-    modalities ? `形式：${modalities}` : null,
+    delivery.platform ? `平台：${delivery.platform}` : null,
   ].filter(Boolean);
-  return parts.length ? parts.join("；") : "尚未确定创作规格";
+  return parts.length ? parts.join("；") : "尚未确定体裁与参数";
 }
 
 const PROFILE_LIST_EMPTY = "（尚无）";
@@ -41,7 +36,6 @@ function formatProfileIdList<T extends { id: string; description: string }>(
     : PROFILE_LIST_EMPTY;
 }
 
-/** 参考素材摘要（含分析要点与使用意图） */
 export function profileReferencesSummary(
   references: WorkReference[] | undefined,
 ): string {
@@ -65,29 +59,27 @@ export function profileReferencesSummary(
   return `参考素材（${items.length} 条）：\n${lines.join("\n")}`;
 }
 
-/** 交付规格正文（不含标题行） */
-export function profileDeliverySummary(profile: WorkProfile): string {
-  return deliverySummary(profile);
+export function profileIntentSummary(profile: WorkProfile): string {
+  const summary = profile.intent.summary.trim();
+  return summary || "尚未确定创作定位";
 }
 
-/** 表达设定正文（不含标题行） */
+export function profileDeliveryStepSummary(profile: WorkProfile): string {
+  return deliveryStepSummary(profile);
+}
+
 export function profileExpressionSummary(profile: WorkProfile): string {
   const { expression } = profile;
   const parts = [
     expression.audience ? `受众：${expression.audience}` : null,
-    expression.verbal?.tone ? `语气：${expression.verbal.tone}` : null,
-    expression.verbal?.style ? `文风：${expression.verbal.style}` : null,
-    expression.verbal?.persona ? `叙述者：${expression.verbal.persona}` : null,
-    expression.visual?.style ? `画风：${expression.visual.style}` : null,
-    expression.visual?.mood ? `氛围：${expression.visual.mood}` : null,
-    expression.visual?.palette ? `色彩：${expression.visual.palette}` : null,
+    expression.verbal?.trim() ? `文字风格：${expression.verbal.trim()}` : null,
+    expression.visual?.trim() ? `画面方向：${expression.visual.trim()}` : null,
   ].filter(Boolean);
   return parts.length ? parts.join("；") : "尚未确定表达设定";
 }
 
-/** 结构段列表（含标题行与 id，供工具 update/delete 引用） */
 export function profileSegmentsSummary(profile: WorkProfile): string {
-  const segments = profile.blueprint.segments;
+  const segments = profile.structure.segments;
   return `结构段（含 id，${segments.length} 节）：\n${formatProfileIdList(segments)}`;
 }
 
@@ -109,24 +101,21 @@ function formatSettingLine(item: {
   return `- [${item.id}] ${prefix} ${item.description}`;
 }
 
-/** 创作设定列表（含标题行与 id，供工具 update/delete 引用） */
 export function profileSettingsSummary(profile: WorkProfile): string {
-  const settings = profile.blueprint.settings;
+  const settings = profile.structure.settings;
   if (!settings.length) {
     return `创作设定（含 id，0 条）：\n${PROFILE_LIST_EMPTY}`;
   }
   return `创作设定（含 id，${settings.length} 条）：\n${settings.map(formatSettingLine).join("\n")}`;
 }
 
-/** 创作规则列表（含标题行与 id，供工具 update/delete 引用） */
-export function profileGuardrailsSummary(profile: WorkProfile): string {
-  const guardrails = profile.guardrails;
-  return `创作规则（含 id，${guardrails.length} 条）：\n${formatProfileIdList(guardrails)}`;
+export function profileConstraintsSummary(profile: WorkProfile): string {
+  const rules = profile.constraints.rules;
+  return `创作规则（含 id，${rules.length} 条）：\n${formatProfileIdList(rules)}`;
 }
 
-/** 体裁参数正文（不含标题行） */
 export function profileParamsSummary(profile: WorkProfile): string {
-  const { params } = profile;
+  const { params } = profile.delivery;
   const parts: string[] = [];
 
   if (params.kind === "text") {
@@ -166,41 +155,34 @@ export function profileParamsSummary(profile: WorkProfile): string {
   return parts.length ? parts.join("；") : "尚未设定体裁参数";
 }
 
-/** 作品方案紧凑总览（多场景通用） */
 export function profileSummary(
   profile: WorkProfile,
   references?: WorkReference[],
 ): string {
   const summary = getProfileSummary(profile);
-  const lines: string[] = ["创作规格"];
-  if (summary) lines.push(`定位：${summary}`);
-  lines.push(profileDeliverySummary(profile));
-  lines.push(`体裁参数：${profileParamsSummary(profile)}`);
-  lines.push(profileExpressionSummary(profile));
+  const lines: string[] = ["制作方案（按步骤）"];
+  lines.push(`① 创作定位：${profileIntentSummary(profile)}`);
+  lines.push(`② 体裁与参数：${profileDeliveryStepSummary(profile)}`);
+  lines.push(`   参数：${profileParamsSummary(profile)}`);
+  lines.push(`③ 表达设定：${profileExpressionSummary(profile)}`);
+  if (profile.structure.settings.length || profile.structure.segments.length) {
+    lines.push(
+      `④ 结构与要素：设定 ${profile.structure.settings.length} 条；结构 ${profile.structure.segments.length} 节`,
+    );
+  }
+  if (profile.constraints.rules.length) {
+    lines.push(
+      `⑤ 创作规则（${profile.constraints.rules.length} 条）：${profile.constraints.rules.map((g) => g.description).join("；")}`,
+    );
+  }
   if (references?.length) {
     lines.push(profileReferencesSummary(references));
   }
-  if (profile.guardrails.length) {
-    lines.push(
-      `规则（${profile.guardrails.length} 条）：${profile.guardrails.map((g) => g.description).join("；")}`,
-    );
-  }
-  if (profile.blueprint.settings.length) {
-    lines.push(
-      `设定（${profile.blueprint.settings.length} 条）：${profile.blueprint.settings.map((s) => formatSettingLine(s)).join("；")}`,
-    );
-  }
-  if (profile.blueprint.segments.length) {
-    lines.push(
-      `结构（${profile.blueprint.segments.length} 节）：${profile.blueprint.segments.map((s, i) => `${i + 1}. ${s.description}`).join("；")}`,
-    );
-  }
   if (
     !summary &&
-    !profile.guardrails.length &&
-    !profile.blueprint.settings.length &&
-    !profile.blueprint.segments.length &&
-    !profile.delivery.topic
+    !profile.constraints.rules.length &&
+    !profile.structure.settings.length &&
+    !profile.structure.segments.length
   ) {
     return "尚无作品方案";
   }

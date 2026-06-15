@@ -12,7 +12,7 @@ export const PlanTaskSchema = z.object({
     .string()
     .min(1)
     .describe(
-      "该节的规划 brief：本节写什么、如何呼应 profile 与结构段（不是正文、不是实现细节）",
+      "该节的规划 brief：本节写什么、如何呼应 profile 与结构段（不是正文、不是实现细节）。连续正文时须含【本节止于】；第 2 节起另含【下节起笔】【禁止重复】",
     ),
   acceptance_criteria: z
     .string()

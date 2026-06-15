@@ -9,9 +9,9 @@ import type {
 } from "../models/taxonomy/discover.js";
 import type {
   AudioFormatParams,
+  DeliverySpec,
   FormatParams,
   IllustrationFormatParams,
-  ProfileDelivery,
   TextFormatParams,
   VideoFormatParams,
 } from "../models/work/profile.js";
@@ -80,7 +80,7 @@ function normalizeCategory(
 }
 
 /** 补齐缺失或无效的 format / modalities（仅制作/发布等运行时推断，不写入 profile） */
-export function resolveDelivery(delivery: ProfileDelivery): ResolvedDelivery {
+export function resolveDelivery(delivery: DeliverySpec): ResolvedDelivery {
   const format = isValidContentFormat(delivery.format)
     ? delivery.format
     : inferFormatFromPlatform(delivery.platform);
@@ -168,7 +168,7 @@ export function parseFormatParams(
   } satisfies TextFormatParams;
 }
 
-export type ResolvedDelivery = ProfileDelivery & {
+export type ResolvedDelivery = DeliverySpec & {
   modalities: MediaModalityId[];
   format: ContentFormatId;
 };

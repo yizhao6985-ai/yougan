@@ -74,32 +74,22 @@ const FormatParamsSchema = z.discriminatedUnion("kind", [
 
 export const WorkProfileSchema = z
   .object({
+    intent: z.object({
+      summary: z.string(),
+    }),
     delivery: z.object({
-      topic: z.string(),
       format: z.string().nullable(),
       modalities: z.array(z.string()),
       platform: z.string().nullable().optional(),
       category: z.string().nullable().optional(),
+      params: FormatParamsSchema,
     }),
     expression: z.object({
       audience: z.string().nullable().optional(),
-      verbal: z
-        .object({
-          tone: z.string().nullable().optional(),
-          style: z.string().nullable().optional(),
-          persona: z.string().nullable().optional(),
-        })
-        .optional(),
-      visual: z
-        .object({
-          style: z.string().nullable().optional(),
-          mood: z.string().nullable().optional(),
-          palette: z.string().nullable().optional(),
-        })
-        .optional(),
+      verbal: z.string().nullable().optional(),
+      visual: z.string().nullable().optional(),
     }),
-    blueprint: z.object({
-      summary: z.string(),
+    structure: z.object({
       settings: z.array(
         z.object({
           id: z.string(),
@@ -119,15 +109,16 @@ export const WorkProfileSchema = z
         }),
       ),
     }),
-    guardrails: z.array(
-      z.object({
-        id: z.string(),
-        description: z.string(),
-        scope: z.enum(["all", "verbal", "visual", "audio", "video"]),
-        confirmed_at: z.string(),
-      }),
-    ),
-    params: FormatParamsSchema,
+    constraints: z.object({
+      rules: z.array(
+        z.object({
+          id: z.string(),
+          description: z.string(),
+          scope: z.enum(["all", "verbal", "visual", "audio", "video"]),
+          confirmed_at: z.string(),
+        }),
+      ),
+    }),
   })
   .openapi("WorkProfile");
 

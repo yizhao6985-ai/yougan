@@ -1,24 +1,10 @@
 export const TOOL_LABELS: Record<string, string> = {
   reference_apply_patch: "更新参考素材",
-  update_profile_delivery: "更新交付规格",
-  update_profile_summary: "更新内容定位",
+  update_profile_intent: "更新创作定位",
+  update_profile_delivery: "更新体裁与参数",
   update_profile_expression: "更新表达设定",
-  update_profile_params: "更新体裁参数",
-  append_profile_setting: "追加创作设定",
-  update_profile_setting: "修改创作设定",
-  delete_profile_setting: "删除创作设定",
-  replace_profile_settings: "替换创作设定",
-  clear_profile_settings: "清空创作设定",
-  append_profile_segment: "追加结构段",
-  update_profile_segment: "修改结构段",
-  delete_profile_segment: "删除结构段",
-  replace_profile_segments: "替换结构段",
-  clear_profile_segments: "清空结构段",
-  append_profile_guardrail: "追加创作规则",
-  update_profile_guardrail: "修改创作规则",
-  delete_profile_guardrail: "删除创作规则",
-  replace_profile_guardrails: "替换创作规则",
-  clear_profile_guardrails: "清空创作规则",
+  update_profile_structure: "更新结构与要素",
+  update_profile_constraints: "更新创作规则",
   add_plan_task: "添加制作任务",
   execute_task: "执行任务",
   generate_preview: "AI 团队制作",
@@ -55,12 +41,6 @@ export const TOOL_STATE_LABELS: Record<ToolActivityState, string> = {
   error: "失败",
 };
 
-function truncate(text: string, max = 120) {
-  const trimmed = text.trim();
-  if (trimmed.length <= max) return trimmed;
-  return `${trimmed.slice(0, max)}…`;
-}
-
 function readString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
@@ -76,31 +56,56 @@ function summarizePatchList(
   return value.length > 1 ? `${field}：${preview} 等 ${value.length} 项` : `${field}：${preview}`;
 }
 
+function summarizeDeliveryParams(toolInput: Record<string, unknown>): string {
+  const parts: string[] = [];
+  const format = readString(toolInput.format);
+  const platform = readString(toolInput.platform);
+  if (format) parts.push(format);
+  if (platform) parts.push(platform);
+
+  const min = toolInput.word_count_min;
+  const max = toolInput.word_count_max;
+  if (typeof min === "number" || typeof max === "number") {
+    if (typeof min === "number" && typeof max === "number" && min === max) {
+      parts.push(`${min} 字`);
+    } else {
+      const range = [
+        typeof min === "number" ? `${min}` : null,
+        typeof max === "number" ? `${max}` : null,
+      ]
+        .filter(Boolean)
+        .join("–");
+      if (range) parts.push(`${range} 字`);
+    }
+  }
+
+  if (typeof toolInput.duration_sec === "number") {
+    parts.push(`${toolInput.duration_sec} 秒`);
+  }
+  if (readString(toolInput.aspect_ratio)) {
+    parts.push(readString(toolInput.aspect_ratio));
+  }
+
+  return parts.join(" · ");
+}
+
 export function getToolInputSummary(
   toolName: string,
   toolInput: Record<string, unknown>,
-  options?: { full?: boolean },
 ) {
   switch (toolName) {
     case "update_profile_delivery":
-      return readString(toolInput.topic) || readString(toolInput.format);
-    case "update_profile_summary":
+      return summarizeDeliveryParams(toolInput);
+    case "update_profile_intent":
       return readString(toolInput.summary);
-    case "append_profile_setting":
-    case "update_profile_setting":
-      return readString(toolInput.description) || readString(toolInput.title);
-    case "append_profile_segment":
-    case "update_profile_segment":
-      return readString(toolInput.description) || readString(toolInput.title);
-    case "append_profile_guardrail":
-    case "update_profile_guardrail":
-      return readString(toolInput.description);
-    case "replace_profile_settings":
-      return summarizePatchList(toolInput.settings, "设定") ?? "替换创作设定";
-    case "replace_profile_segments":
-      return summarizePatchList(toolInput.segments, "结构") ?? "替换结构段";
-    case "replace_profile_guardrails":
-      return summarizePatchList(toolInput.guardrails, "规则") ?? "替换创作规则";
+    case "update_profile_structure":
+      return (
+        summarizePatchList(toolInput.settings, "设定") ??
+        summarizePatchList(toolInput.segments, "结构") ??
+        ""
+      );
+    case "update_profile_constraints":
+      return summarizePatchList(toolInput.rules, "规则") ?? "";
     case "reference_apply_patch": {
       const updates = toolInput.updates;
       if (Array.isArray(updates) && updates.length) {

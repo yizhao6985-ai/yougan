@@ -81,8 +81,8 @@ flowchart LR
 
 ### 推断优先级
 
-1. **`profile.content_type`** 自由文本 → 正则映射到 `contentFormat` / `mediaType`
-2. **`profile.content_topic`** → 正则映射到 `topicCategory`
+1. **`profile.intent.summary`** 自由文本 → 正则映射到 `contentFormat` / `topicCategory`
+2. **`profile.delivery.format` / `profile.delivery.category`** → 结构化体裁与主题分类
 3. **平台 + 正文长度 + 是否有配图** → 兜底推断
 4. **发布时用户覆盖** → `applyMetadataOverrides` 校验 taxonomy ID 后写入
 
@@ -90,11 +90,9 @@ flowchart LR
 
 | 模块 | 路径 |
 |------|------|
-| Taxonomy 定义与推断 | `apps/api/src/lib/discover-taxonomy.ts` |
-| Agent 内容规格与路由 | `apps/agent/src/lib/content-spec.ts` |
-| 创作子图 | `apps/agent/src/agents/creation/graph.ts` |
-| 体裁写作约束 | `apps/agent/src/agents/creation/format-prompts.ts` |
-| 前端 taxonomy 同步 | `apps/web/src/lib/discover-taxonomy.ts` |
+| Taxonomy 定义与推断 | `packages/domain/src/utils/discover/taxonomy.ts` |
+| 体裁写作约束 | `apps/agent/src/state-graph/subgraphs/production/helpers/format-guidance.ts` |
+| 前端 taxonomy 展示 | `apps/web/src/lib/discover-taxonomy.ts` |
 | 发布入库 | `apps/api/src/services/publications.ts` |
 | 预览 API | `GET /api/publications/preview-metadata?workId=` |
 | 发布 API | `POST /api/publications`（可选 `metadata` 覆盖） |
@@ -141,17 +139,17 @@ flowchart LR
 
 ## 创作侧 profile 字段
 
-AI 在对话中隐式维护的 `Work.profile` 字段：
+`Work.profile` 按五步组织（Studio「制作方案」侧栏）：
 
-| 字段 | 用途 |
-|------|------|
-| `content_type` | 自由文本，自然语言类型描述 |
-| `content_format` | 结构化体裁（与 `contentFormat` 对齐） |
-| `media_modality` | 结构化媒介形式（与 `mediaType` 对齐） |
-| `content_topic` | 自由文本，推断 `topicCategory` |
-| `platform` | 目标平台 |
+| 步骤 | 字段 | 用途 |
+|------|------|------|
+| ① 创作定位 | `intent.summary` | 一句话说清作品要做什么；发布推断 `contentTopic` |
+| ② 体裁与参数 | `delivery.format` / `params` / `platform` / `category` | 结构化体裁、平台与主题分类 |
+| ③ 表达设定 | `expression.*` | 受众、文字与画面风格 |
+| ④ 结构与要素 | `structure.settings` / `segments` | 固定设定与结构节拍 |
+| ⑤ 创作规则 | `constraints.rules` | 必须遵守或需避免的事项 |
 
-这些字段在 Studio 的「内容设置」面板只读展示，不要求用户手动填写。
+参考素材在 `Work.references` 顶层维护，不在 `profile` 内。
 
 ### Agent 写入时机
 
@@ -159,7 +157,7 @@ AI 在对话中隐式维护的 `Work.profile` 字段：
 |------|------|------|
 | 侧栏 / API | `PATCH Work` + 线程同步 | 可更新 `profile`、`references`、`preview` |
 | 聊天 | profile / reference / production / ask 子图 | 对话工具改方案、参考与作品预览 |
-| 定方案 | `profile_apply_patch`（对话工具） | 用户明确体裁/形式/结构时写入 |
+| 定方案 | profile 子图按步骤工具 | 用户明确体裁/形式/结构/规则时写入对应步骤 |
 | 备参考 | reference 子图 `analyzeNewAssets` | 新附件分析入库 |
 | 制作入口 | `planProduction` 节点 | 创意总监基于现有方案（可不完整）制定制作计划 |
 | 制作执行 | `execute_task` 等 | 单任务执行、方向验收、备妥后整合 |

@@ -3,25 +3,33 @@ import { HumanMessage } from "@langchain/core/messages";
 import type { RunnableConfig } from "@langchain/core/runnables";
 
 import {
+  buildProfileSetupSuggestionFocus,
+  buildProfileSetupSuggestionHint,
+  OPENING_NEXT_STEP_SUGGESTIONS_COUNT,
+  resolveProfileSetupSuggestionRoles,
+  TURN_NEXT_STEP_SUGGESTIONS_COUNT,
   DEFAULT_NEXT_STEP_SUGGESTIONS_HINT,
+  isProfileSetupPhase,
   type NextStepSuggestions,
 } from "@yougan/domain";
 
 import { invokeStructured } from "#agent/llm/invoke/index.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
+import { getProfile } from "#agent/state-io/index.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
 import { extractLastMessages } from "./helpers/extract-last-messages.js";
 import { hasSuggestionWorkContext } from "./helpers/has-suggestion-work-context.js";
 import { newNextStepSuggestion } from "./helpers/suggestion-factory.js";
 import { buildNextStepSuggestionsPrompt } from "./prompt.js";
-import {
-  nextStepSuggestionsResponseSchema,
-  OPENING_NEXT_STEP_SUGGESTIONS_COUNT,
-  TURN_NEXT_STEP_SUGGESTIONS_COUNT,
-} from "./schema.js";
+import { nextStepSuggestionsResponseSchema } from "./schema.js";
 
 const OPENING_HINT = "";
+
+export {
+  OPENING_NEXT_STEP_SUGGESTIONS_COUNT,
+  TURN_NEXT_STEP_SUGGESTIONS_COUNT,
+} from "@yougan/domain";
 
 async function invokeNextStepSuggestions(
   state: AgentStateType,
@@ -35,6 +43,16 @@ async function invokeNextStepSuggestions(
   config?: RunnableConfig,
 ): Promise<NextStepSuggestions | null> {
   const topicMode = options.isOpening && !hasSuggestionWorkContext(state);
+  const profile = getProfile(state);
+  const profileSetupMode =
+    !topicMode && isProfileSetupPhase(profile);
+  const profileSetupFocus = profileSetupMode
+    ? buildProfileSetupSuggestionFocus({
+        before: state.profile,
+        after: profile,
+      })
+    : undefined;
+
   const llm = createChatModel({ temperature: options.temperature });
   const prompt = buildNextStepSuggestionsPrompt(state, {
     count: options.count,
@@ -52,14 +70,23 @@ async function invokeNextStepSuggestions(
       { name: "next_step_suggestions" },
       config,
     );
-    const suggestions = parsed.suggestions.map((s) =>
-      newNextStepSuggestion(s.kind, s.label, s.message),
+    const suggestions = resolveProfileSetupSuggestionRoles(
+      parsed.suggestions.map((s) => newNextStepSuggestion(s.message)),
+      {
+        profile,
+        beforeProfile: state.profile,
+      },
     );
     if (suggestions.length === 0) return null;
+
+    const profileSetupHint =
+      profileSetupFocus &&
+      buildProfileSetupSuggestionHint(profileSetupFocus, profile);
 
     return {
       hint:
         parsed.hint?.trim() ||
+        profileSetupHint ||
         (topicMode ? OPENING_HINT : DEFAULT_NEXT_STEP_SUGGESTIONS_HINT),
       suggestions,
     };

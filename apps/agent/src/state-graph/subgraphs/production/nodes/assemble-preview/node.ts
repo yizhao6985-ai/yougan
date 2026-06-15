@@ -9,6 +9,7 @@ import {
   withRunProgressHeartbeat,
 } from "#agent/state-io/run-progress.js";
 import {
+  getIntentSummary,
   resolveDeliveryFromProfile,
   type TaskDeliverable,
   type WorkPreview,
@@ -83,7 +84,7 @@ export async function assemblePreviewNode(
   } catch {
     const body = deliverables.map((d) => d.body).join("\n\n---\n\n");
     payload = {
-      title: delivery.topic ?? null,
+      title: getIntentSummary(profile) || null,
       body: body || "整理失败，请重试。",
       hashtags: [],
       hook: null,

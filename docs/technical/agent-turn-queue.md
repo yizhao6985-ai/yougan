@@ -42,7 +42,7 @@ START
 
 **reference**（`subgraphs/reference/`）：`analyzeNewAssets` → `mutateReferences` → `summarizeReferences`。新附件走分析入库；无新附件时走删改参考。
 
-**profile**（`subgraphs/profile/`）：`consultProfile` ⇄ `runProfileTools`（`profile_apply_patch` 批量改方案）。
+**profile**（`subgraphs/profile/`）：`mutateProfile` ⇄ `runProfileTools`（按步骤原子工具改方案，经 `applyProfilePatch` 写入 staging）。
 
 **production**（`subgraphs/production/`，详见 `README.md`）：`planProduction` → `dispatchTask` → `executeWriting` / `executeDesign` → `acceptTask` → `routeProduction` →（`dispatchTask`、`assemblePreview`、计划为空或验收 3 次失败时直达 `summarizeProduction`）→ `summarizeProduction`。任务在 `Work.production.pending_tasks`（`in_progress` 为当前任务）；验收未通过带 `feedback` 自动重产，达上限标 `failed`。
 
@@ -55,7 +55,7 @@ START
 | kind | 主图节点 | 行为 |
 |------|----------|------|
 | `reference` | `referenceGraph` | 分析新附件 / 删改参考素材 |
-| `profile` | `profileGraph` | 作品方案对话（delivery、blueprint、guardrails 等） |
+| `profile` | `profileGraph` | 作品方案对话（按步骤改 `intent` / `delivery` / `expression` / `structure` / `constraints`） |
 | `production` | `productionGraph` | 制作计划 + 出稿 + 质检 |
 | `ask` | `askGraph` | 提问答疑 |
 

@@ -1,12 +1,13 @@
 /**
  * 写入 turn.staging 工作区。
  */
-import type {
-  TurnStaging,
-  WorkProduction,
-  WorkProfile,
-  WorkReference,
-  WorkPreview,
+import {
+  mergeProfileState,
+  type TurnStaging,
+  type WorkProduction,
+  type WorkProfile,
+  type WorkReference,
+  type WorkPreview,
 } from "@yougan/domain";
 
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
@@ -23,6 +24,13 @@ export function patchPending(
     staging: {
       ...staging,
       ...patch,
+      profile: patch.profile
+        ? mergeProfileState(staging.profile, patch.profile)
+        : staging.profile,
+      references: patch.references ?? staging.references,
+      production: patch.production
+        ? { ...staging.production, ...patch.production }
+        : staging.production,
     },
   });
 }
@@ -69,18 +77,20 @@ export function patchPendingPreview(
 }
 
 function mergeStagingPatches(stagingPatches: TurnStaging[]): TurnStaging {
-  let merged = stagingPatches[stagingPatches.length - 1]!;
-  for (const staging of stagingPatches.slice(0, -1)) {
-    merged = {
+  return stagingPatches.reduce(
+    (merged, staging) => ({
       ...merged,
-      profile: staging.profile ?? merged.profile,
+      ...staging,
+      profile: staging.profile
+        ? mergeProfileState(merged.profile, staging.profile)
+        : merged.profile,
       references: staging.references ?? merged.references,
       production: staging.production
         ? { ...merged.production, ...staging.production }
         : merged.production,
-    };
-  }
-  return merged;
+    }),
+    stagingPatches[0]!,
+  );
 }
 
 /** 合并多个 turn.staging patch（同节点内多字段写入） */

@@ -1,39 +1,40 @@
 import type { ContentFormatId, MediaModalityId } from "../taxonomy/content.js";
-import type { DiscoverPlatformId, DiscoverTopicCategoryId } from "../taxonomy/discover.js";
+import type { DiscoverTopicCategoryId } from "../taxonomy/discover.js";
 
-/**
- * 交付规格：机器权威字段，决定子图路由、制作管线与发布推断。
- * 与 expression / blueprint 分离，避免「写什么」与「怎么写」混在一起。
- */
-export interface ProfileDelivery {
-  /** 创作主题（一句话题眼） */
-  topic: string;
-  /** 体裁 id，见 CONTENT_FORMATS；未推断前为 null */
+/** 方案向导步骤（含虚拟完成态 ready） */
+export type ProfileSetupStep = ProfileStepId | "ready";
+
+/** 方案步骤 id（与 WorkProfile 顶层键一致；ready 为虚拟完成态） */
+export type ProfileStepId =
+  | "intent"
+  | "delivery"
+  | "expression"
+  | "structure"
+  | "constraints";
+
+/** ① 创作定位 */
+export interface ProfileIntentStep {
+  /** 面向用户/制作的一句话定位 */
+  summary: string;
+}
+
+/** ② 体裁与参数 */
+export interface ProfileDeliveryStep {
   format: ContentFormatId | null;
-  /** 交付媒介组合，如 ["text"]、["text", "image"]；未推断前为空数组 */
   modalities: MediaModalityId[];
-  /** 目标发布平台（可选） */
-  platform?: DiscoverPlatformId | null;
-  /** 内容分类（发现页 taxonomy） */
+  platform?: string | null;
   category?: DiscoverTopicCategoryId | null;
+  params: FormatParams;
 }
 
-/** 表达设定：受众、语气文风与画面气质 */
-export interface ProfileExpression {
+/** ③ 表达设定 */
+export interface ProfileExpressionStep {
   audience?: string | null;
-  verbal?: {
-    tone?: string | null;
-    style?: string | null;
-    persona?: string | null;
-  };
-  visual?: {
-    style?: string | null;
-    mood?: string | null;
-    palette?: string | null;
-  };
+  verbal?: string | null;
+  visual?: string | null;
 }
 
-/** 结构段角色（跨体裁复用，按叙事/镜头语义选用） */
+/** 结构段角色（跨体裁复用） */
 export type SegmentRole =
   | "hook"
   | "context"
@@ -53,7 +54,6 @@ export type SegmentRole =
   | "outro"
   | "bridge";
 
-/** 有序结构段；id 供 profile 工具 update/delete 引用 */
 export interface ProfileSegment {
   id: string;
   confirmed_at: string;
@@ -62,10 +62,8 @@ export interface ProfileSegment {
   description: string;
 }
 
-/** 固定设定类型（对象、背景等，不参与内容时序） */
 export type ProfileSettingKind = "character" | "world" | "other";
 
-/** 固定创作设定；id 供 profile 工具 update/delete 引用 */
 export interface ProfileSetting {
   id: string;
   confirmed_at: string;
@@ -74,22 +72,25 @@ export interface ProfileSetting {
   description: string;
 }
 
-/** 内容蓝图：一句话定位 + 固定设定 + 结构段列表 */
-export interface ProfileBlueprint {
-  summary: string;
+/** ④ 结构与要素 */
+export interface ProfileStructureStep {
   settings: ProfileSetting[];
   segments: ProfileSegment[];
 }
 
-/** 创作规则生效范围 */
-export type GuardrailScope = "all" | "verbal" | "visual" | "audio" | "video";
+export type ConstraintScope = "all" | "verbal" | "visual" | "audio" | "video";
 
-/** 硬性创作约束（禁用词、必提要素、尺度边界等） */
-export interface ProfileGuardrail {
+/** ⑤ 创作规则条目 */
+export interface ProfileConstraint {
   id: string;
   confirmed_at: string;
   description: string;
-  scope: GuardrailScope;
+  scope: ConstraintScope;
+}
+
+/** ⑤ 创作规则 */
+export interface ProfileConstraintsStep {
+  rules: ProfileConstraint[];
 }
 
 export interface TextFormatParams {
@@ -118,7 +119,6 @@ export interface AudioFormatParams {
   segment_count?: number;
 }
 
-/** 体裁参数（与 delivery.format 对应，互斥 union） */
 export type FormatParams =
   | TextFormatParams
   | IllustrationFormatParams
@@ -126,29 +126,58 @@ export type FormatParams =
   | AudioFormatParams;
 
 /**
- * 作品创作方案（state 顶层 profile）。
- * 不含 references——参考素材在 Work.references 顶层维护（API schema）。
+ * 作品制作方案：按步骤组织。
+ * references 在 Work 顶层维护，不在 profile 内。
  */
 export interface WorkProfile {
-  delivery: ProfileDelivery;
-  expression: ProfileExpression;
-  blueprint: ProfileBlueprint;
-  guardrails: ProfileGuardrail[];
-  params: FormatParams;
+  intent: ProfileIntentStep;
+  delivery: ProfileDeliveryStep;
+  expression: ProfileExpressionStep;
+  structure: ProfileStructureStep;
+  constraints: ProfileConstraintsStep;
 }
 
-export const EMPTY_PROFILE_DELIVERY: ProfileDelivery = {
-  topic: "",
+/** 运行时推断交付规格时的输入（delivery 字段；创作定位见 profile.intent.summary） */
+export type DeliverySpec = {
+  format: ContentFormatId | null;
+  modalities: MediaModalityId[];
+  platform?: string | null;
+  category?: DiscoverTopicCategoryId | null;
+};
+
+export const EMPTY_PROFILE_INTENT: ProfileIntentStep = {
+  summary: "",
+};
+
+export const EMPTY_PROFILE_DELIVERY: ProfileDeliveryStep = {
   format: null,
   modalities: [],
   platform: null,
   category: null,
+  params: { kind: "text" },
+};
+
+export const EMPTY_PROFILE_STRUCTURE: ProfileStructureStep = {
+  settings: [],
+  segments: [],
+};
+
+export const EMPTY_PROFILE_CONSTRAINTS: ProfileConstraintsStep = {
+  rules: [],
 };
 
 export const EMPTY_WORK_PROFILE: WorkProfile = {
+  intent: { ...EMPTY_PROFILE_INTENT },
   delivery: { ...EMPTY_PROFILE_DELIVERY },
   expression: {},
-  blueprint: { summary: "", settings: [], segments: [] },
-  guardrails: [],
-  params: { kind: "text" },
+  structure: { ...EMPTY_PROFILE_STRUCTURE },
+  constraints: { ...EMPTY_PROFILE_CONSTRAINTS },
 };
+
+export const PROFILE_STEP_IDS: ProfileStepId[] = [
+  "intent",
+  "delivery",
+  "expression",
+  "structure",
+  "constraints",
+];

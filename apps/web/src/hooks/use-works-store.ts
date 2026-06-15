@@ -17,13 +17,13 @@ import {
 import { queryKeys } from "@/hooks/queries/keys";
 import { normalizeWork } from "@/lib/normalize-work";
 import {
-  clearGuardrails,
+  clearConstraints,
   clearSegments,
   clearSettings,
-  deleteGuardrail,
+  deleteConstraint,
   deleteSegment,
   deleteSetting,
-  updateGuardrail,
+  updateConstraint,
   updateSegment,
   updateSetting,
 } from "@yougan/domain";
@@ -161,15 +161,15 @@ export function useWorksStore() {
     [queryClient, updateWorkMutation],
   );
 
-  const updateProfileGuardrailItem = useCallback(
-    (workId: string, guardrailId: string, description: string) => {
+  const updateProfileConstraintItem = useCallback(
+    (workId: string, ruleId: string, description: string) => {
       const current = queryClient
         .getQueryData<Work[]>(queryKeys.works.list)
         ?.find((work) => work.id === workId);
       if (!current) return;
-      const next = updateGuardrail(
+      const next = updateConstraint(
         current.profile,
-        guardrailId,
+        ruleId,
         description,
       );
       patchProfile(workId, next);
@@ -177,25 +177,25 @@ export function useWorksStore() {
     [patchProfile, queryClient],
   );
 
-  const deleteProfileGuardrailItem = useCallback(
-    (workId: string, guardrailId: string) => {
+  const deleteProfileConstraintItem = useCallback(
+    (workId: string, ruleId: string) => {
       const current = queryClient
         .getQueryData<Work[]>(queryKeys.works.list)
         ?.find((work) => work.id === workId);
       if (!current) return;
-      const next = deleteGuardrail(current.profile, guardrailId);
+      const next = deleteConstraint(current.profile, ruleId);
       patchProfile(workId, next);
     },
     [patchProfile, queryClient],
   );
 
-  const clearWorkProfileGuardrails = useCallback(
+  const clearWorkProfileConstraints = useCallback(
     (workId: string) => {
       const current = queryClient
         .getQueryData<Work[]>(queryKeys.works.list)
         ?.find((work) => work.id === workId);
       if (!current) return;
-      patchProfile(workId, clearGuardrails(current.profile));
+      patchProfile(workId, clearConstraints(current.profile));
     },
     [patchProfile, queryClient],
   );
@@ -303,9 +303,9 @@ export function useWorksStore() {
     deleteWork,
     selectWork,
     applyStreamValuesToCache,
-    updateProfileGuardrail: updateProfileGuardrailItem,
-    deleteProfileGuardrail: deleteProfileGuardrailItem,
-    clearWorkProfileGuardrails,
+    updateProfileConstraint: updateProfileConstraintItem,
+    deleteProfileConstraint: deleteProfileConstraintItem,
+    clearWorkProfileConstraints,
     updateProfileSegment: updateProfileSegmentItem,
     deleteProfileSegment: deleteProfileSegmentItem,
     clearWorkProfileSegments,

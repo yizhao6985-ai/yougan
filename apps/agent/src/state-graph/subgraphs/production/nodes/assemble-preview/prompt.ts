@@ -1,4 +1,5 @@
 import {
+  getIntentSummary,
   getUserRequirements,
   resolveDeliveryFromProfile,
   type ContentFormatId,
@@ -46,7 +47,7 @@ export function buildConsolidateSystemPrompt(input: {
 ${profileSummary(profile)}
 
 体裁：${delivery.format ?? "未指定"}
-主题：${delivery.topic ?? "未指定"}
+主题：${getIntentSummary(profile) || "未指定"}
 
 ## 篇幅与体裁要求
 ${buildFormatGenerationGuidance(delivery.format as ContentFormatId | null, delivery.modalities?.[0] ?? null, profile)}`;

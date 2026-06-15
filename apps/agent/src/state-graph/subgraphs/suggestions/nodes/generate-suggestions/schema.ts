@@ -1,15 +1,15 @@
-import { NEXT_STEP_SUGGESTION_KINDS } from "@yougan/domain";
+import {
+  OPENING_NEXT_STEP_SUGGESTIONS_COUNT,
+  TURN_NEXT_STEP_SUGGESTIONS_COUNT,
+} from "@yougan/domain";
 import { z } from "zod";
 
-/** 开屏下一步建议条数 */
-export const OPENING_NEXT_STEP_SUGGESTIONS_COUNT = 7;
-
-/** 回合末下一步建议条数 */
-export const TURN_NEXT_STEP_SUGGESTIONS_COUNT = 4;
+export {
+  OPENING_NEXT_STEP_SUGGESTIONS_COUNT,
+  TURN_NEXT_STEP_SUGGESTIONS_COUNT,
+} from "@yougan/domain";
 
 export const NextStepSuggestionItemSchema = z.object({
-  kind: z.enum(NEXT_STEP_SUGGESTION_KINDS),
-  label: z.string(),
   message: z
     .string()
     .describe("用户点击后原样发送的完整口语化中文，一句说清意图"),

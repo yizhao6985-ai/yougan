@@ -1,9 +1,10 @@
 import {
   EMPTY_WORK_PROFILE,
   type FormatParams,
-  type ProfileDelivery,
-  type ProfileExpression,
-  type ProfileGuardrail,
+  type ProfileConstraint,
+  type ProfileDeliveryStep,
+  type ProfileExpressionStep,
+  type ProfileIntentStep,
   type ProfileSegment,
   type ProfileSetting,
   type ProfileSettingKind,
@@ -12,51 +13,77 @@ import {
 } from "../../models/work/profile.js";
 import { defaultParamsForFormat } from "../delivery.js";
 
-export function patchDelivery(
+export function patchIntent(
   profile: WorkProfile | undefined,
-  delivery: Partial<ProfileDelivery>,
+  intent: Partial<ProfileIntentStep>,
 ): WorkProfile {
   const base = profile ?? EMPTY_WORK_PROFILE;
+  return {
+    ...base,
+    intent: {
+      summary:
+        intent.summary !== undefined ? intent.summary : base.intent.summary,
+    },
+  };
+}
+
+export function patchDeliveryStep(
+  profile: WorkProfile | undefined,
+  delivery: Partial<Omit<ProfileDeliveryStep, "params">> & {
+    params?: FormatParams;
+  },
+): WorkProfile {
+  const base = profile ?? EMPTY_WORK_PROFILE;
+  const nextFormat =
+    delivery.format !== undefined ? delivery.format : base.delivery.format;
   const params =
-    delivery.format != null &&
-    delivery.format !== base.delivery.format
+    delivery.params ??
+    (delivery.format != null && delivery.format !== base.delivery.format
       ? defaultParamsForFormat(delivery.format)
-      : base.params;
+      : base.delivery.params);
 
   return {
     ...base,
-    delivery: { ...base.delivery, ...delivery },
-    params,
+    delivery: {
+      format: nextFormat,
+      modalities:
+        delivery.modalities !== undefined
+          ? delivery.modalities
+          : base.delivery.modalities,
+      platform:
+        delivery.platform !== undefined
+          ? delivery.platform
+          : base.delivery.platform,
+      category:
+        delivery.category !== undefined
+          ? delivery.category
+          : base.delivery.category,
+      params,
+    },
   };
 }
 
 export function patchExpression(
   profile: WorkProfile | undefined,
-  expression: Partial<ProfileExpression>,
+  expression: Partial<ProfileExpressionStep>,
 ): WorkProfile {
   const base = profile ?? EMPTY_WORK_PROFILE;
   return {
     ...base,
     expression: {
-      audience: expression.audience ?? base.expression.audience,
-      verbal: expression.verbal
-        ? { ...base.expression.verbal, ...expression.verbal }
-        : base.expression.verbal,
-      visual: expression.visual
-        ? { ...base.expression.visual, ...expression.visual }
-        : base.expression.visual,
+      audience:
+        expression.audience !== undefined
+          ? expression.audience
+          : base.expression.audience,
+      verbal:
+        expression.verbal !== undefined
+          ? expression.verbal
+          : base.expression.verbal,
+      visual:
+        expression.visual !== undefined
+          ? expression.visual
+          : base.expression.visual,
     },
-  };
-}
-
-export function setBlueprintSummary(
-  profile: WorkProfile | undefined,
-  summary: string,
-): WorkProfile {
-  const base = profile ?? EMPTY_WORK_PROFILE;
-  return {
-    ...base,
-    blueprint: { ...base.blueprint, summary: summary.trim() },
   };
 }
 
@@ -65,12 +92,15 @@ export function updateFormatParams(
   params: FormatParams,
 ): WorkProfile {
   const base = profile ?? EMPTY_WORK_PROFILE;
-  return { ...base, params };
+  return {
+    ...base,
+    delivery: { ...base.delivery, params },
+  };
 }
 
-export function updateGuardrail(
+export function updateConstraint(
   profile: WorkProfile | undefined,
-  guardrailId: string,
+  ruleId: string,
   description: string,
 ): WorkProfile {
   const base = profile ?? EMPTY_WORK_PROFILE;
@@ -78,26 +108,33 @@ export function updateGuardrail(
   if (!trimmed) return base;
   return {
     ...base,
-    guardrails: base.guardrails.map((item) =>
-      item.id === guardrailId ? { ...item, description: trimmed } : item,
-    ),
+    constraints: {
+      rules: base.constraints.rules.map((item) =>
+        item.id === ruleId ? { ...item, description: trimmed } : item,
+      ),
+    },
   };
 }
 
-export function deleteGuardrail(
+export function deleteConstraint(
   profile: WorkProfile | undefined,
-  guardrailId: string,
+  ruleId: string,
 ): WorkProfile {
   const base = profile ?? EMPTY_WORK_PROFILE;
   return {
     ...base,
-    guardrails: base.guardrails.filter((item) => item.id !== guardrailId),
+    constraints: {
+      rules: base.constraints.rules.filter((item) => item.id !== ruleId),
+    },
   };
 }
 
-export function clearGuardrails(profile: WorkProfile | undefined): WorkProfile {
+export function clearConstraints(profile: WorkProfile | undefined): WorkProfile {
   const base = profile ?? EMPTY_WORK_PROFILE;
-  return { ...base, guardrails: [] };
+  return {
+    ...base,
+    constraints: { rules: [] },
+  };
 }
 
 function normalizeSegmentRole(
@@ -138,9 +175,9 @@ export function updateSegment(
   if (!trimmed) return base;
   return {
     ...base,
-    blueprint: {
-      ...base.blueprint,
-      segments: base.blueprint.segments.map((item) =>
+    structure: {
+      ...base.structure,
+      segments: base.structure.segments.map((item) =>
         item.id === segmentId
           ? {
               ...item,
@@ -161,9 +198,9 @@ export function deleteSegment(
   const base = profile ?? EMPTY_WORK_PROFILE;
   return {
     ...base,
-    blueprint: {
-      ...base.blueprint,
-      segments: base.blueprint.segments.filter((item) => item.id !== segmentId),
+    structure: {
+      ...base.structure,
+      segments: base.structure.segments.filter((item) => item.id !== segmentId),
     },
   };
 }
@@ -172,7 +209,7 @@ export function clearSegments(profile: WorkProfile | undefined): WorkProfile {
   const base = profile ?? EMPTY_WORK_PROFILE;
   return {
     ...base,
-    blueprint: { ...base.blueprint, segments: [] },
+    structure: { ...base.structure, segments: [] },
   };
 }
 
@@ -199,9 +236,9 @@ export function updateSetting(
   if (!trimmed) return base;
   return {
     ...base,
-    blueprint: {
-      ...base.blueprint,
-      settings: base.blueprint.settings.map((item) =>
+    structure: {
+      ...base.structure,
+      settings: base.structure.settings.map((item) =>
         item.id === settingId
           ? {
               ...item,
@@ -222,9 +259,9 @@ export function deleteSetting(
   const base = profile ?? EMPTY_WORK_PROFILE;
   return {
     ...base,
-    blueprint: {
-      ...base.blueprint,
-      settings: base.blueprint.settings.filter((item) => item.id !== settingId),
+    structure: {
+      ...base.structure,
+      settings: base.structure.settings.filter((item) => item.id !== settingId),
     },
   };
 }
@@ -233,8 +270,12 @@ export function clearSettings(profile: WorkProfile | undefined): WorkProfile {
   const base = profile ?? EMPTY_WORK_PROFILE;
   return {
     ...base,
-    blueprint: { ...base.blueprint, settings: [] },
+    structure: { ...base.structure, settings: [] },
   };
 }
 
-export type { ProfileGuardrail, ProfileSegment, ProfileSetting };
+export type {
+  ProfileConstraint,
+  ProfileSegment,
+  ProfileSetting,
+};

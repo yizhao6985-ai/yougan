@@ -26,6 +26,7 @@ type StudioChatComposerProps = {
   }) => void | Promise<void>;
   onStop?: () => void | Promise<void>;
   chatStatus: "ready" | "submitted" | "streaming" | "error";
+  placeholder?: string;
 };
 
 export function StudioChatComposer({
@@ -34,6 +35,7 @@ export function StudioChatComposer({
   onSend,
   onStop,
   chatStatus,
+  placeholder,
 }: StudioChatComposerProps) {
   const {
     stream,
@@ -77,7 +79,7 @@ export function StudioChatComposer({
       <ComposerAttachmentDrawer />
       <PromptInputBody>
         <PromptInputTextarea
-          placeholder={CHAT_COPY.placeholder}
+          placeholder={placeholder ?? CHAT_COPY.placeholderDefault}
           value={input}
           onChange={(event) => onInputChange(event.target.value)}
         />

@@ -42,7 +42,7 @@
 
 | 功能 | 用户价值 | 状态 | 模型 |
 |------|----------|------|------|
-| 定方案对话 | 定选题、体裁、受众、结构 | 已实现 | profile 子图 + `profile_apply_patch` |
+| 定方案对话 | 按步骤定选题、体裁、表达、结构与规则 | 已实现 | profile 子图 + 五步方案工具（`update_profile_intent` … `update_profile_constraints`） |
 | 参考素材分析 | 上传附件自动分析入库 | 已实现 | reference 子图 + MiniMax 多模态 |
 | 聊天改状态 | 改方案、参考、作品预览 | 已实现 | profile / reference / production 子图 + 工具 |
 | 制作计划与出稿 | 排计划 + AI 团队执行 | 已实现 | production 子图 |

@@ -183,11 +183,14 @@ export const DISCOVER_SECTION = {
   title: "发现灵感",
   navLabel: "发现灵感",
   navLabelShort: "发现",
-  description: "浏览创作者公开分享的作品，按体裁与媒介筛选。",
+  description:
+    "浏览创作者公开分享的作品，从故事、干货到笔记与视听内容，找灵感、看写法。",
   intentHeading: "你想看什么",
-  intentDescription: "按类型快速筛选，也可在下方组合更多条件。",
+  intentDescription: "选一个方向快速开始，或在下方组合更多筛选条件。",
   featuredHeading: "精选推荐",
+  featuredHint: "编辑挑选的视觉与内容质量更突出的作品。",
   moreHeading: "更多内容",
+  moreHint: "继续浏览社区里的最新公开作品。",
   emptyFiltered: "没有符合筛选的内容，试试放宽条件。",
   emptyDefault: "还没有公开内容，稍后再来看看。",
   loadError: "加载失败，请稍后再试",
@@ -332,13 +335,13 @@ export const STUDIO = {
 export const CHAT_COPY = {
   openingSuggestionsLoading: "正在生成下一步建议…",
   openingSuggestionsEmpty: "暂无合适建议，请在下方输入",
-  placeholder: "说说想法、提问，或说明要改方案 / 改作品…",
+  placeholderDefault: "说说想法、提问，或说明要改方案 / 改作品…",
   emptyTitle: "选择下一步，或直接输入",
   status: {
     referenceProcessing: "正在分析参考素材",
     profileExploring: "正在整理制作方案",
-    profileEditing: (segments: number, guardrails: number) =>
-      `制作方案 ${segments} 节 · ${guardrails} 条规则，可在右侧修改`,
+    profileEditing: (segments: number, rules: number) =>
+      `制作方案 ${segments} 节 · ${rules} 条规则，可在右侧修改`,
     askExploring: "提问答疑中：优化建议、创作方法、背景知识",
     productionExecuting: "AI 团队正在执行制作",
   },
@@ -405,27 +408,29 @@ export const WORK_HISTORY_PANEL = {
   cancel: "取消",
 } as const;
 
-/** 作品面板 · 制作方案 */
-export const PROFILE_PANEL = {
+/** 作品面板 · 制作方案（步骤向导） */
+export const PROFILE_WIZARD = {
   title: "制作方案",
-  hint: "主题、体裁、表达与结构等制作要求，对话确认后写入此处",
-  deliveryLabel: "制作规格",
-  expressionLabel: "表达设定",
-  summaryLabel: "内容定位",
-  settingsLabel: "创作设定",
-  segmentsLabel: "内容结构",
-  guardrailsLabel: "制作规则",
-  paramsLabel: "体裁参数",
-  clearGuardrails: "清空规则",
+  hint: "垂直展示全部步骤；每步内为该项已确认内容或待补充说明",
+  stepsOverviewLabel: "全部步骤",
+  currentStepLabel: "当前步骤",
+  completedLabel: "已完成",
+  skipStep: "跳过，稍后补充",
+  tierRequired: "必填",
+  tierRecommended: "建议",
+  tierOptional: "可选",
+  readyBody: "必填项已齐。可说「开始制作」进入制作，或继续补充表达、结构与规则。",
+  settingsLabel: "固定设定",
+  segmentsLabel: "结构大纲",
+  clearConstraints: "清空规则",
   clearSettings: "清空设定",
-  clearSegments: "清空结构",
-  deliveryEmpty: "创作主题、体裁与媒介形式，确认后会显示在这里。",
-  expressionEmpty: "受众、语气与视觉风格，确认后会显示在这里。",
-  summaryEmpty: "作品的核心定位，确认后会显示在这里。",
-  settingsEmpty: "背景、对象与关键设定，确认后会显示在这里。",
-  segmentsEmpty: "内容结构与节拍，确认后会按顺序显示在这里。",
-  guardrailsEmpty: "制作约束与边界，确认后会显示在这里。",
-  paramsEmpty: "字数、画幅、时长等参数，确认后会显示在这里。",
+  clearSegments: "清空大纲",
+  settingsEmptyTitle: "暂无固定设定",
+  settingsEmptyBody:
+    "可选。例如：「主角是刚入行的产品经理」或「背景设定在 2030 年」",
+  segmentsEmptyTitle: "暂无结构大纲",
+  segmentsEmptyBody:
+    "可选。例如：「开头钩子 → 主体展开 → 结尾号召」，或分镜顺序",
   settingKindLabels: {
     character: "对象",
     world: "背景",

@@ -12,6 +12,7 @@ import {
 import { DISCOVER_SECTION } from "@/lib/content-section";
 import type { PublicationMetadataOverrides } from "@/lib/discover-taxonomy";
 import { PUBLISH, STUDIO } from "@/lib/site-copy";
+import { publicationContentPath } from "@/lib/publication-path";
 import type { WorkPreview } from "@/lib/types";
 
 export function PublishPlatformActions({
@@ -56,7 +57,7 @@ export function PublishPlatformActions({
           {PUBLISH.publishedBadge}
         </span>
         <Button type="button" variant="outline" size="sm" asChild>
-          <Link to={`/content/${publication.slug}`}>
+          <Link to={publicationContentPath(publication.slug)}>
             <ExternalLinkIcon className="size-3.5" />
             {STUDIO.publishViewInDiscover(DISCOVER_SECTION.title)}
           </Link>

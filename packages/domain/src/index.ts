@@ -3,6 +3,9 @@ export * from "./models/index.js";
 
 // —— 工具函数 ——
 export * from "./utils/work/profile.js";
+export * from "./utils/work/profile-setup.js";
+export * from "./utils/work/profile-setup-suggestions.js";
+export * from "./utils/work/profile-step-copy.js";
 export * from "./utils/asset.js";
 export * from "./utils/work/reference.js";
 export * from "./utils/work/production.js";
@@ -16,4 +19,5 @@ export * from "./utils/conversation-title.js";
 export * from "./utils/delivery.js";
 export * from "./utils/media-modalities.js";
 export * from "./utils/discover/taxonomy.js";
+export * from "./utils/publication-slug.js";
 export * from "./utils/ai-metering/index.js";

@@ -1,11 +1,22 @@
 import { nanoid } from "nanoid";
 
-import type { NextStepSuggestion, NextStepSuggestionKind } from "@yougan/domain";
+import type {
+  NextStepSuggestion,
+  ProfileSetupSuggestionRole,
+  ProfileStepId,
+} from "@yougan/domain";
 
 export function newNextStepSuggestion(
-  kind: NextStepSuggestionKind,
-  label: string,
   message: string,
+  extras?: {
+    step?: ProfileStepId | "ready";
+    role?: ProfileSetupSuggestionRole;
+  },
 ): NextStepSuggestion {
-  return { id: nanoid(8), kind, label, message };
+  return {
+    id: nanoid(8),
+    message,
+    ...(extras?.step ? { step: extras.step } : {}),
+    ...(extras?.role ? { role: extras.role } : {}),
+  };
 }

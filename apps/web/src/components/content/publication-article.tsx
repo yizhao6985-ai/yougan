@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { ArrowRightIcon } from "lucide-react";
 
 import { AuthorAvatar } from "@/components/content/author-avatar";
 import { MarkdownContent } from "@/components/markdown-content";
@@ -9,6 +10,117 @@ import {
 } from "@/lib/discover-taxonomy";
 import { formatPublishedAt, platformLabel } from "@/lib/platform-labels";
 import type { Publication } from "@/lib/publication-types";
+import { scene } from "@/lib/scene-styles";
+import { cn } from "@/lib/utils";
+
+function ArticleCategoryLine({
+  publication,
+}: {
+  publication: Publication;
+}) {
+  const parts = [
+    formatLabel(publication.contentFormat),
+    topicCategoryLabel(publication.topicCategory),
+    publication.contentTopic,
+  ].filter(Boolean);
+
+  if (!parts.length) return null;
+
+  return (
+    <p className={scene.articleCategory}>
+      {parts.join(" · ")}
+    </p>
+  );
+}
+
+function ArticleByline({ publication }: { publication: Publication }) {
+  const timeLabel = publication.publishedAt
+    ? formatPublishedAt(publication.publishedAt)
+    : null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+      {publication.author?.id ? (
+        <Link
+          to={`/user/${publication.author.id}`}
+          className="inline-flex min-w-0 items-center gap-2.5 transition-opacity hover:opacity-80"
+        >
+          <AuthorAvatar author={publication.author} size="sm" />
+          <span className="truncate text-sm font-semibold text-foreground">
+            {authorDisplayName(publication.author)}
+          </span>
+        </Link>
+      ) : (
+        <span className="inline-flex items-center gap-2.5">
+          <AuthorAvatar author={publication.author} size="sm" />
+          <span className="text-sm font-semibold text-foreground">
+            {authorDisplayName(publication.author)}
+          </span>
+        </span>
+      )}
+
+      <span className={scene.articleByline}>
+        {platformLabel(publication.platform)}
+        {timeLabel ? (
+          <>
+            <span aria-hidden className="mx-1.5 text-muted-foreground/40">
+              ·
+            </span>
+            <time dateTime={publication.publishedAt ?? undefined}>
+              {timeLabel}
+            </time>
+          </>
+        ) : null}
+      </span>
+    </div>
+  );
+}
+
+function ArticleAuthorCard({ publication }: { publication: Publication }) {
+  if (!publication.author) return null;
+
+  const body = (
+    <>
+      <AuthorAvatar author={publication.author} size="md" />
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-foreground">
+          {authorDisplayName(publication.author)}
+        </p>
+        {publication.author.bio?.trim() ? (
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">
+            {publication.author.bio.trim()}
+          </p>
+        ) : (
+          <p className="mt-1 text-sm text-muted-foreground">
+            查看作者公开作品与主页
+          </p>
+        )}
+      </div>
+      {publication.author.id ? (
+        <ArrowRightIcon
+          className="size-4 shrink-0 text-muted-foreground"
+          aria-hidden
+        />
+      ) : null}
+    </>
+  );
+
+  if (publication.author.id) {
+    return (
+      <Link
+        to={`/user/${publication.author.id}`}
+        className={cn(
+          scene.articleAuthorCard,
+          "transition-colors hover:bg-secondary/55",
+        )}
+      >
+        {body}
+      </Link>
+    );
+  }
+
+  return <aside className={scene.articleAuthorCard}>{body}</aside>;
+}
 
 export function PublicationArticle({
   publication,
@@ -18,108 +130,83 @@ export function PublicationArticle({
   const images = publication.images as Array<{ url?: string }>;
 
   return (
-    <article className="space-y-6">
-      <header className="flex items-start gap-3 border-b border-border/80 pb-6">
-        {publication.author?.id ? (
-          <Link to={`/user/${publication.author.id}`} className="shrink-0">
-            <AuthorAvatar author={publication.author} size="lg" />
-          </Link>
-        ) : (
-          <AuthorAvatar author={publication.author} size="lg" />
-        )}
-        <div className="min-w-0 flex-1 space-y-1">
-          {publication.author?.id ? (
-            <Link
-              to={`/user/${publication.author.id}`}
-              className="text-base font-semibold text-foreground hover:text-primary"
-            >
-              {authorDisplayName(publication.author)}
-            </Link>
-          ) : (
-            <p className="text-base font-semibold text-foreground">
-              {authorDisplayName(publication.author)}
-            </p>
-          )}
-          {publication.author?.bio?.trim() ? (
-            <p className="text-sm text-muted-foreground">
-              {publication.author.bio.trim()}
-            </p>
-          ) : null}
-          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            <span className="rounded-md bg-accent px-2.5 py-1 text-xs font-medium text-primary">
-              {platformLabel(publication.platform)}
-            </span>
-            {formatLabel(publication.contentFormat) ? (
-              <span className="rounded-md bg-secondary px-2.5 py-1 text-xs font-medium text-foreground/90">
-                {formatLabel(publication.contentFormat)}
-              </span>
-            ) : null}
-            {topicCategoryLabel(publication.topicCategory) ? (
-              <span className="rounded-md bg-secondary px-2.5 py-1 text-xs font-medium text-foreground/90">
-                {topicCategoryLabel(publication.topicCategory)}
-              </span>
-            ) : null}
-            {publication.contentTopic ? (
-              <span className="text-xs text-muted-foreground">
-                主题：{publication.contentTopic}
-              </span>
-            ) : null}
-            {publication.publishedAt ? (
-              <span>{formatPublishedAt(publication.publishedAt)}</span>
-            ) : null}
-          </div>
-        </div>
+    <article className="pb-4">
+      <header className={cn(scene.articleColumn, "space-y-5 sm:space-y-6")}>
+        <ArticleCategoryLine publication={publication} />
+
+        {publication.title ? (
+          <h1 className={scene.articleTitle}>{publication.title}</h1>
+        ) : null}
+
+        {publication.excerpt ? (
+          <p className={scene.articleDek}>{publication.excerpt}</p>
+        ) : null}
+
+        <ArticleByline publication={publication} />
       </header>
 
-      {publication.title ? (
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-          {publication.title}
-        </h1>
-      ) : null}
-
-      {publication.excerpt ? (
-        <p className="text-lg leading-8 text-muted-foreground">{publication.excerpt}</p>
-      ) : null}
-
       {publication.coverUrl ? (
-        <img
-          src={publication.coverUrl}
-          alt=""
-          className="w-full rounded-lg border border-border object-cover"
-        />
+        <figure className={cn(scene.articleMediaColumn, "mt-10 sm:mt-12")}>
+          <div className="overflow-hidden rounded-2xl bg-secondary/30">
+            <img
+              src={publication.coverUrl}
+              alt=""
+              className="aspect-[16/10] w-full object-cover sm:aspect-[2/1]"
+            />
+          </div>
+        </figure>
       ) : null}
 
-      <div className="prose prose-stone max-w-none">
+      <div
+        className={cn(
+          scene.articleColumn,
+          scene.articleProse,
+          publication.coverUrl ? "mt-10 sm:mt-12" : "mt-10 sm:mt-12",
+        )}
+      >
         <MarkdownContent content={publication.body} />
       </div>
 
       {images?.length ? (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div
+          className={cn(
+            scene.articleMediaColumn,
+            "mt-10 grid gap-4 sm:grid-cols-2 sm:mt-12",
+          )}
+        >
           {images.map((image, index) =>
             image.url ? (
-              <img
+              <figure
                 key={image.url}
-                src={image.url}
-                alt={`配图 ${index + 1}`}
-                className="w-full rounded-lg border border-border"
-              />
+                className="overflow-hidden rounded-xl bg-secondary/25"
+              >
+                <img
+                  src={image.url}
+                  alt={`配图 ${index + 1}`}
+                  className="w-full object-cover"
+                />
+              </figure>
             ) : null,
           )}
         </div>
       ) : null}
 
       {publication.hashtags?.length ? (
-        <div className="flex flex-wrap gap-2 border-t border-border/60 pt-6">
+        <div className={cn(scene.articleColumn, "mt-10 flex flex-wrap gap-2")}>
           {publication.hashtags.map((tag) => (
             <span
               key={tag}
-              className="rounded-md bg-accent px-2.5 py-1 text-xs text-primary"
+              className="rounded-full bg-accent/60 px-3 py-1 text-xs font-medium text-primary"
             >
               #{tag.replace(/^#/, "")}
             </span>
           ))}
         </div>
       ) : null}
+
+      <div className={cn(scene.articleColumn, "mt-12 sm:mt-14")}>
+        <ArticleAuthorCard publication={publication} />
+      </div>
     </article>
   );
 }

@@ -22,21 +22,36 @@ Agent 每条用户消息先经 **回合队列**（`turn.queue`）workflow（见 
 
 | 对象 | 字段 | 用户可见 | 说明 |
 |------|------|----------|------|
-| `WorkProfile` | `profile` | 是（侧栏「方案」） | delivery、expression、blueprint、guardrails、params |
+| `WorkProfile` | `profile` | 是（侧栏「方案」） | 按步骤：`intent` → `delivery` → `expression` → `structure` → `constraints` |
 | `WorkReference[]` | `references` | 是（侧栏「参考」） | 参考素材及分析、借鉴意图 |
 | `WorkProductionPlan` | `productionPlan` | 否（内部） | 创意总监制作任务 |
 | `WorkPreview` | `preview` | 是（侧栏「作品」） | 成稿标题、正文等 |
 
+### WorkProfile 结构（按步骤）
+
+```text
+profile
+├── intent          ① 创作定位（summary）
+├── delivery        ② 体裁与参数（format, modalities, platform, category, params）
+├── expression      ③ 表达设定（audience, verbal, visual）
+├── structure       ④ 结构与要素（settings[], segments[]）
+└── constraints     ⑤ 创作规则（rules[]）
+```
+
+**方案就绪**：`intent.summary` 与 `delivery.format` 必填；其余步骤可选。**不做旧版 blueprint / guardrails / 顶层 params 的迁移**。
+
 ## 阶段一：定方案（profile）
 
-**目标**：确认做什么、什么形式、面向谁、内容结构与创作规则。
+**目标**：按向导步骤确认做什么、什么形式、面向谁、内容结构与创作规则。
 
 | 入口 | 说明 |
 |------|------|
-| `profile` 队列项 | 多轮对话 + `profile_apply_patch` 工具 |
+| `profile` 队列项 | 多轮对话 + profile 子图按步骤原子工具改方案 |
 | 侧栏 PATCH | 直改物化列并同步 thread |
 
-**对话工具**（profile 子图）：`profile_apply_patch`（批量改 delivery、expression、blueprint、guardrails 等）
+**对话工具**（profile 子图 `mutateProfile` ⇄ `runProfileTools`）：与方案五步一一对应——`update_profile_intent`、`update_profile_delivery`、`update_profile_expression`、`update_profile_structure`、`update_profile_constraints`；底层经 `applyProfilePatch` 写入 staging。
+
+侧栏「方案」以相同五步向导展示与编辑。
 
 ## 阶段二：备参考（reference）
 
