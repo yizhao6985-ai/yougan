@@ -1,13 +1,11 @@
 import { useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 
-import { DiscoverActiveFilters } from "@/components/content/discover-active-filters";
-import { DiscoverCategoryTabs } from "@/components/content/discover-category-tabs";
+import { DiscoverControls } from "@/components/content/discover-controls";
 import { DiscoverEmptyState } from "@/components/content/discover-empty-state";
 import { DiscoverFeaturedHero } from "@/components/content/discover-featured-hero";
 import { DiscoverFeedCard } from "@/components/content/discover-feed-card";
 import { DiscoverFeedSkeleton } from "@/components/content/discover-feed-skeleton";
-import { DiscoverFilterDialog } from "@/components/content/discover-filter-dialog";
 import { DiscoverPageHeader } from "@/components/content/discover-page-header";
 import {
   MarketingPageShell,
@@ -67,25 +65,11 @@ export function ContentFeedPage() {
         <DiscoverPageHeader total={total} loading={isLoading} />
 
         {showControls ? (
-          <div className="mt-8 border-b border-border/80">
-            <div className="flex items-start justify-between gap-4">
-              <DiscoverCategoryTabs
-                filters={filters}
-                onChange={handleFiltersChange}
-              />
-              <DiscoverFilterDialog
-                filters={filters}
-                facets={facets}
-                onChange={handleFiltersChange}
-              />
-            </div>
-            <div className="pb-4 pt-3">
-              <DiscoverActiveFilters
-                filters={filters}
-                onChange={handleFiltersChange}
-              />
-            </div>
-          </div>
+          <DiscoverControls
+            filters={filters}
+            facets={facets}
+            onChange={handleFiltersChange}
+          />
         ) : null}
 
         <div className="mt-10">
