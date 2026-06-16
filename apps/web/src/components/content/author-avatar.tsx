@@ -1,6 +1,14 @@
+import { useEffect, useState } from "react";
+
 import { authorDisplayName } from "@/lib/publication-utils";
 import type { Publication } from "@/lib/publication-types";
 import { cn } from "@/lib/utils";
+
+const sizeClasses = {
+  sm: { box: "size-8", text: "text-xs" },
+  md: { box: "size-10", text: "text-sm" },
+  lg: { box: "size-12", text: "text-base" },
+} as const;
 
 export function AuthorAvatar({
   author,
@@ -11,22 +19,29 @@ export function AuthorAvatar({
   size?: "sm" | "md" | "lg";
   className?: string;
 }) {
+  const [imageFailed, setImageFailed] = useState(false);
   const name = authorDisplayName(author);
   const initial = name.charAt(0).toUpperCase();
-  const avatarUrl = author?.avatarUrl?.trim();
+  const avatarUrl = author?.avatarUrl?.trim() || null;
 
-  if (avatarUrl) {
+  useEffect(() => {
+    setImageFailed(false);
+  }, [avatarUrl]);
+
+  const showFallback = !avatarUrl || imageFailed;
+  const { box, text } = sizeClasses[size];
+
+  if (!showFallback) {
     return (
       <img
         src={avatarUrl}
         alt=""
         className={cn(
           "inline-flex shrink-0 rounded-lg object-cover bg-secondary",
-          size === "sm" && "size-8",
-          size === "md" && "size-10",
-          size === "lg" && "size-12",
+          box,
           className,
         )}
+        onError={() => setImageFailed(true)}
       />
     );
   }
@@ -35,9 +50,8 @@ export function AuthorAvatar({
     <span
       className={cn(
         "inline-flex shrink-0 items-center justify-center rounded-lg bg-secondary font-medium text-primary",
-        size === "sm" && "size-8 text-xs",
-        size === "md" && "size-10 text-sm",
-        size === "lg" && "size-12 text-base",
+        box,
+        text,
         className,
       )}
       aria-hidden

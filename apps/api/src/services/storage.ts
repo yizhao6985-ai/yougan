@@ -1,12 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { nanoid } from "nanoid";
-import {
-  S3Client,
-  PutObjectCommand,
-  GetObjectCommand,
-} from "@aws-sdk/client-s3";
-import { Readable } from "node:stream";
+import OSS from "ali-oss";
 
 import { env } from "../env.js";
 
@@ -14,28 +9,42 @@ function localRoot() {
   return resolve(env.storage.localDir);
 }
 
-let s3Client: S3Client | null = null;
+let ossClient: OSS | null = null;
 
-function getS3() {
-  if (!s3Client) {
-    const { endpoint, region, accessKeyId, secretAccessKey } = env.storage.s3;
-    if (!endpoint || !accessKeyId || !secretAccessKey || !env.storage.s3.bucket) {
-      throw new Error("S3/OSS storage is not configured");
+function getOss(): OSS {
+  if (!ossClient) {
+    const { endpoint, region, bucket, accessKeyId, secretAccessKey } =
+      env.storage.oss;
+    if (!endpoint || !region || !accessKeyId || !secretAccessKey || !bucket) {
+      throw new Error("OSS storage is not configured");
     }
-    s3Client = new S3Client({
-      endpoint,
+    ossClient = new OSS({
       region,
-      credentials: {
-        accessKeyId,
-        secretAccessKey,
-      },
-      forcePathStyle: true,
+      accessKeyId,
+      accessKeySecret: secretAccessKey,
+      bucket,
+      endpoint,
+      authorizationV4: true,
+      secure: true,
     });
   }
-  return s3Client;
+  return ossClient;
 }
 
 export type UploadFolder = "references" | "avatars" | "covers";
+
+function localFileUrl(key: string): string {
+  return `${env.publicBaseUrl}/api/files/${key}`;
+}
+
+/** OSS 标准公网地址：https://BucketName.Endpoint/ObjectName */
+function ossObjectUrl(bucket: string, endpoint: string, key: string): string {
+  const endpointUrl = endpoint.startsWith("http")
+    ? endpoint
+    : `https://${endpoint}`;
+  const host = new URL(endpointUrl).hostname;
+  return `https://${bucket}.${host}/${key}`;
+}
 
 export async function uploadFile(
   buffer: Buffer,
@@ -45,45 +54,41 @@ export async function uploadFile(
 ): Promise<{ url: string; key: string }> {
   const key = `${folder}/${filename}`;
 
-  if (env.storage.driver === "s3") {
-    const bucket = env.storage.s3.bucket!;
-    await getS3().send(
-      new PutObjectCommand({
-        Bucket: bucket,
-        Key: key,
-        Body: buffer,
-        ContentType: contentType,
-      }),
-    );
-    const url = `${env.publicBaseUrl}/api/files/${key}`;
+  if (env.storage.driver === "oss") {
+    const { bucket, endpoint } = env.storage.oss;
+    const result = await getOss().put(key, buffer, {
+      mime: contentType,
+      headers: {
+        "Content-Type": contentType,
+        "x-oss-object-acl": "public-read",
+      },
+    });
+    const url =
+      typeof result.url === "string" && result.url.trim()
+        ? result.url.trim()
+        : ossObjectUrl(bucket!, endpoint!, key);
     return { url, key };
   }
 
   const dir = join(localRoot(), folder);
   await mkdir(dir, { recursive: true });
   await writeFile(join(dir, filename), buffer);
-  const url = `${env.publicBaseUrl}/api/files/${key}`;
-  return { url, key };
+  return { url: localFileUrl(key), key };
 }
 
 export async function readStoredFile(key: string): Promise<{
   buffer: Buffer;
   contentType: string;
 }> {
-  if (env.storage.driver === "s3") {
-    const bucket = env.storage.s3.bucket!;
-    const response = await getS3().send(
-      new GetObjectCommand({ Bucket: bucket, Key: key }),
-    );
-    const stream = response.Body as Readable;
-    const chunks: Buffer[] = [];
-    for await (const chunk of stream) {
-      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-    }
-    return {
-      buffer: Buffer.concat(chunks),
-      contentType: response.ContentType ?? "application/octet-stream",
-    };
+  if (env.storage.driver === "oss") {
+    const result = await getOss().get(key);
+    const buffer = Buffer.isBuffer(result.content)
+      ? result.content
+      : Buffer.from(result.content);
+    const rawType = result.res?.headers?.["content-type"];
+    const contentType =
+      typeof rawType === "string" ? rawType : "application/octet-stream";
+    return { buffer, contentType };
   }
 
   const path = join(localRoot(), key);

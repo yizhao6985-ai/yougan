@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { CameraIcon, ImagePlusIcon, Loader2Icon, Trash2Icon } from "lucide-react";
 
+import { AccountCover } from "@/components/account/account-cover";
 import { AuthorAvatar } from "@/components/content/author-avatar";
 import { Button } from "@/components/ui/button";
 import { authorDisplayName } from "@/lib/publication-utils";
@@ -67,22 +68,11 @@ export function ProfileAppearanceEditor({
       <div className="overflow-hidden rounded-lg border border-border/80 bg-card shadow-sm shadow-border/20">
         {/* 封面区 */}
         <div className="group relative">
-          <div
-            className={cn(
-              "relative h-32 sm:h-36",
-              !coverUrl &&
-                "bg-gradient-to-r from-primary/15 via-accent/80 to-secondary/70",
-            )}
-          >
-            {coverUrl ? (
-              <img
-                src={coverUrl}
-                alt=""
-                className="size-full object-cover"
-              />
-            ) : null}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.25),transparent_55%)]" />
-          </div>
+          <AccountCover
+            coverUrl={coverUrl}
+            className="h-32 sm:h-36"
+            persistentOverlay
+          />
 
           <div
             className={cn(

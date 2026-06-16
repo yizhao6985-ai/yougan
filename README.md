@@ -159,7 +159,7 @@ pnpm generate:api       # 生成 apps/web/src/services/generated/schema.d.ts
 - 内容发布与公开阅读（`/content`）
 - 用户主页与资料设置
 - 会员订阅与账单（免费版 / Pro）
-- 本地或 S3 兼容对象存储上传
+- 本地或阿里云 OSS 上传
 
 ## 技术栈
 
@@ -169,7 +169,7 @@ pnpm generate:api       # 生成 apps/web/src/services/generated/schema.d.ts
 | 前端     | Vite、React 19、React Router、TanStack Query、Jotai、Tailwind v4、LangGraph SDK `useStream` |
 | 中间层   | Express 5、Prisma、JWT、Zod + OpenAPI、http-proxy-middleware、ioredis                       |
 | Agent    | LangGraph JS、百炼 DashScope（qwen3.7-max 对话、deepseek-v4-pro 结构化、Qwen-Image 文生图） |
-| 存储     | PostgreSQL × 2、Redis（可选）、本地目录 / S3 兼容 OSS                                       |
+| 存储     | PostgreSQL × 2、Redis（可选）、本地目录 / 阿里云 OSS                                       |
 
 ## 故障排查
 

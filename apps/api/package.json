@@ -18,7 +18,7 @@
   "dependencies": {
     "@yougan/domain": "workspace:*",
     "@asteasolutions/zod-to-openapi": "^7.3.4",
-    "@aws-sdk/client-s3": "^3.1058.0",
+    "ali-oss": "^6.23.0",
     "@langchain/langgraph-sdk": "^1.9.15",
     "@prisma/adapter-pg": "7.8.0",
     "@prisma/client": "7.8.0",

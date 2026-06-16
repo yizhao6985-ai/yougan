@@ -24,10 +24,10 @@ const ApiEnvSchema = z
     AGENT_URL: z.string().url().default("http://localhost:2024"),
     RAG_SERVICE_URL: z.string().url().default("http://localhost:8000"),
     PUBLIC_BASE_URL: z.string().url().default("http://localhost:4000"),
-    STORAGE_DRIVER: z.enum(["local", "s3"]).default("local"),
+    STORAGE_DRIVER: z.enum(["local", "oss"]).default("local"),
     STORAGE_LOCAL_DIR: z.string().default("./storage"),
     OSS_ENDPOINT: optionalString,
-    OSS_REGION: z.string().default("auto"),
+    OSS_REGION: optionalString,
     OSS_BUCKET: optionalString,
     OSS_ACCESS_KEY_ID: optionalString,
     OSS_SECRET_ACCESS_KEY: optionalString,
@@ -40,10 +40,11 @@ const ApiEnvSchema = z
     MAIL_FROM: optionalString,
   })
   .superRefine((env, ctx) => {
-    if (env.STORAGE_DRIVER !== "s3") return;
+    if (env.STORAGE_DRIVER !== "oss") return;
 
     const required: Array<keyof typeof env> = [
       "OSS_ENDPOINT",
+      "OSS_REGION",
       "OSS_BUCKET",
       "OSS_ACCESS_KEY_ID",
       "OSS_SECRET_ACCESS_KEY",
@@ -53,7 +54,7 @@ const ApiEnvSchema = z
       if (!env[key]) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: `${key} is required when STORAGE_DRIVER=s3`,
+          message: `${key} is required when STORAGE_DRIVER=oss`,
           path: [key],
         });
       }
@@ -89,7 +90,7 @@ const ApiEnvSchema = z
     storage: {
       driver: env.STORAGE_DRIVER,
       localDir: env.STORAGE_LOCAL_DIR,
-      s3: {
+      oss: {
         endpoint: env.OSS_ENDPOINT,
         region: env.OSS_REGION,
         bucket: env.OSS_BUCKET,

@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { PencilIcon } from "lucide-react";
 
+import { AccountCover } from "@/components/account/account-cover";
 import { AuthorAvatar } from "@/components/content/author-avatar";
 import { Button } from "@/components/ui/button";
 import { authorDisplayName } from "@/lib/publication-utils";
@@ -39,23 +40,10 @@ export function AccountHero({
 
   return (
     <section className="overflow-hidden rounded-lg border border-border/80 bg-card shadow-sm shadow-border/25">
-      <div
-        className={cn(
-          "relative h-36 sm:h-44",
-          !account.coverUrl &&
-            "bg-gradient-to-r from-primary/15 via-accent/80 to-secondary/70",
-        )}
-      >
-        {account.coverUrl ? (
-          <img
-            src={account.coverUrl}
-            alt=""
-            className="size-full object-cover"
-          />
-        ) : (
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.35),transparent_55%)]" />
-        )}
-      </div>
+      <AccountCover
+        coverUrl={account.coverUrl}
+        className="h-36 sm:h-44"
+      />
 
       <div className="relative px-5 pb-6 sm:px-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">

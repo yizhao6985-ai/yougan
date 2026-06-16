@@ -60,7 +60,7 @@ WEIBO_OAUTH_SCOPES=email
 - `file`：图片文件
 - `purpose`：`avatar`（≤3MB）| `cover`（≤8MB）| `reference`（默认，创作参考图）
 
-需配置 `STORAGE_DRIVER`（`local` 或 `s3`）及 `PUBLIC_BASE_URL`，以便返回可访问的图片 URL。
+需配置 `STORAGE_DRIVER`（`local` 或 `oss`）。`local` 时返回 `{PUBLIC_BASE_URL}/api/files/...`；`oss` 时经 ali-oss 上传，返回 SDK 给出的 `url`（或 `https://{bucket}.{endpoint-host}/{key}`）。
 
 ## 常见问题
 
