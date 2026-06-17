@@ -61,7 +61,8 @@ export const updateProfileStructure = createProfileTool({
 
 export const updateProfileConstraints = createProfileTool({
   name: "update_profile_constraints",
-  description: "更新方案第 5 步「创作规则」（rules）。",
+  description:
+    "更新方案第 5 步「创作规则」（rules）。每条 rule 可选 scope：all（全局）、verbal（文字/文案，勿用 text）、visual（画面）、audio、video。",
   schema: constraintsFieldsSchema,
   toPatch: (input) => buildConstraintsPatch(input),
   emptyMessage: "未提供可更新的创作规则字段。",

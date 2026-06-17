@@ -23,9 +23,13 @@ import { productionAcceptProgress } from "../../helpers/progress-labels.js";
 import {
   currentActiveTask,
   defaultTaskGuidance,
+  isDesignTask,
   taskAwaitingAccept,
 } from "../../helpers/task-plan.js";
-import { isValidTaskDeliverable } from "./helpers/deliverable.js";
+import {
+  isValidDesignPromptDeliverable,
+  isValidTaskDeliverable,
+} from "./helpers/deliverable.js";
 import {
   buildAcceptTaskHumanPrompt,
   buildAcceptTaskSystemPrompt,
@@ -117,9 +121,19 @@ export async function acceptTaskNode(
   let passed = true;
   let feedback = "";
 
-  if (!isValidTaskDeliverable(deliverable)) {
+  if (!isValidTaskDeliverable(deliverable, task)) {
     passed = false;
-    feedback = "缺少有效任务交付物，需先完成产出后再验收。";
+    if (
+      isDesignTask(task) &&
+      isValidDesignPromptDeliverable(deliverable) &&
+      !deliverable?.images?.[0]?.url?.trim()
+    ) {
+      feedback =
+        deliverable?.render_error?.trim() ||
+        "图片尚未生成或生成失败，将重试出图。";
+    } else {
+      feedback = "缺少有效任务交付物，需先完成产出后再验收。";
+    }
   } else {
     const llm = createChatModel({ temperature: 0.2 });
     const promptInput = {
@@ -130,7 +144,22 @@ export async function acceptTaskNode(
       direction: guidance.direction,
       acceptanceCriteria: guidance.acceptance_criteria,
       deliverableBody: deliverable!.body,
-      deliverableNotes: deliverable!.notes,
+      deliverableNotes:
+        task.department === "design"
+          ? [
+              deliverable!.title?.trim()
+                ? `标题：${deliverable!.title.trim()}`
+                : null,
+              deliverable!.notes?.trim()
+                ? `短说明：${deliverable!.notes.trim()}`
+                : null,
+              deliverable!.images?.[0]?.url?.trim()
+                ? `成图 URL（仅证明已出图，勿据此评判画面）：${deliverable!.images[0].url.trim()}`
+                : null,
+            ]
+              .filter(Boolean)
+              .join("\n") || null
+          : deliverable!.notes,
     };
 
     try {
@@ -139,7 +168,9 @@ export async function acceptTaskNode(
           llm,
           AcceptResultSchema,
           [
-            new SystemMessage(buildAcceptTaskSystemPrompt({ profile, references })),
+            new SystemMessage(
+              buildAcceptTaskSystemPrompt({ profile, references, task }),
+            ),
             new HumanMessage(buildAcceptTaskHumanPrompt(promptInput)),
           ],
           { name: "production_accept_task" },
@@ -175,6 +206,34 @@ export async function acceptTaskNode(
   }
 
   const attemptCount = (task.accept_retry_count ?? 0) + 1;
+
+  const renderRetryOnly =
+    isDesignTask(task) &&
+    isValidDesignPromptDeliverable(deliverable) &&
+    !deliverable?.images?.[0]?.url?.trim();
+
+  if (renderRetryOnly) {
+    return {
+      ...patchPendingProductionFields(state, {
+        ...plan,
+        pending_tasks: plan.pending_tasks.map((t) =>
+          t.id === task.id
+            ? {
+                ...t,
+                status: "in_progress" as const,
+                feedback,
+                deliverable: {
+                  ...deliverable!,
+                  images: undefined,
+                  render_error: feedback,
+                },
+              }
+            : t,
+        ),
+      }),
+      ...progressPatch,
+    };
+  }
 
   if (attemptCount >= MAX_ACCEPT_ATTEMPTS) {
     return {

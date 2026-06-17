@@ -33,7 +33,7 @@ ${buildProfileStepPromptSection(profile)}
 - ② 体裁与参数：update_profile_delivery（format、platform、modalities 与字数/画幅/时长等 params **同次写入**）
 - ③ 表达设定：update_profile_expression
 - ④ 结构与要素：update_profile_structure（settings 固定设定、segments 结构段）
-- ⑤ 创作规则：update_profile_constraints（rules）
+- ⑤ 创作规则：update_profile_constraints（rules；scope 用 all / verbal / visual / audio / video，文字规则用 verbal 勿用 text）
 
 **设定 vs 结构（第 4 步）**
 - settings：背景、对象、关键要素等**固定**信息

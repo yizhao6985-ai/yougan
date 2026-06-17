@@ -6,7 +6,9 @@
 
 ```text
 START → planProduction → dispatchTask
-                              ├─ executeWriting / executeDesign → acceptTask → routeProduction
+                              ├─ executeWriting → acceptTask → routeProduction
+                              ├─ executeDesign → renderDesignImage → acceptTask → routeProduction
+                              │     （design 必经 executeDesign，dispatch 不直达 renderDesignImage）
                               └─ summarizeProduction（计划为空 / 无法执行）
 routeProduction
   ├─ dispatchTask（尚有未完成任务）
@@ -15,14 +17,25 @@ routeProduction
 summarizeProduction → END
 ```
 
+## 设计任务流水线
+
+`department=design` 的任务固定走三步，不可跳过 executeDesign：
+
+1. **executeDesign**（LLM）：编写文生图 prompt + 短说明（notes）
+2. **renderDesignImage**（MiniMax image-01）：按 prompt 出图，写入临时 URL
+3. **acceptTask**（LLM）：验收 prompt 方向与质量（与文案验 body 同理）；成图 URL 仅作结构凭证；prompt 方向问题回到 executeDesign 重写，仅出图失败可保留 prompt 重试 render
+
+dispatch 在「已有 prompt、待出图」时仍路由到 executeDesign（no-op 后进入 renderDesignImage）。
+
 ## 节点职责
 
 | 节点                               | 类型     | 职责                                                  |
 | ---------------------------------- | -------- | ----------------------------------------------------- |
 | `planProduction`                   | llm-work | 写入用户要求（summary），生成可执行 `pending_tasks` |
 | `dispatchTask`                     | plain    | 标记当前 `in_progress` 任务                           |
-| `executeWriting` / `executeDesign` | llm-work | 单任务产出 → `deliverable`                            |
-| `acceptTask`                       | llm-work | 方向性验收；失败重试或标 `failed`                     |
+| `executeWriting` / `executeDesign` | llm-work | 单任务产出 → `deliverable`（design 产出 prompt + 短说明） |
+| `renderDesignImage` | plain | design 任务：MiniMax image-01 出图，写入临时 URL（`transient`）；stream 结束后由 API sync 物化 |
+| `acceptTask` | llm-work | 方向性验收；失败重试或标 `failed` |
 | `routeProduction`                  | plain    | 流转锚点（无状态变更）                                |
 | `assemblePreview`                  | llm-work | 整合片段 → `preview`，清空 `pending_tasks`            |
 | `summarizeProduction`              | plain    | 对话末位摘要（成稿 / 失败 / 空计划）                  |
@@ -34,7 +47,8 @@ summarizeProduction → END
 | 节点 | prompt 位置 |
 | ---- | ----------- |
 | `planProduction` | `nodes/plan-production/prompt.ts` |
-| `executeWriting` / `executeDesign` | `nodes/execute-writing/prompt.ts`（共享） |
+| `executeWriting` | `nodes/execute-writing/prompt.ts` |
+| `executeDesign` | `nodes/execute-design/prompt.ts` |
 | `acceptTask` | `nodes/accept-task/prompt.ts` |
 | `assemblePreview` | `nodes/assemble-preview/prompt.ts` |
 

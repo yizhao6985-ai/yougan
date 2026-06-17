@@ -45,7 +45,7 @@ export function executorNodeForTask(
   return task?.department === "design" ? "executeDesign" : "executeWriting";
 }
 
-function readyTasksSnippet(
+export function readyTasksSnippet(
   state: AgentStateType,
   excludeTaskId: string,
 ): string {

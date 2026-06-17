@@ -13,6 +13,7 @@ import {
   resolveDeliveryFromProfile,
   type TaskDeliverable,
   type WorkPreview,
+  type WorkPreviewImage,
 } from "@yougan/domain";
 import {
   getModelTemperature,
@@ -49,14 +50,23 @@ export async function assemblePreviewNode(
     (t) => {
       const body = t.deliverable?.body?.trim();
       if (!body) return [];
+      const isDesign = t.department === "design";
       const item: TaskDeliverable = {
         taskId: t.id,
-        body,
+        body: isDesign
+          ? (t.deliverable?.notes?.trim() ||
+              t.deliverable?.title?.trim() ||
+              body)
+          : body,
         title: t.deliverable?.title,
-        notes: t.deliverable?.notes,
+        notes: isDesign ? null : t.deliverable?.notes,
       };
       return [item];
     },
+  );
+
+  const previewImages: WorkPreviewImage[] = production.pending_tasks.flatMap(
+    (t) => t.deliverable?.images ?? [],
   );
 
   const profile = getProfile(state);
@@ -82,10 +92,12 @@ export async function assemblePreviewNode(
       ),
     );
   } catch {
-    const body = deliverables.map((d) => d.body).join("\n\n---\n\n");
+    const body =
+      deliverables.map((d) => d.body).join("\n\n---\n\n") ||
+      "整理失败，请重试。";
     payload = {
       title: getIntentSummary(profile) || null,
-      body: body || "整理失败，请重试。",
+      body,
       hashtags: [],
       hook: null,
       notes: null,
@@ -99,6 +111,7 @@ export async function assemblePreviewNode(
     hashtags: payload.hashtags ?? [],
     hook: payload.hook ?? null,
     notes: payload.notes ?? null,
+    images: previewImages.length > 0 ? previewImages : undefined,
   };
 
   return {

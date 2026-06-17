@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 
+import type { Message as LangChainMessage } from "@langchain/langgraph-sdk";
+
 import {
   Conversation,
   ConversationContent,
@@ -33,7 +35,7 @@ import {
   resolveStreamProfile,
 } from "@/lib/profile-setup-display";
 import { ProductionConfirmPrompt } from "@/components/studio/production-confirm-prompt";
-import type { TurnQueueKind } from "@/lib/types";
+import type { TurnQueueKind, YouganValues } from "@/lib/types";
 
 export function YouganChat() {
   const {
@@ -44,7 +46,6 @@ export function YouganChat() {
     resumeProductionConfirm,
     productionConfirmInterrupt,
     isResumingInterrupt,
-    canChat,
     canSend,
     isBootstrappingOpening,
     activeWork,
@@ -57,7 +58,7 @@ export function YouganChat() {
   } = useWorkItemNameDialog();
   const [input, setInput] = useState("");
 
-  const streamValues = stream.values;
+  const streamValues = stream.values as YouganValues | undefined;
 
   const activeKind = streamValues?.turn?.activeKind as
     | TurnQueueKind
@@ -67,7 +68,11 @@ export function YouganChat() {
     streamValues?.turn?.interruptedMessageIds ?? [];
 
   const chatMessages = useMemo(
-    () => mergeChatMessages(stream.messages, streamValues?.messages),
+    () =>
+      mergeChatMessages(
+        stream.messages,
+        streamValues?.messages as LangChainMessage[] | undefined,
+      ),
     [stream.messages, streamValues?.messages],
   );
 

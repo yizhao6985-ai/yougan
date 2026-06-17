@@ -86,19 +86,25 @@ return new Command({
 
 | 子目录 | 职责 |
 |--------|------|
-| `llm/providers/` | **创建**客户端：`createChatModel`（Qwen）、`createMultimodalChatModel`（MiniMax）、`generateImage` |
-| `llm/invoke/` | **调用**：`streamChat`（对话）、`invokeStructured`（后台 work，自动 nostream） |
+| `llm/providers/` | **创建**客户端：`createChatModel`（Qwen）、`createMultimodalChatModel`（MiniMax）、`generateMiniMaxImage`（MiniMax 文生图） |
+| `llm/invoke/` | **调用**：`streamChat`（对话）、`invokeStructured`（文本结构化 work）、`invokeMultimodalStructured`（多模态结构化，保留 image_url） |
 
 ```typescript
-import { createChatModel } from "#agent/llm/providers/index.js";
-import { streamChat, invokeStructured } from "#agent/llm/invoke/index.js";
+import { createChatModel, createMultimodalChatModel } from "#agent/llm/providers/index.js";
+import { streamChat, invokeStructured, invokeMultimodalStructured } from "#agent/llm/invoke/index.js";
 
 const llm = createChatModel({ temperature: 0.7 });
 const message = await streamChat(llm.bindTools(tools), input, config);
 const decision = await invokeStructured(llm, schema, input, { name: "..." }, config);
+const analysis = await invokeMultimodalStructured(
+  createMultimodalChatModel(),
+  schema,
+  multimodalInput,
+  { name: "..." },
+);
 ```
 
-节点内禁止直接 `llm.invoke()`，统一走 `llm/invoke/`。`invokeStructured` 会合并 `langsmith:nostream` / `nostream` tag，避免内部结构化输出泄漏到前端；有 `RunnableConfig` 的节点应传入。
+节点内禁止直接 `llm.invoke()`，统一走 `llm/invoke/`。结构化调用会合并 `nostream` tag，避免内部输出泄漏到前端；有 `RunnableConfig` 的节点应传入。
 
 ## 路径别名
 

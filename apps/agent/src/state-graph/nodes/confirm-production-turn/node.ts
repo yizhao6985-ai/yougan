@@ -13,7 +13,7 @@ const PRODUCTION_CONFIRM_PAYLOAD: ProductionConfirmInterruptValue = {
   kind: PRODUCTION_CONFIRM_INTERRUPT_KIND,
   title: "开始创作",
   message:
-    "即将进入成稿制作，AI 团队会按计划撰写与润色，整个过程可能需要几分钟。确认开始吗？",
+    "方案已就绪，即将进入制作环节。AI 团队会按计划执行各项任务，过程可能需要几分钟。确认开始吗？",
 };
 
 export async function confirmProductionTurnNode(

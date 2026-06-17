@@ -59,18 +59,18 @@ profile
 
 | 入口 | 说明 |
 |------|------|
-| 有附件的消息 | 系统自动前置 `reference` → `analyzeNewAssets` |
+| 有附件的消息 | 系统自动前置 `reference` → `preprocessReferences` |
 | 删/改参考 | 模型判定 `reference` 队列项 → `mutateReferences` |
 | 侧栏 PATCH | 直改 `references` 并同步 thread |
 
-参考子图：`analyzeNewAssets` → `mutateReferences` → `summarizeReferences`（对用户可见摘要）。
+参考子图：`preprocessReferences` ⇄ `runPreprocessTools` → `mutateReferences` ⇄ `runMutateTools` → `summarizeReferences`（对用户可见摘要）。
 
 ## 阶段三：制作（production）
 
 **目标**：根据方案制定内部 `productionPlan`，再按计划产出 `preview`。
 
 - 入口：`production` 队列项
-- 子图（原子流水线）：用户一次开写 → `planProduction` → `executeWriting`/`executeDesign` 自动逐任务产出 → `acceptTask`（不过则重产，超 2 次失败结束）→ `assemblePreview`；中途不需用户交互
+- 子图（原子流水线）：用户一次开写 → `planProduction` → `executeWriting` /（`executeDesign` → `renderDesignImage`）自动逐任务产出 → `acceptTask`（不过则重产，超 2 次失败结束）→ `assemblePreview`；design 任务必经 executeDesign；中途不需用户交互
 - 进入制作由 `planTurnQueue` 识别用户**明确**出稿/开写/改稿意图；仅讨论方案或描述创作方向时走 `profile`
 
 ## 阶段四：提问（ask）

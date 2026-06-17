@@ -1,8 +1,4 @@
-import type { MediaKind, Asset } from "@yougan/domain";
-
-export type ReferenceAnalyzeRequest = {
-  asset: Asset;
-};
+import type { MediaKind } from "@yougan/domain";
 
 /** 分模态预处理后的素材，供单次 structured 分析消费 */
 export type ReferenceAssetPrep = {

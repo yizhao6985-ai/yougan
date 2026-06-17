@@ -1,4 +1,8 @@
 export const TOOL_LABELS: Record<string, string> = {
+  preprocess_reference_text: "预处理文本参考",
+  preprocess_reference_image: "预处理图片参考",
+  preprocess_reference_audio: "预处理音频参考",
+  preprocess_reference_video: "预处理视频参考",
   reference_apply_patch: "更新参考素材",
   update_profile_intent: "更新创作定位",
   update_profile_delivery: "更新体裁与参数",
@@ -129,6 +133,11 @@ export function getToolInputSummary(
       return "AI 团队按计划制作";
     case "generate_design":
       return "AI 团队按制作计划绘画";
+    case "preprocess_reference_text":
+    case "preprocess_reference_image":
+    case "preprocess_reference_audio":
+    case "preprocess_reference_video":
+      return readString(toolInput.asset_url);
     default:
       return "";
   }

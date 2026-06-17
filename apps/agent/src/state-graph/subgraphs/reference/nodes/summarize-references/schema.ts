@@ -10,5 +10,3 @@ export const ReferenceTurnSummarySchema = z.object({
   intents: z.array(ReferenceTurnIntentSchema).default([]),
   reply: z.string().min(1).describe("面向感友的确认或追问"),
 });
-
-export type ReferenceTurnSummary = z.infer<typeof ReferenceTurnSummarySchema>;

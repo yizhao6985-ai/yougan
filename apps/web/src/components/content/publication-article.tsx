@@ -3,6 +3,7 @@ import { ArrowRightIcon } from "lucide-react";
 
 import { AuthorAvatar } from "@/components/content/author-avatar";
 import { MarkdownContent } from "@/components/markdown-content";
+import { WorkPreviewImages } from "@/components/work-preview-images";
 import { authorDisplayName } from "@/lib/publication-utils";
 import {
   formatLabel,
@@ -168,26 +169,14 @@ export function PublicationArticle({
       </div>
 
       {images?.length ? (
-        <div
-          className={cn(
-            scene.articleMediaColumn,
-            "mt-10 grid gap-4 sm:grid-cols-2 sm:mt-12",
-          )}
-        >
-          {images.map((image, index) =>
-            image.url ? (
-              <figure
-                key={image.url}
-                className="overflow-hidden rounded-xl bg-secondary/25"
-              >
-                <img
-                  src={image.url}
-                  alt={`配图 ${index + 1}`}
-                  className="w-full object-cover"
-                />
-              </figure>
-            ) : null,
-          )}
+        <div className={cn(scene.articleMediaColumn, "mt-10 sm:mt-12")}>
+          <WorkPreviewImages
+            images={images.flatMap((image, index) =>
+              image.url
+                ? [{ url: image.url, alt: `配图 ${index + 1}` }]
+                : [],
+            )}
+          />
         </div>
       ) : null}
 

@@ -9,7 +9,3 @@ export const ReferenceContentAnalyzeSchema = z.object({
   transcript: z.string().optional().describe("ASR 转写稿，音频/视频素材"),
   visual_cues: z.string().optional().describe("视觉感知摘要，图片/视频素材"),
 });
-
-export type ReferenceContentAnalyzeResult = z.infer<
-  typeof ReferenceContentAnalyzeSchema
->;

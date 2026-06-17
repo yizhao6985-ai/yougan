@@ -9,7 +9,7 @@ import { z } from "zod";
 
 import {
   DASHSCOPE_ASR_MODELS,
-  DASHSCOPE_IMAGE_MODELS,
+  MINIMAX_IMAGE_MODELS,
   MINIMAX_MODELS,
   QWEN_MODELS,
 } from "./llm/providers/catalog.js";
@@ -64,11 +64,11 @@ const AgentEnvSchema = z
       .positive()
       .default(32768),
     LLM_TEMPERATURE: z.coerce.number().min(0).max(2).default(0.7),
-    LLM_MODEL_IMAGE: optionalString,
     LLM_MODEL_ASR: optionalString,
     MINIMAX_API_KEY: optionalString,
     MINIMAX_BASE_URL: optionalString,
     MINIMAX_MODEL: optionalString,
+    MINIMAX_IMAGE_MODEL: optionalString,
     MINIMAX_MAX_TOKENS: z.coerce.number().int().positive().optional(),
     TAVILY_API_KEY: optionalString,
   })
@@ -86,12 +86,12 @@ const AgentEnvSchema = z
       llmMaxTokens: env.LLM_MAX_TOKENS,
       llmProductionMaxTokens: env.LLM_PRODUCTION_MAX_TOKENS,
       llmTemperature: env.LLM_TEMPERATURE,
-      llmModelImage:
-        env.LLM_MODEL_IMAGE ?? DASHSCOPE_IMAGE_MODELS.qwenImage20Pro,
       llmModelAsr: env.LLM_MODEL_ASR ?? DASHSCOPE_ASR_MODELS.funAsr,
       minimaxApiKey: env.MINIMAX_API_KEY ?? "",
       minimaxBaseUrl: env.MINIMAX_BASE_URL ?? "https://api.minimaxi.com/v1",
       minimaxModel: env.MINIMAX_MODEL ?? MINIMAX_MODELS.m3,
+      minimaxImageModel:
+        env.MINIMAX_IMAGE_MODEL ?? MINIMAX_IMAGE_MODELS.image01,
       minimaxMaxTokens: env.MINIMAX_MAX_TOKENS ?? env.LLM_MAX_TOKENS,
       tavilyApiKey: env.TAVILY_API_KEY ?? "",
     };

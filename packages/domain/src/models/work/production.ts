@@ -1,4 +1,4 @@
-import type { WorkPreview } from "./preview.js";
+import type { WorkPreview, WorkPreviewImage } from "./preview.js";
 
 // —— 部门 ——
 
@@ -31,6 +31,12 @@ export interface ProductionTaskDeliverable {
   body: string;
   title?: string | null;
   notes?: string | null;
+  /** 设计任务：render 节点写入的成图 */
+  images?: WorkPreviewImage[];
+  /** 设计任务：文生图 API 失败原因 */
+  render_error?: string | null;
+  /** 设计任务：负面 prompt（staging，commit 时剥离） */
+  negative_prompt?: string | null;
 }
 
 /** assemblePreview 等按 taskId 索引片段时使用 */

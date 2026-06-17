@@ -1,4 +1,4 @@
-/** preprocessReferences 之后：有 tool_calls 则执行预处理工具，否则进入 mutate 或继续预处理 */
+/** preprocessReferences 之后：有 tool_calls 则执行预处理工具，否则进入 mutate */
 import { AIMessage } from "@langchain/core/messages";
 
 import type { AgentStateType } from "#agent/state.js";
@@ -9,7 +9,6 @@ export const from = "preprocessReferences" as const;
 
 export type AfterPreprocessReferencesTarget =
   | "runPreprocessTools"
-  | "preprocessReferences"
   | "mutateReferences";
 
 function lastAiHasToolCalls(state: AgentStateType): boolean {
@@ -22,15 +21,13 @@ function lastAiHasToolCalls(state: AgentStateType): boolean {
 export function selectAfterPreprocessReferences(
   state: AgentStateType,
 ): AfterPreprocessReferencesTarget {
-  if (lastAiHasToolCalls(state)) return "runPreprocessTools";
-  if (listUnprocessedReferenceJobs(state).length > 0) {
-    return "preprocessReferences";
+  if (listUnprocessedReferenceJobs(state).length === 0) {
+    return "mutateReferences";
   }
-  return "mutateReferences";
+  return lastAiHasToolCalls(state) ? "runPreprocessTools" : "mutateReferences";
 }
 
 export const paths = {
   runPreprocessTools: "runPreprocessTools",
-  preprocessReferences: "preprocessReferences",
   mutateReferences: "mutateReferences",
 } as const;

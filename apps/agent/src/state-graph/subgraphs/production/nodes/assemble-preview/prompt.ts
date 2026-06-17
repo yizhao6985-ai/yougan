@@ -22,9 +22,13 @@ function buildFragmentsBlock(input: ConsolidatePromptInput): string {
   return deliverables
     .map((d, i) => {
       const task = plan.pending_tasks.find((t) => t.id === d.taskId);
+      const isDesign = task?.department === "design";
+      const summary = isDesign
+        ? d.notes?.trim() || d.title?.trim() || "（视觉交付，成图已单独生成）"
+        : d.body;
       return `### 片段 ${i + 1}：${task?.description ?? d.taskId}
-${d.title ? `标题建议：${d.title}\n` : ""}${d.body}
-${d.notes ? `备注：${d.notes}` : ""}`;
+${d.title ? `标题建议：${d.title}\n` : ""}${summary}
+${!isDesign && d.notes ? `备注：${d.notes}` : ""}`;
     })
     .join("\n\n");
 }
@@ -42,6 +46,7 @@ export function buildConsolidateSystemPrompt(input: {
 - **不要重新创作**，以组织、衔接、排版为主
 - 保留各片段的核心内容与总监方向
 - 输出完整 preview：title、body、hashtags、hook、notes
+- **body 必须包含一段给用户阅读的短说明**（即使主交付为插画/配图；design 任务的成图由 renderDesignImage 单独写入 images，整合时用各 design 片段的 notes 作为说明文字）
 
 ## 作品方案
 ${profileSummary(profile)}

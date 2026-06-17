@@ -40,6 +40,27 @@ export function newProfileConstraint(
   };
 }
 
+const CONSTRAINT_SCOPES: readonly ConstraintScope[] = [
+  "all",
+  "verbal",
+  "visual",
+  "audio",
+  "video",
+];
+
+/** 规范化创作规则 scope；`text`（媒介名）映射为 `verbal` */
+export function normalizeConstraintScope(
+  value: unknown,
+  fallback: ConstraintScope = "all",
+): ConstraintScope {
+  if (typeof value !== "string") return fallback;
+  const trimmed = value.trim().toLowerCase();
+  if (trimmed === "text") return "verbal";
+  return CONSTRAINT_SCOPES.includes(trimmed as ConstraintScope)
+    ? (trimmed as ConstraintScope)
+    : fallback;
+}
+
 export function newProfileSegment(
   description: string,
   role?: SegmentRole | string | null,
@@ -212,17 +233,7 @@ function parseConstraints(raw: unknown): WorkProfile["constraints"] {
         .map((item) => ({
           id: String(item.id ?? newId("rule")),
           description: String(item.description ?? "").trim(),
-          scope: (
-            [
-              "all",
-              "verbal",
-              "visual",
-              "audio",
-              "video",
-            ] as const
-          ).includes(item.scope as ConstraintScope)
-            ? (item.scope as ConstraintScope)
-            : "all",
+          scope: normalizeConstraintScope(item.scope),
           confirmed_at:
             typeof item.confirmed_at === "string"
               ? item.confirmed_at

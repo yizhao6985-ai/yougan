@@ -31,7 +31,7 @@ function getOss(): OSS {
   return ossClient;
 }
 
-export type UploadFolder = "references" | "avatars" | "covers";
+export type UploadFolder = "references" | "avatars" | "covers" | "generated";
 
 function localFileUrl(key: string): string {
   return `${env.publicBaseUrl}/api/files/${key}`;

@@ -1,7 +1,7 @@
 import { inferMediaKind, type Asset } from "@yougan/domain";
 
-import type { ReferenceAnalyzeRequest } from "./types.js";
 import { prepareReferenceAudio } from "./prep-audio.js";
+import { prepareReferenceImage } from "./prep-image.js";
 import { prepareReferenceText } from "./prep-text.js";
 import { prepareReferenceVideo } from "./prep-video.js";
 import type { ReferenceAssetPrep } from "./types.js";
@@ -16,10 +16,9 @@ function referenceAssetDescriptor(asset: Asset): string {
   return parts.join("\n");
 }
 
-export async function prepareReferenceIngest(
-  request: ReferenceAnalyzeRequest,
+export async function prepareReferenceAsset(
+  asset: Asset,
 ): Promise<ReferenceAssetPrep> {
-  const asset = request.asset;
   const mediaKind = inferMediaKind(asset.mime_type);
   const url = asset.url.trim();
   const notes: string[] = [];
@@ -41,7 +40,9 @@ export async function prepareReferenceIngest(
   }
 
   if (mediaKind === "image") {
-    prep.image_url = url;
+    const result = await prepareReferenceImage(url, asset.mime_type);
+    notes.push(...result.notes);
+    prep.image_url = result.image_url;
     return prep;
   }
 

@@ -348,7 +348,7 @@ export const CHAT_COPY = {
   replying: "正在回复…",
   interrupted: "已中断",
   productionConfirm: {
-    durationHint: "成稿制作会调用多个 AI 步骤，通常需要数分钟，请保持页面打开。",
+    durationHint: "制作会依次执行多个步骤，通常需要数分钟，请保持页面打开。",
     confirm: "开始创作",
     decline: "取消",
     statusHint: "等待确认是否开始创作",
@@ -443,6 +443,15 @@ export const PREVIEW_PANEL = {
   hint: "AI 团队按方案制作的文字、画面、脚本等，显示在这里",
   unsavedBadge: "（未保存）",
   empty: "进入制作环节后，作品内容会显示在这里。",
+  openGallery: "查看大图",
+  galleryTitle: "作品图册",
+  galleryPrevious: "上一张",
+  galleryNext: "下一张",
+  galleryCounter: (current: number, total: number) => `${current} / ${total}`,
+  galleryOpenOriginal: "在新标签页打开",
+  promptLabel: "生成提示词",
+  promptShow: "查看提示词",
+  promptHide: "收起提示词",
 } as const;
 
 export const REFERENCE_PANEL = {

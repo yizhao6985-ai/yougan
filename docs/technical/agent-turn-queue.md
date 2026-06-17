@@ -40,11 +40,11 @@ START
 
 ### 内层子图
 
-**reference**（`subgraphs/reference/`）：`analyzeNewAssets` → `mutateReferences` → `summarizeReferences`。新附件走分析入库；无新附件时走删改参考。
+**reference**（`subgraphs/reference/`）：`preprocessReferences` ⇄ `runPreprocessTools` → `mutateReferences` ⇄ `runMutateTools` → `summarizeReferences`。新附件走预处理分析入库；无新附件时走删改参考。
 
 **profile**（`subgraphs/profile/`）：`mutateProfile` ⇄ `runProfileTools`（按步骤原子工具改方案，经 `applyProfilePatch` 写入 staging）。
 
-**production**（`subgraphs/production/`，详见 `README.md`）：`planProduction` → `dispatchTask` → `executeWriting` / `executeDesign` → `acceptTask` → `routeProduction` →（`dispatchTask`、`assemblePreview`、计划为空或验收 3 次失败时直达 `summarizeProduction`）→ `summarizeProduction`。任务在 `Work.production.pending_tasks`（`in_progress` 为当前任务）；验收未通过带 `feedback` 自动重产，达上限标 `failed`。
+**production**（`subgraphs/production/`，详见 `README.md`）：`planProduction` → `dispatchTask` → `executeWriting` /（`executeDesign` → `renderDesignImage`）→ `acceptTask` → `routeProduction` →（`dispatchTask`、`assemblePreview`、计划为空或验收 3 次失败时直达 `summarizeProduction`）→ `summarizeProduction`。design 任务必经 executeDesign，dispatch 不直达 renderDesignImage。任务在 `Work.production.pending_tasks`（`in_progress` 为当前任务）；验收未通过带 `feedback` 自动重产，达上限标 `failed`。
 
 **ask**（`subgraphs/ask/`）：`answerQuestion` ⇄ `runAskTools`（纯答疑）。
 
@@ -66,7 +66,7 @@ START
 - 无附件：仅当模型判定用户要删/改参考素材时入队 `reference`
 - 有附件且队列已含 `reference`：不重复前置
 - 有附件且纯 `ask`：不前置（纯讨论不入库）
-- 有附件且非纯 `ask`：确定性前置 `reference`，供 `analyze-new-assets` 分析
+- 有附件且非纯 `ask`：确定性前置 `reference`，供 `preprocessReferences` 预处理新附件
 
 ### production 入队规则（`plan-turn-queue`）
 

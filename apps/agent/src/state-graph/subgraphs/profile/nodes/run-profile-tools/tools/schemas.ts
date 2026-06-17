@@ -2,6 +2,9 @@ import {
   CONTENT_FORMATS,
   DISCOVER_TOPIC_CATEGORIES,
   MEDIA_MODALITIES,
+  normalizeConstraintScope,
+  normalizeProfileAspectRatio,
+  type ContentFormatId,
   type FormatParams,
   type WorkProfile,
 } from "@yougan/domain";
@@ -28,6 +31,7 @@ export const deliveryTaxonomyPrompt = [
   "平台 platform：按用户表述写入发布平台名称（自由文本，如「小红书」「微信公众号」），勿套用系统 id",
   "媒介 modalities：通常由体裁自动推断；仅明确混合媒介时显式指定",
   "参数 params：word_count_min/max（字数）、duration_sec（时长）、aspect_ratio（画幅）等，与 format 同次写入",
+  "画幅 aspect_ratio：写 MiniMax 支持的比例 id（1:1、3:4、4:3、2:3、3:2、16:9、9:16、21:9）；手机截图/竖屏常用 9:16",
 ].join("\n");
 
 export const segmentInputSchema = z.object({
@@ -39,7 +43,10 @@ export const segmentInputSchema = z.object({
 export const constraintInputSchema = z.object({
   description: z.string().min(1),
   scope: z
-    .enum(["all", "verbal", "visual", "audio", "video"])
+    .preprocess(
+      (value) => normalizeConstraintScope(value, "all"),
+      z.enum(["all", "verbal", "visual", "audio", "video"]),
+    )
     .optional()
     .default("all"),
 });
@@ -102,7 +109,12 @@ export const paramsFieldsSchema = z.object({
   word_count_min: z.number().optional().describe("最少字数"),
   word_count_max: z.number().optional().describe("最多字数"),
   emoji_level: z.enum(["none", "light", "heavy"]).optional(),
-  aspect_ratio: z.string().optional().describe("画幅比例"),
+  aspect_ratio: z
+    .string()
+    .optional()
+    .describe(
+      "MiniMax 画幅 id：1:1、3:4、4:3、2:3、3:2、16:9、9:16、21:9",
+    ),
   image_count: z.number().optional(),
   negative_hints: z.array(z.string()).optional(),
   duration_sec: z.number().optional().describe("时长（秒）"),
@@ -163,6 +175,10 @@ export function buildExpressionPatch(
 export function buildParamsPatch(
   profile: WorkProfile,
   input: z.infer<typeof paramsFieldsSchema>,
+  deliveryContext?: {
+    platform?: string | null;
+    format?: ContentFormatId | null;
+  },
 ): FormatParams | undefined {
   const hasParams =
     input.kind !== undefined ||
@@ -178,11 +194,29 @@ export function buildParamsPatch(
 
   if (!hasParams) return undefined;
 
+  const platform = deliveryContext?.platform ?? profile.delivery.platform;
+  const format = deliveryContext?.format ?? profile.delivery.format;
+  const ratioContext = { platform, format };
+
+  function resolveAspectRatio(
+    kind: FormatParams["kind"],
+  ): string | undefined {
+    const raw =
+      input.aspect_ratio ??
+      (profile.delivery.params.kind === kind &&
+      "aspect_ratio" in profile.delivery.params
+        ? profile.delivery.params.aspect_ratio
+        : "aspect_ratio" in profile.delivery.params
+          ? profile.delivery.params.aspect_ratio
+          : undefined);
+    return normalizeProfileAspectRatio(raw, ratioContext);
+  }
+
   const kind = input.kind ?? profile.delivery.params.kind;
   if (kind === "illustration") {
     return {
       kind: "illustration",
-      aspect_ratio: input.aspect_ratio,
+      aspect_ratio: resolveAspectRatio("illustration"),
       image_count: input.image_count,
       negative_hints: input.negative_hints,
     };
@@ -191,7 +225,7 @@ export function buildParamsPatch(
     return {
       kind: "video",
       duration_sec: input.duration_sec,
-      aspect_ratio: input.aspect_ratio,
+      aspect_ratio: resolveAspectRatio("video"),
       pacing: input.pacing,
     };
   }
@@ -210,8 +244,15 @@ export function buildParamsPatch(
             min: input.word_count_min,
             max: input.word_count_max,
           }
-        : undefined,
-    emoji_level: input.emoji_level,
+        : profile.delivery.params.kind === "text"
+          ? profile.delivery.params.word_count
+          : undefined,
+    emoji_level:
+      input.emoji_level ??
+      (profile.delivery.params.kind === "text"
+        ? profile.delivery.params.emoji_level
+        : undefined),
+    aspect_ratio: resolveAspectRatio("text"),
   };
 }
 
@@ -229,7 +270,10 @@ export function buildDeliveryStepPatch(
   input: z.infer<typeof deliveryStepFieldsSchema>,
 ): ProfilePatch["delivery"] | undefined {
   const delivery = buildDeliveryPatch(input);
-  const params = buildParamsPatch(profile, input);
+  const params = buildParamsPatch(profile, input, {
+    platform: input.platform ?? profile.delivery.platform,
+    format: (input.format ?? profile.delivery.format) as ContentFormatId | null,
+  });
   if (!delivery && !params) return undefined;
   return { ...delivery, ...(params ? { params } : {}) };
 }

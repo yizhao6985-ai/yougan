@@ -180,6 +180,7 @@ function formatDeliveryRows(profile: WorkProfile) {
       const labels = { none: "不用", light: "少量", heavy: "较多" } as const;
       rows.push({ label: "Emoji", value: labels[params.emoji_level] });
     }
+    if (params.aspect_ratio) rows.push({ label: "画幅", value: params.aspect_ratio });
   }
 
   if (params.kind === "illustration") {

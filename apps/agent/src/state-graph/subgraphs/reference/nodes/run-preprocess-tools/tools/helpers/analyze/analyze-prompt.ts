@@ -38,16 +38,22 @@ export function buildAnalyzeReferenceMessage(
     );
   }
 
-  if (prep.media_kind === "image" && prep.image_url) {
-    return new HumanMessage({
-      content: [
-        { type: "text", text: header },
-        {
-          type: "image_url",
-          image_url: { url: prep.image_url },
-        },
-      ],
-    });
+  if (prep.media_kind === "image") {
+    if (prep.image_url) {
+      return new HumanMessage({
+        content: [
+          { type: "text", text: header },
+          {
+            type: "image_url",
+            image_url: { url: prep.image_url },
+          },
+        ],
+      });
+    }
+
+    return new HumanMessage(
+      `${header}（未能加载图片内容，请主要依据文件信息保守分析）`,
+    );
   }
 
   if (prep.media_kind === "audio") {

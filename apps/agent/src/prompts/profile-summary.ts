@@ -131,6 +131,7 @@ export function profileParamsSummary(profile: WorkProfile): string {
       const labels = { none: "不用", light: "少量", heavy: "较多" } as const;
       parts.push(`Emoji：${labels[params.emoji_level]}`);
     }
+    if (params.aspect_ratio) parts.push(`画幅：${params.aspect_ratio}`);
   }
 
   if (params.kind === "illustration") {

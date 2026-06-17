@@ -16,6 +16,7 @@ import {
   snapshotsEqual,
   snapshotFromAgentValues,
 } from "./versions.js";
+import { materializeAgentRunValues } from "./materialize-preview-images.js";
 
 function snapshotFromWorkColumns(work: {
   profile: unknown;
@@ -95,7 +96,8 @@ export async function applyAgentRunToWork(input: {
   values: Record<string, unknown>;
 }) {
   const previous = (await getWorkCurrentSnapshot(input.workId)) ?? emptySnapshot();
-  const next = snapshotFromAgentValues(input.values);
+  const values = await materializeAgentRunValues(input.values);
+  const next = snapshotFromAgentValues(values);
 
   if (snapshotsEqual(previous, next)) {
     return null;

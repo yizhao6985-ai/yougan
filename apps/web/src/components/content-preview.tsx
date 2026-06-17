@@ -4,8 +4,13 @@ import {
   CreativeContextSection,
 } from "@/components/studio/creative-context/shared";
 import { PublishPlatformActions } from "@/components/studio/publish-platform-actions";
+import { WorkPreviewImages } from "@/components/work-preview-images";
 import { PREVIEW_PANEL } from "@/lib/site-copy";
 import type { WorkPreview } from "@/lib/types";
+
+function hasPreviewContent(preview: WorkPreview) {
+  return Boolean(preview.body?.trim()) || Boolean(preview.images?.length);
+}
 
 export function ContentPreview({
   workId,
@@ -26,7 +31,7 @@ export function ContentPreview({
       }
       compact={compact}
     >
-      {!preview?.body ? (
+      {!preview || !hasPreviewContent(preview) ? (
         <CreativeContextEmpty>{PREVIEW_PANEL.empty}</CreativeContextEmpty>
       ) : (
         <div className="space-y-3">
@@ -41,23 +46,15 @@ export function ContentPreview({
                 </h4>
               ) : null}
             </div>
-            <MarkdownContent content={preview.body} />
+
             {preview.images?.length ? (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {preview.images.map((image, index) => (
-                  <figure
-                    key={`${image.url}-${index}`}
-                    className="overflow-hidden rounded-lg border border-border/80 bg-muted/30"
-                  >
-                    <img
-                      src={image.url}
-                      alt={image.alt ?? `绘画作品 ${index + 1}`}
-                      className="h-auto w-full object-cover"
-                    />
-                  </figure>
-                ))}
-              </div>
+              <WorkPreviewImages images={preview.images} compact={compact} />
             ) : null}
+
+            {preview.body?.trim() ? (
+              <MarkdownContent content={preview.body} />
+            ) : null}
+
             {preview.hashtags?.length ? (
               <div className="flex flex-wrap gap-2">
                 {preview.hashtags.map((tag) => (
@@ -72,13 +69,15 @@ export function ContentPreview({
             ) : null}
           </div>
           <div className="flex flex-wrap items-center justify-end gap-2 rounded-lg border border-border/80 bg-card/70 px-3 py-2.5">
-            <button
-              type="button"
-              onClick={() => navigator.clipboard.writeText(preview.body)}
-              className="rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground/90 transition hover:bg-muted"
-            >
-              复制内容
-            </button>
+            {preview.body?.trim() ? (
+              <button
+                type="button"
+                onClick={() => navigator.clipboard.writeText(preview.body)}
+                className="rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground/90 transition hover:bg-muted"
+              >
+                复制内容
+              </button>
+            ) : null}
             {workId ? (
               <PublishPlatformActions workId={workId} preview={preview} />
             ) : null}

@@ -48,7 +48,7 @@ src/
 ├── messages/
 ├── llm/
 │   ├── providers/                    # 创建 Chat / 结构化 / 文生图客户端
-│   └── invoke/                       # streamChat / invokeStructured
+│   └── invoke/                       # streamChat / invokeStructured / invokeMultimodalStructured
 ├── system-prompt.ts                  # 全局系统提示词 + composeSystemPrompt
 └── state.ts
 ```
@@ -98,23 +98,23 @@ START → planTurnQueue → dispatchTurnQueue → [*Graph] → advanceTurnQueue
 | **Qwen** | `DASHSCOPE_API_KEY` + `DASHSCOPE_MODEL` | 对话、结构化 work |
 | **MiniMax** | `MINIMAX_API_KEY` + `MINIMAX_MODEL` | 多模态（参考素材分析等） |
 
-默认模型 ID 见 `src/llm/providers/catalog.ts`。文生图 / ASR 仍走百炼原生 API。
+默认模型 ID 见 `src/llm/providers/catalog.ts`。文生图走 MiniMax image-01；ASR 仍走百炼原生 API。
 
 ## llm 分层
 
 | 子目录 | 内容 |
 |--------|------|
-| `llm/providers/` | `createChatModel`、`generateImage` |
-| `llm/invoke/` | `streamChat`、`invokeStructured` |
+| `llm/providers/` | `createChatModel`、`generateMiniMaxImage` |
+| `llm/invoke/` | `streamChat`、`invokeStructured`、`invokeMultimodalStructured` |
 
 ## 模型分工
 
 | 场景 | 工厂 | 调用 | 模型 |
 |------|------|------|------|
 | 对话子图 | `createChatModel` | `streamChat` | Qwen |
-| 参考素材分析 | `createMultimodalChatModel` | `invokeStructured` | MiniMax |
+| 参考素材分析 | `createMultimodalChatModel` | `invokeMultimodalStructured` | MiniMax |
 | 结构化 work | `createChatModel` | `invokeStructured` | Qwen |
-| 文生图 | `generateImage` | — | 百炼 qwen-image |
+| 文生图 | `generateMiniMaxImage` | — | MiniMax image-01 |
 
 ## 相关文档
 

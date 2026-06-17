@@ -13,6 +13,11 @@ function assertMiniMaxApiKey(): void {
   }
 }
 
+/** 参考素材分析等结构化多模态任务：关闭 thinking，降低延迟与 token 消耗。 */
+const MINIMAX_CHAT_KWARGS = {
+  thinking: { type: "disabled" },
+} as const;
+
 /** 图片 / 视频 / 音频 / 文本等多模态任务（参考素材分析等）。 */
 export function createMultimodalChatModel(
   options?: OpenAiCompatibleChatModelOptions,
@@ -27,6 +32,7 @@ export function createMultimodalChatModel(
       temperature: 0.2,
       streaming: false,
       maxTokens: env.minimaxMaxTokens,
+      modelKwargs: MINIMAX_CHAT_KWARGS,
     },
     options,
   );

@@ -32,11 +32,6 @@ export const MODEL_PRICE_TABLE: Record<MeteringModelId, ModelPriceTable> = {
     outputMicroCreditsPer1M: 8.4 * MICRO_CREDITS_PER_YUAN,
     cachedInputMicroCreditsPer1M: 0.42 * MICRO_CREDITS_PER_YUAN,
   },
-  "dashscope-image": {
-    inputMicroCreditsPer1M: 0,
-    outputMicroCreditsPer1M: 0,
-    flatMicroCreditsPerCall: 0.4 * MICRO_CREDITS_PER_YUAN,
-  },
 };
 
 function tokensToMicroCredits(tokens: number, microCreditsPer1M: number): number {

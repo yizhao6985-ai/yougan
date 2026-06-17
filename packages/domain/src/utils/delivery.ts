@@ -165,6 +165,8 @@ export function parseFormatParams(
     kind: "text",
     word_count,
     emoji_level,
+    aspect_ratio:
+      typeof value.aspect_ratio === "string" ? value.aspect_ratio : undefined,
   } satisfies TextFormatParams;
 }
 

@@ -6,7 +6,6 @@ export const METERING_MODEL_IDS = [
   "qwen-plus",
   "deepseek-v3",
   "minimax-m3-s",
-  "dashscope-image",
 ] as const;
 
 export type MeteringModelId = (typeof METERING_MODEL_IDS)[number];

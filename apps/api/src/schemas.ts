@@ -52,6 +52,7 @@ const FormatParamsSchema = z.discriminatedUnion("kind", [
       })
       .optional(),
     emoji_level: z.enum(["none", "light", "heavy"]).optional(),
+    aspect_ratio: z.string().optional(),
   }),
   z.object({
     kind: z.literal("illustration"),
@@ -136,6 +137,7 @@ export const WorkPreviewSchema = z
           url: z.string().url(),
           alt: z.string().nullable().optional(),
           prompt: z.string().nullable().optional(),
+          transient: z.boolean().optional(),
         }),
       )
       .optional(),

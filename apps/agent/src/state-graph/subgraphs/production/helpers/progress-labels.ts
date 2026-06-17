@@ -34,6 +34,16 @@ export function productionExecuteDesignProgress(
   );
 }
 
+export function productionRenderDesignProgress(
+  taskDescription?: string,
+): RunProgress {
+  return buildRunProgress(
+    "production_render_design",
+    "正在生成图片…",
+    taskDescription?.trim() || null,
+  );
+}
+
 export function productionAcceptProgress(taskDescription?: string): RunProgress {
   return buildRunProgress(
     "production_accept",

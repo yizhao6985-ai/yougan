@@ -97,6 +97,8 @@ export interface TextFormatParams {
   kind: "text";
   word_count?: { min?: number; max?: number };
   emoji_level?: "none" | "light" | "heavy";
+  /** 图文混排等体裁的配图画幅（design 出图时使用） */
+  aspect_ratio?: string;
 }
 
 export interface IllustrationFormatParams {

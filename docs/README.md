@@ -53,6 +53,14 @@
 
 **完整初稿**：[business/business-plan.md](./business/business-plan.md)
 
+## 商业计划书素材库（BP）
+
+面向 BP 撰写的**事实底稿 + 按章节归档的素材**，事实部分核验自当前代码（定价、计量、平台、模型、数据模型、功能状态），并标注「已核验 / 待调研 / 待填」：
+
+→ **[docs/bp/](./bp/README.md)**
+
+> 与 `docs/business/` 互补；凡涉定价、套餐、平台数量、计量单位等，以 [bp/00-fact-sheet.md](./bp/00-fact-sheet.md) 为准（`docs/business/` 部分内容写于旧版本，已与代码脱节）。
+
 ## 技术文档
 
 | 文档 | 说明 |
@@ -63,6 +71,7 @@
 | [apps/agent/README.md](../apps/agent/README.md) | LangGraph、模型分工 |
 | [technical/agent-turn-queue.md](./technical/agent-turn-queue.md) | 回合队列、子图路由、API 线程同步 |
 | [technical/version-graph.md](./technical/version-graph.md) | 单线版本历史、restore、duplicate |
+| [technical/design-image-generation.md](./technical/design-image-generation.md) | 设计任务文生图：画幅推断、MiniMax 出图、物化落库、前端展示 |
 | [platform-oauth.md](./platform-oauth.md) | 第三方平台 OAuth 环境变量与回调 |
 
 ## 文档维护原则

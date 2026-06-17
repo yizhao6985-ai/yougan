@@ -1,13 +1,9 @@
-import type { ReferenceIntent, WorkReference } from "@yougan/domain";
+import type { WorkReference } from "@yougan/domain";
 
 export type ReferenceTarget = {
   reference_id?: string;
   index?: number;
   asset_url?: string;
-};
-
-export type ReferenceIntentPatch = ReferenceTarget & {
-  intent: ReferenceIntent;
 };
 
 export function findReferenceIndex(

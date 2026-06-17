@@ -2,16 +2,35 @@
 import type { ProductionTask, WorkProduction } from "@yougan/domain";
 
 import { acceptAttemptsExhausted } from "./pipeline.js";
+import { isValidDesignPromptDeliverable } from "../nodes/accept-task/helpers/deliverable.js";
+
+export function isDesignTask(task: ProductionTask): boolean {
+  return task.department === "design";
+}
+
+export function designTaskHasRenderedImage(task: ProductionTask): boolean {
+  return Boolean(task.deliverable?.images?.[0]?.url?.trim());
+}
+
+export function taskNeedsRender(task: ProductionTask): boolean {
+  if (!isDesignTask(task) || taskHasTerminalFailure(task) || isTaskReady(task)) {
+    return false;
+  }
+  if (!isValidDesignPromptDeliverable(task.deliverable)) return false;
+  return !designTaskHasRenderedImage(task);
+}
 
 export function isTaskReady(task: ProductionTask): boolean {
   return task.status === "ready";
 }
 
 export function taskAwaitingAccept(task: ProductionTask): boolean {
-  return (
-    task.status === "in_progress" &&
-    Boolean(task.deliverable?.body?.trim())
-  );
+  if (task.status !== "in_progress") return false;
+  if (!task.deliverable?.body?.trim()) return false;
+  if (isDesignTask(task)) {
+    return designTaskHasRenderedImage(task);
+  }
+  return true;
 }
 
 export function taskHasTerminalFailure(task: ProductionTask): boolean {
@@ -64,7 +83,7 @@ export function resolveDispatchTaskId(
     return null;
   }
   const active = currentActiveTask(production);
-  if (active && taskNeedsProduce(active)) {
+  if (active && (taskNeedsProduce(active) || taskNeedsRender(active))) {
     return active.id;
   }
   const next = nextPendingTask(production);
@@ -88,6 +107,9 @@ export function productionPipelineStuck(
   if (production.pending_tasks.some(taskAwaitingAccept)) {
     return false;
   }
+  if (production.pending_tasks.some(taskNeedsRender)) {
+    return false;
+  }
   return resolveDispatchTaskId(production) == null;
 }
 
@@ -95,6 +117,7 @@ export function taskNeedsProduce(task: ProductionTask): boolean {
   if (taskHasTerminalFailure(task)) return false;
   if (isTaskReady(task)) return false;
   if (taskAwaitingAccept(task)) return false;
+  if (taskNeedsRender(task)) return false;
   if (acceptAttemptsExhausted(task)) return false;
   return true;
 }

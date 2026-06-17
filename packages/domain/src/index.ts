@@ -17,6 +17,8 @@ export * from "./utils/messages/human-content.js";
 export * from "./utils/checkpoint-messages.js";
 export * from "./utils/conversation-title.js";
 export * from "./utils/delivery.js";
+export * from "./utils/aspect-ratio.js";
+export * from "./utils/image-aspect-ratio.js";
 export * from "./utils/media-modalities.js";
 export * from "./utils/discover/taxonomy.js";
 export * from "./utils/publication-slug.js";

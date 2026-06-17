@@ -26,6 +26,8 @@ export type StructuredInvokeOptions = {
   name?: string;
   method?: StructuredOutputMethod;
   meteringModelId?: MeteringModelId;
+  /** 保留 human 消息中的 image_url / 多模态 part（默认会压平成纯文本） */
+  preserveMultimodal?: boolean;
 };
 
 type ChatModelWithKwargs = BaseChatModel & {
@@ -67,8 +69,9 @@ function forStructuredInvoke(llm: BaseChatModel): BaseChatModel {
 
 function sanitizeStructuredInput(
   input: BaseLanguageModelInput,
+  preserveMultimodal?: boolean,
 ): BaseLanguageModelInput {
-  if (!Array.isArray(input)) return input;
+  if (preserveMultimodal || !Array.isArray(input)) return input;
   return sanitizeMessagesForTextChat(input as BaseMessage[]);
 }
 
@@ -113,9 +116,9 @@ export async function invokeStructured<T extends Record<string, unknown>>(
     includeRaw: true,
   });
   const result = (await structured.invoke(
-    sanitizeStructuredInput(input),
+    sanitizeStructuredInput(input, options?.preserveMultimodal),
     meteredConfig,
-  )) as { parsed: T; raw: BaseMessage };
+  )) as { parsed: T | null | undefined; raw: BaseMessage };
   if (getRunMeteringAccumulator(config).callCount === callCountBefore) {
     const raw = result.raw;
     if (raw instanceof AIMessage) {
@@ -126,5 +129,27 @@ export async function invokeStructured<T extends Record<string, unknown>>(
       );
     }
   }
+  if (result.parsed == null) {
+    throw new Error("STRUCTURED_OUTPUT_PARSE_FAILED");
+  }
   return result.parsed;
+}
+
+/** 多模态结构化输出（图片/视频帧等 content part 不会被压平成纯文本）。 */
+export async function invokeMultimodalStructured<
+  T extends Record<string, unknown>,
+>(
+  llm: BaseChatModel,
+  schema: z.ZodType<T>,
+  input: BaseLanguageModelInput,
+  options?: Omit<StructuredInvokeOptions, "preserveMultimodal">,
+  config?: RunnableConfig,
+): Promise<T> {
+  return invokeStructured(
+    llm,
+    schema,
+    input,
+    { ...options, preserveMultimodal: true },
+    config,
+  );
 }

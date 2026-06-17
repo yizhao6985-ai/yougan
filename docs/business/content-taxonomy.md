@@ -158,7 +158,7 @@ flowchart LR
 | 侧栏 / API | `PATCH Work` + 线程同步 | 可更新 `profile`、`references`、`preview` |
 | 聊天 | profile / reference / production / ask 子图 | 对话工具改方案、参考与作品预览 |
 | 定方案 | profile 子图按步骤工具 | 用户明确体裁/形式/结构/规则时写入对应步骤 |
-| 备参考 | reference 子图 `analyzeNewAssets` | 新附件分析入库 |
+| 备参考 | reference 子图 `preprocessReferences` | 新附件预处理分析入库 |
 | 制作入口 | `planProduction` 节点 | 创意总监基于现有方案（可不完整）制定制作计划 |
 | 制作执行 | `execute_task` 等 | 单任务执行、方向验收、备妥后整合 |
 | 发布 | 发布确认弹窗 | 用户可覆盖最终分类 |
