@@ -14,9 +14,8 @@ function tokensForWordCount(maxChars: number): number {
  */
 export function resolveProductionMaxTokens(profile: WorkProfile): number {
   const base = env.llmProductionMaxTokens;
-  if (profile.delivery.params.kind !== "text") return base;
 
-  const maxChars = profile.delivery.params.word_count?.max;
+  const maxChars = profile.delivery.media_params.text?.word_count?.max;
   if (maxChars == null || maxChars <= 0) return base;
 
   return Math.min(

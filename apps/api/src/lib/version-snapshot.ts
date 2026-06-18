@@ -6,8 +6,8 @@ import {
   parseProfileJson,
   parseReferencesJson,
   parseWorkPreview,
+  previewPlainText,
   resolveReferencesFromWork,
-  type WorkPreview,
   type WorkVersionSnapshot,
 } from "@yougan/domain";
 
@@ -94,7 +94,7 @@ export function previewVersionSummary(next: WorkVersionSnapshot): string {
   const preview = next.production.preview;
   return (
     preview?.title?.trim() ||
-    preview?.body?.trim().slice(0, 80) ||
+    previewPlainText(preview, 80) ||
     "生成作品预览"
   );
 }

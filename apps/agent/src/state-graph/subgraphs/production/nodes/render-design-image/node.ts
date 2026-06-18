@@ -23,17 +23,13 @@ function buildImageGenerationPrompt(input: {
   body: string;
   aspectRatio: string;
   notes?: string | null;
-  negativePrompt?: string | null;
 }): string {
   const parts = [input.body.trim()];
   parts.push(
-    `Composition: ${input.aspectRatio} aspect ratio, edge-to-edge full bleed, no letterbox bars or black borders.`,
+    `Composition: ${input.aspectRatio} aspect ratio, full-bleed, subject and scene fill the entire frame edge to edge.`,
   );
   if (input.notes?.trim()) {
     parts.push(`Context: ${input.notes.trim()}`);
-  }
-  if (input.negativePrompt?.trim()) {
-    parts.push(`Avoid: ${input.negativePrompt.trim()}`);
   }
   return parts.join("\n\n");
 }
@@ -71,7 +67,6 @@ export async function renderDesignImageNode(
             body: promptBody,
             aspectRatio,
             notes: deliverable?.notes,
-            negativePrompt: deliverable?.negative_prompt,
           }),
           aspectRatio,
           responseFormat: "url",

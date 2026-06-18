@@ -3,6 +3,7 @@ import {
   buildProfileSetupSuggestionPromptBlock,
   buildProfileStepPromptSection,
   isProfileSetupPhase,
+  previewPlainText,
   type ProfileSetupSuggestionFocus,
 } from "@yougan/domain";
 
@@ -23,8 +24,8 @@ export function buildWorkStateSection(
     : [...EMPTY_WORK_REFERENCES];
   const preview = state.production?.preview;
 
-  const previewLine = preview?.body?.trim()
-    ? `已有预览正文（节选）：${preview.body.slice(0, 200)}…`
+  const previewLine = preview?.blocks?.length
+    ? `已有预览成稿（节选）：${previewPlainText(preview, 200)}`
     : "尚无预览成稿";
 
   const profileBlock = isProfileSetupPhase(profile)

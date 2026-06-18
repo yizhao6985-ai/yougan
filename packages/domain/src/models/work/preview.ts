@@ -1,9 +1,52 @@
-/** 预览中的单张配图 */
+/** 产物块类型：按数组顺序在 Studio / 发现页纵向展示 */
+export type PreviewBlockType = "text" | "image" | "audio" | "video";
+
+export interface PreviewBlockBase {
+  id: string;
+  taskId?: string | null;
+}
+
+export interface TextPreviewBlock extends PreviewBlockBase {
+  type: "text";
+  markdown: string;
+}
+
+/** 设计任务成图；transient 由 API 物化后剥离 */
+export interface ImagePreviewBlock extends PreviewBlockBase {
+  type: "image";
+  url: string;
+  alt?: string | null;
+  prompt?: string | null;
+  transient?: boolean;
+}
+
+export interface AudioPreviewBlock extends PreviewBlockBase {
+  type: "audio";
+  url: string;
+  title?: string | null;
+  durationSec?: number | null;
+  transcript?: string | null;
+}
+
+export interface VideoPreviewBlock extends PreviewBlockBase {
+  type: "video";
+  url: string;
+  posterUrl?: string | null;
+  title?: string | null;
+  durationSec?: number | null;
+}
+
+export type PreviewBlock =
+  | TextPreviewBlock
+  | ImagePreviewBlock
+  | AudioPreviewBlock
+  | VideoPreviewBlock;
+
+/** 任务 deliverable 中的单张配图（整合前进 preview.blocks） */
 export interface WorkPreviewImage {
   url: string;
   alt?: string | null;
   prompt?: string | null;
-  /** Agent 写入的外部临时链（如 MiniMax）；API sync 时物化后移除 */
   transient?: boolean;
 }
 
@@ -14,11 +57,9 @@ export interface WorkPreviewImage {
 export interface WorkPreview {
   platform: string;
   title?: string | null;
-  /** 成稿正文或短说明（插画体裁亦保留一段说明） */
-  body: string;
-  hashtags?: string[];
   hook?: string | null;
-  /** 制作备注（内部说明，非正文） */
+  hashtags?: string[];
+  /** 制作备注（内部说明，默认不进公开展示） */
   notes?: string | null;
-  images?: WorkPreviewImage[];
+  blocks: PreviewBlock[];
 }

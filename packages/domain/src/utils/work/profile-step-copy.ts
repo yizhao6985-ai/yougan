@@ -28,9 +28,9 @@ const DEFAULT_EXAMPLES: Record<
     "30 分钟创业者访谈播客",
   ],
   delivery: [
-    "小红书图文笔记，3 图配文",
+    "图文笔记，文字+图片，800 字以内，图片 3:4",
     "竖屏 60 秒短视频，快节奏口播",
-    "4 张 16:9 概念插画",
+    "16:9 概念插画（纯图片）",
     "15 分钟单口播客",
   ],
   expression: [
@@ -42,8 +42,8 @@ const DEFAULT_EXAMPLES: Record<
   structure: [
     "开头用痛点引入，中间对比三款，结尾给购买建议",
     "主角是刚入行的产品经理",
-    "分镜：门头特写 → 产品展示 → 口播总结",
-    "第一段钩子，第二段展开，第三段行动号召",
+    "text 痛点引入 → image 产品对比图 → text 购买建议",
+    "text 钩子 → video 产品展示 → text 总结号召",
   ],
   constraints: [
     "不要出现真实品牌名",
@@ -104,12 +104,12 @@ const DEFAULT_STEP_COPY: Record<
     placeholder: "说说创作方向，例如：职场新人效率工具测评…",
   },
   delivery: {
-    title: "体裁与参数",
-    hint: "选定交付形态（图文、视频、插画等）、发布平台与字数/画幅/时长等参数",
-    emptyTitle: "还没定体裁",
+    title: "内容形态与规格",
+    hint: "形态是创作模板；内容媒介列出作品实际包含的媒介；media_params 只写各媒介最小单元规格（画幅/字数/时长等），不写张数或段落数",
+    emptyTitle: "还没定内容形态",
     emptyBody:
-      "在对话里说，例如：「小红书图文笔记」或「竖屏 60 秒短视频，时长约 1 分钟」",
-    placeholder: "说说体裁与参数，例如：小红书图文、竖屏短视频 60 秒…",
+      "例如：「图文笔记，文字+图片，800 字以内，图片 3:4」→ format=note, modalities=[text,image], word_count_max=800, aspect_ratio=3:4",
+    placeholder: "说说形态、媒介与规格，例如：note + 文字图片混排，800 字内，3:4 竖图…",
   },
   expression: {
     title: "表达设定",
@@ -121,11 +121,11 @@ const DEFAULT_STEP_COPY: Record<
   },
   structure: {
     title: "结构与要素",
-    hint: "补充固定设定（人物、背景等）与内容结构（段落、分镜、章节顺序）",
+    hint: "补充固定设定（人物、背景等）与结构段顺序；每段用 role 标明媒介（text / image / audio / video）",
     emptyTitle: "暂无结构与要素",
     emptyBody:
-      "可选。需要可说：「主角是刚入行的产品经理」或「开头钩子，中间对比，结尾号召」",
-    placeholder: "说说结构或关键要素，例如：三幕结构，第二幕对比竞品…",
+      "可选。例如：「主角是产品经理」或「第 1 段 text 写痛点，第 2 段 image 放对比图」",
+    placeholder: "说说设定或结构段顺序，例如：text 导语 → image 主图 → text 总结…",
   },
   constraints: {
     title: "创作规则",
@@ -135,19 +135,6 @@ const DEFAULT_STEP_COPY: Record<
       "可选。需要可说：「不要出现真实品牌名」或「必须提到 SPF50」",
     placeholder: "说说限制或必含要素，例如：不出现竞品名、必须标注数据来源…",
   },
-};
-
-const STRUCTURE_SEGMENTS_LABEL: Partial<Record<ContentFormatId, string>> = {
-  illustration: "构图与画面结构",
-  short_video: "分镜大纲",
-  video_script: "分镜大纲",
-  podcast: "章节大纲",
-  music: "段落结构",
-  novel: "章节大纲",
-  article: "段落大纲",
-  blog: "段落大纲",
-  note: "段落大纲",
-  short_post: "段落大纲",
 };
 
 function resolveFormat(profile: WorkProfile): ContentFormatId | null {
@@ -201,13 +188,8 @@ export function getProfileStepCopy(
     return mergeStepCopy("intent", FORMAT_INTENT[format]);
   }
 
-  if (step === "structure" && format) {
-    const segmentLabel = STRUCTURE_SEGMENTS_LABEL[format] ?? "结构大纲";
-    return mergeStepCopy("structure", {
-      title: "结构与要素",
-      hint: `固定设定与${segmentLabel}`,
-      emptyBody: `可选。需要可说设定对象/背景，或补充${segmentLabel}`,
-    });
+  if (step === "structure") {
+    return mergeStepCopy("structure");
   }
 
   return mergeStepCopy(step);

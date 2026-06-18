@@ -1,19 +1,19 @@
 /** summarizeProduction 对话文案 */
-import type { WorkPreview, WorkProduction } from "@yougan/domain";
+import {
+  previewPlainText,
+  type WorkPreview,
+  type WorkProduction,
+} from "@yougan/domain";
 
 import { firstProductionFailureMessage } from "../../../helpers/task-plan.js";
 
 const PREVIEW_EXCERPT_MAX = 1200;
 
 function formatPreviewExcerpt(preview: WorkPreview): string {
-  const body = preview.body.trim();
+  const plain = previewPlainText(preview, PREVIEW_EXCERPT_MAX);
   const title = preview.title?.trim();
-  const excerpt =
-    body.length > PREVIEW_EXCERPT_MAX
-      ? `${body.slice(0, PREVIEW_EXCERPT_MAX)}…`
-      : body;
   const titleBlock = title ? `**${title}**\n\n` : "";
-  return `${titleBlock}${excerpt}\n\n---\n完整成稿已同步到右侧「作品」面板，可复制或发布。`;
+  return `${titleBlock}${plain || "（以配图/音视频为主）"}\n\n---\n完整成稿已同步到右侧「作品」面板，可复制或发布。`;
 }
 
 /**
@@ -24,7 +24,7 @@ export function buildProductionSummaryMessage(
   production: WorkProduction,
 ): string {
   const preview = production.preview;
-  if (preview?.body?.trim()) {
+  if (preview?.blocks?.length) {
     return formatPreviewExcerpt(preview);
   }
 

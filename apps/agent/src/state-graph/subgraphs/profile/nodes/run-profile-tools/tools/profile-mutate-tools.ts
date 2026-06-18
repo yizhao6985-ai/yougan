@@ -29,14 +29,14 @@ export const updateProfileIntent = createProfileTool({
 export const updateProfileDelivery = createProfileTool({
   name: "update_profile_delivery",
   description:
-    "更新方案第 2 步「体裁与参数」（format、platform、modalities、字数/画幅/时长等 params）。",
+    "更新方案第 2 步「内容形态与规格」（format、modalities、分媒介 media_params）。",
   schema: deliveryStepFieldsSchema,
   toPatch: (input) => {
     const profile = getProfile(getState());
     const delivery = buildDeliveryStepPatch(profile, input);
     return delivery ? { delivery } : {};
   },
-  emptyMessage: "未提供可更新的体裁与参数字段。",
+  emptyMessage: "未提供可更新的内容形态与规格字段。",
 });
 
 export const updateProfileExpression = createProfileTool({
@@ -53,7 +53,7 @@ export const updateProfileExpression = createProfileTool({
 export const updateProfileStructure = createProfileTool({
   name: "update_profile_structure",
   description:
-    "更新方案第 4 步「结构与要素」（固定设定 settings、结构段 segments）。",
+    "更新方案第 4 步「结构与要素」（固定设定 settings、结构段 segments；role 仅 text/image/audio/video）。",
   schema: structureFieldsSchema,
   toPatch: (input) => buildStructurePatch(input),
   emptyMessage: "未提供可更新的结构与要素字段。",

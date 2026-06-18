@@ -1,5 +1,4 @@
 import type { ContentFormatId, MediaModalityId } from "../taxonomy/content.js";
-import type { DiscoverTopicCategoryId } from "../taxonomy/discover.js";
 
 /** 方案向导步骤（含虚拟完成态 ready） */
 export type ProfileSetupStep = ProfileStepId | "ready";
@@ -18,13 +17,41 @@ export interface ProfileIntentStep {
   summary: string;
 }
 
-/** ② 体裁与参数 */
+export interface TextMediaParams {
+  word_count?: { min?: number; max?: number };
+  emoji_level?: "none" | "light" | "heavy";
+}
+
+export interface ImageMediaParams {
+  aspect_ratio?: string;
+}
+
+export interface VideoMediaParams {
+  duration_sec?: number;
+  aspect_ratio?: string;
+  pacing?: "fast" | "medium" | "slow" | string;
+}
+
+export interface AudioMediaParams {
+  duration_sec?: number;
+}
+
+/** 按媒介拆分的作品规格（支持混排） */
+export interface DeliveryMediaParams {
+  text?: TextMediaParams;
+  image?: ImageMediaParams;
+  video?: VideoMediaParams;
+  audio?: AudioMediaParams;
+}
+
+/** ② 内容形态与规格 */
 export interface ProfileDeliveryStep {
+  /** 主内容形态（创作模板/归类，不限制实际媒介组合） */
   format: ContentFormatId | null;
+  /** 作品实际包含的媒介；混排须全部列出，如 ["text", "image"] */
   modalities: MediaModalityId[];
-  platform?: string | null;
-  category?: DiscoverTopicCategoryId | null;
-  params: FormatParams;
+  /** 各媒介最小单元规格（画幅、字数范围、时长等；不含张数/段落数） */
+  media_params: DeliveryMediaParams;
 }
 
 /** ③ 表达设定 */
@@ -34,25 +61,10 @@ export interface ProfileExpressionStep {
   visual?: string | null;
 }
 
-/** 结构段角色（跨体裁复用） */
-export type SegmentRole =
-  | "hook"
-  | "context"
-  | "point"
-  | "example"
-  | "cta"
-  | "chapter"
-  | "scene"
-  | "shot"
-  | "broll"
-  | "transition"
-  | "subject"
-  | "composition"
-  | "detail"
-  | "intro"
-  | "segment"
-  | "outro"
-  | "bridge";
+/** 结构段媒介节拍（与作品 blocks 顺序对应） */
+export const SEGMENT_ROLES = ["text", "image", "audio", "video"] as const;
+
+export type SegmentRole = (typeof SEGMENT_ROLES)[number];
 
 export interface ProfileSegment {
   id: string;
@@ -93,40 +105,6 @@ export interface ProfileConstraintsStep {
   rules: ProfileConstraint[];
 }
 
-export interface TextFormatParams {
-  kind: "text";
-  word_count?: { min?: number; max?: number };
-  emoji_level?: "none" | "light" | "heavy";
-  /** 图文混排等体裁的配图画幅（design 出图时使用） */
-  aspect_ratio?: string;
-}
-
-export interface IllustrationFormatParams {
-  kind: "illustration";
-  aspect_ratio?: "1:1" | "3:4" | "4:3" | "16:9" | "9:16" | string;
-  image_count?: number;
-  negative_hints?: string[];
-}
-
-export interface VideoFormatParams {
-  kind: "video";
-  duration_sec?: number;
-  aspect_ratio?: string;
-  pacing?: "fast" | "medium" | "slow" | string;
-}
-
-export interface AudioFormatParams {
-  kind: "audio";
-  duration_sec?: number;
-  segment_count?: number;
-}
-
-export type FormatParams =
-  | TextFormatParams
-  | IllustrationFormatParams
-  | VideoFormatParams
-  | AudioFormatParams;
-
 /**
  * 作品制作方案：按步骤组织。
  * references 在 Work 顶层维护，不在 profile 内。
@@ -139,12 +117,10 @@ export interface WorkProfile {
   constraints: ProfileConstraintsStep;
 }
 
-/** 运行时推断交付规格时的输入（delivery 字段；创作定位见 profile.intent.summary） */
+/** 运行时推断交付规格（创作阶段不含发布分类） */
 export type DeliverySpec = {
   format: ContentFormatId | null;
   modalities: MediaModalityId[];
-  platform?: string | null;
-  category?: DiscoverTopicCategoryId | null;
 };
 
 export const EMPTY_PROFILE_INTENT: ProfileIntentStep = {
@@ -154,9 +130,7 @@ export const EMPTY_PROFILE_INTENT: ProfileIntentStep = {
 export const EMPTY_PROFILE_DELIVERY: ProfileDeliveryStep = {
   format: null,
   modalities: [],
-  platform: null,
-  category: null,
-  params: { kind: "text" },
+  media_params: {},
 };
 
 export const EMPTY_PROFILE_STRUCTURE: ProfileStructureStep = {

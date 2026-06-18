@@ -3,7 +3,9 @@ import {
   EMPTY_WORK_PRODUCTION,
   type WorkProduction,
 } from "../../models/work/production.js";
-import type { WorkPreview } from "../../models/work/preview.js";
+import { parseWorkPreview } from "./preview.js";
+
+export { parseWorkPreview } from "./preview.js";
 
 /** @deprecated 使用 getUserRequirements */
 export function getPlanSummary(production: WorkProduction): string | null {
@@ -15,13 +17,6 @@ export function getUserRequirements(
   production: WorkProduction,
 ): string | null {
   return production.summary ?? null;
-}
-
-export function parseWorkPreview(raw: unknown): WorkPreview | null {
-  if (!raw || typeof raw !== "object") return null;
-  const value = raw as WorkPreview;
-  if (!value.body || !value.platform) return null;
-  return value;
 }
 
 /** 解析 production JSON（含 preview） */

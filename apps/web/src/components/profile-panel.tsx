@@ -2,7 +2,11 @@ import { useCallback, useMemo, useState } from "react";
 import { CheckIcon, PencilIcon, Trash2Icon } from "lucide-react";
 
 import {
+  EMPTY_WORK_PROFILE,
+  buildDeliveryModalitySpecSections,
   getProfileStepCopy,
+  modalityLabel,
+  parseProfileJson,
   type ProfileSetupStep,
 } from "@yougan/domain";
 
@@ -17,7 +21,6 @@ import { cn } from "@/lib/utils";
 import { PROFILE_WIZARD } from "@/lib/site-copy";
 import { buildProfileSetupView } from "@/lib/profile-setup-display";
 import { formatLabel } from "@/lib/discover-taxonomy";
-import { platformLabel } from "@/lib/platform-labels";
 import type { WorkProfile, ProfileSettingKind } from "@/lib/types";
 
 function GuidedEmpty({
@@ -152,65 +155,74 @@ function SpecRows({ rows }: { rows: Array<{ label: string; value: string }> }) {
   );
 }
 
-function formatDeliveryRows(profile: WorkProfile) {
+function DeliverySpecDisplay({ profile }: { profile: WorkProfile }) {
   const { delivery } = profile;
-  const { params } = delivery;
-  const rows: Array<{ label: string; value: string }> = [];
+  const modalities = delivery.modalities ?? [];
+  const metaRows: Array<{ label: string; value: string }> = [];
 
   if (delivery.format) {
-    rows.push({
-      label: "体裁",
+    metaRows.push({
+      label: "形态",
       value: formatLabel(delivery.format) ?? delivery.format,
     });
   }
-  if (delivery.platform) {
-    rows.push({ label: "平台", value: platformLabel(delivery.platform) });
+  if (modalities.length) {
+    metaRows.push({
+      label: "内容媒介",
+      value: modalities.map((id) => modalityLabel(id)).join(" + "),
+    });
   }
 
-  if (params.kind === "text") {
-    const { min, max } = params.word_count ?? {};
-    if (min != null || max != null) {
-      const parts = [
-        min != null ? `最少 ${min} 字` : null,
-        max != null ? `最多 ${max} 字` : null,
-      ].filter(Boolean);
-      rows.push({ label: "字数", value: parts.join("，") });
-    }
-    if (params.emoji_level) {
-      const labels = { none: "不用", light: "少量", heavy: "较多" } as const;
-      rows.push({ label: "Emoji", value: labels[params.emoji_level] });
-    }
-    if (params.aspect_ratio) rows.push({ label: "画幅", value: params.aspect_ratio });
-  }
+  const sections = buildDeliveryModalitySpecSections({
+    modalities,
+    media_params: delivery.media_params ?? {},
+  });
 
-  if (params.kind === "illustration") {
-    if (params.aspect_ratio) rows.push({ label: "画幅", value: params.aspect_ratio });
-    if (params.image_count != null) {
-      rows.push({ label: "图片数", value: String(params.image_count) });
-    }
-    if (params.negative_hints?.length) {
-      rows.push({ label: "负面提示", value: params.negative_hints.join("、") });
-    }
-  }
+  if (!metaRows.length && !sections.length) return null;
 
-  if (params.kind === "video") {
-    if (params.duration_sec != null) {
-      rows.push({ label: "时长", value: `${params.duration_sec} 秒` });
-    }
-    if (params.aspect_ratio) rows.push({ label: "画幅", value: params.aspect_ratio });
-    if (params.pacing) rows.push({ label: "节奏", value: params.pacing });
-  }
+  return (
+    <div className="space-y-3">
+      {metaRows.length ? <SpecRows rows={metaRows} /> : null}
+      {sections.map((section) => (
+        <CreativeContextInset key={section.modality}>
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {section.title}规格
+          </p>
+          <dl className="grid gap-2 text-sm">
+            {section.rows.map((row) => (
+              <div key={row.label} className="grid grid-cols-[4.5rem_1fr] gap-2">
+                <dt className="text-muted-foreground">{row.label}</dt>
+                <dd className="text-foreground">{row.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </CreativeContextInset>
+      ))}
+      {modalities.length > sections.length ? (
+        <p className="text-xs leading-5 text-muted-foreground">
+          已选媒介中，{modalities
+            .filter(
+              (id) => !sections.some((section) => section.modality === id),
+            )
+            .map((id) => modalityLabel(id))
+            .join("、")}
+          尚未填写规格，可在对话中补充。
+        </p>
+      ) : null}
+    </div>
+  );
+}
 
-  if (params.kind === "audio") {
-    if (params.duration_sec != null) {
-      rows.push({ label: "时长", value: `${params.duration_sec} 秒` });
-    }
-    if (params.segment_count != null) {
-      rows.push({ label: "段落数", value: String(params.segment_count) });
-    }
-  }
-
-  return rows;
+function hasDeliveryContent(profile: WorkProfile): boolean {
+  const { delivery } = profile;
+  return (
+    Boolean(delivery.format) ||
+    (delivery.modalities?.length ?? 0) > 0 ||
+    buildDeliveryModalitySpecSections({
+      modalities: delivery.modalities ?? [],
+      media_params: delivery.media_params ?? {},
+    }).length > 0
+  );
 }
 
 function formatExpressionRows(profile: WorkProfile) {
@@ -449,8 +461,8 @@ function StepContent({
     }
 
     case "delivery":
-      return formatDeliveryRows(profile).length > 0 ? (
-        <SpecRows rows={formatDeliveryRows(profile)} />
+      return hasDeliveryContent(profile) ? (
+        <DeliverySpecDisplay profile={profile} />
       ) : (
         empty
       );
@@ -528,14 +540,17 @@ function StepContent({
                 {profile.structure.segments.map((item, index) => (
                   <EditableTextItem
                     key={item.id}
-                    description={`${index + 1}. ${item.description}`}
+                    heading={
+                      item.role
+                        ? `${index + 1}. ${formatLabel(item.role) ?? item.role}`
+                        : `${index + 1}.`
+                    }
+                    description={item.description}
                     confirmedAt={item.confirmed_at}
                     editable={editable}
                     editLabel="修改结构段"
                     deleteLabel="删除结构段"
-                    onEdit={(next) =>
-                      onUpdateSegment?.(item.id, next.replace(/^\d+\.\s*/, ""))
-                    }
+                    onEdit={(next) => onUpdateSegment?.(item.id, next)}
                     onDelete={() => onDeleteSegment?.(item.id)}
                   />
                 ))}
@@ -588,19 +603,7 @@ function StepContent({
   }
 }
 
-const EMPTY_PROFILE: WorkProfile = {
-  intent: { summary: "" },
-  delivery: {
-    format: null,
-    modalities: [],
-    platform: null,
-    category: null,
-    params: { kind: "text" },
-  },
-  expression: {},
-  structure: { settings: [], segments: [] },
-  constraints: { rules: [] },
-};
+const EMPTY_PROFILE = EMPTY_WORK_PROFILE;
 
 export function ProfilePanel({
   profile,
@@ -629,12 +632,15 @@ export function ProfilePanel({
   onClearSettings?: () => void;
   onClearSegments?: () => void;
 }) {
-  const data = profile ?? EMPTY_PROFILE;
+  const normalizedProfile = useMemo(
+    () => parseProfileJson(profile ?? EMPTY_PROFILE),
+    [profile],
+  );
   const [skippedSteps, setSkippedSteps] = useState<ProfileSetupStep[]>([]);
 
   const setupView = useMemo(
-    () => buildProfileSetupView(data, { skippedSteps }),
-    [data, skippedSteps],
+    () => buildProfileSetupView(normalizedProfile, { skippedSteps }),
+    [normalizedProfile, skippedSteps],
   );
   const { state, headline, activeStep } = setupView;
 
@@ -661,7 +667,7 @@ export function ProfilePanel({
         <p className="text-sm font-medium text-foreground">{headline}</p>
         <ProfileStepList
           steps={state.steps}
-          profile={data}
+          profile={normalizedProfile}
           activeStepId={activeStep}
           editable={editable}
           onUpdateConstraint={onUpdateConstraint}

@@ -19,6 +19,7 @@ import { NextStepSuggestionOptions } from "@/components/studio/next-step-suggest
 import { OpeningNextStepSuggestions } from "@/components/studio/opening-next-step-suggestions";
 import { useTurnNextStepSuggestions } from "@/hooks/use-turn-next-step-suggestions";
 import { ChatLoadingDots } from "@/components/studio/chat-loading-dots";
+import { ChatRunProgress } from "@/components/studio/chat-run-progress";
 import { StudioChatComposer } from "@/components/studio/studio-chat-composer";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { useYouganStreamContext } from "@/components/studio/yougan-stream-provider";
@@ -188,6 +189,15 @@ export function YouganChat() {
     }
   })();
 
+  const conversationRunProgress = runProgress?.label
+    ? {
+        label: runProgress.label,
+        detail: runProgress.detail?.trim() || null,
+      }
+    : stream.isLoading
+      ? { label: statusHint, detail: null }
+      : null;
+
   const composerPlaceholder = profileSetupPlaceholder(
     profile,
     activeKind === "profile" || activeKind == null ? "profile" : activeKind,
@@ -199,9 +209,7 @@ export function YouganChat() {
         <p className={scene.studioPanelHeaderTitle}>
           {activeConversation?.title ?? activeWork.title}
         </p>
-        <p className={scene.studioPanelHeaderHint}>
-          {[activeWork.title, statusHint].join(" · ")}
-        </p>
+        <p className={scene.studioPanelHeaderHint}>{statusHint}</p>
       </div>
 
       <div className="relative min-h-0 flex-1 overflow-hidden">
@@ -232,16 +240,7 @@ export function YouganChat() {
                       disabled={!canSend}
                       onSelect={(value) => void sendMessage(value)}
                     />
-                  ) : (
-                    <p
-                      className={cn(
-                        chatStreamBlock.muted,
-                        "text-center text-sm leading-6",
-                      )}
-                    >
-                      {CHAT_COPY.openingSuggestionsEmpty}
-                    </p>
-                  )}
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -363,8 +362,15 @@ export function YouganChat() {
 
               {showShimmer && (
                 <Message from="assistant" className="max-w-full">
-                  <MessageContent>
-                    <ChatLoadingDots />
+                  <MessageContent className="w-full max-w-full p-0">
+                    {conversationRunProgress ? (
+                      <ChatRunProgress
+                        label={conversationRunProgress.label}
+                        detail={conversationRunProgress.detail}
+                      />
+                    ) : (
+                      <ChatLoadingDots />
+                    )}
                   </MessageContent>
                 </Message>
               )}

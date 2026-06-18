@@ -1,4 +1,5 @@
 import { EMPTY_WORK_PROFILE, type WorkProfile } from "../models/work/profile.js";
+import { mergeDeliveryMediaParams } from "./work/delivery-media-params.js";
 import { isProfileEmpty, parseProfileJson } from "./work/profile.js";
 
 function isProfileAuthoritativeReplace(base: WorkProfile, next: WorkProfile): boolean {
@@ -46,10 +47,10 @@ export function mergeProfileState(
     delivery: {
       ...base.delivery,
       ...patch.delivery,
-      params:
-        patch.delivery.params.kind !== base.delivery.params.kind
-          ? patch.delivery.params
-          : patch.delivery.params,
+      media_params: mergeDeliveryMediaParams(
+        base.delivery.media_params,
+        patch.delivery.media_params,
+      ),
     },
     expression: {
       audience: patch.expression.audience ?? base.expression.audience,

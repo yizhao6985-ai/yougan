@@ -6,7 +6,6 @@ import { END, START, StateGraph } from "@langchain/langgraph";
 import { checkpointer } from "./checkpointer.js";
 import * as afterConfirmProductionTurn from "./state-graph/conditional-edges/after-confirm-production-turn.js";
 import * as afterAdvanceTurnQueue from "./state-graph/conditional-edges/after-advance-turn-queue.js";
-import * as afterCommitTurn from "./state-graph/conditional-edges/after-commit-turn.js";
 import * as afterDispatchTurnQueue from "./state-graph/conditional-edges/after-dispatch-turn-queue.js";
 import * as afterGateAiQuota from "./state-graph/conditional-edges/after-gate-ai-quota.js";
 import * as atGraphStart from "./state-graph/conditional-edges/at-graph-start.js";
@@ -16,7 +15,6 @@ import { commitTurnNode } from "./state-graph/nodes/commit-turn/node.js";
 import { dispatchTurnQueueNode } from "./state-graph/nodes/dispatch-turn-queue/node.js";
 import { finalizeRunMeteringNode } from "./state-graph/nodes/finalize-run-metering/node.js";
 import { gateAiQuotaNode } from "./state-graph/nodes/gate-ai-quota/node.js";
-import { postCommitNode } from "./state-graph/nodes/post-commit/node.js";
 import { planTurnQueueNode } from "./state-graph/nodes/plan-turn-queue/node.js";
 import { summarizeMessagesNode } from "./state-graph/nodes/summarize-messages/node.js";
 import { askGraph } from "./state-graph/subgraphs/ask/graph.js";
@@ -34,7 +32,6 @@ const workflow = new StateGraph(AgentState)
   .addNode("confirmProductionTurn", confirmProductionTurnNode)
   .addNode("advanceTurnQueue", advanceTurnQueueNode)
   .addNode("commitTurn", commitTurnNode)
-  .addNode("postCommit", postCommitNode)
   .addNode("summarizeMessages", summarizeMessagesNode)
   .addNode("referenceGraph", referenceGraph)
   .addNode("profileGraph", profileGraph)
@@ -73,12 +70,7 @@ const workflow = new StateGraph(AgentState)
     afterAdvanceTurnQueue.selectAfterAdvanceTurnQueue,
     afterAdvanceTurnQueue.paths,
   )
-  .addConditionalEdges(
-    afterCommitTurn.from,
-    afterCommitTurn.selectAfterCommitTurn,
-    afterCommitTurn.paths,
-  )
-  .addEdge("postCommit", "summarizeMessages")
+  .addEdge("commitTurn", "summarizeMessages")
   .addEdge("summarizeMessages", "finalizeRunMetering");
 
 export const graph = workflow.compile({ checkpointer });

@@ -1,4 +1,5 @@
 /** planTurnQueue 用：根据用户最新消息判定 turnQueue kinds */
+import { previewHasContent } from "@yougan/domain";
 import { profileSummary } from "#agent/prompts/profile-summary.js";
 import { YOUGAN_USER_LABEL } from "#agent/system-prompt.js";
 import type { AgentStateType } from "#agent/state.js";
@@ -15,7 +16,7 @@ export function buildTurnQueuePrompt(
 ): string {
   const profile = getProfile(state);
   const references = getReferences(state);
-  const hasPreview = Boolean(getPreview(state)?.body?.trim());
+  const hasPreview = previewHasContent(getPreview(state));
   const hasAttachments =
     getLatestHumanMessageAttachments(state.messages).length > 0;
 

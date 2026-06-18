@@ -12,16 +12,24 @@ import {
   type ProfileSegment,
   type ProfileSetting,
   type ProfileSettingKind,
+  SEGMENT_ROLES,
   type SegmentRole,
   type WorkProfile,
+  type DeliveryMediaParams,
+  type TextMediaParams,
 } from "../../models/work/profile.js";
 import { parseReferencesJson } from "./reference.js";
 import {
   isValidContentFormat,
-  parseFormatParams,
   resolveDelivery,
   type ResolvedDelivery,
 } from "../delivery.js";
+import {
+  defaultMediaParamsForFormat,
+  parseDeliveryMediaParams,
+  syncModalitiesWithFormat,
+} from "./delivery-media-params.js";
+import { syncMediaParamsWithModalities } from "./delivery-display.js";
 import { isMediaModalityId, sortMediaModalities } from "../media-modalities.js";
 
 function newId(prefix: string): string {
@@ -61,38 +69,26 @@ export function normalizeConstraintScope(
     : fallback;
 }
 
+/** 结构段 role 仅允许 text / image / audio / video */
+export function normalizeSegmentRole(
+  value: unknown,
+): SegmentRole | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim().toLowerCase();
+  return SEGMENT_ROLES.includes(trimmed as SegmentRole)
+    ? (trimmed as SegmentRole)
+    : null;
+}
+
 export function newProfileSegment(
   description: string,
   role?: SegmentRole | string | null,
   title?: string | null,
 ): ProfileSegment {
-  const validRoles: SegmentRole[] = [
-    "hook",
-    "context",
-    "point",
-    "example",
-    "cta",
-    "chapter",
-    "scene",
-    "shot",
-    "broll",
-    "transition",
-    "subject",
-    "composition",
-    "detail",
-    "intro",
-    "segment",
-    "outro",
-    "bridge",
-  ];
-  const normalizedRole =
-    role && validRoles.includes(role as SegmentRole)
-      ? (role as SegmentRole)
-      : null;
   return {
     id: newId("segment"),
     description: description.trim(),
-    role: normalizedRole,
+    role: normalizeSegmentRole(role),
     title: title?.trim() || null,
     confirmed_at: new Date().toISOString(),
   };
@@ -130,6 +126,71 @@ export function getIntentSummary(profile: WorkProfile | undefined): string {
   return parseProfileJson(profile).intent.summary.trim();
 }
 
+/** 将旧版 delivery.params 迁移为 media_params（读路径兼容） */
+function migrateLegacyFormatParams(raw: unknown): DeliveryMediaParams {
+  if (!raw || typeof raw !== "object") return {};
+  const params = raw as Record<string, unknown>;
+  const kind = typeof params.kind === "string" ? params.kind : null;
+
+  if (kind === "illustration") {
+    return {
+      image: {
+        aspect_ratio:
+          typeof params.aspect_ratio === "string"
+            ? params.aspect_ratio
+            : undefined,
+      },
+    };
+  }
+
+  if (kind === "video") {
+    return {
+      video: {
+        duration_sec:
+          typeof params.duration_sec === "number"
+            ? params.duration_sec
+            : undefined,
+        aspect_ratio:
+          typeof params.aspect_ratio === "string"
+            ? params.aspect_ratio
+            : undefined,
+        pacing: typeof params.pacing === "string" ? params.pacing : undefined,
+      },
+    };
+  }
+
+  if (kind === "audio") {
+    return {
+      audio: {
+        duration_sec:
+          typeof params.duration_sec === "number"
+            ? params.duration_sec
+            : undefined,
+      },
+    };
+  }
+
+  if (kind === "text" || params.word_count || params.emoji_level) {
+    const wordCountRaw = params.word_count;
+    let word_count: TextMediaParams["word_count"];
+    if (wordCountRaw && typeof wordCountRaw === "object") {
+      const wc = wordCountRaw as Record<string, unknown>;
+      word_count = {
+        min: typeof wc.min === "number" ? wc.min : undefined,
+        max: typeof wc.max === "number" ? wc.max : undefined,
+      };
+    }
+    const emoji = params.emoji_level;
+    const emoji_level =
+      emoji === "none" || emoji === "light" || emoji === "heavy"
+        ? emoji
+        : undefined;
+    return { text: { word_count, emoji_level } };
+  }
+
+  return {};
+}
+
 function parseDeliveryStep(raw: unknown): ProfileDeliveryStep {
   if (!raw || typeof raw !== "object") {
     return { ...EMPTY_PROFILE_DELIVERY };
@@ -145,20 +206,23 @@ function parseDeliveryStep(raw: unknown): ProfileDeliveryStep {
   const rawFormat =
     typeof value.format === "string" ? value.format : null;
   const format = isValidContentFormat(rawFormat) ? rawFormat : null;
-  const params = parseFormatParams(value.params, format);
+  const syncedModalities = syncModalitiesWithFormat(format, modalities);
+  let media_params = parseDeliveryMediaParams(value.media_params);
+  if (!Object.keys(media_params).length && value.params) {
+    media_params = migrateLegacyFormatParams(value.params);
+  }
 
   return {
     format,
-    modalities,
-    platform:
-      typeof value.platform === "string"
-        ? value.platform.trim() || null
-        : null,
-    category:
-      typeof value.category === "string"
-        ? (value.category as ProfileDeliveryStep["category"])
-        : null,
-    params,
+    modalities: syncedModalities,
+    media_params: syncMediaParamsWithModalities(
+      syncedModalities,
+      Object.keys(media_params).length > 0
+        ? media_params
+        : format
+          ? defaultMediaParamsForFormat(format, syncedModalities)
+          : {},
+    ),
   };
 }
 
@@ -209,10 +273,7 @@ function parseStructure(raw: unknown): WorkProfile["structure"] {
             typeof item.confirmed_at === "string"
               ? item.confirmed_at
               : new Date().toISOString(),
-          role:
-            typeof item.role === "string"
-              ? (item.role as SegmentRole)
-              : null,
+          role: normalizeSegmentRole(item.role),
           title: typeof item.title === "string" ? item.title : null,
           description: String(item.description ?? "").trim(),
         }))
@@ -253,7 +314,8 @@ export function isProfileEmpty(profile: WorkProfile | undefined): boolean {
     normalized.constraints.rules.length === 0 &&
     normalized.structure.settings.length === 0 &&
     normalized.structure.segments.length === 0 &&
-    !normalized.delivery.platform
+    !normalized.delivery.format &&
+    !normalized.delivery.modalities.length
   );
 }
 
@@ -321,8 +383,6 @@ export function resolveDeliveryFromProfile(profile: WorkProfile): ResolvedDelive
   return resolveDelivery({
     format: normalized.delivery.format,
     modalities: normalized.delivery.modalities,
-    platform: normalized.delivery.platform,
-    category: normalized.delivery.category,
   });
 }
 
@@ -331,7 +391,5 @@ export function getDeliverySpec(profile: WorkProfile): import("../../models/work
   return {
     format: normalized.delivery.format,
     modalities: normalized.delivery.modalities,
-    platform: normalized.delivery.platform,
-    category: normalized.delivery.category,
   };
 }

@@ -1,3 +1,5 @@
+import type { PreviewBlock } from "@yougan/domain";
+
 export type PublicationStatus = "draft" | "published" | "archived";
 
 export interface PublicationAuthor {
@@ -14,7 +16,7 @@ export interface Publication {
   slug: string;
   title: string;
   excerpt: string | null;
-  body: string;
+  blocks: PreviewBlock[];
   coverUrl: string | null;
   platform: string | null;
   contentFormat: string | null;
@@ -23,7 +25,6 @@ export interface Publication {
   contentType: string | null;
   mediaTypes: string[];
   hashtags: string[];
-  images: Array<Record<string, unknown>>;
   status: PublicationStatus;
   publishedAt: string | null;
   createdAt: string;

@@ -1,8 +1,11 @@
 import {
   CONTENT_FORMATS,
+  MEDIA_MODALITIES,
+  buildDeliveryModalitySpecSections,
   getProfileSummary,
   referenceContentLabel,
   type ContentFormatId,
+  type MediaModalityId,
   type WorkProfile,
   type WorkReference,
 } from "@yougan/domain";
@@ -11,19 +14,29 @@ const FORMAT_LABELS = Object.fromEntries(
   CONTENT_FORMATS.map((item) => [item.id, item.label]),
 ) as Record<ContentFormatId, string>;
 
+const MODALITY_LABELS = Object.fromEntries(
+  MEDIA_MODALITIES.map((item) => [item.id, item.label]),
+) as Record<MediaModalityId, string>;
+
 function contentFormatLabel(id: string | null | undefined) {
   if (!id) return null;
   return FORMAT_LABELS[id as ContentFormatId] ?? id;
 }
 
+function modalityLabels(ids: MediaModalityId[]): string | null {
+  if (!ids.length) return null;
+  return ids.map((id) => MODALITY_LABELS[id] ?? id).join("、");
+}
+
 function deliveryStepSummary(profile: WorkProfile) {
   const delivery = profile.delivery;
   const format = delivery.format ? contentFormatLabel(delivery.format) : null;
+  const modalities = modalityLabels(delivery.modalities);
   const parts = [
-    format ? `体裁：${format}` : null,
-    delivery.platform ? `平台：${delivery.platform}` : null,
+    format ? `形态：${format}（模板）` : null,
+    modalities ? `内容媒介：${modalities}` : null,
   ].filter(Boolean);
-  return parts.length ? parts.join("；") : "尚未确定体裁与参数";
+  return parts.length ? parts.join("；") : "尚未确定内容形态与规格";
 }
 
 const PROFILE_LIST_EMPTY = "（尚无）";
@@ -80,7 +93,15 @@ export function profileExpressionSummary(profile: WorkProfile): string {
 
 export function profileSegmentsSummary(profile: WorkProfile): string {
   const segments = profile.structure.segments;
-  return `结构段（含 id，${segments.length} 节）：\n${formatProfileIdList(segments)}`;
+  if (!segments.length) {
+    return `结构段（含 id，0 节）：\n${PROFILE_LIST_EMPTY}`;
+  }
+  const lines = segments.map((item) => {
+    const role = item.role ? `[${item.role}] ` : "";
+    const title = item.title?.trim() ? `${item.title.trim()}：` : "";
+    return `- [${item.id}] ${role}${title}${item.description}`;
+  });
+  return `结构段（含 id，${segments.length} 节）：\n${lines.join("\n")}`;
 }
 
 const SETTING_KIND_LABELS: Record<string, string> = {
@@ -115,45 +136,19 @@ export function profileConstraintsSummary(profile: WorkProfile): string {
 }
 
 export function profileParamsSummary(profile: WorkProfile): string {
-  const { params } = profile.delivery;
-  const parts: string[] = [];
+  const { modalities, media_params } = profile.delivery;
+  const sections = buildDeliveryModalitySpecSections({
+    modalities: modalities ?? [],
+    media_params: media_params ?? {},
+  });
+  if (!sections.length) return "尚未设定媒介规格";
 
-  if (params.kind === "text") {
-    const { min, max } = params.word_count ?? {};
-    if (min != null || max != null) {
-      const words = [
-        min != null ? `最少 ${min} 字` : null,
-        max != null ? `最多 ${max} 字` : null,
-      ].filter(Boolean);
-      parts.push(`字数：${words.join("，")}`);
-    }
-    if (params.emoji_level) {
-      const labels = { none: "不用", light: "少量", heavy: "较多" } as const;
-      parts.push(`Emoji：${labels[params.emoji_level]}`);
-    }
-    if (params.aspect_ratio) parts.push(`画幅：${params.aspect_ratio}`);
-  }
-
-  if (params.kind === "illustration") {
-    if (params.aspect_ratio) parts.push(`画幅：${params.aspect_ratio}`);
-    if (params.image_count != null) parts.push(`图片数：${params.image_count}`);
-    if (params.negative_hints?.length) {
-      parts.push(`负面提示：${params.negative_hints.join("、")}`);
-    }
-  }
-
-  if (params.kind === "video") {
-    if (params.duration_sec != null) parts.push(`时长：${params.duration_sec} 秒`);
-    if (params.aspect_ratio) parts.push(`画幅：${params.aspect_ratio}`);
-    if (params.pacing) parts.push(`节奏：${params.pacing}`);
-  }
-
-  if (params.kind === "audio") {
-    if (params.duration_sec != null) parts.push(`时长：${params.duration_sec} 秒`);
-    if (params.segment_count != null) parts.push(`段落数：${params.segment_count}`);
-  }
-
-  return parts.length ? parts.join("；") : "尚未设定体裁参数";
+  return sections
+    .map((section) => {
+      const detail = section.rows.map((row) => `${row.label} ${row.value}`).join("，");
+      return `${section.title}：${detail}`;
+    })
+    .join("；");
 }
 
 export function profileSummary(
@@ -163,8 +158,8 @@ export function profileSummary(
   const summary = getProfileSummary(profile);
   const lines: string[] = ["制作方案（按步骤）"];
   lines.push(`① 创作定位：${profileIntentSummary(profile)}`);
-  lines.push(`② 体裁与参数：${profileDeliveryStepSummary(profile)}`);
-  lines.push(`   参数：${profileParamsSummary(profile)}`);
+  lines.push(`② 内容形态与规格：${profileDeliveryStepSummary(profile)}`);
+  lines.push(`   规格：${profileParamsSummary(profile)}`);
   lines.push(`③ 表达设定：${profileExpressionSummary(profile)}`);
   if (profile.structure.settings.length || profile.structure.segments.length) {
     lines.push(

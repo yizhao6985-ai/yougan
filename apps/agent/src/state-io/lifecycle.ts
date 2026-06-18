@@ -88,7 +88,6 @@ export function normalizeDirtyTurnState(
       completedKinds: [],
     }),
     nextStepSuggestions: null,
-    generatedConversationTitle: null,
   };
 }
 

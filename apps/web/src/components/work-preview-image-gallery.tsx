@@ -1,10 +1,8 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import {
-  ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ExternalLinkIcon,
-  SparklesIcon,
   XIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -34,8 +32,6 @@ export function WorkPreviewImageGallery({
   const activeImage = images[activeIndex];
   const hasMultiple = images.length > 1;
   const [failed, setFailed] = useState(false);
-  const [promptExpanded, setPromptExpanded] = useState(false);
-  const prompt = activeImage?.prompt?.trim();
 
   const close = useCallback(() => {
     onOpenIndexChange(null);
@@ -54,7 +50,6 @@ export function WorkPreviewImageGallery({
   useEffect(() => {
     if (!open) return;
     setFailed(false);
-    setPromptExpanded(false);
   }, [open, activeIndex, activeImage?.url]);
 
   useEffect(() => {
@@ -162,33 +157,6 @@ export function WorkPreviewImageGallery({
                 <p className="mt-4 max-w-2xl px-4 text-center text-sm leading-6 text-white/75">
                   {label}
                 </p>
-              ) : null}
-              {prompt ? (
-                <div className="mt-3 w-full max-w-2xl px-4">
-                  <button
-                    type="button"
-                    onClick={() => setPromptExpanded((value) => !value)}
-                    aria-expanded={promptExpanded}
-                    className="mx-auto flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-white/70 transition hover:bg-white/10 hover:text-white"
-                  >
-                    <SparklesIcon className="size-3" aria-hidden />
-                    {promptExpanded
-                      ? PREVIEW_PANEL.promptHide
-                      : PREVIEW_PANEL.promptShow}
-                    <ChevronDownIcon
-                      className={cn(
-                        "size-3 transition-transform",
-                        promptExpanded && "rotate-180",
-                      )}
-                      aria-hidden
-                    />
-                  </button>
-                  {promptExpanded ? (
-                    <p className="mt-2 max-h-40 overflow-y-auto whitespace-pre-wrap break-words rounded-lg bg-white/5 px-3 py-2 text-left text-xs leading-5 text-white/70">
-                      {prompt}
-                    </p>
-                  ) : null}
-                </div>
               ) : null}
             </div>
 

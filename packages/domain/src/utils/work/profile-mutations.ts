@@ -1,6 +1,6 @@
 import {
   EMPTY_WORK_PROFILE,
-  type FormatParams,
+  type DeliveryMediaParams,
   type ProfileConstraint,
   type ProfileDeliveryStep,
   type ProfileExpressionStep,
@@ -11,7 +11,12 @@ import {
   type SegmentRole,
   type WorkProfile,
 } from "../../models/work/profile.js";
-import { defaultParamsForFormat } from "../delivery.js";
+import {
+  defaultMediaParamsForFormat,
+  mergeDeliveryMediaParams,
+} from "./delivery-media-params.js";
+import { syncMediaParamsWithModalities } from "./delivery-display.js";
+import { normalizeSegmentRole } from "./profile.js";
 
 export function patchIntent(
   profile: WorkProfile | undefined,
@@ -29,36 +34,34 @@ export function patchIntent(
 
 export function patchDeliveryStep(
   profile: WorkProfile | undefined,
-  delivery: Partial<Omit<ProfileDeliveryStep, "params">> & {
-    params?: FormatParams;
-  },
+  delivery: Partial<ProfileDeliveryStep>,
 ): WorkProfile {
   const base = profile ?? EMPTY_WORK_PROFILE;
   const nextFormat =
     delivery.format !== undefined ? delivery.format : base.delivery.format;
-  const params =
-    delivery.params ??
-    (delivery.format != null && delivery.format !== base.delivery.format
-      ? defaultParamsForFormat(delivery.format)
-      : base.delivery.params);
+  const nextModalities =
+    delivery.modalities !== undefined
+      ? delivery.modalities
+      : base.delivery.modalities;
+
+  const mergedMediaParams =
+    delivery.media_params !== undefined
+      ? mergeDeliveryMediaParams(base.delivery.media_params, delivery.media_params)
+      : delivery.format != null && delivery.format !== base.delivery.format
+        ? defaultMediaParamsForFormat(delivery.format, nextModalities)
+        : base.delivery.media_params;
+
+  const media_params = syncMediaParamsWithModalities(
+    nextModalities,
+    mergedMediaParams,
+  );
 
   return {
     ...base,
     delivery: {
       format: nextFormat,
-      modalities:
-        delivery.modalities !== undefined
-          ? delivery.modalities
-          : base.delivery.modalities,
-      platform:
-        delivery.platform !== undefined
-          ? delivery.platform
-          : base.delivery.platform,
-      category:
-        delivery.category !== undefined
-          ? delivery.category
-          : base.delivery.category,
-      params,
+      modalities: nextModalities,
+      media_params,
     },
   };
 }
@@ -87,14 +90,20 @@ export function patchExpression(
   };
 }
 
-export function updateFormatParams(
+export function updateDeliveryMediaParams(
   profile: WorkProfile | undefined,
-  params: FormatParams,
+  media_params: DeliveryMediaParams,
 ): WorkProfile {
   const base = profile ?? EMPTY_WORK_PROFILE;
   return {
     ...base,
-    delivery: { ...base.delivery, params },
+    delivery: {
+      ...base.delivery,
+      media_params: mergeDeliveryMediaParams(
+        base.delivery.media_params,
+        media_params,
+      ),
+    },
   };
 }
 
@@ -135,32 +144,6 @@ export function clearConstraints(profile: WorkProfile | undefined): WorkProfile 
     ...base,
     constraints: { rules: [] },
   };
-}
-
-function normalizeSegmentRole(
-  role?: SegmentRole | string | null,
-): SegmentRole | null {
-  if (!role) return null;
-  const valid: SegmentRole[] = [
-    "hook",
-    "context",
-    "point",
-    "example",
-    "cta",
-    "chapter",
-    "scene",
-    "shot",
-    "broll",
-    "transition",
-    "subject",
-    "composition",
-    "detail",
-    "intro",
-    "segment",
-    "outro",
-    "bridge",
-  ];
-  return valid.includes(role as SegmentRole) ? (role as SegmentRole) : null;
 }
 
 export function updateSegment(

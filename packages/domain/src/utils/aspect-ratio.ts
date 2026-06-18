@@ -1,18 +1,5 @@
 import type { ContentFormatId } from "../models/taxonomy/content.js";
-import type { FormatParams } from "../models/work/profile.js";
-import {
-  DISCOVER_PLATFORMS,
-  type DiscoverPlatformId,
-} from "../models/taxonomy/discover.js";
-
-/** 从 params 读取显式画幅（illustration / video / text 均可携带） */
-export function aspectRatioFromParams(
-  params: FormatParams,
-): string | undefined {
-  if (!("aspect_ratio" in params)) return undefined;
-  const trimmed = params.aspect_ratio?.trim();
-  return trimmed || undefined;
-}
+import type { MediaModalityId } from "../models/taxonomy/content.js";
 
 /** MiniMax image-01 支持的 aspect_ratio */
 export const MINIMAX_IMAGE_ASPECT_RATIOS = [
@@ -32,56 +19,18 @@ export type MiniMaxImageAspectRatio =
 const MINIMAX_RATIO_SET = new Set<string>(MINIMAX_IMAGE_ASPECT_RATIOS);
 
 export type AspectRatioContext = {
-  platform?: string | null;
   format?: ContentFormatId | null;
+  modalities?: MediaModalityId[];
 };
 
-/** 将自由文本平台名（如「小红书」）匹配为 discover platform id */
-export function matchDiscoverPlatformId(
-  platform: string | null | undefined,
-): DiscoverPlatformId | null {
-  const raw = platform?.trim();
-  if (!raw) return null;
-
-  for (const item of DISCOVER_PLATFORMS) {
-    if (raw === item.id || raw === item.label) return item.id;
-  }
-
-  const lower = raw.toLowerCase();
-  if (/小红书|xhs|redbook/i.test(raw)) return "xiaohongshu";
-  if (/抖音|douyin/i.test(raw)) return "douyin";
-  if (/快手|kuaishou/i.test(raw)) return "kuaishou";
-  if (/微博|weibo/i.test(raw)) return "weibo";
-  if (/微信|公众号|wechat/i.test(raw)) return "wechat";
-  if (/哔哩|bilibili|b站/i.test(raw)) return "bilibili";
-  if (/有感|yougan/i.test(lower)) return "yougan";
-
-  for (const item of DISCOVER_PLATFORMS) {
-    if (raw.includes(item.label) || lower.includes(item.id)) return item.id;
-  }
-
-  return null;
-}
-
-function inferAspectRatioFromPlatform(
-  platform: string | null | undefined,
-  format?: ContentFormatId | null,
+function inferAspectRatioFromModalities(
+  modalities: MediaModalityId[] | undefined,
 ): string | undefined {
-  const platformId = matchDiscoverPlatformId(platform);
-  if (!platformId) return undefined;
-
-  switch (platformId) {
-    case "douyin":
-    case "kuaishou":
-      return "9:16";
-    case "xiaohongshu":
-      return "3:4";
-    case "bilibili":
-    case "wechat":
-      return format === "short_video" ? "9:16" : "16:9";
-    default:
-      return undefined;
-  }
+  const set = new Set(modalities ?? []);
+  if (set.has("video") && !set.has("image")) return "9:16";
+  if (set.has("image") && set.has("text")) return "3:4";
+  if (set.has("image")) return "3:4";
+  return undefined;
 }
 
 function inferAspectRatioFromFormat(
@@ -105,7 +54,7 @@ function inferAspectRatioFromFormat(
 
 /**
  * 写入方案前规范化 aspect_ratio：已是 MiniMax 比例 id 则原样保留；
- * 中文描述才映射为比例（如「手机截图」→ 9:16）。
+ * 中文描述才映射为比例（如「竖屏」→ 9:16）。
  */
 export function normalizeProfileAspectRatio(
   value: string | null | undefined,
@@ -126,10 +75,10 @@ export function normalizeProfileAspectRatio(
   return trimmed;
 }
 
-/** 无显式 params 时，按平台/体裁推断默认画幅 */
+/** 无显式 media_params 时，按体裁与媒介组合推断默认画幅 */
 export function inferProfileAspectRatio(ctx: AspectRatioContext): string {
   return (
-    inferAspectRatioFromPlatform(ctx.platform, ctx.format) ??
+    inferAspectRatioFromModalities(ctx.modalities) ??
     inferAspectRatioFromFormat(ctx.format) ??
     "1:1"
   );

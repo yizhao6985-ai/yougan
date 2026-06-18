@@ -2,6 +2,10 @@ import { Link } from "react-router-dom";
 
 import { MarkdownContent } from "@/components/markdown-content";
 import {
+  publicationCoverFromBlocks,
+  publicationPlainExcerpt,
+} from "@/components/preview-block-list";
+import {
   formatLabel,
   topicCategoryLabel,
 } from "@/lib/discover-taxonomy";
@@ -16,8 +20,7 @@ export function AccountPublicationCard({
   publication: Publication;
 }) {
   const cover =
-    publication.coverUrl ||
-    (publication.images?.[0] as { url?: string } | undefined)?.url;
+    publication.coverUrl || publicationCoverFromBlocks(publication.blocks);
   const timeLabel = publication.publishedAt
     ? formatPublishedAt(publication.publishedAt)
     : null;
@@ -42,7 +45,7 @@ export function AccountPublicationCard({
           <div className="flex size-full items-center justify-center px-6">
             <p className="line-clamp-4 text-center text-sm leading-6 text-muted-foreground">
               {publication.excerpt?.trim() ||
-                publication.body.replace(/[#>*`\-\[\]]/g, "").slice(0, 120)}
+                publicationPlainExcerpt(publication.blocks, 120)}
             </p>
           </div>
         )}
@@ -74,7 +77,9 @@ export function AccountPublicationCard({
               "[&_p]:inline [&_p]:m-0",
             )}
           >
-            <MarkdownContent content={publication.body.slice(0, 160)} />
+            <MarkdownContent
+              content={publicationPlainExcerpt(publication.blocks, 160)}
+            />
           </div>
         )}
 

@@ -30,14 +30,14 @@ ${buildProfileStepPromptSection(profile)}
 
 **步骤与工具（一步一工具，与侧栏方案向导对应）**
 - ① 创作定位：update_profile_intent（summary 必填，须从${YOUGAN_USER_LABEL}消息凝练）
-- ② 体裁与参数：update_profile_delivery（format、platform、modalities 与字数/画幅/时长等 params **同次写入**）
+- ② 内容形态与规格：update_profile_delivery（format、modalities 与分媒介 media_params **同次写入**；不写发布平台）
 - ③ 表达设定：update_profile_expression
-- ④ 结构与要素：update_profile_structure（settings 固定设定、segments 结构段）
+- ④ 结构与要素：update_profile_structure（settings 固定设定、segments 结构段；segment.role 仅 text / image / audio / video）
 - ⑤ 创作规则：update_profile_constraints（rules；scope 用 all / verbal / visual / audio / video，文字规则用 verbal 勿用 text）
 
 **设定 vs 结构（第 4 步）**
 - settings：背景、对象、关键要素等**固定**信息
-- segments：内容走向、段落节拍、分镜顺序
+- segments：按作品顺序排列的媒介节拍；每段 role 须为 text / image / audio / video 之一，description 写该段内容要点
 
 ${deliveryTaxonomyPrompt}
 
@@ -49,9 +49,9 @@ ${deliveryTaxonomyPrompt}
 **当前方案**
 ① 创作定位：${profileIntentSummary(profile)}
 
-② 体裁与参数：
+② 内容形态与规格：
 ${profileDeliveryStepSummary(profile)}
-体裁参数：${profileParamsSummary(profile)}
+媒介规格：${profileParamsSummary(profile)}
 
 ③ 表达设定：
 ${profileExpressionSummary(profile)}

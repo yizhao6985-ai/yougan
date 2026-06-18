@@ -42,9 +42,9 @@ ${afterSummary}
 ## 变更后完整方案（按步骤）
 ① 创作定位：${afterSummary}
 
-② 体裁与参数：
+② 内容形态与规格：
 ${profileDeliveryStepSummary(input.after)}
-体裁参数：${profileParamsSummary(input.after)}
+媒介规格：${profileParamsSummary(input.after)}
 
 ③ 表达设定：
 ${profileExpressionSummary(input.after)}

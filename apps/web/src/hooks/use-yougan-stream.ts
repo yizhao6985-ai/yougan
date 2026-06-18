@@ -29,13 +29,18 @@ import type {
   WorkConversation,
   RunProgress,
 } from "@/lib/types";
-import type { ProductionConfirmDecision } from "@yougan/domain";
+import {
+  fallbackConversationTitleFromText,
+  isDefaultConversationTitle,
+  type ProductionConfirmDecision,
+} from "@yougan/domain";
 import {
   isRunProgressCustomPayload,
   pickRunProgress,
 } from "@/lib/run-progress";
 import { getProductionConfirmInterrupt } from "@/lib/production-confirm-interrupt";
 import { useAuthToken } from "@/store/auth";
+import { patchConversationsCache } from "@/hooks/queries/conversations";
 
 /**
  * 消息 chunk 走 messages-tuple；其余 state（profile、turnQueue 等）走 updates 合并，避免 values 整表覆盖。
@@ -514,6 +519,20 @@ export function useYouganStream({
           : content.length > 0;
       if (!hasText || !work || !conversation) return;
 
+      if (
+        isDefaultConversationTitle(conversation.title) &&
+        typeof content === "string"
+      ) {
+        const title = fallbackConversationTitleFromText(content);
+        if (title) {
+          patchConversationsCache(queryClient, work.id, (items) =>
+            items.map((item) =>
+              item.id === conversation.id ? { ...item, title } : item,
+            ),
+          );
+        }
+      }
+
       await awaitCancelIfInFlight();
       setPostCancelValues(null);
       setLiveRunProgress(null);
@@ -527,6 +546,7 @@ export function useYouganStream({
       awaitCancelIfInFlight,
       conversation,
       modelTemperature,
+      queryClient,
       stream,
       work,
     ],
@@ -565,14 +585,18 @@ export function useYouganStream({
     !isCancelling &&
     !hasLiveProductionConfirm;
 
+  const hasOpeningSuggestions =
+    (mergedStreamValues?.nextStepSuggestions?.suggestions?.length ?? 0) > 0;
+
   const isBootstrappingOpening =
     Boolean(conversation?.id) &&
     stream.messages.length === 0 &&
-    !hasActiveRun &&
+    !hasOpeningSuggestions &&
     (openingBootstrapQuery.isFetching ||
       openingBootstrapQuery.isPending ||
       stream.isThreadLoading ||
-      isCancelling);
+      isCancelling ||
+      stream.isLoading);
 
   const streamWithPostCancel = useMemo(
     () => {

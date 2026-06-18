@@ -42,36 +42,36 @@ export const WorkReferencesSchema = z
   .array(WorkReferenceSchema)
   .openapi("WorkReferences");
 
-const FormatParamsSchema = z.discriminatedUnion("kind", [
-  z.object({
-    kind: z.literal("text"),
-    word_count: z
-      .object({
-        min: z.number().optional(),
-        max: z.number().optional(),
-      })
-      .optional(),
-    emoji_level: z.enum(["none", "light", "heavy"]).optional(),
-    aspect_ratio: z.string().optional(),
-  }),
-  z.object({
-    kind: z.literal("illustration"),
-    aspect_ratio: z.string().optional(),
-    image_count: z.number().optional(),
-    negative_hints: z.array(z.string()).optional(),
-  }),
-  z.object({
-    kind: z.literal("video"),
-    duration_sec: z.number().optional(),
-    aspect_ratio: z.string().optional(),
-    pacing: z.string().optional(),
-  }),
-  z.object({
-    kind: z.literal("audio"),
-    duration_sec: z.number().optional(),
-    segment_count: z.number().optional(),
-  }),
-]);
+const DeliveryMediaParamsSchema = z.object({
+  text: z
+    .object({
+      word_count: z
+        .object({
+          min: z.number().optional(),
+          max: z.number().optional(),
+        })
+        .optional(),
+      emoji_level: z.enum(["none", "light", "heavy"]).optional(),
+    })
+    .optional(),
+  image: z
+    .object({
+      aspect_ratio: z.string().optional(),
+    })
+    .optional(),
+  video: z
+    .object({
+      duration_sec: z.number().optional(),
+      aspect_ratio: z.string().optional(),
+      pacing: z.string().optional(),
+    })
+    .optional(),
+  audio: z
+    .object({
+      duration_sec: z.number().optional(),
+    })
+    .optional(),
+});
 
 export const WorkProfileSchema = z
   .object({
@@ -81,9 +81,7 @@ export const WorkProfileSchema = z
     delivery: z.object({
       format: z.string().nullable(),
       modalities: z.array(z.string()),
-      platform: z.string().nullable().optional(),
-      category: z.string().nullable().optional(),
-      params: FormatParamsSchema,
+      media_params: DeliveryMediaParamsSchema,
     }),
     expression: z.object({
       audience: z.string().nullable().optional(),
@@ -123,24 +121,50 @@ export const WorkProfileSchema = z
   })
   .openapi("WorkProfile");
 
+export const PreviewBlockSchema = z.discriminatedUnion("type", [
+  z.object({
+    id: z.string(),
+    taskId: z.string().nullable().optional(),
+    type: z.literal("text"),
+    markdown: z.string(),
+  }),
+  z.object({
+    id: z.string(),
+    taskId: z.string().nullable().optional(),
+    type: z.literal("image"),
+    url: z.string().url(),
+    alt: z.string().nullable().optional(),
+    prompt: z.string().nullable().optional(),
+    transient: z.boolean().optional(),
+  }),
+  z.object({
+    id: z.string(),
+    taskId: z.string().nullable().optional(),
+    type: z.literal("audio"),
+    url: z.string().url(),
+    title: z.string().nullable().optional(),
+    durationSec: z.number().nullable().optional(),
+    transcript: z.string().nullable().optional(),
+  }),
+  z.object({
+    id: z.string(),
+    taskId: z.string().nullable().optional(),
+    type: z.literal("video"),
+    url: z.string().url(),
+    posterUrl: z.string().url().nullable().optional(),
+    title: z.string().nullable().optional(),
+    durationSec: z.number().nullable().optional(),
+  }),
+]).openapi("PreviewBlock");
+
 export const WorkPreviewSchema = z
   .object({
     platform: z.string(),
     title: z.string().nullable().optional(),
-    body: z.string(),
-    hashtags: z.array(z.string()).optional(),
     hook: z.string().nullable().optional(),
+    hashtags: z.array(z.string()).optional(),
     notes: z.string().nullable().optional(),
-    images: z
-      .array(
-        z.object({
-          url: z.string().url(),
-          alt: z.string().nullable().optional(),
-          prompt: z.string().nullable().optional(),
-          transient: z.boolean().optional(),
-        }),
-      )
-      .optional(),
+    blocks: z.array(PreviewBlockSchema).min(1),
   })
   .openapi("WorkPreview");
 
@@ -163,6 +187,16 @@ export const WorkProductionSchema = z
             body: z.string(),
             title: z.string().nullable().optional(),
             notes: z.string().nullable().optional(),
+            images: z
+              .array(
+                z.object({
+                  url: z.string().url(),
+                  alt: z.string().nullable().optional(),
+                  prompt: z.string().nullable().optional(),
+                  transient: z.boolean().optional(),
+                }),
+              )
+              .optional(),
           })
           .nullable()
           .optional(),
@@ -328,7 +362,7 @@ export const PublicationSchema = z
     slug: z.string(),
     title: z.string(),
     excerpt: z.string().nullable(),
-    body: z.string(),
+    blocks: z.array(PreviewBlockSchema),
     coverUrl: z.string().url().nullable(),
     platform: z.string().nullable(),
     contentFormat: z.string().nullable(),
@@ -337,13 +371,6 @@ export const PublicationSchema = z
     contentType: z.string().nullable(),
     mediaTypes: z.array(z.string()),
     hashtags: z.array(z.string()),
-    images: z.array(
-      z.object({
-        url: z.string(),
-        alt: z.string().nullable().optional(),
-        prompt: z.string().nullable().optional(),
-      }),
-    ),
     status: PublicationStatusSchema,
     publishedAt: z.string().nullable(),
     createdAt: z.string(),

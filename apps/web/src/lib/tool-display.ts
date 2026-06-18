@@ -5,7 +5,7 @@ export const TOOL_LABELS: Record<string, string> = {
   preprocess_reference_video: "预处理视频参考",
   reference_apply_patch: "更新参考素材",
   update_profile_intent: "更新创作定位",
-  update_profile_delivery: "更新体裁与参数",
+  update_profile_delivery: "更新内容形态与规格",
   update_profile_expression: "更新表达设定",
   update_profile_structure: "更新结构与要素",
   update_profile_constraints: "更新创作规则",
@@ -63,9 +63,11 @@ function summarizePatchList(
 function summarizeDeliveryParams(toolInput: Record<string, unknown>): string {
   const parts: string[] = [];
   const format = readString(toolInput.format);
-  const platform = readString(toolInput.platform);
   if (format) parts.push(format);
-  if (platform) parts.push(platform);
+
+  if (Array.isArray(toolInput.modalities) && toolInput.modalities.length) {
+    parts.push(toolInput.modalities.filter((m) => typeof m === "string").join("+"));
+  }
 
   const min = toolInput.word_count_min;
   const max = toolInput.word_count_max;

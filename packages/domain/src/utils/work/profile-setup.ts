@@ -46,7 +46,9 @@ function hasExpression(profile: WorkProfile): boolean {
 
 export function isProfileSetupReady(profile: WorkProfile): boolean {
   return (
-    Boolean(profile.intent.summary.trim()) && Boolean(profile.delivery.format)
+    Boolean(profile.intent.summary.trim()) &&
+    Boolean(profile.delivery.format) &&
+    profile.delivery.modalities.length > 0
   );
 }
 
@@ -58,7 +60,7 @@ export function isProfileStepFilled(
     case "intent":
       return Boolean(profile.intent.summary.trim());
     case "delivery":
-      return Boolean(profile.delivery.format);
+      return Boolean(profile.delivery.format) && profile.delivery.modalities.length > 0;
     case "expression":
       return hasExpression(profile);
     case "structure":
@@ -94,9 +96,9 @@ function buildStepItems(
           tier: "required",
         },
         {
-          key: "platform",
-          filled: Boolean(profile.delivery.platform),
-          tier: "recommended",
+          key: "modalities",
+          filled: profile.delivery.modalities.length > 0,
+          tier: "required",
         },
       ];
     case "expression":

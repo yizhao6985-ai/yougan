@@ -16,7 +16,6 @@ import {
   fallbackConversationTitleFromText,
   getFirstHumanCheckpointMessageText,
   isDefaultConversationTitle,
-  sanitizeAutoConversationTitle,
 } from "@yougan/domain";
 import {
   useYouganStream,
@@ -66,13 +65,9 @@ function ConversationStreamKeyed({
 
       if (!stillPlaceholderTitle || completedWorkId !== workId) return;
 
-      let generatedTitle = sanitizeAutoConversationTitle(
-        values.generatedConversationTitle,
+      const generatedTitle = fallbackConversationTitleFromText(
+        getFirstHumanCheckpointMessageText(values.messages),
       );
-      if (!generatedTitle) {
-        const firstHuman = getFirstHumanCheckpointMessageText(values.messages);
-        generatedTitle = fallbackConversationTitleFromText(firstHuman);
-      }
       if (conversationId && generatedTitle) {
         patchConversationsCache(queryClient, completedWorkId, (items) =>
           items.map((item) =>
@@ -81,9 +76,10 @@ function ConversationStreamKeyed({
               : item,
           ),
         );
+        return;
       }
 
-      // 仅占位标题且已有用户消息时拉列表，对齐 agent-proxy 自动标题（开屏 bootstrap 无 human，跳过）
+      // 标题未写入时拉列表，对齐 agent-proxy 自动标题（开屏 bootstrap 无 human，跳过）
       if (conversationId && countHumanCheckpointMessages(values.messages) >= 1) {
         window.setTimeout(() => {
           void invalidateConversations();

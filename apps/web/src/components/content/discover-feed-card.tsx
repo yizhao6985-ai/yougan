@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 
+import { publicationCoverFromBlocks } from "@/components/preview-block-list";
 import { AuthorAvatar } from "@/components/content/author-avatar";
 import { authorDisplayName } from "@/lib/publication-utils";
 import {
@@ -17,8 +18,7 @@ export function DiscoverFeedCard({
   publication: Publication;
 }) {
   const cover =
-    publication.coverUrl ||
-    (publication.images?.[0] as { url?: string } | undefined)?.url;
+    publication.coverUrl || publicationCoverFromBlocks(publication.blocks);
   const format = formatLabel(publication.contentFormat);
   const topic = topicCategoryLabel(publication.topicCategory);
   const timeLabel = publication.publishedAt

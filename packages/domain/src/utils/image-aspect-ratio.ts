@@ -1,11 +1,11 @@
 import type { WorkProfile } from "../models/work/profile.js";
 import {
-  aspectRatioFromParams,
   inferProfileAspectRatio,
   normalizeProfileAspectRatio,
   type AspectRatioContext,
 } from "./aspect-ratio.js";
 import { resolveDelivery } from "./delivery.js";
+import { imageAspectRatioFromMediaParams } from "./work/delivery-media-params.js";
 
 function profileNeedsImageAspectRatio(profile: WorkProfile): boolean {
   const delivery = resolveDelivery(profile.delivery);
@@ -22,18 +22,21 @@ function aspectRatioContextFromProfile(
 ): AspectRatioContext {
   const delivery = resolveDelivery(profile.delivery);
   return {
-    platform: delivery.platform,
     format: delivery.format,
+    modalities: delivery.modalities,
   };
 }
 
 /**
  * 解析 design 出图应使用的 MiniMax aspect_ratio。
- * 显式 params 经语义规范化；否则按平台/体裁推断。
+ * 显式 media_params.image 优先；否则按体裁/媒介推断。
  */
 export function resolveImageAspectRatio(profile: WorkProfile): string {
   const ctx = aspectRatioContextFromProfile(profile);
-  const explicit = aspectRatioFromParams(profile.delivery.params);
+  const explicit = imageAspectRatioFromMediaParams(
+    profile.delivery.media_params,
+    ctx,
+  );
   if (explicit) {
     return (
       normalizeProfileAspectRatio(explicit, ctx) ?? inferProfileAspectRatio(ctx)

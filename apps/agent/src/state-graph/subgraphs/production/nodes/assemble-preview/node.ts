@@ -9,11 +9,9 @@ import {
   withRunProgressHeartbeat,
 } from "#agent/state-io/run-progress.js";
 import {
+  blocksFromProductionTasks,
   getIntentSummary,
-  resolveDeliveryFromProfile,
-  type TaskDeliverable,
   type WorkPreview,
-  type WorkPreviewImage,
 } from "@yougan/domain";
 import {
   getModelTemperature,
@@ -45,37 +43,31 @@ export async function assemblePreviewNode(
   }
 
   const progress = productionAssembleProgress();
+  const tasks = production.pending_tasks;
+  const blocks = blocksFromProductionTasks(tasks);
 
-  const deliverables: TaskDeliverable[] = production.pending_tasks.flatMap(
-    (t) => {
-      const body = t.deliverable?.body?.trim();
-      if (!body) return [];
-      const isDesign = t.department === "design";
-      const item: TaskDeliverable = {
-        taskId: t.id,
-        body: isDesign
-          ? (t.deliverable?.notes?.trim() ||
-              t.deliverable?.title?.trim() ||
-              body)
-          : body,
-        title: t.deliverable?.title,
-        notes: isDesign ? null : t.deliverable?.notes,
-      };
-      return [item];
-    },
-  );
-
-  const previewImages: WorkPreviewImage[] = production.pending_tasks.flatMap(
-    (t) => t.deliverable?.images ?? [],
-  );
+  if (!blocks.length) {
+    return {};
+  }
 
   const profile = getProfile(state);
-  const delivery = resolveDeliveryFromProfile(profile);
   const llm = createProductionChatModel({
     temperature: getModelTemperature(state),
     maxTokens: resolveProductionMaxTokens(profile),
   });
-  const promptInput = { profile, plan: production, deliverables };
+
+  const deliverables = tasks.flatMap((task) => {
+    const body = task.deliverable?.body?.trim();
+    if (!body && !task.deliverable?.images?.length) return [];
+    return [
+      {
+        taskId: task.id,
+        body: body ?? "",
+        title: task.deliverable?.title ?? null,
+        notes: task.deliverable?.notes ?? null,
+      },
+    ];
+  });
 
   let payload: ConsolidatedPreview;
   try {
@@ -85,19 +77,17 @@ export async function assemblePreviewNode(
         ConsolidatedPreviewSchema,
         [
           new SystemMessage(buildConsolidateSystemPrompt({ profile })),
-          new HumanMessage(buildConsolidateHumanPrompt(promptInput)),
+          new HumanMessage(
+            buildConsolidateHumanPrompt({ profile, plan: production, deliverables }),
+          ),
         ],
         { name: "assemble_preview" },
         config,
       ),
     );
   } catch {
-    const body =
-      deliverables.map((d) => d.body).join("\n\n---\n\n") ||
-      "整理失败，请重试。";
     payload = {
       title: getIntentSummary(profile) || null,
-      body,
       hashtags: [],
       hook: null,
       notes: null,
@@ -105,13 +95,12 @@ export async function assemblePreviewNode(
   }
 
   const preview: WorkPreview = {
-    platform: delivery.platform ?? "yougan",
+    platform: "yougan",
     title: payload.title ?? null,
-    body: payload.body,
-    hashtags: payload.hashtags ?? [],
     hook: payload.hook ?? null,
+    hashtags: payload.hashtags ?? [],
     notes: payload.notes ?? null,
-    images: previewImages.length > 0 ? previewImages : undefined,
+    blocks,
   };
 
   return {

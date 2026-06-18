@@ -1,16 +1,12 @@
-import { MarkdownContent } from "@/components/markdown-content";
 import {
   CreativeContextEmpty,
   CreativeContextSection,
 } from "@/components/studio/creative-context/shared";
 import { PublishPlatformActions } from "@/components/studio/publish-platform-actions";
-import { WorkPreviewImages } from "@/components/work-preview-images";
+import { PreviewBlockList } from "@/components/preview-block-list";
+import { previewHasContent, copyablePreviewText } from "@yougan/domain";
 import { PREVIEW_PANEL } from "@/lib/site-copy";
 import type { WorkPreview } from "@/lib/types";
-
-function hasPreviewContent(preview: WorkPreview) {
-  return Boolean(preview.body?.trim()) || Boolean(preview.images?.length);
-}
 
 export function ContentPreview({
   workId,
@@ -31,7 +27,7 @@ export function ContentPreview({
       }
       compact={compact}
     >
-      {!preview || !hasPreviewContent(preview) ? (
+      {!preview || !previewHasContent(preview) ? (
         <CreativeContextEmpty>{PREVIEW_PANEL.empty}</CreativeContextEmpty>
       ) : (
         <div className="space-y-3">
@@ -47,13 +43,12 @@ export function ContentPreview({
               ) : null}
             </div>
 
-            {preview.images?.length ? (
-              <WorkPreviewImages images={preview.images} compact={compact} />
-            ) : null}
-
-            {preview.body?.trim() ? (
-              <MarkdownContent content={preview.body} />
-            ) : null}
+            <PreviewBlockList
+              blocks={preview.blocks}
+              compact={compact}
+              galleryKey={workId}
+              showImagePrompts
+            />
 
             {preview.hashtags?.length ? (
               <div className="flex flex-wrap gap-2">
@@ -69,10 +64,12 @@ export function ContentPreview({
             ) : null}
           </div>
           <div className="flex flex-wrap items-center justify-end gap-2 rounded-lg border border-border/80 bg-card/70 px-3 py-2.5">
-            {preview.body?.trim() ? (
+            {copyablePreviewText(preview).trim() ? (
               <button
                 type="button"
-                onClick={() => navigator.clipboard.writeText(preview.body)}
+                onClick={() =>
+                  navigator.clipboard.writeText(copyablePreviewText(preview))
+                }
                 className="rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground/90 transition hover:bg-muted"
               >
                 复制内容

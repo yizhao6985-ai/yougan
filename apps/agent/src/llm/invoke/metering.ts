@@ -24,7 +24,9 @@ const accByThreadId = new Map<string, RunMetering>();
 
 function resolveThreadId(config?: RunnableConfig): string | undefined {
   const threadId = config?.configurable?.thread_id;
-  return typeof threadId === "string" && threadId.length > 0 ? threadId : undefined;
+  return typeof threadId === "string" && threadId.length > 0
+    ? threadId
+    : undefined;
 }
 
 function ensureMeteringConfigurable(
@@ -162,10 +164,7 @@ export function withMeteringCallbacks(
   modelId: MeteringModelId,
   accumulatorConfig?: RunnableConfig,
 ): RunnableConfig {
-  const handler = new LlmMeteringHandler(
-    modelId,
-    accumulatorConfig ?? config,
-  );
+  const handler = new LlmMeteringHandler(modelId, accumulatorConfig ?? config);
   return mergeConfigs(config ?? {}, { callbacks: [handler] }) as RunnableConfig;
 }
 

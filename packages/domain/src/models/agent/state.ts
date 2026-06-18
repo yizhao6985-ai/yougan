@@ -21,8 +21,6 @@ export interface YouganAgentState {
   production: WorkProduction;
   /** 回合末或开屏生成的下一步建议（不入库） */
   nextStepSuggestions: NextStepSuggestions | null;
-  /** 首条用户消息后生成的对话标题建议（占位标题时由 API 落库） */
-  generatedConversationTitle: string | null;
   /** 单轮执行运行时（调度、staging、取消） */
   turn: TurnRuntime;
   /** 当前运行进度（不入库；回合结束清空） */
@@ -43,7 +41,6 @@ export type YouganStreamValues = Partial<
     | "references"
     | "production"
     | "nextStepSuggestions"
-    | "generatedConversationTitle"
     | "turn"
     | "runProgress"
   >

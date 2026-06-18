@@ -197,7 +197,7 @@ model Publication {
   slug          String    @unique
   title         String
   excerpt       String?
-  body          String
+  blocks        Json      @default("[]")
   coverUrl      String?
   platform      String?
   contentFormat String?
@@ -206,7 +206,6 @@ model Publication {
   contentType   String?
   mediaTypes    String[]  @default([])
   hashtags      Json      @default("[]")
-  images        Json      @default("[]")
   status        String    @default("draft")
   viewCount     Int       @default(0)
   publishedAt   DateTime?

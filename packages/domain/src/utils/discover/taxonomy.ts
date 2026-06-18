@@ -14,6 +14,7 @@ import {
   type PublicationMetadataOverrides,
 } from "../../models/taxonomy/discover.js";
 import type { WorkProfile } from "../../models/work/profile.js";
+import type { PreviewBlock } from "../../models/work/preview.js";
 import {
   inferMediaModalities,
   isMediaModalityId,
@@ -21,6 +22,10 @@ import {
   mediaModalityLabel,
   sortMediaModalities,
 } from "../media-modalities.js";
+import {
+  previewHasImages,
+  previewTextLength,
+} from "../work/preview.js";
 import { parseProfileJson, resolveDeliveryFromProfile, getProfileSummary, getIntentSummary } from "../work/profile.js";
 
 const FORMAT_LABELS = Object.fromEntries(
@@ -37,8 +42,7 @@ const PLATFORM_LABELS = Object.fromEntries(
 
 type OutputLike = {
   platform?: string;
-  body?: string;
-  images?: Array<{ url?: string }>;
+  blocks?: PreviewBlock[];
 };
 
 export function formatLabel(id: string | null | undefined) {
@@ -108,13 +112,15 @@ export function inferContentFormat(input: {
   platform?: string | null;
   contentType?: string | null;
   body?: string | null;
+  bodyLength?: number;
   hasImage?: boolean;
 }) {
   const fromType = normalizeContentFormatFromType(input.contentType);
   if (fromType) return fromType;
 
   const platform = input.platform ?? "yougan";
-  const bodyLength = input.body?.trim().length ?? 0;
+  const bodyLength =
+    input.bodyLength ?? input.body?.trim().length ?? 0;
 
   switch (platform) {
     case "xiaohongshu":
@@ -138,15 +144,17 @@ export function inferContentFormat(input: {
 
 export function inferMediaTypes(input: {
   coverUrl?: string | null;
-  images?: unknown;
+  blocks?: PreviewBlock[] | null;
   contentType?: string | null;
-  body?: string | null;
   contentFormat?: string | null;
 }): MediaModalityId[] {
-  const bodyLength = input.body?.trim().length ?? 0;
-  const hasImage =
-    Boolean(input.coverUrl) ||
-    (Array.isArray(input.images) && input.images.length > 0);
+  const blocks = input.blocks ?? [];
+  const bodyLength =
+    blocks.length > 0 ? previewTextLength(blocks) : 0;
+  const hasImage = Boolean(input.coverUrl) || previewHasImages(blocks);
+
+  if (blocks.some((block) => block.type === "audio")) return ["audio"];
+  if (blocks.some((block) => block.type === "video")) return ["video"];
 
   return inferMediaModalities({
     contentType: input.contentType,
@@ -160,16 +168,14 @@ export function buildPublicationMetadata(input: {
   profile?: WorkProfile | unknown | null;
   output?: OutputLike | null;
   coverUrl?: string | null;
-  body?: string | null;
-  images?: unknown;
+  blocks?: PreviewBlock[] | null;
   platform?: string | null;
 }): PublicationMetadata {
   const output = input.output ?? {};
-  const body = input.body ?? output.body ?? null;
+  const blocks = input.blocks ?? output.blocks ?? [];
+  const bodyLength = previewTextLength(blocks);
   const hasImage =
-    Boolean(input.coverUrl) ||
-    (Array.isArray(input.images) && input.images.length > 0) ||
-    (Array.isArray(output.images) && output.images.length > 0);
+    Boolean(input.coverUrl) || previewHasImages(blocks);
 
   const delivery = input.profile
     ? resolveDeliveryFromProfile(parseProfileJson(input.profile))
@@ -178,7 +184,7 @@ export function buildPublicationMetadata(input: {
   const profile = input.profile ? parseProfileJson(input.profile) : null;
 
   const platform =
-    input.platform ?? output.platform ?? delivery?.platform ?? "yougan";
+    input.platform ?? output.platform ?? "yougan";
   const contentTopic = profile ? getIntentSummary(profile) || null : null;
   const contentType = profile ? getProfileSummary(profile) : null;
 
@@ -189,20 +195,18 @@ export function buildPublicationMetadata(input: {
       : inferContentFormat({
           platform,
           contentType,
-          body,
+          bodyLength,
           hasImage,
         });
 
-  const topicCategory =
-    delivery?.category ?? normalizeTopicCategory(contentTopic);
+  const topicCategory = normalizeTopicCategory(contentTopic);
 
   const mediaTypes = delivery?.modalities?.length
     ? sortMediaModalities(delivery.modalities)
     : inferMediaTypes({
         coverUrl: input.coverUrl,
-        images: input.images ?? output.images,
+        blocks,
         contentType,
-        body,
         contentFormat,
       });
 

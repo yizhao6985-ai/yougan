@@ -5,11 +5,11 @@ import {
   newProfileConstraint,
   newProfileSegment,
   newProfileSetting,
+  normalizeSegmentRole,
   patchDeliveryStep,
   patchExpression,
   patchIntent,
   type ConstraintScope,
-  type FormatParams,
   type ProfileConstraint,
   type ProfileDeliveryStep,
   type ProfileExpressionStep,
@@ -41,9 +41,7 @@ export type SettingPatchInput = {
 
 export type ProfilePatch = {
   intent?: Partial<ProfileIntentStep>;
-  delivery?: Partial<Omit<ProfileDeliveryStep, "params">> & {
-    params?: FormatParams;
-  };
+  delivery?: Partial<ProfileDeliveryStep>;
   expression?: Partial<ProfileExpressionStep>;
   clear_settings?: boolean;
   settings_replace?: SettingPatchInput[];
@@ -60,32 +58,6 @@ export type ApplyProfilePatchResult = {
   profile: WorkProfile;
   changes: string[];
 };
-
-function normalizeSegmentRole(
-  role?: SegmentRole | string | null,
-): SegmentRole | null {
-  if (!role) return null;
-  const valid: SegmentRole[] = [
-    "hook",
-    "context",
-    "point",
-    "example",
-    "cta",
-    "chapter",
-    "scene",
-    "shot",
-    "broll",
-    "transition",
-    "subject",
-    "composition",
-    "detail",
-    "intro",
-    "segment",
-    "outro",
-    "bridge",
-  ];
-  return valid.includes(role as SegmentRole) ? (role as SegmentRole) : null;
-}
 
 const VALID_SETTING_KINDS: ProfileSettingKind[] = [
   "character",
@@ -318,7 +290,7 @@ export function applyProfilePatch(
 
   if (patch.delivery && Object.keys(patch.delivery).length > 0) {
     next = patchDeliveryStep(next, patch.delivery);
-    changes.push("体裁与参数");
+    changes.push("内容形态与规格");
   }
 
   if (patch.expression && hasExpressionPatch(patch.expression)) {

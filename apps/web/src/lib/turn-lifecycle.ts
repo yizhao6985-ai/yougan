@@ -13,11 +13,10 @@ const ACTIVE_LANGGRAPH_RUN_STATUSES = new Set(["pending", "running"]);
 /** 新 submit 前重置的回合运行时与验收产物 */
 export const TURN_EPHEMERAL_RESET: Pick<
   YouganValues,
-  "turn" | "nextStepSuggestions" | "generatedConversationTitle" | "runProgress"
+  "turn" | "nextStepSuggestions" | "runProgress"
 > = {
   turn: { ...EMPTY_TURN_RUNTIME },
   nextStepSuggestions: null,
-  generatedConversationTitle: null,
   runProgress: null,
 };
 
@@ -95,7 +94,7 @@ export function buildTurnFinalizePatch(
   messages: Message[],
 ): Pick<
   YouganValues,
-  "turn" | "nextStepSuggestions" | "generatedConversationTitle" | "runProgress"
+  "turn" | "nextStepSuggestions" | "runProgress"
 > {
   const { turn: cancelled } = buildTurnCancelPatch(prev, messages);
   return {
@@ -105,7 +104,6 @@ export function buildTurnFinalizePatch(
       completedKinds: [],
     }),
     nextStepSuggestions: null,
-    generatedConversationTitle: null,
     runProgress: null,
   };
 }

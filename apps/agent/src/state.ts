@@ -46,7 +46,7 @@ export const AgentState = Annotation.Root({
     reducer: (prev: string | undefined, next: string | undefined) => next,
     default: () => undefined,
   }),
-  /** API 注入：对话标题（占位「对话 N」时可被 generatedConversationTitle 替换） */
+  /** API 注入：对话标题（占位「对话 N」时由 API 用首条用户消息自动替换） */
   conversationTitle: Annotation<string | undefined>({
     reducer: (prev: string | undefined, next: string | undefined) => next,
     default: () => undefined,
@@ -79,12 +79,6 @@ export const AgentState = Annotation.Root({
       prev: NextStepSuggestions | null,
       next: NextStepSuggestions | null | undefined,
     ) => (next === undefined ? (prev ?? null) : next),
-    default: () => null,
-  }),
-  /** 首条用户消息后生成的对话标题建议 */
-  generatedConversationTitle: Annotation<string | null>({
-    reducer: (prev: string | null, next: string | null | undefined) =>
-      next === undefined ? (prev ?? null) : next,
     default: () => null,
   }),
   /** 对话历史滚动摘要（checkpoint 内压缩更早 messages，供后续 LLM 注入） */

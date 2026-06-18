@@ -2,6 +2,10 @@ import { Link } from "react-router-dom";
 
 import { AuthorAvatar } from "@/components/content/author-avatar";
 import { MarkdownContent } from "@/components/markdown-content";
+import {
+  publicationCoverFromBlocks,
+  publicationPlainExcerpt,
+} from "@/components/preview-block-list";
 import { authorDisplayName } from "@/lib/publication-utils";
 import {
   formatLabel,
@@ -79,8 +83,7 @@ export function PublicationFeedPost({
   hideAuthor?: boolean;
 }) {
   const cover =
-    publication.coverUrl ||
-    (publication.images?.[0] as { url?: string } | undefined)?.url;
+    publication.coverUrl || publicationCoverFromBlocks(publication.blocks);
   const timeLabel = publication.publishedAt
     ? formatPublishedAt(publication.publishedAt)
     : null;
@@ -159,7 +162,9 @@ export function PublicationFeedPost({
               "[&_p]:inline [&_p]:m-0",
             )}
           >
-            <MarkdownContent content={publication.body.slice(0, 280)} />
+            <MarkdownContent
+              content={publicationPlainExcerpt(publication.blocks, 280)}
+            />
           </div>
         )}
 

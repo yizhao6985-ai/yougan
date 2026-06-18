@@ -109,7 +109,6 @@ export async function planTurnQueueNode(
   return {
     ...(normalized ?? {}),
     nextStepSuggestions: null,
-    generatedConversationTitle: null,
     ...patchTurn(baseState, {
       queue,
       staging,

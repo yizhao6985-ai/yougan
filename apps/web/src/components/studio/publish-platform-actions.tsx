@@ -13,6 +13,7 @@ import { DISCOVER_SECTION } from "@/lib/content-section";
 import type { PublicationMetadataOverrides } from "@/lib/discover-taxonomy";
 import { PUBLISH, STUDIO } from "@/lib/site-copy";
 import { publicationContentPath } from "@/lib/publication-path";
+import { previewHasContent } from "@yougan/domain";
 import type { WorkPreview } from "@/lib/types";
 
 export function PublishPlatformActions({
@@ -43,7 +44,7 @@ export function PublishPlatformActions({
     setDialogOpen(false);
   };
 
-  if (!preview?.body) return null;
+  if (!previewHasContent(preview)) return null;
   if (isLoading) {
     return (
       <p className="text-xs text-muted-foreground/70">{PUBLISH.checking}</p>

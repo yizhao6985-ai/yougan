@@ -1211,17 +1211,39 @@ export interface components {
         WorkPreview: {
             platform: string;
             title?: string | null;
-            body: string;
-            hashtags?: string[];
             hook?: string | null;
+            hashtags?: string[];
             notes?: string | null;
-            images?: {
-                /** Format: uri */
-                url: string;
-                alt?: string | null;
-                prompt?: string | null;
-            }[];
+            blocks: components["schemas"]["PreviewBlock"][];
         } | null;
+        PreviewBlock: {
+            id: string;
+            taskId?: string | null;
+        } & ({
+            type: "text";
+            markdown: string;
+        } | {
+            type: "image";
+            /** Format: uri */
+            url: string;
+            alt?: string | null;
+            prompt?: string | null;
+            transient?: boolean;
+        } | {
+            type: "audio";
+            /** Format: uri */
+            url: string;
+            title?: string | null;
+            durationSec?: number | null;
+            transcript?: string | null;
+        } | {
+            type: "video";
+            /** Format: uri */
+            url: string;
+            posterUrl?: string | null;
+            title?: string | null;
+            durationSec?: number | null;
+        });
         WorkProduction: {
             pending_tasks: {
                 id: string;
@@ -1238,6 +1260,13 @@ export interface components {
                     body: string;
                     title?: string | null;
                     notes?: string | null;
+                    images?: {
+                        /** Format: uri */
+                        url: string;
+                        alt?: string | null;
+                        prompt?: string | null;
+                        transient?: boolean;
+                    }[];
                 } | null;
                 accept_retry_count?: number;
                 failure_message?: string | null;

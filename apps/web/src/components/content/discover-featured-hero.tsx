@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowRightIcon } from "lucide-react";
 
 import { AuthorAvatar } from "@/components/content/author-avatar";
+import { publicationCoverFromBlocks } from "@/components/preview-block-list";
 import { authorDisplayName } from "@/lib/publication-utils";
 import {
   formatLabel,
@@ -19,8 +20,7 @@ export function DiscoverFeaturedHero({
   publication: Publication;
 }) {
   const cover =
-    publication.coverUrl ||
-    (publication.images?.[0] as { url?: string } | undefined)?.url;
+    publication.coverUrl || publicationCoverFromBlocks(publication.blocks);
   const format = formatLabel(publication.contentFormat);
   const topic = topicCategoryLabel(publication.topicCategory);
 

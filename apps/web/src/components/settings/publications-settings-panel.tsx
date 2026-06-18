@@ -6,6 +6,7 @@ import {
   Trash2Icon,
 } from "lucide-react";
 
+import { publicationCoverFromBlocks } from "@/components/preview-block-list";
 import {
   SettingsEmptyState,
   SettingsPageHeader,
@@ -105,7 +106,7 @@ export function PublicationsSettingsPanel() {
             const busy = busyId === publication.id;
             const cover =
               publication.coverUrl ||
-              (publication.images?.[0] as { url?: string } | undefined)?.url;
+              publicationCoverFromBlocks(publication.blocks);
 
             return (
               <li key={publication.id}>

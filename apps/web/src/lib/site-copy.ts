@@ -333,8 +333,7 @@ export const STUDIO = {
 } as const;
 
 export const CHAT_COPY = {
-  openingSuggestionsLoading: "正在生成下一步建议…",
-  openingSuggestionsEmpty: "暂无合适建议，请在下方输入",
+  openingSuggestionsLoading: "正在生成建议…",
   placeholderDefault: "说说想法、提问，或说明要改方案 / 改作品…",
   emptyTitle: "选择下一步，或直接输入",
   status: {

@@ -87,18 +87,17 @@ export function summarizeProfileStepForSuggestions(
       return profile.intent.summary.trim() || "（空）";
     case "delivery": {
       const parts: string[] = [];
-      if (profile.delivery.format) parts.push(`体裁 ${profile.delivery.format}`);
-      if (profile.delivery.platform) parts.push(`平台 ${profile.delivery.platform}`);
-      const params = profile.delivery.params;
-      if (params.kind === "text") {
-        const { min, max } = params.word_count ?? {};
-        if (min != null || max != null) {
-          parts.push(`字数 ${min ?? "?"}-${max ?? "?"}`);
-        }
-      } else if (params.kind === "video" && params.duration_sec != null) {
-        parts.push(`时长约 ${params.duration_sec} 秒`);
-      } else if (params.kind === "illustration" && params.image_count != null) {
-        parts.push(`约 ${params.image_count} 张`);
+      if (profile.delivery.format) parts.push(`形态 ${profile.delivery.format}`);
+      if (profile.delivery.modalities.length) {
+        parts.push(`媒介 ${profile.delivery.modalities.join("+")}`);
+      }
+      const { media_params: mp } = profile.delivery;
+      const { min, max } = mp.text?.word_count ?? {};
+      if (min != null || max != null) {
+        parts.push(`字数 ${min ?? "?"}-${max ?? "?"}`);
+      }
+      if (mp.video?.duration_sec != null) {
+        parts.push(`时长约 ${mp.video.duration_sec} 秒`);
       }
       return parts.join("；") || "（空）";
     }

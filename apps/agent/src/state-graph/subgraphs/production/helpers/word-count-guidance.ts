@@ -4,8 +4,7 @@ import type { WorkProfile } from "@yougan/domain";
 export function buildWordCountRequirement(
   profile: WorkProfile,
 ): string | null {
-  if (profile.delivery.params.kind !== "text") return null;
-  const { min, max } = profile.delivery.params.word_count ?? {};
+  const { min, max } = profile.delivery.media_params.text?.word_count ?? {};
   if (min == null && max == null) return null;
 
   if (min != null && max != null) {

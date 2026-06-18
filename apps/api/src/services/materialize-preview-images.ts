@@ -1,5 +1,11 @@
 import { nanoid } from "nanoid";
-import type { WorkPreviewImage, WorkProduction } from "@yougan/domain";
+import type {
+  ImagePreviewBlock,
+  PreviewBlock,
+  WorkPreviewImage,
+  WorkProduction,
+} from "@yougan/domain";
+import { parsePreviewBlocks } from "@yougan/domain";
 
 import { env } from "../env.js";
 import { uploadFile } from "./storage.js";
@@ -38,7 +44,10 @@ function isOurStorageUrl(url: string): boolean {
   }
 }
 
-function imageNeedsMaterialize(image: WorkPreviewImage): boolean {
+function imageNeedsMaterialize(image: {
+  url?: string;
+  transient?: boolean;
+}): boolean {
   const url = image.url?.trim();
   if (!url) return false;
   if (isOurStorageUrl(url)) return false;
@@ -123,11 +132,41 @@ async function materializePreviewImage(
   }
 }
 
+async function materializeImageBlock(
+  block: ImagePreviewBlock,
+): Promise<ImagePreviewBlock> {
+  const materialized = await materializePreviewImage({
+    url: block.url,
+    alt: block.alt,
+    prompt: block.prompt,
+    transient: block.transient,
+  });
+  return {
+    ...block,
+    url: materialized.url,
+    alt: materialized.alt ?? null,
+    prompt: materialized.prompt ?? null,
+    transient: undefined,
+  };
+}
+
 async function materializeImageList(
   images: WorkPreviewImage[] | undefined,
 ): Promise<WorkPreviewImage[] | undefined> {
   if (!images?.length) return images;
   return Promise.all(images.map(materializePreviewImage));
+}
+
+async function materializePreviewBlocks(
+  blocks: PreviewBlock[] | undefined,
+): Promise<PreviewBlock[] | undefined> {
+  if (!blocks?.length) return blocks;
+  return Promise.all(
+    blocks.map(async (block) => {
+      if (block.type !== "image") return block;
+      return materializeImageBlock(block);
+    }),
+  );
 }
 
 /** 将 production 内外部临时配图物化到自有 storage（写库前调用）。 */
@@ -137,7 +176,7 @@ export async function materializeWorkProductionImages(
   const preview = production.preview
     ? {
         ...production.preview,
-        images: await materializeImageList(production.preview.images),
+        blocks: await materializePreviewBlocks(production.preview.blocks),
       }
     : production.preview;
 
@@ -179,4 +218,8 @@ export async function materializeAgentRunValues(
     ...values,
     production: materialized,
   };
+}
+
+export function parsePublicationBlocks(raw: unknown): PreviewBlock[] {
+  return parsePreviewBlocks(raw);
 }

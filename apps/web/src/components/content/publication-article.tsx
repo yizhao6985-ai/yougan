@@ -2,8 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowRightIcon } from "lucide-react";
 
 import { AuthorAvatar } from "@/components/content/author-avatar";
-import { MarkdownContent } from "@/components/markdown-content";
-import { WorkPreviewImages } from "@/components/work-preview-images";
+import { PreviewBlockList } from "@/components/preview-block-list";
 import { authorDisplayName } from "@/lib/publication-utils";
 import {
   formatLabel,
@@ -128,8 +127,6 @@ export function PublicationArticle({
 }: {
   publication: Publication;
 }) {
-  const images = publication.images as Array<{ url?: string }>;
-
   return (
     <article className="pb-4">
       <header className={cn(scene.articleColumn, "space-y-5 sm:space-y-6")}>
@@ -146,39 +143,18 @@ export function PublicationArticle({
         <ArticleByline publication={publication} />
       </header>
 
-      {publication.coverUrl ? (
-        <figure className={cn(scene.articleMediaColumn, "mt-10 sm:mt-12")}>
-          <div className="overflow-hidden rounded-2xl bg-secondary/30">
-            <img
-              src={publication.coverUrl}
-              alt=""
-              className="aspect-[16/10] w-full object-cover sm:aspect-[2/1]"
-            />
-          </div>
-        </figure>
-      ) : null}
-
       <div
         className={cn(
           scene.articleColumn,
           scene.articleProse,
-          publication.coverUrl ? "mt-10 sm:mt-12" : "mt-10 sm:mt-12",
+          "mt-10 sm:mt-12",
         )}
       >
-        <MarkdownContent content={publication.body} />
+        <PreviewBlockList
+          blocks={publication.blocks}
+          galleryKey={publication.slug}
+        />
       </div>
-
-      {images?.length ? (
-        <div className={cn(scene.articleMediaColumn, "mt-10 sm:mt-12")}>
-          <WorkPreviewImages
-            images={images.flatMap((image, index) =>
-              image.url
-                ? [{ url: image.url, alt: `配图 ${index + 1}` }]
-                : [],
-            )}
-          />
-        </div>
-      ) : null}
 
       {publication.hashtags?.length ? (
         <div className={cn(scene.articleColumn, "mt-10 flex flex-wrap gap-2")}>
