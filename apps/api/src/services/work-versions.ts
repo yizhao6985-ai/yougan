@@ -1,4 +1,4 @@
-import type { WorkVersionSnapshot } from "@yougan/domain";
+import { DEFAULT_CONVERSATION_TITLE, type WorkVersionSnapshot } from "@yougan/domain";
 
 import { prisma } from "../db.js";
 import type { WorkVersionDTO } from "../schemas.js";
@@ -281,7 +281,7 @@ export async function duplicateWorkFromVersion(
     const conversation = await tx.workConversation.create({
       data: {
         workId: createdWork.id,
-        title: "对话 1",
+        title: DEFAULT_CONVERSATION_TITLE,
       },
     });
 

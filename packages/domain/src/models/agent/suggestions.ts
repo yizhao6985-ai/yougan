@@ -34,7 +34,7 @@ export const TURN_NEXT_STEP_SUGGESTIONS_COUNT = 4;
 
 /** LLM 生成建议 message 的目标字数区间（汉字计，含标点） */
 export const NEXT_STEP_SUGGESTION_MESSAGE_MIN_LENGTH = 12;
-export const NEXT_STEP_SUGGESTION_MESSAGE_MAX_LENGTH = 64;
+export const NEXT_STEP_SUGGESTION_MESSAGE_MAX_LENGTH = 48;
 
 /** 前端展示建议气泡时的截断上限（与 message 上限对齐，避免展示被压成等长） */
 export const MAX_NEXT_STEP_SUGGESTION_DISPLAY_LENGTH =

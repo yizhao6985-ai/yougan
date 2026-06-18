@@ -180,7 +180,7 @@ model WorkConversation {
   id        String   @id @default(cuid())
   workId    String
   work      Work     @relation(fields: [workId], references: [id], onDelete: Cascade)
-  title     String   @default("新对话")
+  title     String   @default("对话")
   threadId  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -1,5 +1,6 @@
 import { Prisma, type Work } from "../db.js";
 import {
+  DEFAULT_CONVERSATION_TITLE,
   EMPTY_WORK_PROFILE,
   EMPTY_WORK_PRODUCTION,
   EMPTY_WORK_REFERENCES,
@@ -81,7 +82,7 @@ export async function createWork(
     const conversation = await tx.workConversation.create({
       data: {
         workId: createdWork.id,
-        title: "对话 1",
+        title: DEFAULT_CONVERSATION_TITLE,
       },
     });
 

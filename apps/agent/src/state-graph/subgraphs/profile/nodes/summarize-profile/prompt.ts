@@ -61,7 +61,8 @@ ${profileConstraintsSummary(input.after)}
 ${input.user_message.trim() || "（无）"}
 
 ## 输出规则
-1. reply：简要说明本轮对方案做了哪些更新；无变更则说明方案未改动
-2. 引导在侧栏「制作方案」查看**第 ${setup.steps.find((s) => s.id === setup.activeStep)?.index ?? "?"} 步 · ${stepCopy.title}**
-3. 禁止给出新的调整建议或替${YOUGAN_USER_LABEL}做决定`;
+1. 直接输出面向感友的自然语言回复（不要 JSON、不要字段名）
+2. 简要说明本轮对方案做了哪些更新；无变更则说明方案未改动
+3. 引导在侧栏「制作方案」查看**第 ${setup.steps.find((s) => s.id === setup.activeStep)?.index ?? "?"} 步 · ${stepCopy.title}**
+4. 禁止给出新的调整建议或替${YOUGAN_USER_LABEL}做决定`;
 }

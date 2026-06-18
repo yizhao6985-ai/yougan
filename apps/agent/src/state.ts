@@ -46,7 +46,7 @@ export const AgentState = Annotation.Root({
     reducer: (prev: string | undefined, next: string | undefined) => next,
     default: () => undefined,
   }),
-  /** API 注入：对话标题（占位「对话 N」时由 API 用首条用户消息自动替换） */
+  /** API 注入：对话标题（占位「对话」时由 API 用首条用户消息自动替换） */
   conversationTitle: Annotation<string | undefined>({
     reducer: (prev: string | undefined, next: string | undefined) => next,
     default: () => undefined,

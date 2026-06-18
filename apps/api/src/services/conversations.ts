@@ -1,5 +1,7 @@
 import type { WorkConversation } from "../db.js";
 
+import { DEFAULT_CONVERSATION_TITLE } from "@yougan/domain";
+
 import { prisma } from "../db.js";
 import type { WorkConversationDTO } from "../schemas.js";
 import { getWork } from "./works.js";
@@ -28,7 +30,7 @@ export async function listWorkConversations(userId: string, workId: string) {
     const created = await prisma.workConversation.create({
       data: {
         workId,
-        title: "对话 1",
+        title: DEFAULT_CONVERSATION_TITLE,
       },
     });
     conversations = [created];
@@ -45,8 +47,7 @@ export async function createWorkConversation(
   const work = await getWork(userId, workId);
   if (!work) return null;
 
-  const count = await prisma.workConversation.count({ where: { workId } });
-  const title = options?.title?.trim() || `对话 ${count + 1}`;
+  const title = options?.title?.trim() || DEFAULT_CONVERSATION_TITLE;
 
   const conversation = await prisma.workConversation.create({
     data: {

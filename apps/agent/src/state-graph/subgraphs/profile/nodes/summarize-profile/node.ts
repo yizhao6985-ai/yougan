@@ -1,16 +1,15 @@
-/** summarize-profile：总结方案变更并回复感友 */
+/** summarize-profile：总结方案变更并流式回复感友 */
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import type { RunnableConfig } from "@langchain/core/runnables";
 import type { WorkProfile } from "@yougan/domain";
 
-import { invokeStructured } from "#agent/llm/invoke/index.js";
+import { streamChat } from "#agent/llm/invoke/index.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
 import { getLatestHumanMessageText } from "#agent/messages/human.js";
 import { getProfile } from "#agent/state-io/index.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
 import { buildSummarizeProfilePrompt } from "./prompt.js";
-import { ProfileTurnSummarySchema } from "./schema.js";
 
 function profileSnapshotChanged(
   before: WorkProfile,
@@ -35,9 +34,8 @@ export async function summarizeProfileNode(
   }
 
   const llm = createChatModel({ temperature: 0.2 });
-  const summary = await invokeStructured(
+  const response = await streamChat(
     llm,
-    ProfileTurnSummarySchema,
     [
       new HumanMessage(
         buildSummarizeProfilePrompt({
@@ -48,11 +46,10 @@ export async function summarizeProfileNode(
         }),
       ),
     ],
-    { name: "profile_summarize_turn" },
     config,
   );
 
   return {
-    messages: [new AIMessage(summary.reply)],
+    messages: [response],
   };
 }

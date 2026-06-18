@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import {
   ChevronRightIcon,
   MessageSquarePlusIcon,
@@ -35,8 +36,46 @@ export function WorkSidebarItem({
     selectConversation,
     createConversation,
     deleteConversation,
+    cancelActiveTurn,
     stream,
   } = useYouganStreamContext();
+
+  const cancelStreamIfNeeded = useCallback(
+    async (options?: { conversationId?: string }) => {
+      if (!stream.isLoading) return;
+      if (
+        options?.conversationId &&
+        activeConversation?.id !== options.conversationId
+      ) {
+        return;
+      }
+      await cancelActiveTurn();
+    },
+    [activeConversation?.id, cancelActiveTurn, stream.isLoading],
+  );
+
+  const handleCreateConversation = useCallback(async () => {
+    await cancelStreamIfNeeded();
+    await createConversation();
+  }, [cancelStreamIfNeeded, createConversation]);
+
+  const handleDeleteConversation = useCallback(
+    async (conversationId: string) => {
+      await cancelStreamIfNeeded({ conversationId });
+      await deleteConversation(conversationId);
+    },
+    [cancelStreamIfNeeded, deleteConversation],
+  );
+
+  const handleSelectConversation = useCallback(
+    async (conversationId: string) => {
+      if (conversationId !== activeConversation?.id) {
+        await cancelStreamIfNeeded();
+      }
+      selectConversation(conversationId);
+    },
+    [activeConversation?.id, cancelStreamIfNeeded, selectConversation],
+  );
 
   return (
     <Collapsible open={isActive} className="mb-1">
@@ -98,9 +137,8 @@ export function WorkSidebarItem({
       <CollapsibleContent className="space-y-0.5 pb-1 pl-3 pt-0.5">
         <button
           type="button"
-          disabled={stream.isLoading}
           className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs font-medium text-muted-foreground transition hover:bg-accent/70 hover:text-foreground"
-          onClick={() => void createConversation()}
+          onClick={() => void handleCreateConversation()}
         >
           <MessageSquarePlusIcon className="size-3.5 shrink-0" />
           {STUDIO.newConversation}
@@ -127,7 +165,7 @@ export function WorkSidebarItem({
               <button
                 type="button"
                 className="flex min-w-0 flex-1 items-start gap-2 px-2 py-1.5 text-left"
-                onClick={() => selectConversation(conversation.id)}
+                onClick={() => void handleSelectConversation(conversation.id)}
               >
                 <MessagesSquareIcon
                   className={cn(
@@ -145,9 +183,8 @@ export function WorkSidebarItem({
                 <button
                   type="button"
                   aria-label="删除对话"
-                  disabled={stream.isLoading}
                   className="inline-flex size-6 shrink-0 items-center justify-center rounded-md opacity-0 transition hover:bg-background/80 hover:text-destructive group-hover/conv:opacity-100"
-                  onClick={() => void deleteConversation(conversation.id)}
+                  onClick={() => void handleDeleteConversation(conversation.id)}
                 >
                   <Trash2Icon className="size-3" />
                 </button>
