@@ -3,6 +3,7 @@ import type { RunnableConfig } from "@langchain/core/runnables";
 
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
+import { patchAiUsageMetering } from "#agent/llm/invoke/metering.js";
 import { resolveConversationSummary } from "./helpers/summarize-conversation.js";
 
 export async function summarizeMessagesNode(
@@ -10,5 +11,5 @@ export async function summarizeMessagesNode(
   config?: RunnableConfig,
 ): Promise<AgentStatePatch> {
   const patch = await resolveConversationSummary(state, config);
-  return patch ?? {};
+  return { ...(patch ?? {}), ...patchAiUsageMetering(state.aiUsage, config) };
 }

@@ -6,8 +6,6 @@ import type { AuthedRequest } from "../middleware/auth.js";
 import { requireAuth } from "../middleware/auth.js";
 import {
   DISCOVER_FORMATS,
-  DISCOVER_MEDIA_TYPES,
-  DISCOVER_PLATFORMS,
   DISCOVER_TOPIC_CATEGORIES,
 } from "../lib/discover-taxonomy.js";
 import { PublicationStatusSchema } from "../schemas.js";
@@ -17,7 +15,7 @@ import {
   getPublicationBySlug,
   listPublicationFeed,
   listUserPublications,
-  previewPublicationMetadata,
+  previewPublicationSummaryForWork,
   recordPublicationView,
   updatePublicationStatus,
 } from "../services/publications.js";
@@ -26,23 +24,24 @@ export const publicationsRouter = Router();
 
 const formatIds = DISCOVER_FORMATS.map((item) => item.id);
 const topicIds = DISCOVER_TOPIC_CATEGORIES.map((item) => item.id);
-const mediaIds = DISCOVER_MEDIA_TYPES.map((item) => item.id);
-const platformIds = DISCOVER_PLATFORMS.map((item) => item.id);
 
 const FeedQuerySchema = z.object({
-  platform: z.enum(platformIds as [string, ...string[]]).optional(),
   contentFormat: z.enum(formatIds as [string, ...string[]]).optional(),
   topicCategory: z.enum(topicIds as [string, ...string[]]).optional(),
-  mediaType: z.enum(mediaIds as [string, ...string[]]).optional(),
+  mediaType: z.enum(["text", "image", "audio", "video"]).optional(),
+  mixedTextImage: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((value) => value === "true"),
   limit: z.coerce.number().int().min(1).max(60).optional(),
 });
 
-const MetadataOverridesSchema = z.object({
-  platform: z.enum(platformIds as [string, ...string[]]).optional(),
-  contentFormat: z.enum(formatIds as [string, ...string[]]).optional(),
+const PublicationSummaryOverridesSchema = z.object({
+  title: z.string().optional(),
+  hook: z.string().optional(),
+  coverBlockId: z.string().nullable().optional(),
+  compositionLabel: z.string().optional(),
   topicCategory: z.enum(topicIds as [string, ...string[]]).optional(),
-  mediaType: z.enum(mediaIds as [string, ...string[]]).optional(),
-  mediaTypes: z.array(z.enum(mediaIds as [string, ...string[]])).optional(),
 });
 
 publicationsRouter.get("/feed", async (req, res) => {
@@ -86,7 +85,7 @@ publicationsRouter.get(
     }
 
     try {
-      const preview = await previewPublicationMetadata(
+      const preview = await previewPublicationSummaryForWork(
         req.userId!,
         parsed.data.workId,
       );
@@ -110,7 +109,7 @@ publicationsRouter.post("/", requireAuth, async (req: AuthedRequest, res) => {
     .object({
       workId: z.string(),
       publish: z.boolean().optional(),
-      metadata: MetadataOverridesSchema.optional(),
+      summary: PublicationSummaryOverridesSchema.optional(),
     })
     .safeParse(req.body);
   if (!body.success) {

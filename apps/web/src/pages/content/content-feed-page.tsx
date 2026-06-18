@@ -25,7 +25,6 @@ import {
 import { type DiscoverFacets } from "@/lib/discover-taxonomy";
 
 const EMPTY_FACETS: DiscoverFacets = {
-  platform: [],
   contentFormat: [],
   topicCategory: [],
   mediaType: [],

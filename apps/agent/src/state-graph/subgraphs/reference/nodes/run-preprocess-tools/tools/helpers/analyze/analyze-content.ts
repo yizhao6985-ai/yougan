@@ -28,13 +28,11 @@ function buildFallbackReferenceAnalysis(
 
 function finalizeReferenceAnalysis(
   parsed: ReferenceAnalysis,
-  prep: ReferenceAssetPrep,
+  _prep: ReferenceAssetPrep,
 ): ReferenceAnalysis {
   return {
     ...parsed,
     summary: parsed.summary.trim(),
-    transcript:
-      prep.transcript?.trim() || parsed.transcript?.trim() || undefined,
     visual_cues: parsed.visual_cues?.trim() || undefined,
   };
 }

@@ -1,6 +1,6 @@
 /**
  * 发现页与发布元数据 taxonomy。
- * 复用 taxonomy/content 的体裁与媒介 id；扩展平台、分类、意图入口与筛选结构。
+ * 复用 taxonomy/content 的体裁与媒介 id；扩展分类、意图入口与筛选结构。
  */
 import {
   CONTENT_FORMATS,
@@ -22,16 +22,6 @@ export const DISCOVER_TOPIC_CATEGORIES = [
   { id: "general", label: "综合" },
 ] as const;
 
-export const DISCOVER_PLATFORMS = [
-  { id: "yougan", label: "有感" },
-  { id: "xiaohongshu", label: "小红书" },
-  { id: "weibo", label: "微博" },
-  { id: "wechat", label: "微信公众号" },
-  { id: "douyin", label: "抖音" },
-  { id: "kuaishou", label: "快手" },
-  { id: "bilibili", label: "哔哩哔哩" },
-] as const;
-
 export const DISCOVER_INTENT_ENTRIES = [
   {
     id: "story",
@@ -48,8 +38,8 @@ export const DISCOVER_INTENT_ENTRIES = [
   {
     id: "notes",
     label: "刷笔记",
-    description: "种草、生活与日常",
-    filters: { contentFormat: "note" },
+    description: "图文混排、适合扫读",
+    filters: { mixedTextImage: true },
   },
   {
     id: "audio",
@@ -75,23 +65,21 @@ export type DiscoverFormatId = (typeof CONTENT_FORMATS)[number]["id"];
 export type DiscoverTopicCategoryId =
   (typeof DISCOVER_TOPIC_CATEGORIES)[number]["id"];
 export type DiscoverMediaTypeId = (typeof MEDIA_MODALITIES)[number]["id"];
-export type DiscoverPlatformId = (typeof DISCOVER_PLATFORMS)[number]["id"];
 
-export type PublicationMetadataOverrides = {
-  platform?: string;
-  contentFormat?: string;
-  topicCategory?: string;
-  /** 单原子筛选（发现页 URL 兼容） */
-  mediaType?: MediaModalityId;
-  mediaTypes?: MediaModalityId[];
-};
+export type {
+  PublicationSummaryOverrides,
+  PublicationSummaryPreview,
+} from "../work/publication-summary.js";
+
+import type { PublicationSummaryPreview } from "../work/publication-summary.js";
 
 export type DiscoverFilters = {
-  platform?: string;
   contentFormat?: string;
   topicCategory?: string;
   /** 筛选包含该媒介原子的内容 */
   mediaType?: MediaModalityId;
+  /** 图文混排（刷笔记）：同时含 text 与 image */
+  mixedTextImage?: boolean;
 };
 
 export type DiscoverFacetOption = {
@@ -101,14 +89,12 @@ export type DiscoverFacetOption = {
 };
 
 export type DiscoverFacets = {
-  platform: DiscoverFacetOption[];
   contentFormat: DiscoverFacetOption[];
   topicCategory: DiscoverFacetOption[];
   mediaType: DiscoverFacetOption[];
 };
 
 export type PublicationMetadata = {
-  platform: string;
   contentFormat: string;
   topicCategory: DiscoverTopicCategoryId;
   contentTopic: string | null;
@@ -116,14 +102,13 @@ export type PublicationMetadata = {
   mediaTypes: MediaModalityId[];
 };
 
-export type PublicationMetadataPreview = {
-  metadata: PublicationMetadata;
-  labels: {
-    platform: string | null;
-    contentFormat: string | null;
-    topicCategory: string | null;
-    mediaTypes: string | null;
-  };
+export type PublicationMetadataOverrides = {
+  contentFormat?: string;
+  topicCategory?: string;
+  mediaType?: MediaModalityId;
+  mediaTypes?: MediaModalityId[];
 };
+
+export type PublicationMetadataPreview = PublicationSummaryPreview;
 
 export const EMPTY_DISCOVER_FILTERS: DiscoverFilters = {};

@@ -6,10 +6,8 @@ import {
 import type { DeliverySpec } from "../models/work/profile.js";
 import {
   inferFormatFromModalities,
-  parseDeliveryMediaParams,
   syncModalitiesWithFormat,
 } from "./work/delivery-media-params.js";
-import { inferMediaModalities, sortMediaModalities } from "./media-modalities.js";
 
 const FORMAT_IDS = new Set<string>(CONTENT_FORMATS.map((item) => item.id));
 

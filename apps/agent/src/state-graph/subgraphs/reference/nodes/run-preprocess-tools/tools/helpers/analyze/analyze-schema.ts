@@ -6,6 +6,5 @@ export const ReferenceContentAnalyzeSchema = z.object({
   tone_hints: z.array(z.string()).optional(),
   style_hints: z.array(z.string()).optional(),
   structure_hints: z.array(z.string()).optional(),
-  transcript: z.string().optional().describe("ASR 转写稿，音频/视频素材"),
-  visual_cues: z.string().optional().describe("视觉感知摘要，图片/视频素材"),
+  visual_cues: z.string().optional().describe("视觉感知摘要，图片素材"),
 });

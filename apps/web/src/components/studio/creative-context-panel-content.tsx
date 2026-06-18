@@ -38,15 +38,15 @@ type CreativeContextPanelContentProps = {
   preview?: WorkPreview | null;
   previewUnsaved?: boolean;
   onDuplicated?: (workId: string) => void;
-  onUpdateConstraint?: (ruleId: string, description: string) => void;
-  onDeleteConstraint?: (ruleId: string) => void;
-  onClearConstraints?: () => void;
-  onUpdateSegment?: (segmentId: string, description: string) => void;
-  onDeleteSegment?: (segmentId: string) => void;
-  onClearSegments?: () => void;
-  onUpdateSetting?: (settingId: string, description: string) => void;
-  onDeleteSetting?: (settingId: string) => void;
-  onClearSettings?: () => void;
+  onUpdateBound?: (itemId: string, spec: string) => void;
+  onDeleteBound?: (itemId: string) => void;
+  onClearBounds?: () => void;
+  onUpdateSequence?: (itemId: string, spec: string) => void;
+  onDeleteSequence?: (itemId: string) => void;
+  onClearSequence?: () => void;
+  onUpdateContext?: (itemId: string, spec: string) => void;
+  onDeleteContext?: (itemId: string) => void;
+  onClearContext?: () => void;
 };
 
 export function CreativeContextPanelContent({
@@ -56,15 +56,15 @@ export function CreativeContextPanelContent({
   preview,
   previewUnsaved,
   onDuplicated,
-  onUpdateConstraint,
-  onDeleteConstraint,
-  onClearConstraints,
-  onUpdateSegment,
-  onDeleteSegment,
-  onClearSegments,
-  onUpdateSetting,
-  onDeleteSetting,
-  onClearSettings,
+  onUpdateBound,
+  onDeleteBound,
+  onClearBounds,
+  onUpdateSequence,
+  onDeleteSequence,
+  onClearSequence,
+  onUpdateContext,
+  onDeleteContext,
+  onClearContext,
 }: CreativeContextPanelContentProps) {
   const [activeTab, setActiveTab] = useState<CreativeContextTabId>(readStoredTab);
 
@@ -113,15 +113,15 @@ export function CreativeContextPanelContent({
               profile={profile}
               editable={Boolean(activeWork)}
               compact
-              onUpdateConstraint={onUpdateConstraint}
-              onDeleteConstraint={onDeleteConstraint}
-              onClearConstraints={onClearConstraints}
-              onUpdateSegment={onUpdateSegment}
-              onDeleteSegment={onDeleteSegment}
-              onClearSegments={onClearSegments}
-              onUpdateSetting={onUpdateSetting}
-              onDeleteSetting={onDeleteSetting}
-              onClearSettings={onClearSettings}
+              onUpdateBound={onUpdateBound}
+              onDeleteBound={onDeleteBound}
+              onClearBounds={onClearBounds}
+              onUpdateSequence={onUpdateSequence}
+              onDeleteSequence={onDeleteSequence}
+              onClearSequence={onClearSequence}
+              onUpdateContext={onUpdateContext}
+              onDeleteContext={onDeleteContext}
+              onClearContext={onClearContext}
             />
           </div>
         ) : null}

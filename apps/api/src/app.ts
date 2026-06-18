@@ -79,7 +79,7 @@ export function createApp() {
   // RAG 客服 Agent（AG-UI Protocol，无需登录）
   app.use(createRagChatProxy());
 
-  // Agent SDK 兼容代理（需 JWT + X-Work-Id）
+  // Agent SDK 兼容代理（需 JWT + X-Work-Id）；cancel / updateState 结束后 proxy 入账
   app.use("/agent", requireAuth, injectWorkContext, createAgentProxy());
 
   app.use((_req, res) => {

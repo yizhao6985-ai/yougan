@@ -38,6 +38,9 @@ const ApiEnvSchema = z
     SMTP_USER: optionalString,
     SMTP_PASS: optionalString,
     MAIL_FROM: optionalString,
+    DASHSCOPE_API_KEY: optionalString,
+    DASHSCOPE_BASE_URL: optionalString,
+    DASHSCOPE_CHAT_MODEL: optionalString,
   })
   .superRefine((env, ctx) => {
     if (env.STORAGE_DRIVER !== "oss") return;
@@ -97,6 +100,13 @@ const ApiEnvSchema = z
         accessKeyId: env.OSS_ACCESS_KEY_ID,
         secretAccessKey: env.OSS_SECRET_ACCESS_KEY,
       },
+    },
+    llm: {
+      dashscopeApiKey: env.DASHSCOPE_API_KEY ?? "",
+      dashscopeBaseUrl:
+        env.DASHSCOPE_BASE_URL ??
+        "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      dashscopeChatModel: env.DASHSCOPE_CHAT_MODEL ?? "qwen-plus",
     },
   }));
 

@@ -176,7 +176,9 @@ export async function materializeWorkProductionImages(
   const preview = production.preview
     ? {
         ...production.preview,
-        blocks: await materializePreviewBlocks(production.preview.blocks),
+        blocks:
+          (await materializePreviewBlocks(production.preview.blocks)) ??
+          production.preview.blocks,
       }
     : production.preview;
 

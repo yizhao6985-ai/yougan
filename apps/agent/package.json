@@ -25,7 +25,6 @@
     "@langchain/langgraph-checkpoint-postgres": "^1.0.2",
     "@yougan/domain": "workspace:*",
     "dotenv": "^17.4.2",
-    "ffmpeg-static": "^5.2.0",
     "nanoid": "^5.1.11",
     "zod": "^3.25.76"
   },

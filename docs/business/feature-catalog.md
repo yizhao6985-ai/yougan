@@ -42,7 +42,7 @@
 
 | 功能 | 用户价值 | 状态 | 模型 |
 |------|----------|------|------|
-| 定方案对话 | 按步骤定选题、体裁、表达、结构与规则 | 已实现 | profile 子图 + 五步方案工具（`update_profile_intent` … `update_profile_constraints`） |
+| 定方案对话 | 按步骤定方向、风格、背景、节拍与边界 | 已实现 | profile 子图 + 五步方案工具（`update_profile_direction` … `update_profile_bounds`） |
 | 参考素材分析 | 上传附件自动分析入库 | 已实现 | reference 子图 + MiniMax 多模态 |
 | 聊天改状态 | 改方案、参考、作品预览 | 已实现 | profile / reference / production 子图 + 工具 |
 | 制作计划与出稿 | 排计划 + AI 团队执行 | 已实现 | production 子图 |
@@ -72,7 +72,7 @@
 |------|----------|------|------|
 | 免费版 | 体验全流程 | 已实现 | 30 次/月 AI 创作 |
 | Pro 订阅 | 高频创作 | 已实现（支付模拟） | 500 次/月，¥29/月或 ¥288/年 |
-| 额度展示与用尽提示 | 透明消费 | 已实现 | `consumeAiUsage` |
+| 额度展示与用尽提示 | 透明消费 | 已实现 | `assertAiQuotaAvailable` |
 | 订单列表 | 财务可追溯 | 已实现 | `BillingOrder` |
 | 退款 | 降低付费顾虑 | 已实现（模拟支付下即时生效） | 收回 Pro |
 | 取消续费 | 灵活订阅 | 已实现 | `cancelAtPeriodEnd` |

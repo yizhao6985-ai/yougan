@@ -32,8 +32,3 @@ export function HelpChatLauncher({ onOpen, className }: HelpChatLauncherProps) {
     </button>
   );
 }
-
-/** @deprecated 使用 HelpChatLauncher */
-export function HelpChatLauncherCompact(props: HelpChatLauncherProps) {
-  return <HelpChatLauncher {...props} />;
-}

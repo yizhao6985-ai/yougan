@@ -8,11 +8,9 @@ import {
 } from "@/components/preview-block-list";
 import { authorDisplayName } from "@/lib/publication-utils";
 import {
-  formatLabel,
-  mediaTypeLabel,
   topicCategoryLabel,
 } from "@/lib/discover-taxonomy";
-import { formatPublishedAt, platformLabel } from "@/lib/platform-labels";
+import { formatPublishedAt } from "@/lib/platform-labels";
 import { publicationContentPath } from "@/lib/publication-path";
 import type { Publication } from "@/lib/publication-types";
 import { scene } from "@/lib/scene-styles";
@@ -26,10 +24,9 @@ function DiscoverBadges({
   className?: string;
 }) {
   const badges = [
-    formatLabel(publication.contentFormat),
+    publication.compositionLabel?.trim(),
     topicCategoryLabel(publication.topicCategory),
-    mediaTypeLabel(publication.mediaTypes),
-    publication.contentTopic,
+    publication.consumptionHint?.trim(),
   ].filter(Boolean);
 
   if (!badges.length) return null;
@@ -57,17 +54,9 @@ function PublicationMeta({
 }) {
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-        <span>{platformLabel(publication.platform)}</span>
-        {timeLabel ? (
-          <>
-            <span aria-hidden className="text-muted-foreground/50">
-              ·
-            </span>
-            <span>{timeLabel}</span>
-          </>
-        ) : null}
-      </div>
+      {timeLabel ? (
+        <p className="text-xs text-muted-foreground">{timeLabel}</p>
+      ) : null}
       <DiscoverBadges publication={publication} />
     </div>
   );
@@ -124,9 +113,6 @@ export function PublicationFeedPost({
                 </span>
               ) : null}
             </div>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {platformLabel(publication.platform)}
-            </p>
             <DiscoverBadges publication={publication} className="mt-2" />
           </div>
         </div>

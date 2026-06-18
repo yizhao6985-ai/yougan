@@ -1,22 +1,29 @@
 import { env } from "#agent/env.js";
 import type { WorkProfile } from "@yougan/domain";
+import { parseProfileJson } from "@yougan/domain";
+
+import { buildWordCountRequirement } from "./word-count-guidance.js";
 
 const PRODUCTION_OUTPUT_CAP = 65_536;
 
-/** 中文正文粗算：约 1.5–2 token/字，为 functionCalling 与整合留余量 */
 function tokensForWordCount(maxChars: number): number {
   return Math.ceil(maxChars * 2.5) + 4096;
 }
 
-/**
- * 制作 LLM 输出 token 上限：默认 LLM_PRODUCTION_MAX_TOKENS；
- * 若方案写明正文字数上限，则按篇幅抬高（不超过 PRODUCTION_OUTPUT_CAP）。
- */
+function extractMaxChars(profile: WorkProfile): number | null {
+  const hint = buildWordCountRequirement(profile);
+  if (!hint) return null;
+  const match = hint.match(/约?\s*(\d+)\s*字/);
+  if (!match?.[1]) return null;
+  const max = Number(match[1]);
+  return Number.isFinite(max) && max > 0 ? max : null;
+}
+
 export function resolveProductionMaxTokens(profile: WorkProfile): number {
   const base = env.llmProductionMaxTokens;
-
-  const maxChars = profile.delivery.media_params.text?.word_count?.max;
-  if (maxChars == null || maxChars <= 0) return base;
+  const normalized = parseProfileJson(profile);
+  const maxChars = extractMaxChars(normalized);
+  if (maxChars == null) return base;
 
   return Math.min(
     PRODUCTION_OUTPUT_CAP,

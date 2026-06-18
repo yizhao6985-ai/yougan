@@ -4,6 +4,7 @@ import type { RunnableConfig } from "@langchain/core/runnables";
 import { z } from "zod";
 
 import { invokeStructured } from "#agent/llm/invoke/index.js";
+import { patchAiUsageMetering } from "#agent/llm/invoke/metering.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
 import {
   emitRunProgress,
@@ -202,6 +203,7 @@ export async function acceptTaskNode(
         ),
       }),
       ...progressPatch,
+      ...patchAiUsageMetering(state.aiUsage, config),
     };
   }
 
@@ -232,6 +234,7 @@ export async function acceptTaskNode(
         ),
       }),
       ...progressPatch,
+      ...patchAiUsageMetering(state.aiUsage, config),
     };
   }
 
@@ -253,6 +256,7 @@ export async function acceptTaskNode(
         ),
       }),
       ...progressPatch,
+      ...patchAiUsageMetering(state.aiUsage, config),
     };
   }
 
@@ -272,5 +276,6 @@ export async function acceptTaskNode(
       ),
     }),
     ...progressPatch,
+    ...patchAiUsageMetering(state.aiUsage, config),
   };
 }

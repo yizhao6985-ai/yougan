@@ -1,10 +1,9 @@
 import {
-  profileDeliveryStepSummary,
-  profileExpressionSummary,
-  profileConstraintsSummary,
-  profileParamsSummary,
-  profileSegmentsSummary,
-  profileSettingsSummary,
+  profileBoundsSummary,
+  profileContextSummary,
+  profileDirectionSummary,
+  profileSequenceSummary,
+  profileStyleSummary,
 } from "#agent/prompts/profile-summary.js";
 import { YOUGAN_USER_LABEL } from "#agent/system-prompt.js";
 import type { WorkProfile } from "@yougan/domain";
@@ -20,8 +19,9 @@ export function buildSummarizeProfilePrompt(input: {
   user_message: string;
   changed: boolean;
 }): string {
-  const beforeSummary = input.before.intent.summary.trim() || "（尚无）";
-  const afterSummary = input.after.intent.summary.trim() || "（尚无）";
+  const beforeSummary =
+    input.before.direction.summary.trim() || "（尚无）";
+  const afterSummary = input.after.direction.summary.trim() || "（尚无）";
 
   const setup = getProfileSetupState(input.after);
   const stepCopy = getProfileStepCopy(input.after, setup.activeStep);
@@ -39,23 +39,19 @@ ${beforeSummary}
 ## 变更后内容定位
 ${afterSummary}
 
-## 变更后完整方案（按步骤）
-① 创作定位：${afterSummary}
+## 变更后完整方案
+① 方向：${profileDirectionSummary(input.after)}
 
-② 内容形态与规格：
-${profileDeliveryStepSummary(input.after)}
-媒介规格：${profileParamsSummary(input.after)}
+② 风格：${profileStyleSummary(input.after)}
 
-③ 表达设定：
-${profileExpressionSummary(input.after)}
+③ 背景：
+${profileContextSummary(input.after)}
 
-④ 结构与要素：
-${profileSettingsSummary(input.after)}
+④ 节拍：
+${profileSequenceSummary(input.after)}
 
-${profileSegmentsSummary(input.after)}
-
-⑤ 创作规则：
-${profileConstraintsSummary(input.after)}
+⑤ 边界：
+${profileBoundsSummary(input.after)}
 
 ## ${YOUGAN_USER_LABEL}原话
 ${input.user_message.trim() || "（无）"}

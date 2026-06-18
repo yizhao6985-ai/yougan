@@ -18,8 +18,7 @@ import {
   mergeProfileState,
   mergeReferencesState,
   mergeTurnRuntime,
-  EMPTY_RUN_METERING,
-  type RunMetering,
+  type AiUsageSnapshot,
   type RunProgress,
   type NextStepSuggestions,
   type TurnRuntime,
@@ -95,18 +94,13 @@ export const AgentState = Annotation.Root({
     },
     default: () => EMPTY_TURN_RUNTIME,
   }),
-  /** API 注入：本周期额度是否已满（含 thread 内待结算 runMetering） */
-  usageExceeded: Annotation<boolean>({
-    reducer: (_prev: boolean, next: boolean | undefined) => next ?? false,
-    default: () => false,
-  }),
-  /** 待结算 LLM 计量；finalizeRunMetering 合并写入，API settle 后清空 */
-  runMetering: Annotation<RunMetering>({
-    reducer: (prev: RunMetering, next: RunMetering | undefined) => {
-      if (next === undefined) return prev ?? EMPTY_RUN_METERING;
-      return next;
-    },
-    default: () => EMPTY_RUN_METERING,
+  /** API 注入 + 单次 LLM 结算后更新 */
+  aiUsage: Annotation<AiUsageSnapshot | undefined>({
+    reducer: (
+      _prev: AiUsageSnapshot | undefined,
+      next: AiUsageSnapshot | undefined,
+    ) => next,
+    default: () => undefined,
   }),
   /** 前端可调；子图 LLM 经 getModelTemperature 读取 */
   modelTemperature: Annotation<number>({

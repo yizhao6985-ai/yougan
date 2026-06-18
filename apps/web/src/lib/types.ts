@@ -8,15 +8,11 @@ export type {
 } from "@/services/types";
 
 export type {
-  ProfileSegment,
-  ProfileSetting,
-  ProfileSettingKind,
-  ProfileConstraint,
-  ProfileIntentStep,
-  ProfileDeliveryStep,
-  ProfileExpressionStep,
-  ProfileStructureStep,
-  ProfileConstraintsStep,
+  ProfileDirection,
+  ProfileStyle,
+  ProfileSpecItem,
+  ProfileSequenceItem,
+  SequenceRole,
   ProfileStepId,
   DeliveryMediaParams,
   NextStepSuggestion,

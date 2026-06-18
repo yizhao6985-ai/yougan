@@ -3,6 +3,7 @@ import {
   commitPending,
   patchTurn,
 } from "#agent/state-io/index.js";
+import { clearRunProgressPatch } from "#agent/state-io/run-progress.js";
 import { getTurn } from "#agent/state-io/turn.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
@@ -28,5 +29,6 @@ export async function commitTurnNode(
       committed: true,
       cancelled: false,
     }),
+    ...clearRunProgressPatch(),
   };
 }

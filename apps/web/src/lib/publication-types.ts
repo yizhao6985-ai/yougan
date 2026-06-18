@@ -1,4 +1,5 @@
 import type { PreviewBlock } from "@yougan/domain";
+import type { BlockComposition } from "@yougan/domain";
 
 export type PublicationStatus = "draft" | "published" | "archived";
 
@@ -18,7 +19,10 @@ export interface Publication {
   excerpt: string | null;
   blocks: PreviewBlock[];
   coverUrl: string | null;
-  platform: string | null;
+  coverBlockId?: string | null;
+  compositionLabel?: string | null;
+  consumptionHint?: string | null;
+  blockComposition?: BlockComposition;
   contentFormat: string | null;
   topicCategory: string | null;
   contentTopic: string | null;

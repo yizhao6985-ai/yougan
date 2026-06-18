@@ -1,6 +1,6 @@
 /**
  * 创作体裁与媒介原子目录。
- * id 与发现页、ProfileDeliveryStep、路由推断共用。
+ * id 与发现页、WorkProfile.direction.format、路由推断共用。
  */
 
 /** 创作体裁（与 DISCOVER_FORMATS 同 id/label） */

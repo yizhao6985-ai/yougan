@@ -117,11 +117,11 @@ export function groupProfileSetupSuggestions(
   }
 
   const order: Array<ProfileStepId | "ready"> = [
-    "intent",
-    "delivery",
-    "expression",
-    "structure",
-    "constraints",
+    "direction",
+    "style",
+    "context",
+    "sequence",
+    "bounds",
     "ready",
   ];
   const groups = new Map<ProfileStepId | "ready", NextStepSuggestion[]>();

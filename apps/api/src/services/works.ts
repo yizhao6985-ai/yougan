@@ -36,7 +36,6 @@ function toWorkDTO(work: Work): WorkDTO {
     profile: resolveProfileFromWork({ profile: work.profile }),
     references: resolveReferencesFromWork({
       references: (work as Work & { references?: unknown }).references,
-      profile: work.profile,
     }),
     production: parseProduction(work.production),
     headVersionId: work.headVersionId,

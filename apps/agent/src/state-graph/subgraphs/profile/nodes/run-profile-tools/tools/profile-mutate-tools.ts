@@ -1,78 +1,72 @@
 /** 作品方案工具：与方案向导五步一一对应 */
-import { getProfile, getState } from "#agent/state-io/index.js";
-
 import { createProfileTool } from "./helpers/run-profile-tool.js";
 import {
-  buildConstraintsPatch,
-  buildDeliveryStepPatch,
-  buildExpressionPatch,
-  buildIntentPatch,
-  buildStructurePatch,
-  constraintsFieldsSchema,
-  deliveryStepFieldsSchema,
-  expressionFieldsSchema,
-  intentFieldsSchema,
-  structureFieldsSchema,
+  boundsFieldsSchema,
+  buildBoundsPatch,
+  buildContextPatch,
+  buildDirectionPatch,
+  buildSequencePatch,
+  buildStylePatch,
+  contextFieldsSchema,
+  directionFieldsSchema,
+  sequenceFieldsSchema,
+  styleFieldsSchema,
 } from "./schemas.js";
 
-export const updateProfileIntent = createProfileTool({
-  name: "update_profile_intent",
-  description: "更新方案第 1 步「创作定位」（summary）。",
-  schema: intentFieldsSchema,
-  toPatch: (input) => {
-    const intent = buildIntentPatch(input);
-    return intent ? { intent } : {};
-  },
-  emptyMessage: "未提供可更新的创作定位字段。",
-});
-
-export const updateProfileDelivery = createProfileTool({
-  name: "update_profile_delivery",
+export const updateProfileDirection = createProfileTool({
+  name: "update_profile_direction",
   description:
-    "更新方案第 2 步「内容形态与规格」（format、modalities、分媒介 media_params）。",
-  schema: deliveryStepFieldsSchema,
+    "更新方案「方向」：创作定位 summary、内容形式 format、受众 audience。",
+  schema: directionFieldsSchema,
   toPatch: (input) => {
-    const profile = getProfile(getState());
-    const delivery = buildDeliveryStepPatch(profile, input);
-    return delivery ? { delivery } : {};
+    const direction = buildDirectionPatch(input);
+    return direction ? { direction } : {};
   },
-  emptyMessage: "未提供可更新的内容形态与规格字段。",
+  emptyMessage: "未提供可更新的方向字段。",
 });
 
-export const updateProfileExpression = createProfileTool({
-  name: "update_profile_expression",
-  description: "更新方案第 3 步「表达设定」（受众、文字风格、画面方向）。",
-  schema: expressionFieldsSchema,
+export const updateProfileStyle = createProfileTool({
+  name: "update_profile_style",
+  description: "更新方案「风格」：文字 verbal、画面 visual。",
+  schema: styleFieldsSchema,
   toPatch: (input) => {
-    const expression = buildExpressionPatch(input);
-    return expression ? { expression } : {};
+    const style = buildStylePatch(input);
+    return style ? { style } : {};
   },
-  emptyMessage: "未提供可更新的表达设定字段。",
+  emptyMessage: "未提供可更新的风格字段。",
 });
 
-export const updateProfileStructure = createProfileTool({
-  name: "update_profile_structure",
+export const updateProfileContext = createProfileTool({
+  name: "update_profile_context",
   description:
-    "更新方案第 4 步「结构与要素」（固定设定 settings、结构段 segments；role 仅 text/image/audio/video）。",
-  schema: structureFieldsSchema,
-  toPatch: (input) => buildStructurePatch(input),
-  emptyMessage: "未提供可更新的结构与要素字段。",
+    "更新方案「背景」：世界设定、品牌背景、人设等正向离散说明（items + mode）。",
+  schema: contextFieldsSchema,
+  toPatch: (input) => buildContextPatch(input),
+  emptyMessage: "未提供可更新的背景字段。",
 });
 
-export const updateProfileConstraints = createProfileTool({
-  name: "update_profile_constraints",
+export const updateProfileSequence = createProfileTool({
+  name: "update_profile_sequence",
   description:
-    "更新方案第 5 步「创作规则」（rules）。每条 rule 可选 scope：all（全局）、verbal（文字/文案，勿用 text）、visual（画面）、audio、video。",
-  schema: constraintsFieldsSchema,
-  toPatch: (input) => buildConstraintsPatch(input),
-  emptyMessage: "未提供可更新的创作规则字段。",
+    "更新方案「节拍」：有序内容意图，可指定 role（text/image/audio/video）；软参考，不 1:1 对应成稿。",
+  schema: sequenceFieldsSchema,
+  toPatch: (input) => buildSequencePatch(input),
+  emptyMessage: "未提供可更新的节拍字段。",
 });
 
-/** 五步方案工具（一步一工具） */
+export const updateProfileBounds = createProfileTool({
+  name: "update_profile_bounds",
+  description:
+    "更新方案「边界」：反向离散说明，如禁止出现的元素、需避免的事项（items + mode）。",
+  schema: boundsFieldsSchema,
+  toPatch: (input) => buildBoundsPatch(input),
+  emptyMessage: "未提供可更新的边界字段。",
+});
+
 export const PROFILE_TOOLS = [
-  updateProfileIntent,
-  updateProfileDelivery,
-  updateProfileExpression,
-  updateProfileStructure,
-  updateProfileConstraints,
+  updateProfileDirection,
+  updateProfileStyle,
+  updateProfileContext,
+  updateProfileSequence,
+  updateProfileBounds,
 ];

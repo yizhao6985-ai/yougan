@@ -105,14 +105,11 @@ export function parsePreviewBlocks(raw: unknown): PreviewBlock[] {
 
 export function parseWorkPreview(raw: unknown): WorkPreview | null {
   if (!isRecord(raw)) return null;
-  const platform = typeof raw.platform === "string" ? raw.platform.trim() : "";
-  if (!platform) return null;
 
   const blocks = parsePreviewBlocks(raw.blocks);
   if (!blocks.length) return null;
 
   return {
-    platform,
     title: typeof raw.title === "string" ? raw.title : null,
     hook: typeof raw.hook === "string" ? raw.hook : null,
     hashtags: Array.isArray(raw.hashtags)

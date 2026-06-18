@@ -35,7 +35,6 @@ export function normalizeWorkDto<T extends NormalizableWorkFields>(work: T): T {
     profile: parseProfileJson(work.profile),
     references: resolveReferencesFromWork({
       references: work.references,
-      profile: work.profile,
     }),
     production,
   };

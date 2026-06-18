@@ -40,6 +40,7 @@ export function StudioChatComposer({
   const {
     stream,
     canSend,
+    usageExceeded,
     modelTemperatureLevel,
     setModelTemperatureLevel,
   } = useYouganStreamContext();
@@ -79,7 +80,11 @@ export function StudioChatComposer({
       <ComposerAttachmentDrawer />
       <PromptInputBody>
         <PromptInputTextarea
-          placeholder={placeholder ?? CHAT_COPY.placeholderDefault}
+          placeholder={
+            usageExceeded
+              ? CHAT_COPY.quotaExceededPlaceholder
+              : (placeholder ?? CHAT_COPY.placeholderDefault)
+          }
           value={input}
           onChange={(event) => onInputChange(event.target.value)}
         />

@@ -5,19 +5,6 @@ export type ReferenceAssetPrep = {
   media_kind: MediaKind;
   descriptor: string;
   text_excerpt?: string;
-  transcript?: string;
   image_url?: string;
-  video_frames?: Buffer[];
-  notes: string[];
-};
-
-export type ReferenceAudioPrep = {
-  transcript?: string;
-  notes: string[];
-};
-
-export type ReferenceVideoPrep = {
-  transcript?: string;
-  frames: Buffer[];
   notes: string[];
 };

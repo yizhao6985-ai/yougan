@@ -4,6 +4,7 @@ import type { RunnableConfig } from "@langchain/core/runnables";
 import type { WorkProfile } from "@yougan/domain";
 
 import { streamChat } from "#agent/llm/invoke/index.js";
+import { patchAiUsageMetering } from "#agent/llm/invoke/metering.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
 import { getLatestHumanMessageText } from "#agent/messages/human.js";
 import { getProfile } from "#agent/state-io/index.js";
@@ -20,7 +21,7 @@ function profileSnapshotChanged(
 
 export async function summarizeProfileNode(
   state: AgentStateType,
-  config?: RunnableConfig,
+  config: RunnableConfig,
 ): Promise<AgentStatePatch> {
   const before = state.profile;
   const after = getProfile(state);
@@ -30,6 +31,7 @@ export async function summarizeProfileNode(
   if (!changed && !userMessage) {
     return {
       messages: [new AIMessage("作品方案暂无变更。")],
+      ...patchAiUsageMetering(state.aiUsage, config),
     };
   }
 
@@ -51,5 +53,6 @@ export async function summarizeProfileNode(
 
   return {
     messages: [response],
+    ...patchAiUsageMetering(state.aiUsage, config),
   };
 }

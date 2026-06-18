@@ -64,20 +64,18 @@ export function AuthorAvatar({
 export function AuthorMeta({
   author,
   publishedAt,
-  platform,
 }: {
   author?: Publication["author"];
   publishedAt?: string | null;
-  platform?: string | null;
 }) {
   return (
     <div className="min-w-0">
       <p className="truncate text-sm font-semibold text-foreground">
         {authorDisplayName(author)}
       </p>
-      <p className="truncate text-xs text-muted-foreground">
-        {[platform, publishedAt].filter(Boolean).join(" · ")}
-      </p>
+      {publishedAt ? (
+        <p className="truncate text-xs text-muted-foreground">{publishedAt}</p>
+      ) : null}
     </div>
   );
 }

@@ -5,10 +5,9 @@ import { AuthorAvatar } from "@/components/content/author-avatar";
 import { PreviewBlockList } from "@/components/preview-block-list";
 import { authorDisplayName } from "@/lib/publication-utils";
 import {
-  formatLabel,
   topicCategoryLabel,
 } from "@/lib/discover-taxonomy";
-import { formatPublishedAt, platformLabel } from "@/lib/platform-labels";
+import { formatPublishedAt } from "@/lib/platform-labels";
 import type { Publication } from "@/lib/publication-types";
 import { scene } from "@/lib/scene-styles";
 import { cn } from "@/lib/utils";
@@ -19,9 +18,8 @@ function ArticleCategoryLine({
   publication: Publication;
 }) {
   const parts = [
-    formatLabel(publication.contentFormat),
+    publication.compositionLabel?.trim(),
     topicCategoryLabel(publication.topicCategory),
-    publication.contentTopic,
   ].filter(Boolean);
 
   if (!parts.length) return null;
@@ -60,16 +58,10 @@ function ArticleByline({ publication }: { publication: Publication }) {
       )}
 
       <span className={scene.articleByline}>
-        {platformLabel(publication.platform)}
         {timeLabel ? (
-          <>
-            <span aria-hidden className="mx-1.5 text-muted-foreground/40">
-              ·
-            </span>
-            <time dateTime={publication.publishedAt ?? undefined}>
-              {timeLabel}
-            </time>
-          </>
+          <time dateTime={publication.publishedAt ?? undefined}>
+            {timeLabel}
+          </time>
         ) : null}
       </span>
     </div>

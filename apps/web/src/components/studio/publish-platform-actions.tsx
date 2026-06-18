@@ -6,11 +6,11 @@ import { Button } from "@/components/ui/button";
 import { PublishConfirmDialog } from "@/components/studio/publish-confirm-dialog";
 import {
   useMyPublicationsQuery,
-  usePublicationMetadataPreviewQuery,
+  usePublicationSummaryPreviewQuery,
   usePublishWorkMutation,
 } from "@/hooks/queries/publications";
 import { DISCOVER_SECTION } from "@/lib/content-section";
-import type { PublicationMetadataOverrides } from "@/lib/discover-taxonomy";
+import type { PublicationSummaryOverrides } from "@/lib/discover-taxonomy";
 import { PUBLISH, STUDIO } from "@/lib/site-copy";
 import { publicationContentPath } from "@/lib/publication-path";
 import { previewHasContent } from "@yougan/domain";
@@ -26,7 +26,7 @@ export function PublishPlatformActions({
   const [dialogOpen, setDialogOpen] = useState(false);
   const { data: publications = [], isLoading } = useMyPublicationsQuery();
   const publishMutation = usePublishWorkMutation();
-  const metadataPreviewQuery = usePublicationMetadataPreviewQuery(
+  const summaryPreviewQuery = usePublicationSummaryPreviewQuery(
     workId,
     dialogOpen,
   );
@@ -39,8 +39,8 @@ export function PublishPlatformActions({
     [publications, workId],
   );
 
-  const handlePublish = async (metadata: PublicationMetadataOverrides) => {
-    await publishMutation.mutateAsync({ workId, publish: true, metadata });
+  const handlePublish = async (summary: PublicationSummaryOverrides) => {
+    await publishMutation.mutateAsync({ workId, publish: true, summary });
     setDialogOpen(false);
   };
 
@@ -90,9 +90,9 @@ export function PublishPlatformActions({
         onOpenChange={setDialogOpen}
         onConfirm={handlePublish}
         isSubmitting={publishMutation.isPending}
-        preview={metadataPreviewQuery.data}
-        previewLoading={metadataPreviewQuery.isLoading}
-        previewError={metadataPreviewQuery.isError}
+        preview={summaryPreviewQuery.data}
+        previewLoading={summaryPreviewQuery.isLoading}
+        previewError={summaryPreviewQuery.isError}
       />
     </>
   );

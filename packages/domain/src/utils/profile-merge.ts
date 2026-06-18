@@ -1,25 +1,19 @@
 import { EMPTY_WORK_PROFILE, type WorkProfile } from "../models/work/profile.js";
-import { mergeDeliveryMediaParams } from "./work/delivery-media-params.js";
 import { isProfileEmpty, parseProfileJson } from "./work/profile.js";
 
 function isProfileAuthoritativeReplace(base: WorkProfile, next: WorkProfile): boolean {
-  if (next.structure.segments.length < base.structure.segments.length) return true;
-  if (next.structure.settings.length < base.structure.settings.length) return true;
-  if (next.constraints.rules.length < base.constraints.rules.length) return true;
+  if (next.context.length < base.context.length) return true;
+  if (next.sequence.length < base.sequence.length) return true;
+  if (next.bounds.length < base.bounds.length) return true;
 
-  const baseSegmentIds = new Set(base.structure.segments.map((s) => s.id));
-  for (const id of baseSegmentIds) {
-    if (!next.structure.segments.some((s) => s.id === id)) return true;
+  for (const id of base.context.map((item) => item.id)) {
+    if (!next.context.some((item) => item.id === id)) return true;
   }
-
-  const baseSettingIds = new Set(base.structure.settings.map((s) => s.id));
-  for (const id of baseSettingIds) {
-    if (!next.structure.settings.some((s) => s.id === id)) return true;
+  for (const id of base.sequence.map((item) => item.id)) {
+    if (!next.sequence.some((item) => item.id === id)) return true;
   }
-
-  const baseRuleIds = new Set(base.constraints.rules.map((g) => g.id));
-  for (const id of baseRuleIds) {
-    if (!next.constraints.rules.some((g) => g.id === id)) return true;
+  for (const id of base.bounds.map((item) => item.id)) {
+    if (!next.bounds.some((item) => item.id === id)) return true;
   }
 
   return false;
@@ -41,41 +35,24 @@ export function mergeProfileState(
   }
 
   return {
-    intent: {
-      summary: patch.intent.summary.trim() || base.intent.summary,
+    direction: {
+      summary: patch.direction.summary.trim() || base.direction.summary,
+      format: patch.direction.format ?? base.direction.format,
+      audience: patch.direction.audience ?? base.direction.audience,
     },
-    delivery: {
-      ...base.delivery,
-      ...patch.delivery,
-      media_params: mergeDeliveryMediaParams(
-        base.delivery.media_params,
-        patch.delivery.media_params,
-      ),
-    },
-    expression: {
-      audience: patch.expression.audience ?? base.expression.audience,
+    style: {
       verbal:
-        patch.expression.verbal !== undefined
-          ? patch.expression.verbal
-          : base.expression.verbal,
+        patch.style?.verbal !== undefined
+          ? patch.style.verbal
+          : base.style?.verbal,
       visual:
-        patch.expression.visual !== undefined
-          ? patch.expression.visual
-          : base.expression.visual,
+        patch.style?.visual !== undefined
+          ? patch.style.visual
+          : base.style?.visual,
     },
-    structure: {
-      settings: patch.structure.settings.length
-        ? patch.structure.settings
-        : base.structure.settings,
-      segments: patch.structure.segments.length
-        ? patch.structure.segments
-        : base.structure.segments,
-    },
-    constraints: {
-      rules: patch.constraints.rules.length
-        ? patch.constraints.rules
-        : base.constraints.rules,
-    },
+    context: patch.context.length ? patch.context : base.context,
+    sequence: patch.sequence.length ? patch.sequence : base.sequence,
+    bounds: patch.bounds.length ? patch.bounds : base.bounds,
   };
 }
 

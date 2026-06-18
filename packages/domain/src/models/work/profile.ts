@@ -5,17 +5,64 @@ export type ProfileSetupStep = ProfileStepId | "ready";
 
 /** 方案步骤 id（与 WorkProfile 顶层键一致；ready 为虚拟完成态） */
 export type ProfileStepId =
-  | "intent"
-  | "delivery"
-  | "expression"
-  | "structure"
-  | "constraints";
+  | "direction"
+  | "style"
+  | "context"
+  | "sequence"
+  | "bounds";
 
-/** ① 创作定位 */
-export interface ProfileIntentStep {
-  /** 面向用户/制作的一句话定位 */
+/** 方向链：定位 · 形式 · 受众 */
+export interface ProfileDirection {
   summary: string;
+  format: ContentFormatId | null;
+  audience?: string | null;
 }
+
+/** 风格：全稿默认调子 */
+export interface ProfileStyle {
+  verbal?: string | null;
+  visual?: string | null;
+}
+
+/** 离散说明（context / bounds 共用） */
+export interface ProfileSpecItem {
+  id: string;
+  spec: string;
+}
+
+/** 有序节拍 */
+export const SEQUENCE_ROLES = ["text", "image", "audio", "video"] as const;
+
+export type SequenceRole = (typeof SEQUENCE_ROLES)[number];
+
+export interface ProfileSequenceItem {
+  id: string;
+  spec: string;
+  role?: SequenceRole | null;
+}
+
+/**
+ * 作品制作方案。
+ * references 在 Work 顶层维护，不在 profile 内。
+ */
+export interface WorkProfile {
+  direction: ProfileDirection;
+  style?: ProfileStyle;
+  /** 正向离散：世界设定、品牌背景等 */
+  context: ProfileSpecItem[];
+  /** 有序意图：成文节拍、插图/插媒体（软参考） */
+  sequence: ProfileSequenceItem[];
+  /** 反向离散：边界与禁止项 */
+  bounds: ProfileSpecItem[];
+}
+
+/** 运行时推断交付规格（创作阶段不含发布分类） */
+export type DeliverySpec = {
+  format: ContentFormatId | null;
+  modalities: MediaModalityId[];
+};
+
+// —— 运行时媒介规格（由 format 推断，不入库） ——
 
 export interface TextMediaParams {
   word_count?: { min?: number; max?: number };
@@ -36,7 +83,6 @@ export interface AudioMediaParams {
   duration_sec?: number;
 }
 
-/** 按媒介拆分的作品规格（支持混排） */
 export interface DeliveryMediaParams {
   text?: TextMediaParams;
   image?: ImageMediaParams;
@@ -44,116 +90,24 @@ export interface DeliveryMediaParams {
   audio?: AudioMediaParams;
 }
 
-/** ② 内容形态与规格 */
-export interface ProfileDeliveryStep {
-  /** 主内容形态（创作模板/归类，不限制实际媒介组合） */
-  format: ContentFormatId | null;
-  /** 作品实际包含的媒介；混排须全部列出，如 ["text", "image"] */
-  modalities: MediaModalityId[];
-  /** 各媒介最小单元规格（画幅、字数范围、时长等；不含张数/段落数） */
-  media_params: DeliveryMediaParams;
-}
-
-/** ③ 表达设定 */
-export interface ProfileExpressionStep {
-  audience?: string | null;
-  verbal?: string | null;
-  visual?: string | null;
-}
-
-/** 结构段媒介节拍（与作品 blocks 顺序对应） */
-export const SEGMENT_ROLES = ["text", "image", "audio", "video"] as const;
-
-export type SegmentRole = (typeof SEGMENT_ROLES)[number];
-
-export interface ProfileSegment {
-  id: string;
-  confirmed_at: string;
-  role?: SegmentRole | null;
-  title?: string | null;
-  description: string;
-}
-
-export type ProfileSettingKind = "character" | "world" | "other";
-
-export interface ProfileSetting {
-  id: string;
-  confirmed_at: string;
-  kind: ProfileSettingKind;
-  title?: string | null;
-  description: string;
-}
-
-/** ④ 结构与要素 */
-export interface ProfileStructureStep {
-  settings: ProfileSetting[];
-  segments: ProfileSegment[];
-}
-
-export type ConstraintScope = "all" | "verbal" | "visual" | "audio" | "video";
-
-/** ⑤ 创作规则条目 */
-export interface ProfileConstraint {
-  id: string;
-  confirmed_at: string;
-  description: string;
-  scope: ConstraintScope;
-}
-
-/** ⑤ 创作规则 */
-export interface ProfileConstraintsStep {
-  rules: ProfileConstraint[];
-}
-
-/**
- * 作品制作方案：按步骤组织。
- * references 在 Work 顶层维护，不在 profile 内。
- */
-export interface WorkProfile {
-  intent: ProfileIntentStep;
-  delivery: ProfileDeliveryStep;
-  expression: ProfileExpressionStep;
-  structure: ProfileStructureStep;
-  constraints: ProfileConstraintsStep;
-}
-
-/** 运行时推断交付规格（创作阶段不含发布分类） */
-export type DeliverySpec = {
-  format: ContentFormatId | null;
-  modalities: MediaModalityId[];
-};
-
-export const EMPTY_PROFILE_INTENT: ProfileIntentStep = {
+export const EMPTY_PROFILE_DIRECTION: ProfileDirection = {
   summary: "",
-};
-
-export const EMPTY_PROFILE_DELIVERY: ProfileDeliveryStep = {
   format: null,
-  modalities: [],
-  media_params: {},
-};
-
-export const EMPTY_PROFILE_STRUCTURE: ProfileStructureStep = {
-  settings: [],
-  segments: [],
-};
-
-export const EMPTY_PROFILE_CONSTRAINTS: ProfileConstraintsStep = {
-  rules: [],
+  audience: null,
 };
 
 export const EMPTY_WORK_PROFILE: WorkProfile = {
-  intent: { ...EMPTY_PROFILE_INTENT },
-  delivery: { ...EMPTY_PROFILE_DELIVERY },
-  expression: {},
-  structure: { ...EMPTY_PROFILE_STRUCTURE },
-  constraints: { ...EMPTY_PROFILE_CONSTRAINTS },
+  direction: { ...EMPTY_PROFILE_DIRECTION },
+  style: {},
+  context: [],
+  sequence: [],
+  bounds: [],
 };
 
 export const PROFILE_STEP_IDS: ProfileStepId[] = [
-  "intent",
-  "delivery",
-  "expression",
-  "structure",
-  "constraints",
+  "direction",
+  "style",
+  "context",
+  "sequence",
+  "bounds",
 ];

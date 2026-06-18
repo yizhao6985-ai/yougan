@@ -11,14 +11,13 @@
 | [01-product-overview.md](./01-product-overview.md) | 产品是什么、解决什么问题 | 有感和其他 AI 工具有什么不同？ |
 | [02-getting-started.md](./02-getting-started.md) | 注册、首件作品、推荐流程 | 怎么开始第一次创作？ |
 | [03-studio-guide.md](./03-studio-guide.md) | 创作台布局与操作 | 对话区、侧栏、版本怎么用？ |
-| [04-planning-your-work.md](./04-planning-your-work.md) | 定方案环节 | 怎么定选题、平台、受众和结构？ |
+| [04-planning-your-work.md](./04-planning-your-work.md) | 定方案环节 | 怎么定选题、受众和结构？ |
 | [05-producing-content.md](./05-producing-content.md) | 制作与修改 | 怎么开始制作、改稿、管理版本？ |
 | [06-using-references.md](./06-using-references.md) | 参考素材 | 怎么上传参考、让 AI 借鉴？ |
 | [07-creation-best-practices.md](./07-creation-best-practices.md) | 创作方法论与技巧 | 怎样写出更好的作品？ |
-| [08-platform-tips.md](./08-platform-tips.md) | 各平台创作要点 | 小红书/公众号怎么写更合适？ |
 | [09-publish-and-discover.md](./09-publish-and-discover.md) | 发布与发现灵感 | 怎么发布、被人看到？ |
 | [10-membership-and-billing.md](./10-membership-and-billing.md) | 会员与额度 | 免费版和 Pro 有什么区别？ |
-| [11-account-and-settings.md](./11-account-and-settings.md) | 账号、设置、平台绑定 | 怎么改资料、绑定小红书？ |
+| [11-account-and-settings.md](./11-account-and-settings.md) | 账号与设置 | 怎么改资料、管理作品？ |
 | [12-faq.md](./12-faq.md) | 常见问题 | 额度用完了怎么办？ |
 | [13-glossary.md](./13-glossary.md) | 术语表 | 「定方案」「制作计划」是什么意思？ |
 
@@ -48,10 +47,10 @@ audience: end-user
 |----------|----------|
 | 不知道怎么开始 | 02、03 |
 | 创作流程与环节 | 04、05、06 |
-| 写好内容 | 07、08 |
+| 写好内容 | 07 |
 | 发布与曝光 | 09 |
 | 付费与额度 | 10、12 |
-| 账号与绑定 | 11、12 |
+| 账号与设置 | 11、12 |
 
 ### 不应纳入 RAG 的文档
 

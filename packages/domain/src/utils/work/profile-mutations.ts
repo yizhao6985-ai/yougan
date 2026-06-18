@@ -1,264 +1,208 @@
 import {
   EMPTY_WORK_PROFILE,
-  type DeliveryMediaParams,
-  type ProfileConstraint,
-  type ProfileDeliveryStep,
-  type ProfileExpressionStep,
-  type ProfileIntentStep,
-  type ProfileSegment,
-  type ProfileSetting,
-  type ProfileSettingKind,
-  type SegmentRole,
+  type ProfileDirection,
+  type ProfileSequenceItem,
+  type ProfileSpecItem,
+  type ProfileStyle,
+  type SequenceRole,
   type WorkProfile,
 } from "../../models/work/profile.js";
 import {
-  defaultMediaParamsForFormat,
-  mergeDeliveryMediaParams,
-} from "./delivery-media-params.js";
-import { syncMediaParamsWithModalities } from "./delivery-display.js";
-import { normalizeSegmentRole } from "./profile.js";
+  newProfileSequenceItem,
+  newProfileSpecItem,
+  normalizeSequenceRole,
+} from "./profile.js";
 
-export function patchIntent(
+export function patchDirection(
   profile: WorkProfile | undefined,
-  intent: Partial<ProfileIntentStep>,
+  direction: Partial<ProfileDirection>,
 ): WorkProfile {
   const base = profile ?? EMPTY_WORK_PROFILE;
   return {
     ...base,
-    intent: {
+    direction: {
       summary:
-        intent.summary !== undefined ? intent.summary : base.intent.summary,
-    },
-  };
-}
-
-export function patchDeliveryStep(
-  profile: WorkProfile | undefined,
-  delivery: Partial<ProfileDeliveryStep>,
-): WorkProfile {
-  const base = profile ?? EMPTY_WORK_PROFILE;
-  const nextFormat =
-    delivery.format !== undefined ? delivery.format : base.delivery.format;
-  const nextModalities =
-    delivery.modalities !== undefined
-      ? delivery.modalities
-      : base.delivery.modalities;
-
-  const mergedMediaParams =
-    delivery.media_params !== undefined
-      ? mergeDeliveryMediaParams(base.delivery.media_params, delivery.media_params)
-      : delivery.format != null && delivery.format !== base.delivery.format
-        ? defaultMediaParamsForFormat(delivery.format, nextModalities)
-        : base.delivery.media_params;
-
-  const media_params = syncMediaParamsWithModalities(
-    nextModalities,
-    mergedMediaParams,
-  );
-
-  return {
-    ...base,
-    delivery: {
-      format: nextFormat,
-      modalities: nextModalities,
-      media_params,
-    },
-  };
-}
-
-export function patchExpression(
-  profile: WorkProfile | undefined,
-  expression: Partial<ProfileExpressionStep>,
-): WorkProfile {
-  const base = profile ?? EMPTY_WORK_PROFILE;
-  return {
-    ...base,
-    expression: {
+        direction.summary !== undefined
+          ? direction.summary
+          : base.direction.summary,
+      format:
+        direction.format !== undefined
+          ? direction.format
+          : base.direction.format,
       audience:
-        expression.audience !== undefined
-          ? expression.audience
-          : base.expression.audience,
-      verbal:
-        expression.verbal !== undefined
-          ? expression.verbal
-          : base.expression.verbal,
-      visual:
-        expression.visual !== undefined
-          ? expression.visual
-          : base.expression.visual,
+        direction.audience !== undefined
+          ? direction.audience
+          : base.direction.audience,
     },
   };
 }
 
-export function updateDeliveryMediaParams(
+export function patchStyle(
   profile: WorkProfile | undefined,
-  media_params: DeliveryMediaParams,
+  style: Partial<ProfileStyle>,
 ): WorkProfile {
   const base = profile ?? EMPTY_WORK_PROFILE;
   return {
     ...base,
-    delivery: {
-      ...base.delivery,
-      media_params: mergeDeliveryMediaParams(
-        base.delivery.media_params,
-        media_params,
-      ),
+    style: {
+      verbal: style.verbal !== undefined ? style.verbal : base.style?.verbal,
+      visual: style.visual !== undefined ? style.visual : base.style?.visual,
     },
   };
 }
 
-export function updateConstraint(
+function updateSpecItem(
+  items: ProfileSpecItem[],
+  itemId: string,
+  spec: string,
+): ProfileSpecItem[] {
+  const trimmed = spec.trim();
+  if (!trimmed) return items;
+  return items.map((item) =>
+    item.id === itemId ? { ...item, spec: trimmed } : item,
+  );
+}
+
+function deleteSpecItem(items: ProfileSpecItem[], itemId: string): ProfileSpecItem[] {
+  return items.filter((item) => item.id !== itemId);
+}
+
+export function updateContextItem(
   profile: WorkProfile | undefined,
-  ruleId: string,
-  description: string,
+  itemId: string,
+  spec: string,
 ): WorkProfile {
   const base = profile ?? EMPTY_WORK_PROFILE;
-  const trimmed = description.trim();
+  return {
+    ...base,
+    context: updateSpecItem(base.context, itemId, spec),
+  };
+}
+
+export function deleteContextItem(
+  profile: WorkProfile | undefined,
+  itemId: string,
+): WorkProfile {
+  const base = profile ?? EMPTY_WORK_PROFILE;
+  return {
+    ...base,
+    context: deleteSpecItem(base.context, itemId),
+  };
+}
+
+export function clearContext(profile: WorkProfile | undefined): WorkProfile {
+  const base = profile ?? EMPTY_WORK_PROFILE;
+  return { ...base, context: [] };
+}
+
+export function updateBoundItem(
+  profile: WorkProfile | undefined,
+  itemId: string,
+  spec: string,
+): WorkProfile {
+  const base = profile ?? EMPTY_WORK_PROFILE;
+  return {
+    ...base,
+    bounds: updateSpecItem(base.bounds, itemId, spec),
+  };
+}
+
+export function deleteBoundItem(
+  profile: WorkProfile | undefined,
+  itemId: string,
+): WorkProfile {
+  const base = profile ?? EMPTY_WORK_PROFILE;
+  return {
+    ...base,
+    bounds: deleteSpecItem(base.bounds, itemId),
+  };
+}
+
+export function clearBounds(profile: WorkProfile | undefined): WorkProfile {
+  const base = profile ?? EMPTY_WORK_PROFILE;
+  return { ...base, bounds: [] };
+}
+
+export function updateSequenceItem(
+  profile: WorkProfile | undefined,
+  itemId: string,
+  spec: string,
+  role?: SequenceRole | string | null,
+): WorkProfile {
+  const base = profile ?? EMPTY_WORK_PROFILE;
+  const trimmed = spec.trim();
   if (!trimmed) return base;
   return {
     ...base,
-    constraints: {
-      rules: base.constraints.rules.map((item) =>
-        item.id === ruleId ? { ...item, description: trimmed } : item,
-      ),
-    },
+    sequence: base.sequence.map((item) =>
+      item.id === itemId
+        ? {
+            ...item,
+            spec: trimmed,
+            role: role === undefined ? item.role : normalizeSequenceRole(role),
+          }
+        : item,
+    ),
   };
 }
 
-export function deleteConstraint(
+export function deleteSequenceItem(
   profile: WorkProfile | undefined,
-  ruleId: string,
+  itemId: string,
 ): WorkProfile {
   const base = profile ?? EMPTY_WORK_PROFILE;
   return {
     ...base,
-    constraints: {
-      rules: base.constraints.rules.filter((item) => item.id !== ruleId),
-    },
+    sequence: base.sequence.filter((item) => item.id !== itemId),
   };
 }
 
-export function clearConstraints(profile: WorkProfile | undefined): WorkProfile {
+export function clearSequence(profile: WorkProfile | undefined): WorkProfile {
   const base = profile ?? EMPTY_WORK_PROFILE;
-  return {
-    ...base,
-    constraints: { rules: [] },
-  };
+  return { ...base, sequence: [] };
 }
 
-export function updateSegment(
+export function appendContext(
   profile: WorkProfile | undefined,
-  segmentId: string,
-  description: string,
-  role?: SegmentRole | string | null,
-  title?: string | null,
+  spec: string,
 ): WorkProfile {
   const base = profile ?? EMPTY_WORK_PROFILE;
-  const trimmed = description.trim();
+  const trimmed = spec.trim();
   if (!trimmed) return base;
+  if (base.context.some((item) => item.spec === trimmed)) return base;
   return {
     ...base,
-    structure: {
-      ...base.structure,
-      segments: base.structure.segments.map((item) =>
-        item.id === segmentId
-          ? {
-              ...item,
-              description: trimmed,
-              role: role === undefined ? item.role : normalizeSegmentRole(role),
-              title: title === undefined ? item.title : title?.trim() || null,
-            }
-          : item,
-      ),
-    },
+    context: [...base.context, newProfileSpecItem(trimmed, "ctx")],
   };
 }
 
-export function deleteSegment(
+export function appendBound(
   profile: WorkProfile | undefined,
-  segmentId: string,
+  spec: string,
 ): WorkProfile {
   const base = profile ?? EMPTY_WORK_PROFILE;
-  return {
-    ...base,
-    structure: {
-      ...base.structure,
-      segments: base.structure.segments.filter((item) => item.id !== segmentId),
-    },
-  };
-}
-
-export function clearSegments(profile: WorkProfile | undefined): WorkProfile {
-  const base = profile ?? EMPTY_WORK_PROFILE;
-  return {
-    ...base,
-    structure: { ...base.structure, segments: [] },
-  };
-}
-
-const VALID_SETTING_KINDS: ProfileSettingKind[] = ["character", "world", "other"];
-
-function normalizeSettingKind(
-  kind?: ProfileSettingKind | string | null,
-): ProfileSettingKind {
-  if (kind && VALID_SETTING_KINDS.includes(kind as ProfileSettingKind)) {
-    return kind as ProfileSettingKind;
-  }
-  return "other";
-}
-
-export function updateSetting(
-  profile: WorkProfile | undefined,
-  settingId: string,
-  description: string,
-  kind?: ProfileSettingKind | string | null,
-  title?: string | null,
-): WorkProfile {
-  const base = profile ?? EMPTY_WORK_PROFILE;
-  const trimmed = description.trim();
+  const trimmed = spec.trim();
   if (!trimmed) return base;
+  if (base.bounds.some((item) => item.spec === trimmed)) return base;
   return {
     ...base,
-    structure: {
-      ...base.structure,
-      settings: base.structure.settings.map((item) =>
-        item.id === settingId
-          ? {
-              ...item,
-              description: trimmed,
-              kind: kind === undefined ? item.kind : normalizeSettingKind(kind),
-              title: title === undefined ? item.title : title?.trim() || null,
-            }
-          : item,
-      ),
-    },
+    bounds: [...base.bounds, newProfileSpecItem(trimmed, "bnd")],
   };
 }
 
-export function deleteSetting(
+export function appendSequence(
   profile: WorkProfile | undefined,
-  settingId: string,
+  spec: string,
+  role?: SequenceRole | string | null,
 ): WorkProfile {
   const base = profile ?? EMPTY_WORK_PROFILE;
+  const trimmed = spec.trim();
+  if (!trimmed) return base;
+  if (base.sequence.some((item) => item.spec === trimmed)) return base;
   return {
     ...base,
-    structure: {
-      ...base.structure,
-      settings: base.structure.settings.filter((item) => item.id !== settingId),
-    },
+    sequence: [...base.sequence, newProfileSequenceItem(trimmed, role)],
   };
 }
 
-export function clearSettings(profile: WorkProfile | undefined): WorkProfile {
-  const base = profile ?? EMPTY_WORK_PROFILE;
-  return {
-    ...base,
-    structure: { ...base.structure, settings: [] },
-  };
-}
-
-export type {
-  ProfileConstraint,
-  ProfileSegment,
-  ProfileSetting,
-};
+export type { ProfileSequenceItem, ProfileSpecItem };

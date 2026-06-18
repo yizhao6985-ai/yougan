@@ -23,5 +23,7 @@ export * from "./utils/aspect-ratio.js";
 export * from "./utils/image-aspect-ratio.js";
 export * from "./utils/media-modalities.js";
 export * from "./utils/discover/taxonomy.js";
+export * from "./utils/discover/publication-summary.js";
+export * from "./utils/work/block-composition.js";
 export * from "./utils/publication-slug.js";
 export * from "./utils/ai-metering/index.js";

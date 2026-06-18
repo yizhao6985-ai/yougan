@@ -27,7 +27,6 @@ function snapshotFromWorkColumns(work: {
     profile: resolveProfileFromWork({ profile: work.profile }),
     references: resolveReferencesFromWork({
       references: work.references,
-      profile: work.profile,
     }),
     production: parseProduction(work.production),
   };

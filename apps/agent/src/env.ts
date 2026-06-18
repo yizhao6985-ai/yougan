@@ -1,18 +1,11 @@
 /**
  * Agent 环境变量解析与归一化。
- * Chat：Qwen（百炼 OpenAI 兼容）+ MiniMax（多模态 OpenAI 兼容）。
+ * 百炼凭证：仅 DASHSCOPE_API_KEY + DASHSCOPE_BASE_URL；模型见 llm/providers/catalog.ts。
  */
 import { config as loadEnv } from "dotenv";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
-
-import {
-  DASHSCOPE_ASR_MODELS,
-  MINIMAX_IMAGE_MODELS,
-  MINIMAX_MODELS,
-  QWEN_MODELS,
-} from "./llm/providers/catalog.js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 loadEnv({ path: resolve(root, ".env") });
@@ -55,7 +48,6 @@ const AgentEnvSchema = z
     POSTGRES_URI: requiredString,
     DASHSCOPE_API_KEY: optionalString,
     DASHSCOPE_BASE_URL: optionalString,
-    DASHSCOPE_MODEL: optionalString,
     LLM_MAX_TOKENS: z.coerce.number().int().positive().default(8192),
     /** 制作产出 / 整合成稿：输出上限高于通用结构化调用 */
     LLM_PRODUCTION_MAX_TOKENS: z.coerce
@@ -64,12 +56,6 @@ const AgentEnvSchema = z
       .positive()
       .default(32768),
     LLM_TEMPERATURE: z.coerce.number().min(0).max(2).default(0.7),
-    LLM_MODEL_ASR: optionalString,
-    MINIMAX_API_KEY: optionalString,
-    MINIMAX_BASE_URL: optionalString,
-    MINIMAX_MODEL: optionalString,
-    MINIMAX_IMAGE_MODEL: optionalString,
-    MINIMAX_MAX_TOKENS: z.coerce.number().int().positive().optional(),
     TAVILY_API_KEY: optionalString,
   })
   .transform((env) => {
@@ -82,17 +68,9 @@ const AgentEnvSchema = z
       dashscopeApiKey: env.DASHSCOPE_API_KEY ?? "",
       dashscopeBaseUrl,
       dashscopeApiBaseUrl: resolveDashScopeApiBaseUrl(dashscopeBaseUrl),
-      dashscopeModel: env.DASHSCOPE_MODEL ?? QWEN_MODELS.default,
       llmMaxTokens: env.LLM_MAX_TOKENS,
       llmProductionMaxTokens: env.LLM_PRODUCTION_MAX_TOKENS,
       llmTemperature: env.LLM_TEMPERATURE,
-      llmModelAsr: env.LLM_MODEL_ASR ?? DASHSCOPE_ASR_MODELS.funAsr,
-      minimaxApiKey: env.MINIMAX_API_KEY ?? "",
-      minimaxBaseUrl: env.MINIMAX_BASE_URL ?? "https://api.minimaxi.com/v1",
-      minimaxModel: env.MINIMAX_MODEL ?? MINIMAX_MODELS.m3,
-      minimaxImageModel:
-        env.MINIMAX_IMAGE_MODEL ?? MINIMAX_IMAGE_MODELS.image01,
-      minimaxMaxTokens: env.MINIMAX_MAX_TOKENS ?? env.LLM_MAX_TOKENS,
       tavilyApiKey: env.TAVILY_API_KEY ?? "",
     };
   });

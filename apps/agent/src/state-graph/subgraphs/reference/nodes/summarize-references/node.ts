@@ -11,6 +11,7 @@ import {
 } from "@yougan/domain";
 
 import { invokeStructured } from "#agent/llm/invoke/index.js";
+import { patchAiUsageMetering } from "#agent/llm/invoke/metering.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
 import {
   getLatestHumanMessageText,
@@ -100,5 +101,6 @@ export async function summarizeReferencesNode(
   return {
     ...patchPendingReferences(state, next),
     messages: [new AIMessage(summary.reply)],
+    ...patchAiUsageMetering(state.aiUsage, config),
   };
 }

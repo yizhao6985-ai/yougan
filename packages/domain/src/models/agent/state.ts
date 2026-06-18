@@ -3,6 +3,7 @@ import type { WorkProduction } from "../work/production.js";
 import type { WorkReference } from "../work/reference.js";
 import type { NextStepSuggestions } from "./suggestions.js";
 import type { RunProgress } from "./run-progress.js";
+import type { AiUsageSnapshot } from "./ai-usage.js";
 import type { TurnRuntime } from "./turn.js";
 
 /**
@@ -23,6 +24,8 @@ export interface YouganAgentState {
   nextStepSuggestions: NextStepSuggestions | null;
   /** 单轮执行运行时（调度、staging、取消） */
   turn: TurnRuntime;
+  /** API 注入；单次 LLM 结算后更新 */
+  aiUsage?: AiUsageSnapshot;
   /** 当前运行进度（不入库；回合结束清空） */
   runProgress?: RunProgress | null;
 }
@@ -42,6 +45,7 @@ export type YouganStreamValues = Partial<
     | "production"
     | "nextStepSuggestions"
     | "turn"
+    | "aiUsage"
     | "runProgress"
   >
 > & {

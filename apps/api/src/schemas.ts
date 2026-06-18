@@ -75,49 +75,36 @@ const DeliveryMediaParamsSchema = z.object({
 
 export const WorkProfileSchema = z
   .object({
-    intent: z.object({
+    direction: z.object({
       summary: z.string(),
-    }),
-    delivery: z.object({
       format: z.string().nullable(),
-      modalities: z.array(z.string()),
-      media_params: DeliveryMediaParamsSchema,
-    }),
-    expression: z.object({
       audience: z.string().nullable().optional(),
-      verbal: z.string().nullable().optional(),
-      visual: z.string().nullable().optional(),
     }),
-    structure: z.object({
-      settings: z.array(
-        z.object({
-          id: z.string(),
-          confirmed_at: z.string(),
-          kind: z.enum(["character", "world", "other"]),
-          title: z.string().nullable().optional(),
-          description: z.string(),
-        }),
-      ),
-      segments: z.array(
-        z.object({
-          id: z.string(),
-          confirmed_at: z.string(),
-          role: z.string().nullable().optional(),
-          title: z.string().nullable().optional(),
-          description: z.string(),
-        }),
-      ),
-    }),
-    constraints: z.object({
-      rules: z.array(
-        z.object({
-          id: z.string(),
-          description: z.string(),
-          scope: z.enum(["all", "verbal", "visual", "audio", "video"]),
-          confirmed_at: z.string(),
-        }),
-      ),
-    }),
+    style: z
+      .object({
+        verbal: z.string().nullable().optional(),
+        visual: z.string().nullable().optional(),
+      })
+      .optional(),
+    context: z.array(
+      z.object({
+        id: z.string(),
+        spec: z.string(),
+      }),
+    ),
+    sequence: z.array(
+      z.object({
+        id: z.string(),
+        spec: z.string(),
+        role: z.string().nullable().optional(),
+      }),
+    ),
+    bounds: z.array(
+      z.object({
+        id: z.string(),
+        spec: z.string(),
+      }),
+    ),
   })
   .openapi("WorkProfile");
 
@@ -159,7 +146,6 @@ export const PreviewBlockSchema = z.discriminatedUnion("type", [
 
 export const WorkPreviewSchema = z
   .object({
-    platform: z.string(),
     title: z.string().nullable().optional(),
     hook: z.string().nullable().optional(),
     hashtags: z.array(z.string()).optional(),
@@ -364,7 +350,21 @@ export const PublicationSchema = z
     excerpt: z.string().nullable(),
     blocks: z.array(PreviewBlockSchema),
     coverUrl: z.string().url().nullable(),
-    platform: z.string().nullable(),
+    coverBlockId: z.string().nullable(),
+    compositionLabel: z.string().nullable(),
+    consumptionHint: z.string().nullable(),
+    blockComposition: z
+      .object({
+        blockTypes: z.array(z.enum(["text", "image", "audio", "video"])),
+        textBlockCount: z.number(),
+        imageCount: z.number(),
+        audioCount: z.number(),
+        videoCount: z.number(),
+        textLength: z.number(),
+        totalAudioDurationSec: z.number().nullable(),
+        totalVideoDurationSec: z.number().nullable(),
+      })
+      .optional(),
     contentFormat: z.string().nullable(),
     topicCategory: z.string().nullable(),
     contentTopic: z.string().nullable(),

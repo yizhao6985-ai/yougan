@@ -22,7 +22,7 @@ Agent 每条用户消息先经 **回合队列**（`turn.queue`）workflow（见 
 
 | 对象 | 字段 | 用户可见 | 说明 |
 |------|------|----------|------|
-| `WorkProfile` | `profile` | 是（侧栏「方案」） | 按步骤：`intent` → `delivery` → `expression` → `structure` → `constraints` |
+| `WorkProfile` | `profile` | 是（侧栏「方案」） | 按步骤：`direction` → `style` → `context` → `sequence` → `bounds` |
 | `WorkReference[]` | `references` | 是（侧栏「参考」） | 参考素材及分析、借鉴意图 |
 | `WorkProductionPlan` | `productionPlan` | 否（内部） | 创意总监制作任务 |
 | `WorkPreview` | `preview` | 是（侧栏「作品」） | 成稿标题、正文等 |
@@ -31,14 +31,14 @@ Agent 每条用户消息先经 **回合队列**（`turn.queue`）workflow（见 
 
 ```text
 profile
-├── intent          ① 创作定位（summary）
-├── delivery        ② 体裁与参数（format, modalities, platform, category, params）
-├── expression      ③ 表达设定（audience, verbal, visual）
-├── structure       ④ 结构与要素（settings[], segments[]）
-└── constraints     ⑤ 创作规则（rules[]）
+├── direction       ① 方向（summary, format, audience?）
+├── style           ② 风格（verbal?, visual?）
+├── context[]       ③ 背景（正向离散 spec）
+├── sequence[]      ④ 节拍（有序 spec + role?，软参考）
+└── bounds[]        ⑤ 边界（反向离散 spec）
 ```
 
-**方案就绪**：`intent.summary` 与 `delivery.format` 必填；其余步骤可选。**不做旧版 blueprint / guardrails / 顶层 params 的迁移**。
+**方案就绪**：`direction.summary` 与 `direction.format` 必填；其余步骤可选。
 
 ## 阶段一：定方案（profile）
 
@@ -49,7 +49,7 @@ profile
 | `profile` 队列项 | 多轮对话 + profile 子图按步骤原子工具改方案 |
 | 侧栏 PATCH | 直改物化列并同步 thread |
 
-**对话工具**（profile 子图 `mutateProfile` ⇄ `runProfileTools`）：与方案五步一一对应——`update_profile_intent`、`update_profile_delivery`、`update_profile_expression`、`update_profile_structure`、`update_profile_constraints`；底层经 `applyProfilePatch` 写入 staging。
+**对话工具**（profile 子图 `mutateProfile` ⇄ `runProfileTools`）：与方案五步一一对应——`update_profile_direction`、`update_profile_style`、`update_profile_context`、`update_profile_sequence`、`update_profile_bounds`；底层经 `applyProfilePatch` 写入 staging。
 
 侧栏「方案」以相同五步向导展示与编辑。
 

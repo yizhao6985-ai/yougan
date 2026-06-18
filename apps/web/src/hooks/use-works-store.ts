@@ -17,15 +17,15 @@ import {
 import { queryKeys } from "@/hooks/queries/keys";
 import { normalizeWork } from "@/lib/normalize-work";
 import {
-  clearConstraints,
-  clearSegments,
-  clearSettings,
-  deleteConstraint,
-  deleteSegment,
-  deleteSetting,
-  updateConstraint,
-  updateSegment,
-  updateSetting,
+  clearBounds,
+  clearContext,
+  clearSequence,
+  deleteBoundItem,
+  deleteContextItem,
+  deleteSequenceItem,
+  updateBoundItem,
+  updateContextItem,
+  updateSequenceItem,
 } from "@yougan/domain";
 import type { YouganValues, Work, WorkProfile } from "@/lib/types";
 import { useAuthToken } from "@/store/auth";
@@ -161,111 +161,107 @@ export function useWorksStore() {
     [queryClient, updateWorkMutation],
   );
 
-  const updateProfileConstraintItem = useCallback(
-    (workId: string, ruleId: string, description: string) => {
+  const updateProfileBound = useCallback(
+    (workId: string, itemId: string, spec: string) => {
       const current = queryClient
         .getQueryData<Work[]>(queryKeys.works.list)
         ?.find((work) => work.id === workId);
       if (!current) return;
-      const next = updateConstraint(
-        current.profile,
-        ruleId,
-        description,
-      );
+      const next = updateBoundItem(current.profile, itemId, spec);
       patchProfile(workId, next);
     },
     [patchProfile, queryClient],
   );
 
-  const deleteProfileConstraintItem = useCallback(
-    (workId: string, ruleId: string) => {
+  const deleteProfileBound = useCallback(
+    (workId: string, itemId: string) => {
       const current = queryClient
         .getQueryData<Work[]>(queryKeys.works.list)
         ?.find((work) => work.id === workId);
       if (!current) return;
-      const next = deleteConstraint(current.profile, ruleId);
+      const next = deleteBoundItem(current.profile, itemId);
       patchProfile(workId, next);
     },
     [patchProfile, queryClient],
   );
 
-  const clearWorkProfileConstraints = useCallback(
+  const clearWorkProfileBounds = useCallback(
     (workId: string) => {
       const current = queryClient
         .getQueryData<Work[]>(queryKeys.works.list)
         ?.find((work) => work.id === workId);
       if (!current) return;
-      patchProfile(workId, clearConstraints(current.profile));
+      patchProfile(workId, clearBounds(current.profile));
     },
     [patchProfile, queryClient],
   );
 
-  const updateProfileSegmentItem = useCallback(
-    (workId: string, segmentId: string, description: string) => {
+  const updateProfileSequence = useCallback(
+    (workId: string, itemId: string, spec: string) => {
       const current = queryClient
         .getQueryData<Work[]>(queryKeys.works.list)
         ?.find((work) => work.id === workId);
       if (!current) return;
-      const next = updateSegment(current.profile, segmentId, description);
+      const next = updateSequenceItem(current.profile, itemId, spec);
       patchProfile(workId, next);
     },
     [patchProfile, queryClient],
   );
 
-  const deleteProfileSegmentItem = useCallback(
-    (workId: string, segmentId: string) => {
+  const deleteProfileSequence = useCallback(
+    (workId: string, itemId: string) => {
       const current = queryClient
         .getQueryData<Work[]>(queryKeys.works.list)
         ?.find((work) => work.id === workId);
       if (!current) return;
-      const next = deleteSegment(current.profile, segmentId);
+      const next = deleteSequenceItem(current.profile, itemId);
       patchProfile(workId, next);
     },
     [patchProfile, queryClient],
   );
 
-  const clearWorkProfileSegments = useCallback(
+  const clearWorkProfileSequence = useCallback(
     (workId: string) => {
       const current = queryClient
         .getQueryData<Work[]>(queryKeys.works.list)
         ?.find((work) => work.id === workId);
       if (!current) return;
-      patchProfile(workId, clearSegments(current.profile));
+      patchProfile(workId, clearSequence(current.profile));
     },
     [patchProfile, queryClient],
   );
 
-  const updateProfileSettingItem = useCallback(
-    (workId: string, settingId: string, description: string) => {
+  const updateProfileContext = useCallback(
+    (workId: string, itemId: string, spec: string) => {
       const current = queryClient
         .getQueryData<Work[]>(queryKeys.works.list)
         ?.find((work) => work.id === workId);
       if (!current) return;
-      const next = updateSetting(current.profile, settingId, description);
+      const next = updateContextItem(current.profile, itemId, spec);
       patchProfile(workId, next);
     },
     [patchProfile, queryClient],
   );
 
-  const deleteProfileSettingItem = useCallback(
-    (workId: string, settingId: string) => {
+  const deleteProfileContext = useCallback(
+    (workId: string, itemId: string) => {
       const current = queryClient
         .getQueryData<Work[]>(queryKeys.works.list)
         ?.find((work) => work.id === workId);
       if (!current) return;
-      const next = deleteSetting(current.profile, settingId);
+      const next = deleteContextItem(current.profile, itemId);
       patchProfile(workId, next);
     },
     [patchProfile, queryClient],
   );
 
-  const clearWorkProfileSettings = useCallback(
+  const clearWorkProfileContext = useCallback(
     (workId: string) => {
       const current = queryClient
         .getQueryData<Work[]>(queryKeys.works.list)
         ?.find((work) => work.id === workId);
       if (!current) return;
-      patchProfile(workId, clearSettings(current.profile));
+      patchProfile(workId, clearContext(current.profile));
     },
     [patchProfile, queryClient],
   );
@@ -303,15 +299,15 @@ export function useWorksStore() {
     deleteWork,
     selectWork,
     applyStreamValuesToCache,
-    updateProfileConstraint: updateProfileConstraintItem,
-    deleteProfileConstraint: deleteProfileConstraintItem,
-    clearWorkProfileConstraints,
-    updateProfileSegment: updateProfileSegmentItem,
-    deleteProfileSegment: deleteProfileSegmentItem,
-    clearWorkProfileSegments,
-    updateProfileSetting: updateProfileSettingItem,
-    deleteProfileSetting: deleteProfileSettingItem,
-    clearWorkProfileSettings,
+    updateProfileBound,
+    deleteProfileBound,
+    clearWorkProfileBounds,
+    updateProfileSequence,
+    deleteProfileSequence,
+    clearWorkProfileSequence,
+    updateProfileContext,
+    deleteProfileContext,
+    clearWorkProfileContext,
     renameWork,
     moveWorkToGroup,
   };

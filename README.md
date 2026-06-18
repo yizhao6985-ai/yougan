@@ -12,7 +12,7 @@ yougan/
 │   ├── web/      # Vite + React 前端（落地页 + /studio 创作台）
 │   ├── api/      # Express 中间层（鉴权、作品 CRUD、OSS、Agent 代理）
 │   └── agent/    # LangGraph Agent（回合队列 + reference/profile/production/ask 子图）
-├── docs/         # 运维与集成文档（如平台 OAuth）
+├── docs/         # 产品、业务与技术文档
 ├── docker-compose.yml
 ├── package.json
 └── turbo.json

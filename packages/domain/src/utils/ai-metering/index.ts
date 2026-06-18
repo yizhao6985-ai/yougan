@@ -18,3 +18,4 @@ export {
   toUsagePercent,
   isUsageExceeded,
 } from "./aggregate.js";
+export { buildAiUsageSnapshot } from "./ai-usage.js";

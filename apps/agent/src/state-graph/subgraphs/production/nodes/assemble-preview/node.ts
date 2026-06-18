@@ -3,6 +3,7 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import type { RunnableConfig } from "@langchain/core/runnables";
 
 import { invokeStructured } from "#agent/llm/invoke/index.js";
+import { patchAiUsageMetering } from "#agent/llm/invoke/metering.js";
 import { createProductionChatModel } from "#agent/llm/providers/index.js";
 import {
   patchRunProgress,
@@ -10,7 +11,7 @@ import {
 } from "#agent/state-io/run-progress.js";
 import {
   blocksFromProductionTasks,
-  getIntentSummary,
+  getDirectionSummary,
   type WorkPreview,
 } from "@yougan/domain";
 import {
@@ -87,7 +88,7 @@ export async function assemblePreviewNode(
     );
   } catch {
     payload = {
-      title: getIntentSummary(profile) || null,
+      title: getDirectionSummary(profile) || null,
       hashtags: [],
       hook: null,
       notes: null,
@@ -95,7 +96,6 @@ export async function assemblePreviewNode(
   }
 
   const preview: WorkPreview = {
-    platform: "yougan",
     title: payload.title ?? null,
     hook: payload.hook ?? null,
     hashtags: payload.hashtags ?? [],
@@ -110,5 +110,6 @@ export async function assemblePreviewNode(
       preview,
     }),
     ...patchRunProgress(progress),
+    ...patchAiUsageMetering(state.aiUsage, config),
   };
 }

@@ -1,7 +1,6 @@
 import type { ContentFormatId, MediaModalityId } from "../../models/taxonomy/content.js";
 import type { ProfileSetupStep, WorkProfile } from "../../models/work/profile.js";
-import { inferMediaModalities } from "../media-modalities.js";
-import { parseProfileJson } from "./profile.js";
+import { inferModalitiesFromProfile, parseProfileJson } from "./profile.js";
 
 export type ProfileStepCopy = {
   title: string;
@@ -9,7 +8,6 @@ export type ProfileStepCopy = {
   emptyTitle: string;
   emptyBody: string;
   placeholder: string;
-  /** 供 suggestions LLM 参考的示例方向（非逐字输出） */
   suggestionExamples: string[];
 };
 
@@ -21,73 +19,58 @@ const DEFAULT_EXAMPLES: Record<
   Exclude<ProfileSetupStep, "ready">,
   string[]
 > = {
-  intent: [
-    "分享三款适合夏天的平价防晒霜",
-    "一组赛博朋克城市夜景插画",
+  direction: [
+    "三款平价防晒霜测评，图文笔记，给职场新人",
+    "赛博朋克城市插画系列",
     "60 秒咖啡店探店短视频",
-    "30 分钟创业者访谈播客",
+    "都市职场短篇小说",
   ],
-  delivery: [
-    "图文笔记，文字+图片，800 字以内，图片 3:4",
-    "竖屏 60 秒短视频，快节奏口播",
-    "16:9 概念插画（纯图片）",
-    "15 分钟单口播客",
-  ],
-  expression: [
-    "面向职场新人，语气轻松",
-    "画面偏简约，主色蓝白",
+  style: [
+    "语气轻松口语",
+    "画面简约蓝白、产品摄影感",
     "口播亲切、像朋友聊天",
     "高饱和霓虹，电影感构图",
   ],
-  structure: [
-    "开头用痛点引入，中间对比三款，结尾给购买建议",
-    "主角是刚入行的产品经理",
-    "text 痛点引入 → image 产品对比图 → text 购买建议",
-    "text 钩子 → video 产品展示 → text 总结号召",
+  context: [
+    "林晓，内向产品经理",
+    "虚构品牌，不对应真实商品",
+    "全文约 800 字",
+    "品牌主色蓝白，科技感",
   ],
-  constraints: [
-    "不要出现真实品牌名",
-    "必须提到 SPF50",
-    "避免血腥暴力画面",
-    "总时长不超过 90 秒",
+  sequence: [
+    "开头讲防晒焦虑痛点",
+    "三款产品对比配图",
+    "给出选购建议",
+    "text 导语 → image 主图 → text 总结",
+  ],
+  bounds: [
+    "配图中不出现人脸",
+    "不出现真实品牌 logo",
+    "第二节不揭示结局",
   ],
 };
 
-const FORMAT_INTENT: Partial<Record<ContentFormatId, StepCopyVariant>> = {
+const FORMAT_DIRECTION: Partial<Record<ContentFormatId, StepCopyVariant>> = {
   illustration: {
-    title: "画面主题",
-    hint: "这套作品要表达什么、围绕什么对象或场景",
+    title: "画面方向",
+    hint: "这套作品要表达什么、什么体裁",
     emptyTitle: "还没定画面主题",
-    emptyBody: "在对话里说，例如：「一组赛博朋克城市插画，霓虹夜景为主」",
-    placeholder: "说说画面主题，例如：四季更替的城市天际线系列插画…",
+    emptyBody: "例如：「一组赛博朋克城市插画，霓虹夜景」",
+    placeholder: "说说画面主题与形式…",
   },
   short_video: {
-    title: "视频选题",
-    hint: "这条视频讲什么、钩子是什么",
-    emptyTitle: "还没定视频选题",
-    emptyBody: "在对话里说，例如：「60 秒探店 vlog，突出性价比」",
-    placeholder: "说说视频选题，例如：周末居家收纳改造短视频…",
+    title: "视频方向",
+    hint: "视频讲什么、给谁看",
+    emptyTitle: "还没定视频方向",
+    emptyBody: "例如：「60 秒探店 vlog，给年轻上班族」",
+    placeholder: "说说视频选题、形式与受众…",
   },
-  video_script: {
-    title: "脚本选题",
-    hint: "这支片子要拍什么、核心信息是什么",
-    emptyTitle: "还没定脚本方向",
-    emptyBody: "在对话里说，例如：「产品功能演示片，30 秒，三幕结构」",
-    placeholder: "说说脚本方向，例如：品牌年度回顾短片脚本…",
-  },
-  podcast: {
-    title: "节目主题",
-    hint: "这期播客聊什么、给谁听",
-    emptyTitle: "还没定节目主题",
-    emptyBody: "在对话里说，例如：「独立开发者聊副业转型，45 分钟」",
-    placeholder: "说说节目主题，例如：设计师谈 AI 工具如何改变工作流…",
-  },
-  music: {
-    title: "作品主题",
-    hint: "这段音频的情绪、场景或叙事",
-    emptyTitle: "还没定音频主题",
-    emptyBody: "在对话里说，例如：「轻电子氛围曲，适合专注工作」",
-    placeholder: "说说音频主题，例如：治愈系钢琴曲，适合睡前放松…",
+  novel: {
+    title: "故事方向",
+    hint: "故事讲什么、什么体裁、给谁看",
+    emptyTitle: "还没定故事方向",
+    emptyBody: "例如：「都市职场短篇，给轻小说读者」",
+    placeholder: "说说故事定位、形式与受众…",
   },
 };
 
@@ -95,62 +78,43 @@ const DEFAULT_STEP_COPY: Record<
   Exclude<ProfileSetupStep, "ready">,
   StepCopyVariant
 > = {
-  intent: {
-    title: "创作定位",
-    hint: "确定作品要做什么、围绕什么主题，是后续各步的总纲",
-    emptyTitle: "还没定创作方向",
+  direction: {
+    title: "方向",
+    hint: "定位、内容形式与受众：为谁、以什么形式、讲什么事",
+    emptyTitle: "还没定方向",
     emptyBody:
-      "在对话里说，例如：「分享三款适合夏天的平价防晒霜」或「一组赛博朋克城市插画」",
-    placeholder: "说说创作方向，例如：职场新人效率工具测评…",
+      "例如：「三款防晒霜测评，图文笔记，给职场新人」",
+    placeholder: "说说定位、体裁与受众…",
   },
-  delivery: {
-    title: "内容形态与规格",
-    hint: "形态是创作模板；内容媒介列出作品实际包含的媒介；media_params 只写各媒介最小单元规格（画幅/字数/时长等），不写张数或段落数",
-    emptyTitle: "还没定内容形态",
-    emptyBody:
-      "例如：「图文笔记，文字+图片，800 字以内，图片 3:4」→ format=note, modalities=[text,image], word_count_max=800, aspect_ratio=3:4",
-    placeholder: "说说形态、媒介与规格，例如：note + 文字图片混排，800 字内，3:4 竖图…",
+  style: {
+    title: "风格",
+    hint: "全稿默认文字语气与画面方向",
+    emptyTitle: "还没定风格",
+    emptyBody: "例如：「语气轻松」「画面简约蓝白」",
+    placeholder: "说说文字与画面风格…",
   },
-  expression: {
-    title: "表达设定",
-    hint: "说明写给谁看、文字语气与画面/氛围方向，统一全片风格",
-    emptyTitle: "还没定表达风格",
-    emptyBody:
-      "在对话里说，例如：「面向职场新人，语气轻松」或「画面偏简约、主色蓝色」",
-    placeholder: "说说受众与表达风格，例如：面向学生党，口语化、节奏快…",
+  context: {
+    title: "背景",
+    hint: "世界设定、品牌背景、人设等正向离散说明",
+    emptyTitle: "暂无背景设定",
+    emptyBody: "例如：「主角是产品经理」「虚构品牌名」",
+    placeholder: "说说设定、品牌或背景…",
   },
-  structure: {
-    title: "结构与要素",
-    hint: "补充固定设定（人物、背景等）与结构段顺序；每段用 role 标明媒介（text / image / audio / video）",
-    emptyTitle: "暂无结构与要素",
-    emptyBody:
-      "可选。例如：「主角是产品经理」或「第 1 段 text 写痛点，第 2 段 image 放对比图」",
-    placeholder: "说说设定或结构段顺序，例如：text 导语 → image 主图 → text 总结…",
+  sequence: {
+    title: "节拍",
+    hint: "有序内容意图：成文顺序、插图/插媒体位置（软参考，不 1:1 对应成稿）",
+    emptyTitle: "暂无内容节拍",
+    emptyBody: "例如：「先讲痛点 → 配图对比 → 总结推荐」",
+    placeholder: "说说内容顺序与节拍…",
   },
-  constraints: {
-    title: "创作规则",
-    hint: "列出必须遵守或需要避免的事项，减少制作返工",
-    emptyTitle: "暂无特殊要求",
-    emptyBody:
-      "可选。需要可说：「不要出现真实品牌名」或「必须提到 SPF50」",
-    placeholder: "说说限制或必含要素，例如：不出现竞品名、必须标注数据来源…",
+  bounds: {
+    title: "边界",
+    hint: "反向离散说明：不要出现的元素、需避免的事项",
+    emptyTitle: "暂无边界设定",
+    emptyBody: "例如：「配图中不要人脸」「不要真实品牌名」",
+    placeholder: "说说需要避免的边界…",
   },
 };
-
-function resolveFormat(profile: WorkProfile): ContentFormatId | null {
-  return profile.delivery.format;
-}
-
-function resolveModalities(profile: WorkProfile): MediaModalityId[] {
-  const format = profile.delivery.format;
-  if (profile.delivery.modalities?.length) {
-    return profile.delivery.modalities;
-  }
-  if (format) {
-    return inferMediaModalities({ contentFormat: format });
-  }
-  return [];
-}
 
 function mergeStepCopy(
   step: Exclude<ProfileSetupStep, "ready">,
@@ -173,46 +137,38 @@ export function getProfileStepCopy(
   if (step === "ready") {
     return {
       title: "方案就绪",
-      hint: "必填项已齐，确认后可说「开始制作」进入 AI 制作；也可继续补充可选步骤",
+      hint: "必填项已齐，可说「开始制作」；也可继续补充风格、背景、节拍与边界",
       emptyTitle: "",
       emptyBody: "",
-      placeholder: "说「开始制作」，或继续补充方案细节…",
-      suggestionExamples: ["开始制作", "先补充表达风格再制作"],
+      placeholder: "说「开始制作」，或继续补充方案…",
+      suggestionExamples: ["开始制作", "先补充风格再制作"],
     };
   }
 
   const profile = parseProfileJson(raw);
-  const format = resolveFormat(profile);
+  const format = profile.direction.format;
 
-  if (step === "intent" && format && FORMAT_INTENT[format]) {
-    return mergeStepCopy("intent", FORMAT_INTENT[format]);
-  }
-
-  if (step === "structure") {
-    return mergeStepCopy("structure");
+  if (step === "direction" && format && FORMAT_DIRECTION[format]) {
+    return mergeStepCopy("direction", FORMAT_DIRECTION[format]);
   }
 
   return mergeStepCopy(step);
 }
 
-/** 表达步骤应突出哪些子字段 */
-export function getExpressionFieldsForModalities(
-  modalities: MediaModalityId[],
-): Array<"audience" | "verbal" | "visual"> {
-  const set = new Set(modalities);
-  const fields: Array<"audience" | "verbal" | "visual"> = ["audience"];
-  if (set.has("text") || set.has("audio") || set.has("video")) {
-    fields.push("verbal");
-  }
-  if (set.has("image") || set.has("video")) {
-    fields.push("visual");
-  }
-  if (fields.length === 1) {
-    fields.push("verbal", "visual");
-  }
-  return [...new Set(fields)];
+/** 风格步骤应突出哪些子字段 */
+export function getStyleFieldsForProfile(
+  profile: WorkProfile,
+): Array<"verbal" | "visual"> {
+  const fields: Array<"verbal" | "visual"> = ["verbal", "visual"];
+  const format = profile.direction.format;
+  if (format === "illustration") return ["visual"];
+  if (format === "music" || format === "podcast") return ["verbal", "visual"];
+  return fields;
 }
 
-export function getProfileModalities(raw: WorkProfile | undefined): MediaModalityId[] {
-  return resolveModalities(parseProfileJson(raw));
+/** 从 profile 推断媒介组合 */
+export function getProfileModalities(
+  raw: WorkProfile | undefined,
+): MediaModalityId[] {
+  return inferModalitiesFromProfile(parseProfileJson(raw));
 }

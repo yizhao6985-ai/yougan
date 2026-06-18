@@ -18,7 +18,6 @@ model User {
   updatedAt            DateTime              @updatedAt
   works                Work[]
   workGroups           WorkGroup[]
-  platformIntegrations PlatformIntegration[]
   publications         Publication[]
   passwordResetTokens  PasswordResetToken[]
   emailChangeTokens    EmailChangeToken[]
@@ -100,26 +99,6 @@ model PasswordResetToken {
   @@index([userId, createdAt(sort: Desc)])
 }
 
-model PlatformIntegration {
-  id             String    @id @default(cuid())
-  userId         String
-  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  platform       String
-  accountName    String?
-  accountId      String?
-  accessToken    String?
-  refreshToken   String?
-  tokenExpiresAt DateTime?
-  scopes         Json      @default("[]")
-  status         String    @default("connected")
-  metadata       Json      @default("{}")
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
-  @@unique([userId, platform])
-  @@index([userId, updatedAt(sort: Desc)])
-}
-
 model WorkGroup {
   id        String   @id @default(cuid())
   userId    String
@@ -198,9 +177,12 @@ model Publication {
   title         String
   excerpt       String?
   blocks        Json      @default("[]")
-  coverUrl      String?
-  platform      String?
-  contentFormat String?
+  coverUrl          String?
+  coverBlockId      String?
+  compositionLabel  String?
+  consumptionHint   String?
+  blockComposition  Json      @default("{}")
+  contentFormat     String?
   topicCategory String?
   contentTopic  String?
   contentType   String?
@@ -214,7 +196,6 @@ model Publication {
 
   @@index([userId, status, updatedAt(sort: Desc)])
   @@index([status, publishedAt(sort: Desc)])
-  @@index([status, platform, publishedAt(sort: Desc)])
   @@index([status, contentFormat, publishedAt(sort: Desc)])
   @@index([status, topicCategory, publishedAt(sort: Desc)])
   @@index([status, mediaTypes, publishedAt(sort: Desc)])

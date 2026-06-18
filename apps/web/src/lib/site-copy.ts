@@ -184,7 +184,7 @@ export const DISCOVER_SECTION = {
   navLabel: "发现灵感",
   navLabelShort: "发现",
   description:
-    "浏览创作者公开分享的作品，从故事、干货到笔记与视听内容，找灵感、看写法。",
+    "浏览创作者公开分享的混排作品，从上往下完整阅读文字、图片与视听内容。",
   intentHeading: "你想看什么",
   intentDescription: "选一个方向快速开始，或在下方组合更多筛选条件。",
   featuredHeading: "精选推荐",
@@ -268,7 +268,7 @@ export const MEMBERSHIP = {
   navDescription: "套餐与 AI 创作额度",
   pageTitle: "会员",
   pageDescription:
-    "查看当前套餐与 AI 创作额度。升级 Pro / Pro+ 获得更高额度、旗舰出稿与平台发布。",
+    "查看当前套餐与 AI 创作额度。升级 Pro / Pro+ 获得更高额度与旗舰出稿。",
   currentPlan: "当前套餐",
   usageTitle: "本月 AI 创作额度",
   usageHint: (percent: number) => `已使用本月额度的 ${percent}%`,
@@ -335,12 +335,13 @@ export const STUDIO = {
 export const CHAT_COPY = {
   openingSuggestionsLoading: "正在生成建议…",
   placeholderDefault: "说说想法、提问，或说明要改方案 / 改作品…",
+  quotaExceededPlaceholder: "本月 AI 额度已用完，请升级套餐或等待下月重置",
   emptyTitle: "选择下一步，或直接输入",
   status: {
     referenceProcessing: "正在分析参考素材",
     profileExploring: "正在整理制作方案",
-    profileEditing: (segments: number, rules: number) =>
-      `制作方案 ${segments} 节 · ${rules} 条规则，可在右侧修改`,
+    profileEditing: (sequence: number, bounds: number) =>
+      `制作方案 ${sequence} 节拍 · ${bounds} 条边界，可在右侧修改`,
     askExploring: "提问答疑中：优化建议、创作方法、背景知识",
     productionExecuting: "AI 团队正在执行制作",
   },
@@ -418,23 +419,22 @@ export const PROFILE_WIZARD = {
   tierRequired: "必填",
   tierRecommended: "建议",
   tierOptional: "可选",
-  readyBody: "必填项已齐。可说「开始制作」进入制作，或继续补充表达、结构与规则。",
-  settingsLabel: "固定设定",
-  segmentsLabel: "结构大纲",
-  clearConstraints: "清空规则",
-  clearSettings: "清空设定",
-  clearSegments: "清空大纲",
-  settingsEmptyTitle: "暂无固定设定",
-  settingsEmptyBody:
-    "可选。例如：「主角是刚入行的产品经理」或「背景设定在 2030 年」",
-  segmentsEmptyTitle: "暂无结构大纲",
-  segmentsEmptyBody:
-    "可选。例如：「开头钩子 → 主体展开 → 结尾号召」，或分镜顺序",
-  settingKindLabels: {
-    character: "对象",
-    world: "背景",
-    other: "其他",
-  } as const,
+  readyBody: "必填项已齐。可说「开始制作」进入制作，或继续补充风格、背景、节拍与边界。",
+  contextLabel: "背景",
+  sequenceLabel: "节拍",
+  boundsLabel: "边界",
+  clearBounds: "清空边界",
+  clearContext: "清空背景",
+  clearSequence: "清空节拍",
+  contextEmptyTitle: "暂无背景设定",
+  contextEmptyBody:
+    "可选。例如：「主角是产品经理」「虚构品牌名」「全文约 800 字」",
+  sequenceEmptyTitle: "暂无内容节拍",
+  sequenceEmptyBody:
+    "可选。例如：「先讲痛点 → 配图对比 → 总结推荐」",
+  boundsEmptyTitle: "暂无边界设定",
+  boundsEmptyBody:
+    "可选。例如：「配图中不要人脸」「不要真实品牌名」",
 } as const;
 
 export const PREVIEW_PANEL = {
@@ -483,16 +483,18 @@ export const PUBLISH = {
   previewSavedBadge: "作品已保存",
   publishButton: "发布到有感",
   publishing: "发布中…",
-  confirmTitle: "确认发布分类",
+  confirmTitle: "确认发布",
   confirmDescription:
-    "系统已根据作品内容推断分类标签，你可修改后发布，便于他人在发现页找到。",
-  inferredTags: "推断标签",
-  previewLoading: "正在分析内容分类…",
-  previewError: "无法加载分类预览，请稍后再试",
-  fieldFormat: "内容体裁",
+    "系统已根据作品内容生成推荐流摘要，确认后将完整发布所有内容块。",
+  feedPreviewHeading: "发现页预览",
+  blockCompositionHeading: "内容构成",
+  previewLoading: "正在生成发布摘要…",
+  previewError: "无法加载发布预览，请稍后再试",
+  fieldTitle: "标题",
+  fieldHook: "摘要",
+  fieldCompositionLabel: "构成标签",
   fieldTopic: "主题类别",
-  fieldMedia: "媒介形态",
-  fieldPlatform: "发布渠道（可选）",
+  fieldCover: "封面",
   cancel: "取消",
   confirmPublish: "确认发布",
   goPublish: "去创作台开始制作",

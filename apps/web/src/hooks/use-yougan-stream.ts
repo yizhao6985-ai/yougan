@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { useQueryClient } from "@tanstack/react-query";
-import type { Message } from "@langchain/langgraph-sdk";
+import { useQueryClient, type QueryClient } from "@tanstack/react-query";
+import type { Client, Message } from "@langchain/langgraph-sdk";
 import { useStream } from "@langchain/langgraph-sdk/react";
 
 import { queryKeys } from "@/hooks/queries/keys";
@@ -36,6 +36,11 @@ import {
   type ProductionConfirmDecision,
 } from "@yougan/domain";
 import {
+  aiUsageFromThreadState,
+  isAiUsageCustomPayload,
+  syncSubscriptionCacheFromAiUsage,
+} from "@/lib/ai-usage";
+import {
   isRunProgressCustomPayload,
   pickRunProgress,
 } from "@/lib/run-progress";
@@ -52,7 +57,7 @@ const LANGGRAPH_STREAM_MODE = ["updates", "messages-tuple", "custom"] as const;
 const SUBMIT_OPTIONS = {
   streamMode: [...LANGGRAPH_STREAM_MODE],
   multitaskStrategy: "interrupt" as const,
-  /** 连接意外断开时服务端继续执行；用户取消仍走 cancelActiveTurn 的 runs.cancel */
+  /** 连接意外断开时服务端继续执行；用户取消走 runs.cancel + updateState（proxy 响应含 aiUsage） */
   onDisconnect: "continue" as const,
   /** 保留 SSE 事件缓冲，供 joinStream 断点续传 */
   streamResumable: true as const,
@@ -83,6 +88,25 @@ function buildStreamSubmitInput(
     production: work.production,
     modelTemperature,
   };
+}
+
+/** rejoin 漏事件时从 thread head 补齐 aiUsage / onRunComplete；正常 submit 不走此路径 */
+async function syncThreadHeadAfterRejoin(
+  client: Client,
+  queryClient: QueryClient,
+  threadId: string,
+  workId: string | null,
+  onRunComplete: ((workId: string, values: YouganValues) => void) | undefined,
+) {
+  const state = await client.threads.getState(threadId);
+  const values = (state.values ?? {}) as YouganValues;
+  syncSubscriptionCacheFromAiUsage(
+    queryClient,
+    aiUsageFromThreadState(state) ?? values.aiUsage,
+  );
+  if (!workId) return;
+  if (values.turn?.cancelled === true || values.turn?.committed !== true) return;
+  onRunComplete?.(workId, values);
 }
 
 export function useYouganStream({
@@ -119,6 +143,9 @@ export function useYouganStream({
   const [runDiscoverySettled, setRunDiscoverySettled] = useState(false);
   const reconnectAttemptRef = useRef<string | null>(null);
   const repairInFlightRef = useRef<Promise<void> | null>(null);
+  /** reconnectOnMount / runs.list join 结束后按需 getState，避免每次 stream 结束拉 history */
+  const pendingRejoinSyncRef = useRef(false);
+  const wasStreamBusyRef = useRef(false);
 
   const defaultHeaders = useMemo(
     () => ({
@@ -136,8 +163,8 @@ export function useYouganStream({
     defaultHeaders,
     /** mount 时从 sessionStorage join 未完成 run；配合下方 runs.list 兜底 */
     reconnectOnMount: true,
-    /** rejoin 完成后 onFinish 需拉取 thread head state */
-    fetchStateHistory: true,
+    /** 仅拉 thread head（getState），不拉 checkpoint history；rejoin 兜底见 pendingRejoinSyncRef */
+    fetchStateHistory: false,
     throttle: false,
     onThreadId: (id) => {
       if (conversationId) onThreadId?.(conversationId, id);
@@ -163,19 +190,9 @@ export function useYouganStream({
       }
       setRunDiscoverySettled(true);
     },
-    onFinish: (state) => {
+    // 无参 onFinish：SDK 不在 stream 结束后 refetch；业务收尾走 onUpdateEvent
+    onFinish: () => {
       setLiveRunProgress(null);
-      void queryClient.invalidateQueries({
-        queryKey: queryKeys.subscription.all,
-      });
-      if (!workId) return;
-      const values =
-        "values" in state && state.values
-          ? (state.values as YouganValues)
-          : (state as unknown as YouganValues);
-      if (values.turn?.cancelled === true || values.turn?.committed !== true)
-        return;
-      onRunCompleteRef.current?.(workId, values);
     },
     onUpdateEvent: (update, { mutate }) => {
       let committedValues: YouganValues | null = null;
@@ -204,7 +221,14 @@ export function useYouganStream({
       }
 
       for (const raw of Object.values(update as Record<string, unknown>)) {
-        if (!raw || typeof raw !== "object" || !("runProgress" in raw)) continue;
+        if (!raw || typeof raw !== "object") continue;
+        if ("aiUsage" in raw) {
+          syncSubscriptionCacheFromAiUsage(
+            queryClient,
+            (raw as { aiUsage?: YouganValues["aiUsage"] }).aiUsage,
+          );
+        }
+        if (!("runProgress" in raw)) continue;
         const progress = (raw as { runProgress?: RunProgress | null }).runProgress;
         if (progress && typeof progress === "object" && "label" in progress) {
           setLiveRunProgress(progress);
@@ -214,9 +238,39 @@ export function useYouganStream({
     onCustomEvent: (data) => {
       if (isRunProgressCustomPayload(data)) {
         setLiveRunProgress(data.progress);
+        return;
+      }
+      if (isAiUsageCustomPayload(data)) {
+        syncSubscriptionCacheFromAiUsage(queryClient, data.aiUsage);
       }
     },
   });
+
+  /** sessionStorage 有未完成 run 时标记 rejoin，stream 结束后按需 getState */
+  useEffect(() => {
+    pendingRejoinSyncRef.current = Boolean(
+      threadId && getActiveLangGraphRunId(threadId),
+    );
+  }, [threadId]);
+
+  useEffect(() => {
+    const isBusy = stream.isLoading || isJoiningRun;
+    const wasBusy = wasStreamBusyRef.current;
+    wasStreamBusyRef.current = isBusy;
+
+    if (!threadId || isBusy || !wasBusy || !pendingRejoinSyncRef.current) return;
+    pendingRejoinSyncRef.current = false;
+
+    void syncThreadHeadAfterRejoin(
+      stream.client,
+      queryClient,
+      threadId,
+      workId,
+      onRunCompleteRef.current,
+    ).catch((error) => {
+      console.error("[yougan] rejoin thread head sync failed", error);
+    });
+  }, [stream.isLoading, isJoiningRun, stream.client, queryClient, threadId, workId]);
 
   /** 清理 sessionStorage 中已结束的 run，避免 SDK 误 join */
   useEffect(() => {
@@ -256,6 +310,7 @@ export function useYouganStream({
       if (cancelled) return;
 
       if (runId && !stream.isLoading) {
+        pendingRejoinSyncRef.current = true;
         setIsJoiningRun(true);
         try {
           await stream.joinStream(runId, "-1", {
@@ -299,6 +354,8 @@ export function useYouganStream({
 
   useEffect(() => {
     reconnectAttemptRef.current = null;
+    pendingRejoinSyncRef.current = false;
+    wasStreamBusyRef.current = false;
     setIsRepairingStaleTurn(false);
     repairInFlightRef.current = null;
     setRunDiscoverySettled(!threadId);
@@ -328,10 +385,15 @@ export function useYouganStream({
       );
 
       try {
-        await stream.client.threads.updateState(threadId, {
+        const state = await stream.client.threads.updateState(threadId, {
           values: repairPatch,
         });
-        setPostCancelValues(repairPatch);
+        const aiUsage = aiUsageFromThreadState(state);
+        syncSubscriptionCacheFromAiUsage(queryClient, aiUsage);
+        setPostCancelValues({
+          ...repairPatch,
+          ...(aiUsage ? { aiUsage } : {}),
+        });
         setLiveRunProgress(null);
       } catch (error) {
         console.error("[yougan] repair stale turn failed", error);
@@ -352,6 +414,7 @@ export function useYouganStream({
     isCancelling,
     isJoiningRun,
     mergedStreamValues,
+    queryClient,
     stream.client,
     stream.isLoading,
     stream.messages,
@@ -473,17 +536,28 @@ export function useYouganStream({
 
       if (threadId) clearActiveLangGraphRunId(threadId);
 
+      let settledAiUsage: ReturnType<typeof aiUsageFromThreadState>;
       if (threadId) {
         try {
-          await stream.client.threads.updateState(threadId, {
+          const state = await stream.client.threads.updateState(threadId, {
             values: cancelPatch,
           });
+          settledAiUsage = aiUsageFromThreadState(state);
         } catch (error) {
           console.error("[yougan] cancel turn updateState failed", error);
         }
       }
 
-      setPostCancelValues(cancelPatch);
+      syncSubscriptionCacheFromAiUsage(
+        queryClient,
+        settledAiUsage ??
+          (stream.values as YouganValues | undefined)?.aiUsage,
+      );
+      setPostCancelValues({
+        ...cancelPatch,
+        ...(settledAiUsage ? { aiUsage: settledAiUsage } : {}),
+      });
+
       setLiveRunProgress(null);
 
       if (workId && conversationId) {
@@ -586,8 +660,10 @@ export function useYouganStream({
     (stream.isLoading || isJoiningRun || hasStoredActiveRun);
 
   const canChat = Boolean(work && conversation && token);
+  const usageExceeded = mergedStreamValues?.aiUsage?.usageExceeded ?? false;
   const canSend =
     canChat &&
+    !usageExceeded &&
     !hasActiveRun &&
     !isCancelling &&
     !hasLiveProductionConfirm;
@@ -643,6 +719,8 @@ export function useYouganStream({
     isResumingInterrupt,
     isCancelling,
     canSend,
+    usageExceeded,
+    aiUsage: mergedStreamValues?.aiUsage,
     isBootstrappingOpening,
     canChat,
   };

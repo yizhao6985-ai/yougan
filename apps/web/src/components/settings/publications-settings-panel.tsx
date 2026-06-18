@@ -18,12 +18,11 @@ import {
   useMyPublicationsQuery,
   useUpdatePublicationStatusMutation,
 } from "@/hooks/queries/publications";
-import { formatPublishedAt, platformLabel } from "@/lib/platform-labels";
+import { formatPublishedAt } from "@/lib/platform-labels";
 import { DISCOVER_SECTION } from "@/lib/content-section";
 import { publicationContentPath } from "@/lib/publication-path";
 import { PUBLISH, SETTINGS } from "@/lib/site-copy";
 import {
-  formatLabel,
   topicCategoryLabel,
 } from "@/lib/discover-taxonomy";
 import {
@@ -136,9 +135,8 @@ export function PublicationsSettingsPanel() {
                         >
                           {PUBLICATION_STATUS_LABELS[publication.status]}
                         </span>
-                        <span>{platformLabel(publication.platform)}</span>
-                        {formatLabel(publication.contentFormat) ? (
-                          <span>{formatLabel(publication.contentFormat)}</span>
+                        {publication.compositionLabel?.trim() ? (
+                          <span>{publication.compositionLabel}</span>
                         ) : null}
                         {topicCategoryLabel(publication.topicCategory) ? (
                           <span>

@@ -7,7 +7,7 @@ import {
 import { queryKeys } from "@/hooks/queries/keys";
 import type {
   DiscoverFilters,
-  PublicationMetadataOverrides,
+  PublicationSummaryOverrides,
 } from "@/lib/discover-taxonomy";
 import type { Publication, PublicationStatus } from "@/lib/publication-types";
 import {
@@ -15,8 +15,8 @@ import {
   fetchMyPublications,
   fetchPublicationBySlug,
   fetchPublicationFeed,
-  fetchPublicationMetadataPreview,
-  publishWorkToPlatform,
+  fetchPublicationSummaryPreview,
+  publishWork,
   updatePublicationStatus,
 } from "@/services/publications";
 
@@ -56,10 +56,10 @@ function patchMyPublicationsCache(
   );
 }
 
-export function usePublicationMetadataPreviewQuery(workId: string, enabled = true) {
+export function usePublicationSummaryPreviewQuery(workId: string, enabled = true) {
   return useQuery({
     queryKey: queryKeys.publications.previewMetadata(workId),
-    queryFn: () => fetchPublicationMetadataPreview(workId),
+    queryFn: () => fetchPublicationSummaryPreview(workId),
     enabled: enabled && Boolean(workId),
   });
 }
@@ -71,12 +71,12 @@ export function usePublishWorkMutation() {
     mutationFn: ({
       workId,
       publish = true,
-      metadata,
+      summary,
     }: {
       workId: string;
       publish?: boolean;
-      metadata?: PublicationMetadataOverrides;
-    }) => publishWorkToPlatform(workId, publish, metadata),
+      summary?: PublicationSummaryOverrides;
+    }) => publishWork(workId, publish, summary),
     onSuccess: ({ publication }) => {
       patchMyPublicationsCache(queryClient, (publications) => {
         const existing = publications.find((item) => item.id === publication.id);

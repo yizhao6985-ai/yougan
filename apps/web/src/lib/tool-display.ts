@@ -4,11 +4,11 @@ export const TOOL_LABELS: Record<string, string> = {
   preprocess_reference_audio: "预处理音频参考",
   preprocess_reference_video: "预处理视频参考",
   reference_apply_patch: "更新参考素材",
-  update_profile_intent: "更新创作定位",
-  update_profile_delivery: "更新内容形态与规格",
-  update_profile_expression: "更新表达设定",
-  update_profile_structure: "更新结构与要素",
-  update_profile_constraints: "更新创作规则",
+  update_profile_direction: "更新方向",
+  update_profile_style: "更新风格",
+  update_profile_context: "更新背景",
+  update_profile_sequence: "更新节拍",
+  update_profile_bounds: "更新边界",
   add_plan_task: "添加制作任务",
   execute_task: "执行任务",
   generate_preview: "AI 团队制作",
@@ -55,44 +55,9 @@ function summarizePatchList(
 ): string | null {
   if (!Array.isArray(value) || !value.length) return null;
   const first = value[0] as Record<string, unknown>;
-  const preview = readString(first.description) || readString(first.summary);
+  const preview = readString(first.spec) || readString(first.summary);
   if (!preview) return null;
   return value.length > 1 ? `${field}：${preview} 等 ${value.length} 项` : `${field}：${preview}`;
-}
-
-function summarizeDeliveryParams(toolInput: Record<string, unknown>): string {
-  const parts: string[] = [];
-  const format = readString(toolInput.format);
-  if (format) parts.push(format);
-
-  if (Array.isArray(toolInput.modalities) && toolInput.modalities.length) {
-    parts.push(toolInput.modalities.filter((m) => typeof m === "string").join("+"));
-  }
-
-  const min = toolInput.word_count_min;
-  const max = toolInput.word_count_max;
-  if (typeof min === "number" || typeof max === "number") {
-    if (typeof min === "number" && typeof max === "number" && min === max) {
-      parts.push(`${min} 字`);
-    } else {
-      const range = [
-        typeof min === "number" ? `${min}` : null,
-        typeof max === "number" ? `${max}` : null,
-      ]
-        .filter(Boolean)
-        .join("–");
-      if (range) parts.push(`${range} 字`);
-    }
-  }
-
-  if (typeof toolInput.duration_sec === "number") {
-    parts.push(`${toolInput.duration_sec} 秒`);
-  }
-  if (readString(toolInput.aspect_ratio)) {
-    parts.push(readString(toolInput.aspect_ratio));
-  }
-
-  return parts.join(" · ");
 }
 
 export function getToolInputSummary(
@@ -100,18 +65,22 @@ export function getToolInputSummary(
   toolInput: Record<string, unknown>,
 ) {
   switch (toolName) {
-    case "update_profile_delivery":
-      return summarizeDeliveryParams(toolInput);
-    case "update_profile_intent":
-      return readString(toolInput.summary);
-    case "update_profile_structure":
+    case "update_profile_direction":
       return (
-        summarizePatchList(toolInput.settings, "设定") ??
-        summarizePatchList(toolInput.segments, "结构") ??
-        ""
+        readString(toolInput.summary) ||
+        readString(toolInput.format) ||
+        readString(toolInput.audience)
       );
-    case "update_profile_constraints":
-      return summarizePatchList(toolInput.rules, "规则") ?? "";
+    case "update_profile_style":
+      return (
+        readString(toolInput.verbal) || readString(toolInput.visual) || ""
+      );
+    case "update_profile_context":
+      return summarizePatchList(toolInput.items, "背景") ?? "";
+    case "update_profile_sequence":
+      return summarizePatchList(toolInput.items, "节拍") ?? "";
+    case "update_profile_bounds":
+      return summarizePatchList(toolInput.items, "边界") ?? "";
     case "reference_apply_patch": {
       const updates = toolInput.updates;
       if (Array.isArray(updates) && updates.length) {

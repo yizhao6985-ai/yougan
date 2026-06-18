@@ -5,20 +5,21 @@ import { YouganChat } from "@/components/studio/yougan-chat";
 import { useYouganStreamContext } from "@/components/studio/yougan-stream-provider";
 import { mergeReferencesForDisplay } from "@yougan/domain";
 import { resolveStreamProfile } from "@/lib/profile-setup-display";
+
 export function StudioCreateView() {
   const {
     activeWork,
     stream,
     selectWork,
-    updateProfileConstraint,
-    deleteProfileConstraint,
-    clearWorkProfileConstraints,
-    updateProfileSegment,
-    deleteProfileSegment,
-    clearWorkProfileSegments,
-    updateProfileSetting,
-    deleteProfileSetting,
-    clearWorkProfileSettings,
+    updateProfileBound,
+    deleteProfileBound,
+    clearWorkProfileBounds,
+    updateProfileSequence,
+    deleteProfileSequence,
+    clearWorkProfileSequence,
+    updateProfileContext,
+    deleteProfileContext,
+    clearWorkProfileContext,
   } = useYouganStreamContext();
 
   const streamValues = stream.values;
@@ -53,50 +54,45 @@ export function StudioCreateView() {
       preview={preview}
       previewUnsaved={previewUnsaved}
       onDuplicated={selectWork}
-      onUpdateConstraint={
+      onUpdateBound={
         activeWork
-          ? (ruleId, description) =>
-              updateProfileConstraint(activeWork.id, ruleId, description)
+          ? (itemId, spec) => updateProfileBound(activeWork.id, itemId, spec)
           : undefined
       }
-      onDeleteConstraint={
+      onDeleteBound={
         activeWork
-          ? (ruleId) =>
-              deleteProfileConstraint(activeWork.id, ruleId)
+          ? (itemId) => deleteProfileBound(activeWork.id, itemId)
           : undefined
       }
-      onClearConstraints={
+      onClearBounds={
+        activeWork ? () => clearWorkProfileBounds(activeWork.id) : undefined
+      }
+      onUpdateSequence={
         activeWork
-          ? () => clearWorkProfileConstraints(activeWork.id)
+          ? (itemId, spec) =>
+              updateProfileSequence(activeWork.id, itemId, spec)
           : undefined
       }
-      onUpdateSegment={
+      onDeleteSequence={
         activeWork
-          ? (segmentId, description) =>
-              updateProfileSegment(activeWork.id, segmentId, description)
+          ? (itemId) => deleteProfileSequence(activeWork.id, itemId)
           : undefined
       }
-      onDeleteSegment={
+      onClearSequence={
+        activeWork ? () => clearWorkProfileSequence(activeWork.id) : undefined
+      }
+      onUpdateContext={
         activeWork
-          ? (segmentId) => deleteProfileSegment(activeWork.id, segmentId)
+          ? (itemId, spec) => updateProfileContext(activeWork.id, itemId, spec)
           : undefined
       }
-      onClearSegments={
-        activeWork ? () => clearWorkProfileSegments(activeWork.id) : undefined
-      }
-      onUpdateSetting={
+      onDeleteContext={
         activeWork
-          ? (settingId, description) =>
-              updateProfileSetting(activeWork.id, settingId, description)
+          ? (itemId) => deleteProfileContext(activeWork.id, itemId)
           : undefined
       }
-      onDeleteSetting={
-        activeWork
-          ? (settingId) => deleteProfileSetting(activeWork.id, settingId)
-          : undefined
-      }
-      onClearSettings={
-        activeWork ? () => clearWorkProfileSettings(activeWork.id) : undefined
+      onClearContext={
+        activeWork ? () => clearWorkProfileContext(activeWork.id) : undefined
       }
     />
   );

@@ -93,50 +93,40 @@ export function summarizeProfileStepForSuggestions(
   step: ProfileStepId,
 ): string {
   switch (step) {
-    case "intent":
-      return profile.intent.summary.trim() || "（空）";
-    case "delivery": {
+    case "direction": {
       const parts: string[] = [];
-      if (profile.delivery.format) parts.push(`形态 ${profile.delivery.format}`);
-      if (profile.delivery.modalities.length) {
-        parts.push(`媒介 ${profile.delivery.modalities.join("+")}`);
+      if (profile.direction.summary.trim()) {
+        parts.push(profile.direction.summary.trim());
       }
-      const { media_params: mp } = profile.delivery;
-      const { min, max } = mp.text?.word_count ?? {};
-      if (min != null || max != null) {
-        parts.push(`字数 ${min ?? "?"}-${max ?? "?"}`);
+      if (profile.direction.format) {
+        parts.push(`形式 ${profile.direction.format}`);
       }
-      if (mp.video?.duration_sec != null) {
-        parts.push(`时长约 ${mp.video.duration_sec} 秒`);
+      if (profile.direction.audience?.trim()) {
+        parts.push(`受众 ${profile.direction.audience.trim()}`);
       }
       return parts.join("；") || "（空）";
     }
-    case "expression": {
+    case "style": {
       const parts: string[] = [];
-      if (profile.expression.audience?.trim()) {
-        parts.push(`受众 ${profile.expression.audience.trim()}`);
+      if (profile.style?.verbal?.trim()) {
+        parts.push(`文字 ${profile.style.verbal.trim()}`);
       }
-      if (profile.expression.verbal?.trim()) {
-        parts.push(`文字 ${profile.expression.verbal.trim()}`);
-      }
-      if (profile.expression.visual?.trim()) {
-        parts.push(`画面 ${profile.expression.visual.trim()}`);
+      if (profile.style?.visual?.trim()) {
+        parts.push(`画面 ${profile.style.visual.trim()}`);
       }
       return parts.join("；") || "（空）";
     }
-    case "structure": {
-      const parts: string[] = [];
-      if (profile.structure.settings.length > 0) {
-        parts.push(`设定 ${profile.structure.settings.length} 条`);
-      }
-      if (profile.structure.segments.length > 0) {
-        parts.push(`大纲 ${profile.structure.segments.length} 段`);
-      }
-      return parts.join("；") || "（空）";
-    }
-    case "constraints":
-      return profile.constraints.rules.length > 0
-        ? `规则 ${profile.constraints.rules.length} 条`
+    case "context":
+      return profile.context.length > 0
+        ? `背景 ${profile.context.length} 条`
+        : "（空）";
+    case "sequence":
+      return profile.sequence.length > 0
+        ? `节拍 ${profile.sequence.length} 节`
+        : "（空）";
+    case "bounds":
+      return profile.bounds.length > 0
+        ? `边界 ${profile.bounds.length} 条`
         : "（空）";
     default:
       return "（空）";
@@ -195,7 +185,7 @@ function getConsolidationStep(
     const step = PROFILE_SETUP_FLOW[i]!;
     if (isProfileStepFilled(profile, step)) return step;
   }
-  return "intent";
+  return "direction";
 }
 
 /** 是否已有方案/成稿，需要区分「扩展当前状态」与「下一步引导」 */

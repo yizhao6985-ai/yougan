@@ -8,7 +8,7 @@ export type ReferenceImagePrep = {
   notes: string[];
 };
 
-/** 下载图片并转为 data URL，避免 MiniMax 无法访问内网/鉴权 URL。 */
+/** 下载图片并转为 data URL，避免模型无法访问内网/鉴权 URL。 */
 export async function prepareReferenceImage(
   url: string,
   mimeType: string,

@@ -35,20 +35,16 @@ export type ProfileSetupState = {
 
 export const PROFILE_SETUP_FLOW = PROFILE_STEP_IDS;
 
-function hasExpression(profile: WorkProfile): boolean {
-  const { expression } = profile;
+function hasStyle(profile: WorkProfile): boolean {
   return Boolean(
-    expression.audience?.trim() ||
-      expression.verbal?.trim() ||
-      expression.visual?.trim(),
+    profile.style?.verbal?.trim() || profile.style?.visual?.trim(),
   );
 }
 
 export function isProfileSetupReady(profile: WorkProfile): boolean {
   return (
-    Boolean(profile.intent.summary.trim()) &&
-    Boolean(profile.delivery.format) &&
-    profile.delivery.modalities.length > 0
+    Boolean(profile.direction.summary.trim()) &&
+    Boolean(profile.direction.format)
   );
 }
 
@@ -57,19 +53,19 @@ export function isProfileStepFilled(
   step: ProfileStepId,
 ): boolean {
   switch (step) {
-    case "intent":
-      return Boolean(profile.intent.summary.trim());
-    case "delivery":
-      return Boolean(profile.delivery.format) && profile.delivery.modalities.length > 0;
-    case "expression":
-      return hasExpression(profile);
-    case "structure":
+    case "direction":
       return (
-        profile.structure.settings.length > 0 ||
-        profile.structure.segments.length > 0
+        Boolean(profile.direction.summary.trim()) &&
+        Boolean(profile.direction.format)
       );
-    case "constraints":
-      return profile.constraints.rules.length > 0;
+    case "style":
+      return hasStyle(profile);
+    case "context":
+      return profile.context.length > 0;
+    case "sequence":
+      return profile.sequence.length > 0;
+    case "bounds":
+      return profile.bounds.length > 0;
     default:
       return false;
   }
@@ -80,53 +76,53 @@ function buildStepItems(
   step: ProfileStepId,
 ): ProfileStepItem[] {
   switch (step) {
-    case "intent":
+    case "direction":
       return [
         {
           key: "summary",
-          filled: Boolean(profile.intent.summary.trim()),
+          filled: Boolean(profile.direction.summary.trim()),
           tier: "required",
         },
-      ];
-    case "delivery":
-      return [
         {
           key: "format",
-          filled: Boolean(profile.delivery.format),
+          filled: Boolean(profile.direction.format),
           tier: "required",
         },
         {
-          key: "modalities",
-          filled: profile.delivery.modalities.length > 0,
-          tier: "required",
-        },
-      ];
-    case "expression":
-      return [
-        {
-          key: "expression",
-          filled: hasExpression(profile),
+          key: "audience",
+          filled: Boolean(profile.direction.audience?.trim()),
           tier: "recommended",
         },
       ];
-    case "structure":
+    case "style":
       return [
         {
-          key: "settings",
-          filled: profile.structure.settings.length > 0,
-          tier: "optional",
+          key: "style",
+          filled: hasStyle(profile),
+          tier: "recommended",
         },
+      ];
+    case "context":
+      return [
         {
-          key: "segments",
-          filled: profile.structure.segments.length > 0,
+          key: "context",
+          filled: profile.context.length > 0,
           tier: "optional",
         },
       ];
-    case "constraints":
+    case "sequence":
       return [
         {
-          key: "rules",
-          filled: profile.constraints.rules.length > 0,
+          key: "sequence",
+          filled: profile.sequence.length > 0,
+          tier: "optional",
+        },
+      ];
+    case "bounds":
+      return [
+        {
+          key: "bounds",
+          filled: profile.bounds.length > 0,
           tier: "optional",
         },
       ];
@@ -136,7 +132,7 @@ function buildStepItems(
 }
 
 function stepIsRequired(step: ProfileStepId): boolean {
-  return step === "intent" || step === "delivery";
+  return step === "direction";
 }
 
 export function getActiveProfileStep(

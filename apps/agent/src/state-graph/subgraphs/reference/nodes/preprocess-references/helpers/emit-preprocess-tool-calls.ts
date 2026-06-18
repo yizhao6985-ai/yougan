@@ -3,25 +3,20 @@ import { type MediaKind } from "@yougan/domain";
 import { nanoid } from "nanoid";
 
 import type { UnprocessedReferenceJob } from "./list-unprocessed-jobs.js";
+import { isSupportedReferencePreprocessKind } from "./skip-unsupported-reference-jobs.js";
 
 export const PREPROCESS_REFERENCE_TOOL_NAMES = {
   text: "preprocess_reference_text",
   image: "preprocess_reference_image",
-  audio: "preprocess_reference_audio",
-  video: "preprocess_reference_video",
-} as const satisfies Record<
-  Exclude<MediaKind, "file">,
-  string
->;
+} as const;
 
-const PREPROCESS_KIND: Record<
-  MediaKind,
-  "text" | "image" | "audio" | "video" | null
-> = {
+type PreprocessToolKind = keyof typeof PREPROCESS_REFERENCE_TOOL_NAMES;
+
+const PREPROCESS_KIND: Record<MediaKind, PreprocessToolKind | null> = {
   text: "text",
   image: "image",
-  audio: "audio",
-  video: "video",
+  audio: null,
+  video: null,
   file: "text",
 };
 
@@ -36,17 +31,14 @@ export function emitPreprocessToolCalls(
   }> = [];
 
   for (const job of jobs) {
+    if (!isSupportedReferencePreprocessKind(job.media_kind)) continue;
+
     const expectedKind = PREPROCESS_KIND[job.media_kind];
     if (!expectedKind) continue;
 
-    const toolName =
-      PREPROCESS_REFERENCE_TOOL_NAMES[
-        expectedKind as keyof typeof PREPROCESS_REFERENCE_TOOL_NAMES
-      ];
-
     toolCalls.push({
       id: nanoid(),
-      name: toolName,
+      name: PREPROCESS_REFERENCE_TOOL_NAMES[expectedKind],
       args: { asset_url: job.asset_url },
     });
   }

@@ -1,7 +1,8 @@
 import {
+  buildAiUsageSnapshot,
   isUsageExceeded,
   toUsagePercent,
-  type RunMetering,
+  type AiUsageSnapshot,
 } from "@yougan/domain";
 import {
   addBillingPeriod,
@@ -31,32 +32,17 @@ function normalizePlanId(planId: string): SubscriptionPlanId {
   return resolvePlanId(planId);
 }
 
-/** Agent run 前：DB 已用 + thread 内待结算 runMetering */
-export async function getAgentRunQuotaContext(
+export async function getAiUsageSnapshot(
   userId: string,
-  pendingMicroCredits = 0,
-): Promise<{ usageExceeded: boolean; summary: SubscriptionSummary }> {
+): Promise<AiUsageSnapshot> {
   const subscription = await ensureUserSubscription(userId);
-  const plan = getPlanDefinition(normalizePlanId(subscription!.planId));
-  const effectiveUsage =
-    subscription!.aiUsageMicroCredits + Math.max(0, pendingMicroCredits);
-  const usageExceeded = isUsageExceeded(
-    effectiveUsage,
-    plan.monthlyQuotaMicroCredits,
-  );
-  const summary = buildSubscriptionSummary(subscription!);
-
-  return {
-    usageExceeded,
-    summary: {
-      ...summary,
-      usagePercent: toUsagePercent(
-        effectiveUsage,
-        plan.monthlyQuotaMicroCredits,
-      ),
-      usageExceeded,
-    },
-  };
+  const planId = normalizePlanId(subscription!.planId);
+  const plan = getPlanDefinition(planId);
+  return buildAiUsageSnapshot({
+    planId,
+    quotaMicroCredits: plan.monthlyQuotaMicroCredits,
+    settledMicroCredits: subscription!.aiUsageMicroCredits,
+  });
 }
 
 function startOfUtcMonth(date: Date): Date {
@@ -268,31 +254,35 @@ export async function revokeProAfterRefund(
   return getSubscriptionSummary(userId);
 }
 
-/** LangGraph run 开始前：DB 已用 + 待结算 runMetering 是否已满 */
-export async function assertAiQuotaAvailable(
-  userId: string,
-  pendingMicroCredits = 0,
-): Promise<{
+/** LangGraph run 开始前：DB 已用是否已满 */
+export async function assertAiQuotaAvailable(userId: string): Promise<{
   allowed: boolean;
   summary: SubscriptionSummary;
+  aiUsage: AiUsageSnapshot;
 }> {
-  const context = await getAgentRunQuotaContext(userId, pendingMicroCredits);
+  const aiUsage = await getAiUsageSnapshot(userId);
+  const summary = await getSubscriptionSummary(userId);
   return {
-    allowed: !context.usageExceeded,
-    summary: context.summary,
+    allowed: !aiUsage.usageExceeded,
+    summary: {
+      ...summary,
+      usagePercent: aiUsage.usagePercent,
+      usageExceeded: aiUsage.usageExceeded,
+    },
+    aiUsage,
   };
 }
 
-/** LangGraph run 成功后：按 agent 上报的 microCredits 结算 */
+/** Agent 调用结束时结算增量；返回最新 aiUsage 快照 */
 export async function settleAiUsage(
   userId: string,
   input: {
     microCredits: number;
     idempotencyKey: string;
   },
-): Promise<SubscriptionSummary> {
+): Promise<AiUsageSnapshot> {
   if (input.microCredits <= 0) {
-    return getSubscriptionSummary(userId);
+    return getAiUsageSnapshot(userId);
   }
 
   await prisma.$transaction(async (tx) => {
@@ -322,30 +312,7 @@ export async function settleAiUsage(
     });
   });
 
-  return getSubscriptionSummary(userId);
-}
-
-export function parseRunMetering(values: Record<string, unknown>): RunMetering | null {
-  const raw = values.runMetering;
-  if (!raw || typeof raw !== "object") return null;
-  const record = raw as Record<string, unknown>;
-  const microCredits =
-    typeof record.microCredits === "number" ? record.microCredits : 0;
-  const inputTokens =
-    typeof record.inputTokens === "number" ? record.inputTokens : 0;
-  const outputTokens =
-    typeof record.outputTokens === "number" ? record.outputTokens : 0;
-  const callCount = typeof record.callCount === "number" ? record.callCount : 0;
-  if (microCredits <= 0) return null;
-  return { microCredits, inputTokens, outputTokens, callCount };
-}
-
-/** @deprecated 使用 assertAiQuotaAvailable + settleAiUsage */
-export async function consumeAiUsage(userId: string): Promise<{
-  allowed: boolean;
-  summary: SubscriptionSummary;
-}> {
-  return assertAiQuotaAvailable(userId);
+  return getAiUsageSnapshot(userId);
 }
 
 export async function cancelSubscriptionAtPeriodEnd(userId: string) {

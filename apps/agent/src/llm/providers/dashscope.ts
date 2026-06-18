@@ -1,7 +1,12 @@
 /**
- * Qwen（百炼 DashScope OpenAI 兼容）Chat 模型。
+ * 百炼 DashScope 文本 Chat（OpenAI 兼容）。
  */
 import { env } from "#agent/env.js";
+import { DASHSCOPE_MODELS } from "./catalog.js";
+import {
+  getDashScopeChatKwargs,
+  resolveDashScopeChatFamily,
+} from "./dashscope-chat-config.js";
 import {
   createOpenAiCompatibleChatModel,
   type OpenAiCompatibleChatModelOptions,
@@ -13,26 +18,22 @@ function assertDashScopeApiKey(): void {
   }
 }
 
-const QWEN_CHAT_KWARGS = {
-  enable_thinking: false,
-  incremental_output: true,
-  /** 流式最后一包带上 usage，供 LLM callback / usage_metadata 计量 */
-  stream_options: { include_usage: true },
-} as const;
-
 /** 对话、结构化 work 等文本任务（计划/验收/建议等，默认较短输出）。 */
 export function createChatModel(options?: OpenAiCompatibleChatModelOptions) {
   assertDashScopeApiKey();
+
+  const model = DASHSCOPE_MODELS.chat;
+  const family = resolveDashScopeChatFamily(model);
 
   return createOpenAiCompatibleChatModel(
     {
       apiKey: env.dashscopeApiKey,
       baseURL: env.dashscopeBaseUrl,
-      model: env.dashscopeModel,
+      model,
       temperature: env.llmTemperature,
       streaming: true,
       maxTokens: env.llmMaxTokens,
-      modelKwargs: QWEN_CHAT_KWARGS,
+      modelKwargs: getDashScopeChatKwargs(family, "stream"),
     },
     options,
   );

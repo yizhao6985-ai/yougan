@@ -14,7 +14,7 @@ const FORMAT_GUIDANCE: Record<ContentFormatId, string> = {
   podcast: "播客：对话感或独白结构，分段主题，适合音频节目结构与口播稿。",
   music: "音乐/歌词：情绪基调、段落结构与韵律变化。",
   illustration:
-    "绘画插画：executeDesign 编写文生图 prompt 与短说明 → renderDesignImage 调用 image-01 出图 → acceptTask 验收 prompt 方向与质量。",
+    "绘画插画：executeDesign 编写文生图 prompt 与短说明 → renderDesignImage 调用百炼文生图出图 → acceptTask 验收 prompt 方向与质量。",
 };
 
 const FORMAT_DEFAULT_WORD_HINT: Partial<Record<ContentFormatId, string>> = {

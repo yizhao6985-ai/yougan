@@ -1,18 +1,16 @@
 import { buildPublicationSlug } from "@yougan/domain";
 
 import {
-  applyMetadataOverrides,
-  buildFacetOptions,
-  buildMetadataLabels,
+  applyPublicationSummaryOverrides,
   buildPublicationMetadata,
+  buildPublicationSummaryPreview,
+  buildFacetOptions,
   DISCOVER_FORMATS,
   DISCOVER_MEDIA_TYPES,
-  DISCOVER_PLATFORMS,
   DISCOVER_TOPIC_CATEGORIES,
-  previewCoverUrl,
-  previewExcerpt,
+  parseBlockComposition,
   previewHasContent,
-  type PublicationMetadataOverrides,
+  type PublicationSummaryOverrides,
   type WorkPreview,
 } from "../lib/discover-taxonomy.js";
 import {
@@ -26,6 +24,7 @@ import { prisma } from "../db.js";
 import type { Prisma } from "@prisma/client";
 import type { PublicationDTO, PublicationStatus } from "../schemas.js";
 import { parsePublicationBlocks } from "./materialize-preview-images.js";
+import { summarizePublicationSummary } from "./summarize-publication-summary.js";
 import { getWork } from "./works.js";
 
 function buildSlug(title: string) {
@@ -41,7 +40,10 @@ type PublicationRow = {
   excerpt: string | null;
   blocks: unknown;
   coverUrl: string | null;
-  platform: string | null;
+  coverBlockId?: string | null;
+  compositionLabel?: string | null;
+  consumptionHint?: string | null;
+  blockComposition?: unknown;
   contentFormat: string | null;
   topicCategory: string | null;
   contentTopic: string | null;
@@ -70,7 +72,10 @@ function toPublicationDTO(publication: PublicationRow): PublicationDTO {
     excerpt: publication.excerpt,
     blocks: parsePublicationBlocks(publication.blocks),
     coverUrl: publication.coverUrl,
-    platform: publication.platform,
+    coverBlockId: publication.coverBlockId ?? null,
+    compositionLabel: publication.compositionLabel ?? null,
+    consumptionHint: publication.consumptionHint ?? null,
+    blockComposition: parseBlockComposition(publication.blockComposition),
     contentFormat: publication.contentFormat,
     topicCategory: publication.topicCategory,
     contentTopic: publication.contentTopic,
@@ -96,10 +101,10 @@ function toPublicationDTO(publication: PublicationRow): PublicationDTO {
 }
 
 export type PublicationFeedQuery = {
-  platform?: string;
   contentFormat?: string;
   topicCategory?: string;
   mediaType?: string;
+  mixedTextImage?: boolean;
   limit?: number;
 };
 
@@ -113,7 +118,6 @@ export type PublicationFeedResult = {
   publications: PublicationDTO[];
   total: number;
   facets: {
-    platform: DiscoverFacetOption[];
     contentFormat: DiscoverFacetOption[];
     topicCategory: DiscoverFacetOption[];
     mediaType: DiscoverFacetOption[];
@@ -138,9 +142,6 @@ function buildPublishedWhere(
 ): Prisma.PublicationWhereInput {
   const where: Prisma.PublicationWhereInput = { status: "published" };
 
-  if (query.platform && omit !== "platform") {
-    where.platform = query.platform;
-  }
   if (query.contentFormat && omit !== "contentFormat") {
     where.contentFormat = query.contentFormat;
   }
@@ -150,17 +151,18 @@ function buildPublishedWhere(
   if (query.mediaType && omit !== "mediaType") {
     where.mediaTypes = { has: query.mediaType };
   }
+  if (query.mixedTextImage && omit !== "mixedTextImage") {
+    where.AND = [
+      { mediaTypes: { has: "text" } },
+      { mediaTypes: { has: "image" } },
+    ];
+  }
 
   return where;
 }
 
 async function buildFacets(query: PublicationFeedQuery) {
-  const [platformRows, formatRows, topicRows] = await Promise.all([
-    prisma.publication.groupBy({
-      by: ["platform"],
-      where: buildPublishedWhere(query, "platform"),
-      _count: { _all: true },
-    }),
+  const [formatRows, topicRows] = await Promise.all([
     prisma.publication.groupBy({
       by: ["contentFormat"],
       where: buildPublishedWhere(query, "contentFormat"),
@@ -196,10 +198,6 @@ async function buildFacets(query: PublicationFeedQuery) {
     );
 
   return {
-    platform: buildFacetOptions(
-      DISCOVER_PLATFORMS,
-      toCountMap(platformRows, "platform"),
-    ),
     contentFormat: buildFacetOptions(
       DISCOVER_FORMATS,
       toCountMap(formatRows, "contentFormat"),
@@ -320,23 +318,44 @@ export async function listUserPublishedPublications(
   return rows.map(toPublicationDTO);
 }
 
-function metadataFromWork(
+function legacyMetadataFromSummary(
   work: { profile: unknown },
-  preview: WorkPreview,
-  coverUrl: string | null,
-  overrides?: PublicationMetadataOverrides,
+  summary: Awaited<ReturnType<typeof summarizePublicationSummary>>,
+  blocks: WorkPreview["blocks"],
 ) {
-  const inferred = buildPublicationMetadata({
+  return buildPublicationMetadata({
     profile: work.profile,
-    output: preview,
-    coverUrl,
-    blocks: preview.blocks,
-    platform: preview.platform,
+    blocks,
+    coverUrl: summary.cover.url || null,
   });
-  return applyMetadataOverrides(inferred, overrides);
 }
 
-export async function previewPublicationMetadata(
+function summaryToPublicationFields(
+  summary: Awaited<ReturnType<typeof summarizePublicationSummary>>,
+  work: { profile: unknown },
+  blocks: WorkPreview["blocks"],
+  overrides?: PublicationSummaryOverrides | null,
+) {
+  const applied = applyPublicationSummaryOverrides(summary, overrides, blocks);
+  const legacy = legacyMetadataFromSummary(work, applied, blocks);
+
+  return {
+    title: applied.title,
+    excerpt: applied.hook,
+    coverUrl: applied.cover.url || null,
+    coverBlockId: applied.cover.sourceBlockId,
+    compositionLabel: applied.compositionLabel,
+    consumptionHint: applied.consumptionHint,
+    blockComposition: applied.blockComposition,
+    topicCategory: applied.topicCategory,
+    contentTopic: legacy.contentTopic,
+    contentType: legacy.contentType,
+    contentFormat: legacy.contentFormat,
+    mediaTypes: applied.mediaTypes,
+  };
+}
+
+export async function previewPublicationSummaryForWork(
   userId: string,
   workId: string,
 ) {
@@ -348,13 +367,14 @@ export async function previewPublicationMetadata(
     throw new Error("WORK_OUTPUT_EMPTY");
   }
 
-  const coverUrl = previewCoverUrl(preview);
-  const metadata = metadataFromWork(work, preview, coverUrl);
+  const summary = await summarizePublicationSummary({
+    blocks: preview!.blocks,
+    preview,
+    workTitle: work.title,
+    profile: work.profile,
+  });
 
-  return {
-    metadata,
-    labels: buildMetadataLabels(metadata),
-  };
+  return buildPublicationSummaryPreview(summary, preview!.blocks);
 }
 
 export async function createPublicationFromWork(
@@ -362,7 +382,7 @@ export async function createPublicationFromWork(
   input: {
     workId: string;
     publish?: boolean;
-    metadata?: PublicationMetadataOverrides;
+    summary?: PublicationSummaryOverrides;
   },
 ) {
   const work = await getWork(userId, input.workId);
@@ -377,25 +397,35 @@ export async function createPublicationFromWork(
     where: { userId, workId: input.workId, status: { not: "archived" } },
   });
 
-  const title = preview!.title?.trim() || work.title;
-  const excerpt = previewExcerpt(preview);
-  const coverUrl = previewCoverUrl(preview);
+  const summary = await summarizePublicationSummary({
+    blocks: preview!.blocks,
+    preview,
+    workTitle: work.title,
+    profile: work.profile,
+  });
+
+  const overrides = input.summary;
+  const fields = summaryToPublicationFields(
+    summary,
+    work,
+    preview!.blocks,
+    overrides,
+  );
+
   const now = input.publish ? new Date() : null;
-  const metadata = metadataFromWork(work, preview!, coverUrl, input.metadata);
 
   if (existing) {
     const row = await prisma.publication.update({
       where: { id: existing.id },
       data: {
-        title,
-        excerpt,
-        blocks: preview!.blocks,
-        coverUrl,
+        ...fields,
+        blocks: preview!.blocks as unknown as Prisma.InputJsonValue,
+        blockComposition:
+          fields.blockComposition as unknown as Prisma.InputJsonValue,
         hashtags: preview!.hashtags ?? [],
         status: input.publish ? "published" : existing.status,
         publishedAt: input.publish ? now : existing.publishedAt,
-        ...metadata,
-      },
+      } as unknown as Prisma.PublicationUpdateInput,
       include: userInclude,
     });
     await invalidatePublicationCaches(row.slug);
@@ -406,16 +436,15 @@ export async function createPublicationFromWork(
     data: {
       userId,
       workId: input.workId,
-      slug: buildSlug(title),
-      title,
-      excerpt,
-      blocks: preview!.blocks,
-      coverUrl,
+      slug: buildSlug(fields.title),
+      ...fields,
+      blocks: preview!.blocks as unknown as Prisma.InputJsonValue,
+      blockComposition:
+        fields.blockComposition as unknown as Prisma.InputJsonValue,
       hashtags: preview!.hashtags ?? [],
       status: input.publish ? "published" : "draft",
       publishedAt: now,
-      ...metadata,
-    },
+    } as unknown as Prisma.PublicationCreateInput,
     include: userInclude,
   });
   await invalidatePublicationCaches(row.slug);

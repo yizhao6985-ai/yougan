@@ -1,6 +1,5 @@
 import { HumanMessage } from "@langchain/core/messages";
 
-import { referenceImagePartFromBuffer } from "../prepare/asset-image-part.js";
 import type { ReferenceAssetPrep } from "../prepare/types.js";
 
 function notesBlock(notes: string[]): string {
@@ -9,8 +8,7 @@ function notesBlock(notes: string[]): string {
 }
 
 const ANALYZE_INSTRUCTIONS = `请客观分析参考素材的内容、风格、结构与可借鉴要点（仅输出 analysis 字段）。
-- 音频/视频的 transcript 字段留空（系统会从 ASR 填入）
-- 图片/视频的 visual_cues 请填写视觉要点摘要`;
+- 图片素材的 visual_cues 请填写视觉要点摘要`;
 
 function mediaInstruction(mediaKind: ReferenceAssetPrep["media_kind"]): string {
   switch (mediaKind) {
@@ -18,10 +16,6 @@ function mediaInstruction(mediaKind: ReferenceAssetPrep["media_kind"]): string {
       return "请阅读下方参考原文并完成分析。";
     case "image":
       return "请直接观察下方图片并完成分析。";
-    case "audio":
-      return "请基于下方转写稿完成分析。";
-    case "video":
-      return "请结合下方转写稿（如有）与关键帧画面完成分析。";
     default:
       return "请基于文件信息保守分析。";
   }
@@ -53,35 +47,6 @@ export function buildAnalyzeReferenceMessage(
 
     return new HumanMessage(
       `${header}（未能加载图片内容，请主要依据文件信息保守分析）`,
-    );
-  }
-
-  if (prep.media_kind === "audio") {
-    return new HumanMessage(
-      `${header}转写稿：\n${prep.transcript?.trim() || "（无转写）"}`,
-    );
-  }
-
-  if (prep.media_kind === "video") {
-    const transcriptBlock = prep.transcript?.trim()
-      ? `转写稿：\n${prep.transcript.trim()}\n\n`
-      : "";
-    const frames = prep.video_frames ?? [];
-
-    if (frames.length > 0) {
-      return new HumanMessage({
-        content: [
-          {
-            type: "text",
-            text: `${header}${transcriptBlock}以下是从参考视频中抽取的 ${frames.length} 个关键帧：`,
-          },
-          ...frames.map((frame) => referenceImagePartFromBuffer(frame)),
-        ],
-      });
-    }
-
-    return new HumanMessage(
-      `${header}${transcriptBlock}（未能抽取关键帧，请主要依据转写稿分析）`,
     );
   }
 

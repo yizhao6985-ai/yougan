@@ -4,8 +4,10 @@ export const MICRO_CREDITS_PER_YUAN = 10_000 as const;
 export const METERING_MODEL_IDS = [
   "qwen-max",
   "qwen-plus",
+  "glm-5.2",
+  "qwen-omni-flash",
+  "qwen-image-2.0-pro",
   "deepseek-v3",
-  "minimax-m3-s",
 ] as const;
 
 export type MeteringModelId = (typeof METERING_MODEL_IDS)[number];

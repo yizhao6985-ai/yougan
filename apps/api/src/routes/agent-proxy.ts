@@ -1,19 +1,13 @@
 import type { Request, Response, NextFunction } from "express";
-import type { ClientRequest, IncomingMessage } from "node:http";
+import type { ClientRequest, IncomingMessage, ServerResponse } from "node:http";
 import { createProxyMiddleware } from "http-proxy-middleware";
+import type { AiUsageSnapshot } from "@yougan/domain";
 
 import { env } from "../env.js";
 import type { AuthedRequest } from "../middleware/auth.js";
-import {
-  assertAiQuotaAvailable,
-  parseRunMetering,
-  settleAiUsage,
-} from "../services/subscription.js";
-import {
-  clearThreadRunMetering,
-  getLangGraphThreadCheckpointId,
-  getLangGraphThreadValues,
-} from "../services/langgraph.js";
+import { syncThreadAiUsageAfterRun } from "../services/ai-usage-sync.js";
+import { assertAiQuotaAvailable } from "../services/subscription.js";
+import { getLangGraphThreadValues } from "../services/langgraph.js";
 import { maybeAutoTitleConversation } from "../services/conversation-auto-title.js";
 import { applyAgentRunVersion, getAgentContext } from "../services/works.js";
 
@@ -30,6 +24,11 @@ type StreamSyncRequest = AuthedRequest & {
 
 function agentProxyPath(req: Request) {
   return req.originalUrl.replace(/^\/agent/, "").split("?")[0] ?? req.path;
+}
+
+function parseThreadIdFromAgentPath(path: string): string | null {
+  const match = path.match(/\/threads\/([^/]+)/);
+  return match?.[1] ?? null;
 }
 
 function parseStreamThreadId(req: Request): string | null {
@@ -57,23 +56,81 @@ function parseStreamSyncContext(req: AuthedRequest): StreamSyncContext | null {
   };
 }
 
-async function readPendingRunMeteringMicroCredits(
-  threadId: string | null,
-): Promise<number> {
-  if (!threadId) return 0;
+function isStateUpdateRequest(req: Request): boolean {
+  return (
+    req.method === "POST" &&
+    /\/threads\/[^/]+\/state$/.test(agentProxyPath(req))
+  );
+}
+
+/** stream 结束后异步结算；updateState 在响应体内同步结算并注入 aiUsage */
+function shouldSyncAiUsageAfterStream(req: Request): boolean {
+  if (req.method !== "POST") return false;
+  return /\/runs\/stream$/.test(agentProxyPath(req));
+}
+
+function injectAiUsageIntoStateResponse(
+  raw: Buffer,
+  aiUsage: AiUsageSnapshot,
+): Buffer {
   try {
-    const values = await getLangGraphThreadValues(threadId);
-    if (!values || typeof values !== "object") return 0;
-    return (
-      parseRunMetering(values as Record<string, unknown>)?.microCredits ?? 0
-    );
+    const json = JSON.parse(raw.toString("utf8")) as Record<string, unknown>;
+    if (json.values && typeof json.values === "object") {
+      (json.values as Record<string, unknown>).aiUsage = aiUsage;
+    }
+    json.aiUsage = aiUsage;
+    return Buffer.from(JSON.stringify(json));
   } catch {
-    return 0;
+    return raw;
+  }
+}
+
+function writeProxyHeaders(
+  res: ServerResponse,
+  proxyRes: IncomingMessage,
+  statusCode: number,
+) {
+  res.statusCode = statusCode;
+  for (const [key, value] of Object.entries(proxyRes.headers)) {
+    if (value === undefined) continue;
+    const lower = key.toLowerCase();
+    if (lower === "transfer-encoding" || lower === "content-length") continue;
+    if (Array.isArray(value)) {
+      res.setHeader(key, value);
+    } else {
+      res.setHeader(key, value);
+    }
+  }
+}
+
+function endProxyResponse(
+  res: ServerResponse,
+  proxyRes: IncomingMessage,
+  statusCode: number,
+  body?: Buffer,
+) {
+  writeProxyHeaders(res, proxyRes, statusCode);
+  if (body) {
+    res.setHeader("Content-Length", body.length);
+    res.end(body);
+    return;
+  }
+  res.end();
+}
+
+async function syncAiUsageIfNeeded(req: AuthedRequest) {
+  if (!req.userId || !shouldSyncAiUsageAfterStream(req)) return;
+  const threadId = parseThreadIdFromAgentPath(agentProxyPath(req));
+  if (!threadId) return;
+  try {
+    await syncThreadAiUsageAfterRun(req.userId, threadId);
+  } catch (error) {
+    console.error("[agent-proxy] failed to sync ai usage", error);
   }
 }
 
 /**
- * 在转发 LangGraph run 前注入作品状态；stream 结束后结算 metering 并 append WorkVersion。
+ * LangGraph stream 开始前：额度门禁 + 注入作品上下文与 aiUsage。
  */
 export async function injectWorkContext(
   req: AuthedRequest,
@@ -100,15 +157,13 @@ export async function injectWorkContext(
   }
 
   try {
-    const threadId = parseStreamThreadId(req);
-    const pendingMicroCredits =
-      await readPendingRunMeteringMicroCredits(threadId);
-    const usage = await assertAiQuotaAvailable(req.userId, pendingMicroCredits);
+    const usage = await assertAiQuotaAvailable(req.userId);
     if (!usage.allowed) {
       res.status(402).json({
         error: "AI 创作额度已用完",
         code: "QUOTA_EXCEEDED",
         subscription: usage.summary,
+        aiUsage: usage.aiUsage,
       });
       return;
     }
@@ -135,11 +190,14 @@ export async function injectWorkContext(
         profile: context.profile,
         references: context.references,
         production: context.production,
-        usageExceeded: usage.summary.usageExceeded,
+        aiUsage: usage.aiUsage,
       },
     };
 
-    if (conversationId && req.body.config?.configurable) {
+    req.body.config ??= {};
+    req.body.config.configurable ??= {};
+    req.body.config.configurable.userId = req.userId;
+    if (conversationId) {
       req.body.config.configurable.conversationId = conversationId;
     }
 
@@ -149,53 +207,11 @@ export async function injectWorkContext(
   }
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function settleRunMeteringAfterStream(context: StreamSyncContext) {
-  try {
-    let runMetering = null as ReturnType<typeof parseRunMetering>;
-    let values: Record<string, unknown> | null = null;
-
-    for (let attempt = 0; attempt < 6; attempt++) {
-      const nextValues = await getLangGraphThreadValues(context.threadId);
-      if (nextValues && typeof nextValues === "object") {
-        values = nextValues as Record<string, unknown>;
-        runMetering = parseRunMetering(values);
-        if (runMetering) break;
-      }
-      if (attempt < 5) await sleep(200);
-    }
-
-    if (!runMetering || !values) {
-      console.warn(
-        "[agent-proxy] skip AI usage settlement: runMetering empty",
-        { threadId: context.threadId },
-      );
-      return;
-    }
-
-    const checkpointId =
-      (await getLangGraphThreadCheckpointId(context.threadId)) ??
-      `${context.threadId}:${runMetering.microCredits}:${runMetering.callCount}`;
-    await settleAiUsage(context.userId, {
-      microCredits: runMetering.microCredits,
-      idempotencyKey: `${context.threadId}:${checkpointId}`,
-    });
-    await clearThreadRunMetering(context.threadId);
-  } catch (error) {
-    console.error("[agent-proxy] failed to settle AI usage", error);
-  }
-}
-
 async function syncWorkAfterStream(
   context: StreamSyncContext,
   statusCode: number,
 ) {
   if (statusCode < 200 || statusCode >= 300) return;
-
-  await settleRunMeteringAfterStream(context);
 
   try {
     const values = await getLangGraphThreadValues(context.threadId);
@@ -234,6 +250,7 @@ export function createAgentProxy() {
     target: env.agentUrl,
     changeOrigin: true,
     pathRewrite: { "^/agent": "" },
+    selfHandleResponse: true,
     on: {
       proxyReq: (proxyReq: ClientRequest, req) => {
         const expressReq = req as Request;
@@ -244,12 +261,58 @@ export function createAgentProxy() {
         proxyReq.write(bodyData);
         proxyReq.end();
       },
-      proxyRes: (proxyRes: IncomingMessage, req) => {
-        const syncContext = (req as StreamSyncRequest).youganStreamSync;
-        if (!syncContext) return;
-
+      proxyRes: (proxyRes: IncomingMessage, req, res) => {
+        const expressReq = req as StreamSyncRequest;
+        const expressRes = res as ServerResponse;
         const statusCode = proxyRes.statusCode ?? 500;
+        const settleStateInResponse =
+          isStateUpdateRequest(expressReq) && Boolean(expressReq.userId);
+
+        if (settleStateInResponse) {
+          const chunks: Buffer[] = [];
+          proxyRes.on("data", (chunk: Buffer) => chunks.push(chunk));
+          proxyRes.on("end", () => {
+            void (async () => {
+              let body = Buffer.concat(chunks);
+              const threadId = parseThreadIdFromAgentPath(
+                agentProxyPath(expressReq),
+              );
+
+              if (
+                statusCode >= 200 &&
+                statusCode < 300 &&
+                threadId &&
+                expressReq.userId
+              ) {
+                try {
+                  const aiUsage = await syncThreadAiUsageAfterRun(
+                    expressReq.userId,
+                    threadId,
+                  );
+                  if (aiUsage) {
+                    body = injectAiUsageIntoStateResponse(body, aiUsage);
+                  }
+                } catch (error) {
+                  console.error(
+                    "[agent-proxy] failed to sync ai usage on state",
+                    error,
+                  );
+                }
+              }
+
+              endProxyResponse(expressRes, proxyRes, statusCode, body);
+            })();
+          });
+          return;
+        }
+
+        writeProxyHeaders(expressRes, proxyRes, statusCode);
+        proxyRes.pipe(expressRes);
         proxyRes.on("end", () => {
+          void syncAiUsageIfNeeded(expressReq);
+
+          const syncContext = expressReq.youganStreamSync;
+          if (!syncContext) return;
           void syncWorkAfterStream(syncContext, statusCode);
         });
       },

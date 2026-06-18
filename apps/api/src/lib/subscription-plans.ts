@@ -36,14 +36,14 @@ export const SUBSCRIPTION_PLANS: Record<
   pro: {
     id: "pro",
     name: "Pro",
-    description: "适合周更创作，旗舰出稿与平台发布",
+    description: "适合周更创作，旗舰出稿与更高额度",
     monthlyQuotaMicroCredits: 2_550_000,
     priceMonthlyCents: 6800,
     priceYearlyCents: 67800,
     features: [
       "更高 AI 创作额度",
       "旗舰模型出稿",
-      "平台一键发布",
+      "发布到有感公域",
     ],
   },
   pro_plus: {
@@ -57,7 +57,7 @@ export const SUBSCRIPTION_PLANS: Record<
     features: [
       "充足 AI 创作额度",
       "旗舰模型全场景",
-      "优先响应与平台发布",
+      "优先响应",
     ],
   },
 };

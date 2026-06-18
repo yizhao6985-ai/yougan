@@ -2,8 +2,8 @@ import { apiFetch } from "@/services/client";
 import type {
   DiscoverFacets,
   DiscoverFilters,
-  PublicationMetadataOverrides,
-  PublicationMetadataPreview,
+  PublicationSummaryOverrides,
+  PublicationSummaryPreview,
 } from "@/lib/discover-taxonomy";
 import type { Publication, PublicationStatus } from "@/lib/publication-types";
 
@@ -15,10 +15,10 @@ export type PublicationFeedResponse = {
 
 function buildFeedQuery(filters: DiscoverFilters = {}) {
   const params = new URLSearchParams();
-  if (filters.platform) params.set("platform", filters.platform);
   if (filters.contentFormat) params.set("contentFormat", filters.contentFormat);
   if (filters.topicCategory) params.set("topicCategory", filters.topicCategory);
   if (filters.mediaType) params.set("mediaType", filters.mediaType);
+  if (filters.mixedTextImage) params.set("mixedTextImage", "true");
   const query = params.toString();
   return query ? `?${query}` : "";
 }
@@ -39,21 +39,21 @@ export async function fetchMyPublications() {
   return apiFetch<{ publications: Publication[] }>("/api/publications/mine");
 }
 
-export async function fetchPublicationMetadataPreview(workId: string) {
+export async function fetchPublicationSummaryPreview(workId: string) {
   const params = new URLSearchParams({ workId });
-  return apiFetch<PublicationMetadataPreview>(
+  return apiFetch<PublicationSummaryPreview>(
     `/api/publications/preview-metadata?${params.toString()}`,
   );
 }
 
-export async function publishWorkToPlatform(
+export async function publishWork(
   workId: string,
   publish = true,
-  metadata?: PublicationMetadataOverrides,
+  summary?: PublicationSummaryOverrides,
 ) {
   return apiFetch<{ publication: Publication }>("/api/publications", {
     method: "POST",
-    body: JSON.stringify({ workId, publish, metadata }),
+    body: JSON.stringify({ workId, publish, summary }),
   });
 }
 
@@ -75,3 +75,8 @@ export async function deletePublication(publicationId: string) {
     method: "DELETE",
   });
 }
+
+export type {
+  PublicationSummaryOverrides,
+  PublicationSummaryPreview,
+};

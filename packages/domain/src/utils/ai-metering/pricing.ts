@@ -12,7 +12,7 @@ export type ModelPriceTable = {
   flatMicroCreditsPerCall?: number;
 };
 
-/** 与百炼 / DeepSeek / MiniMax 官方价对齐（2026 Q1） */
+/** 与百炼官方价对齐（2026 Q1；文生图按次计价见 flatMicroCreditsPerCall） */
 export const MODEL_PRICE_TABLE: Record<MeteringModelId, ModelPriceTable> = {
   "qwen-max": {
     inputMicroCreditsPer1M: 2.4 * MICRO_CREDITS_PER_YUAN,
@@ -22,15 +22,23 @@ export const MODEL_PRICE_TABLE: Record<MeteringModelId, ModelPriceTable> = {
     inputMicroCreditsPer1M: 0.8 * MICRO_CREDITS_PER_YUAN,
     outputMicroCreditsPer1M: 2.0 * MICRO_CREDITS_PER_YUAN,
   },
+  "glm-5.2": {
+    inputMicroCreditsPer1M: 2.0 * MICRO_CREDITS_PER_YUAN,
+    outputMicroCreditsPer1M: 8.0 * MICRO_CREDITS_PER_YUAN,
+  },
+  "qwen-omni-flash": {
+    inputMicroCreditsPer1M: 0.8 * MICRO_CREDITS_PER_YUAN,
+    outputMicroCreditsPer1M: 2.0 * MICRO_CREDITS_PER_YUAN,
+  },
+  "qwen-image-2.0-pro": {
+    inputMicroCreditsPer1M: 0,
+    outputMicroCreditsPer1M: 0,
+    flatMicroCreditsPerCall: 0.2 * MICRO_CREDITS_PER_YUAN,
+  },
   "deepseek-v3": {
     inputMicroCreditsPer1M: 2.0 * MICRO_CREDITS_PER_YUAN,
     outputMicroCreditsPer1M: 8.0 * MICRO_CREDITS_PER_YUAN,
     cachedInputMicroCreditsPer1M: 0.5 * MICRO_CREDITS_PER_YUAN,
-  },
-  "minimax-m3-s": {
-    inputMicroCreditsPer1M: 2.1 * MICRO_CREDITS_PER_YUAN,
-    outputMicroCreditsPer1M: 8.4 * MICRO_CREDITS_PER_YUAN,
-    cachedInputMicroCreditsPer1M: 0.42 * MICRO_CREDITS_PER_YUAN,
   },
 };
 

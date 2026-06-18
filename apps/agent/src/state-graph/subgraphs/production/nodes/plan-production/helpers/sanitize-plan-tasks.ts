@@ -24,7 +24,7 @@ const DEFAULT_WRITING_TASKS: PlanTaskInput[] = [
     department: "writing",
     direction: "提炼标题与核心表达，呼应主体内容与受众。",
     acceptance_criteria:
-      "标题与核心表达清晰有力，与主体内容一致，符合体裁与平台习惯。",
+      "标题与核心表达清晰有力，与主体内容一致，符合体裁与表达习惯。",
   },
 ];
 

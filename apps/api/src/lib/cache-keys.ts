@@ -1,20 +1,20 @@
 const PREFIX = "yougan";
 
 export type FeedCacheQuery = {
-  platform?: string;
   contentFormat?: string;
   topicCategory?: string;
   mediaType?: string;
+  mixedTextImage?: boolean;
   limit?: number;
 };
 
 export const cacheKeys = {
   publicationFeed(query: FeedCacheQuery) {
     const normalized = [
-      query.platform ?? "",
       query.contentFormat ?? "",
       query.topicCategory ?? "",
       query.mediaType ?? "",
+      query.mixedTextImage ? "mixed" : "",
       String(query.limit ?? 30),
     ].join(":");
     return `${PREFIX}:pub:feed:${normalized}`;

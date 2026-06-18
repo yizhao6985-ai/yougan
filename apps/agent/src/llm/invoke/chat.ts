@@ -12,11 +12,11 @@ import { nanoid } from "nanoid";
 import type { MeteringModelId } from "@yougan/domain";
 
 import { sanitizeMessagesForTextChat } from "#agent/messages/llm-input.js";
-import { env } from "#agent/env.js";
+import { DASHSCOPE_MODELS } from "#agent/llm/providers/catalog.js";
 import {
   getRunMeteringAccumulator,
   recordRunMeteringUsageIfMissing,
-  resolveQwenMeteringModelId,
+  resolveDashScopeMeteringModelId,
   withMeteringCallbacks,
 } from "./metering.js";
 
@@ -67,7 +67,8 @@ export async function streamChat(
   options?: StreamChatOptions,
 ): Promise<AIMessage> {
   const meteringModelId =
-    options?.meteringModelId ?? resolveQwenMeteringModelId(env.dashscopeModel);
+    options?.meteringModelId ??
+    resolveDashScopeMeteringModelId(DASHSCOPE_MODELS.chat);
   const messages = sanitizeMessagesForTextChat(input);
   const callCountBefore = getRunMeteringAccumulator(config).callCount;
   const meteredConfig = withMeteringCallbacks(

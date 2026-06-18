@@ -1,8 +1,8 @@
 import type { ContentFormatId } from "../models/taxonomy/content.js";
 import type { MediaModalityId } from "../models/taxonomy/content.js";
 
-/** MiniMax image-01 支持的 aspect_ratio */
-export const MINIMAX_IMAGE_ASPECT_RATIOS = [
+/** 设计出图支持的画幅比例 id */
+export const DESIGN_IMAGE_ASPECT_RATIOS = [
   "1:1",
   "16:9",
   "4:3",
@@ -13,10 +13,22 @@ export const MINIMAX_IMAGE_ASPECT_RATIOS = [
   "21:9",
 ] as const;
 
-export type MiniMaxImageAspectRatio =
-  (typeof MINIMAX_IMAGE_ASPECT_RATIOS)[number];
+export type DesignImageAspectRatio =
+  (typeof DESIGN_IMAGE_ASPECT_RATIOS)[number];
 
-const MINIMAX_RATIO_SET = new Set<string>(MINIMAX_IMAGE_ASPECT_RATIOS);
+const DESIGN_RATIO_SET = new Set<string>(DESIGN_IMAGE_ASPECT_RATIOS);
+
+/** qwen-image size：宽*高，总像素在 512²–2048² 之间 */
+const QWEN_IMAGE_SIZE_BY_RATIO: Record<DesignImageAspectRatio, string> = {
+  "1:1": "2048*2048",
+  "16:9": "2048*1152",
+  "4:3": "2048*1536",
+  "3:2": "2048*1365",
+  "2:3": "1365*2048",
+  "3:4": "1536*2048",
+  "9:16": "1152*2048",
+  "21:9": "2048*878",
+};
 
 export type AspectRatioContext = {
   format?: ContentFormatId | null;
@@ -53,7 +65,7 @@ function inferAspectRatioFromFormat(
 }
 
 /**
- * 写入方案前规范化 aspect_ratio：已是 MiniMax 比例 id 则原样保留；
+ * 写入方案前规范化 aspect_ratio：已是合法比例 id 则原样保留；
  * 中文描述才映射为比例（如「竖屏」→ 9:16）。
  */
 export function normalizeProfileAspectRatio(
@@ -63,7 +75,7 @@ export function normalizeProfileAspectRatio(
   const trimmed = value?.trim();
   if (!trimmed) return undefined;
 
-  if (MINIMAX_RATIO_SET.has(trimmed)) return trimmed;
+  if (DESIGN_RATIO_SET.has(trimmed)) return trimmed;
 
   if (/手机截图|截图画幅|屏幕截图|屏摄|screenshot/i.test(trimmed)) {
     return "9:16";
@@ -84,12 +96,20 @@ export function inferProfileAspectRatio(ctx: AspectRatioContext): string {
   );
 }
 
-export function normalizeMiniMaxAspectRatio(
+export function normalizeDesignImageAspectRatio(
   value: string | null | undefined,
-): MiniMaxImageAspectRatio {
+): DesignImageAspectRatio {
   const trimmed = value?.trim();
-  if (trimmed && MINIMAX_RATIO_SET.has(trimmed)) {
-    return trimmed as MiniMaxImageAspectRatio;
+  if (trimmed && DESIGN_RATIO_SET.has(trimmed)) {
+    return trimmed as DesignImageAspectRatio;
   }
   return "1:1";
+}
+
+/** 将画幅比例 id 转为百炼 qwen-image 的 size 参数 */
+export function aspectRatioToQwenImageSize(
+  ratio: string | null | undefined,
+): string {
+  const normalized = normalizeDesignImageAspectRatio(ratio);
+  return QWEN_IMAGE_SIZE_BY_RATIO[normalized];
 }

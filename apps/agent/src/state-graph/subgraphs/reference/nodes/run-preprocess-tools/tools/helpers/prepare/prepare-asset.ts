@@ -1,9 +1,7 @@
 import { inferMediaKind, type Asset } from "@yougan/domain";
 
-import { prepareReferenceAudio } from "./prep-audio.js";
 import { prepareReferenceImage } from "./prep-image.js";
 import { prepareReferenceText } from "./prep-text.js";
-import { prepareReferenceVideo } from "./prep-video.js";
 import type { ReferenceAssetPrep } from "./types.js";
 
 function referenceAssetDescriptor(asset: Asset): string {
@@ -43,21 +41,6 @@ export async function prepareReferenceAsset(
     const result = await prepareReferenceImage(url, asset.mime_type);
     notes.push(...result.notes);
     prep.image_url = result.image_url;
-    return prep;
-  }
-
-  if (mediaKind === "audio") {
-    const result = await prepareReferenceAudio(url);
-    notes.push(...result.notes);
-    prep.transcript = result.transcript;
-    return prep;
-  }
-
-  if (mediaKind === "video") {
-    const result = await prepareReferenceVideo(url, asset);
-    notes.push(...result.notes);
-    prep.transcript = result.transcript;
-    prep.video_frames = result.frames;
     return prep;
   }
 

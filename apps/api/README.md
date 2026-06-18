@@ -66,8 +66,6 @@ pnpm dev
 - `SMTP_*` / `MAIL_FROM` — 发信；未配置时开发环境将重置链接打印到控制台
 - `OSS_*` — 仅当 `STORAGE_DRIVER=oss` 时需要
 
-平台 OAuth 变量见 [docs/platform-oauth.md](../../docs/platform-oauth.md)。
-
 ## 目录结构
 
 ```
@@ -101,7 +99,6 @@ apps/api/
 | `/api/publications` | `routes/publications.ts` | 发布内容、公开阅读 |
 | `/api/upload` | `routes/upload.ts` |  multipart 上传 |
 | `/api` | `routes/upload.ts` | `filesRouter` 静态文件访问 |
-| `/api/integrations` | `routes/integrations.ts` | 平台 OAuth 绑定 |
 | `/api/subscription` | `routes/subscription.ts` | 当前订阅与用量 |
 | `/api/billing` | `routes/billing.ts` | 订单与支付状态 |
 | `/api/v1/chat` | `routes/rag-chat-proxy.ts` | RAG 客服 Agent 代理（AG-UI SSE，转发至 `RAG_SERVICE_URL`） |
@@ -119,7 +116,6 @@ apps/api/
 - **WorkConversation** — 多轮对话（共享作品状态）：`threadId`
 - **WorkGroup** — 作品分组
 - **Publication** — 对外发布的内容（草稿/已发布、阅读统计）
-- **PlatformIntegration** — 第三方平台 OAuth 令牌
 - **UserSubscription** / **BillingOrder** — 会员与账单
 
 `WorkConversation` 与 LangGraph `threadId` 一一对应；创作阶段由 Agent 回合队列 workflow，不再持久化对话模式字段。
@@ -167,5 +163,4 @@ pnpm db:push
 ## 相关文档
 
 - [根目录 README](../../README.md) — 全栈启动与架构
-- [docs/platform-oauth.md](../../docs/platform-oauth.md) — 发布平台 OAuth 配置
 - [apps/agent/README.md](../agent/README.md) — Agent graph 与模型

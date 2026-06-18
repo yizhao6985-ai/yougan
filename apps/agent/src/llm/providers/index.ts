@@ -1,23 +1,21 @@
 /**
- * 模型工厂：Qwen 对话 + MiniMax 多模态/文生图；ASR 仍走百炼原生 API。
+ * 百炼 DashScope 模型工厂：文本 Chat、Omni 多模态、文生图。
  */
 export {
-  DASHSCOPE_ASR_MODELS,
-  MINIMAX_MAX_CONTEXT,
-  MINIMAX_IMAGE_MODELS,
-  MINIMAX_MODELS,
-  QWEN_MAX_CONTEXT,
-  QWEN_MODELS,
-  type DashScopeAsrModelId,
-  type MiniMaxImageModelId,
-  type MiniMaxModelId,
-  type QwenModelId,
+  DASHSCOPE_MODELS,
+  type DashScopeModelRole,
 } from "./catalog.js";
-export { createChatModel, createProductionChatModel } from "./dashscope.js";
-export { createMultimodalChatModel } from "./minimax.js";
 export {
-  generateMiniMaxImage,
-  type GenerateMiniMaxImageInput,
-  type GenerateMiniMaxImageResult,
-} from "./minimax-image.js";
-export { transcribeRemoteMedia } from "./dashscope-asr.js";
+  getDashScopeChatKwargs,
+  resolveDashScopeChatFamily,
+  resolveDashScopeMeteringModelId,
+  type DashScopeChatFamily,
+  type DashScopeChatScenario,
+} from "./dashscope-chat-config.js";
+export { createChatModel, createProductionChatModel } from "./dashscope.js";
+export { createMultimodalChatModel } from "./dashscope-multimodal.js";
+export {
+  generateDesignImage,
+  type GenerateDesignImageInput,
+  type GenerateDesignImageResult,
+} from "./dashscope-image.js";

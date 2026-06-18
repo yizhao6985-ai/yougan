@@ -4,10 +4,9 @@ import { publicationCoverFromBlocks } from "@/components/preview-block-list";
 import { AuthorAvatar } from "@/components/content/author-avatar";
 import { authorDisplayName } from "@/lib/publication-utils";
 import {
-  formatLabel,
   topicCategoryLabel,
 } from "@/lib/discover-taxonomy";
-import { formatPublishedAt, platformLabel } from "@/lib/platform-labels";
+import { formatPublishedAt } from "@/lib/platform-labels";
 import { publicationContentPath } from "@/lib/publication-path";
 import type { Publication } from "@/lib/publication-types";
 import { cn } from "@/lib/utils";
@@ -19,7 +18,7 @@ export function DiscoverFeedCard({
 }) {
   const cover =
     publication.coverUrl || publicationCoverFromBlocks(publication.blocks);
-  const format = formatLabel(publication.contentFormat);
+  const compositionLabel = publication.compositionLabel?.trim();
   const topic = topicCategoryLabel(publication.topicCategory);
   const timeLabel = publication.publishedAt
     ? formatPublishedAt(publication.publishedAt)
@@ -46,14 +45,14 @@ export function DiscoverFeedCard({
       </div>
 
       <div className="flex flex-1 flex-col gap-2 px-0.5">
-        {(format || topic) && (
+        {(compositionLabel || topic) && (
           <div className="flex flex-wrap gap-1.5">
-            {format ? (
+            {compositionLabel ? (
               <span className="text-xs font-medium text-primary/90">
-                {format}
+                {compositionLabel}
               </span>
             ) : null}
-            {format && topic ? (
+            {compositionLabel && topic ? (
               <span className="text-xs text-muted-foreground/50">·</span>
             ) : null}
             {topic ? (
@@ -74,6 +73,12 @@ export function DiscoverFeedCard({
           </p>
         ) : null}
 
+        {publication.consumptionHint ? (
+          <p className="text-xs text-muted-foreground/80">
+            {publication.consumptionHint}
+          </p>
+        ) : null}
+
         <div className="mt-auto flex items-center gap-2 pt-1">
           <AuthorAvatar author={publication.author} size="sm" />
           <p className="min-w-0 truncate text-xs text-muted-foreground">
@@ -84,12 +89,6 @@ export function DiscoverFeedCard({
               <>
                 <span className="mx-1 text-muted-foreground/40">·</span>
                 {timeLabel}
-              </>
-            ) : null}
-            {!timeLabel && publication.platform ? (
-              <>
-                <span className="mx-1 text-muted-foreground/40">·</span>
-                {platformLabel(publication.platform)}
               </>
             ) : null}
           </p>

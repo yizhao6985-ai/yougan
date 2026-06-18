@@ -5,10 +5,9 @@ import { AuthorAvatar } from "@/components/content/author-avatar";
 import { publicationCoverFromBlocks } from "@/components/preview-block-list";
 import { authorDisplayName } from "@/lib/publication-utils";
 import {
-  formatLabel,
   topicCategoryLabel,
 } from "@/lib/discover-taxonomy";
-import { formatPublishedAt, platformLabel } from "@/lib/platform-labels";
+import { formatPublishedAt } from "@/lib/platform-labels";
 import { publicationContentPath } from "@/lib/publication-path";
 import type { Publication } from "@/lib/publication-types";
 import { DISCOVER_SECTION } from "@/lib/site-copy";
@@ -21,7 +20,7 @@ export function DiscoverFeaturedHero({
 }) {
   const cover =
     publication.coverUrl || publicationCoverFromBlocks(publication.blocks);
-  const format = formatLabel(publication.contentFormat);
+  const compositionLabel = publication.compositionLabel?.trim();
   const topic = topicCategoryLabel(publication.topicCategory);
 
   return (
@@ -64,11 +63,11 @@ export function DiscoverFeaturedHero({
             </p>
           ) : null}
 
-          {(format || topic) && (
+          {(compositionLabel || topic) && (
             <div className="flex flex-wrap gap-2">
-              {format ? (
+              {compositionLabel ? (
                 <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-                  {format}
+                  {compositionLabel}
                 </span>
               ) : null}
               {topic ? (
@@ -87,10 +86,9 @@ export function DiscoverFeaturedHero({
                   {authorDisplayName(publication.author)}
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
-                  {platformLabel(publication.platform)}
                   {publication.publishedAt
-                    ? ` · ${formatPublishedAt(publication.publishedAt)}`
-                    : ""}
+                    ? formatPublishedAt(publication.publishedAt)
+                    : null}
                 </p>
               </div>
             </div>

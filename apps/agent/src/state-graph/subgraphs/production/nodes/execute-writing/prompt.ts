@@ -1,5 +1,5 @@
 import {
-  getIntentSummary,
+  getDirectionSummary,
   resolveDeliveryFromProfile,
   type ContentFormatId,
   type ProductionTask,
@@ -44,17 +44,10 @@ export function buildProduceTaskSystemPrompt(input: {
     profile,
     { scope: "fragment" },
   );
-  const rules = profile.constraints.rules
-    .filter((g) => g.scope === "all" || g.scope === "verbal")
-    .map((g) => `- ${g.description}`)
-    .join("\n");
-  const settings = profile.structure.settings
-    .map((s) => {
-      const kind =
-        s.kind === "character" ? "对象" : s.kind === "world" ? "背景" : "设定";
-      const name = s.title?.trim();
-      return `- [${kind}${name ? ` · ${name}` : ""}] ${s.description}`;
-    })
+  const bounds = profile.bounds.map((item) => `- ${item.spec}`).join("\n");
+  const context = profile.context.map((item) => `- ${item.spec}`).join("\n");
+  const sequence = profile.sequence
+    .map((item, index) => `- ${index + 1}. ${item.spec}`)
     .join("\n");
 
   return `你是${executorLabel}，专注完成**单个任务**并在实现层面做到最好。你只产出该任务的交付片段，不做最终整合。
@@ -64,17 +57,20 @@ ${profileSummary(profile, references)}
 
 用户要求：${userRequirements ?? "无"}
 
-主题：${getIntentSummary(profile) || "未指定"}
+主题：${getDirectionSummary(profile) || "未指定"}
 体裁：${delivery.format ?? "未指定"}
 媒介：${delivery.modalities?.join(",") ?? "未指定"}
-风格：${profile.expression.verbal?.trim() || "未指定"}
-受众：${profile.expression.audience ?? "未指定"}
+风格：${profile.style?.verbal?.trim() || "未指定"}
+受众：${profile.direction.audience ?? "未指定"}
 
-创作设定：
-${settings || "无"}
+背景设定：
+${context || "无"}
 
-创作规则（必须遵守）：
-${rules || "无"}
+内容节拍（软参考）：
+${sequence || "无"}
+
+边界（须遵守）：
+${bounds || "无"}
 
 体裁与媒介要求：
 ${formatGuidance}

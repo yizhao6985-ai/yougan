@@ -7,11 +7,6 @@ import { parseWorkPreview } from "./preview.js";
 
 export { parseWorkPreview } from "./preview.js";
 
-/** @deprecated 使用 getUserRequirements */
-export function getPlanSummary(production: WorkProduction): string | null {
-  return getUserRequirements(production);
-}
-
 /** 用户对本轮制作的要求（production.summary） */
 export function getUserRequirements(
   production: WorkProduction,

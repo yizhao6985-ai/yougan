@@ -5,7 +5,7 @@
 ## 总览
 
 ```text
-profile.delivery ──▶ resolveImageAspectRatio（画幅）
+profile.direction.format ──▶ resolveDeliveryFromProfile ──▶ resolveImageAspectRatio（画幅）
                         │
 agent: production 子图   ▼
   planProduction ──▶ dispatchTask ──▶ executeDesign（写 prompt）
@@ -28,15 +28,15 @@ web: 展示                ▼
 
 ## 一、画幅推断（domain）
 
-出图比例统一由作品方案（`profile.delivery`）推断，保证文案与配图画幅一致。
+出图比例统一由作品方案（`profile.direction.format` 与节拍推断的媒介）推断，保证文案与配图画幅一致。
 
 - `packages/domain/src/utils/aspect-ratio.ts`
-  - `MINIMAX_IMAGE_ASPECT_RATIOS`：image-01 支持的 8 种比例（`1:1 / 16:9 / 4:3 / 3:2 / 2:3 / 3:4 / 9:16 / 21:9`）。
-  - `aspectRatioFromParams`：从 `delivery.params.aspect_ratio` 读显式画幅。
+  - `DESIGN_IMAGE_ASPECT_RATIOS`：image-01 支持的 8 种比例（`1:1 / 16:9 / 4:3 / 3:2 / 2:3 / 3:4 / 9:16 / 21:9`）。
+  - `aspectRatioFromParams`：从运行时推断的 `mediaParams.image.aspect_ratio` 读显式画幅。
   - `normalizeProfileAspectRatio`：已是合法比例 id 则原样保留；中文描述（如「手机截图」→ `9:16`、「封面/横屏」→ `16:9`、「方图」→ `1:1`）才映射。
   - `inferProfileAspectRatio`：无显式 params 时按平台（抖音/快手 `9:16`、小红书 `3:4` 等）与体裁（`illustration/note` `3:4`、`short_video` `9:16` 等）推断，兜底 `1:1`。
 - `packages/domain/src/utils/image-aspect-ratio.ts`
-  - `resolveImageAspectRatio(profile)`：对外统一入口。显式 params 优先；否则仅当作品需要图像（含 `image` 媒介或 `illustration/short_video/video_script` 体裁）时按平台/体裁推断，其余兜底 `1:1`。
+  - `resolveImageAspectRatio(profile)`：对外统一入口。显式 media params 优先；否则仅当作品需要图像（含 `image` 媒介或 `illustration/short_video/video_script` 体裁）时按 format/节拍推断，其余兜底 `1:1`。
 
 Agent 侧通过薄封装 `apps/agent/.../production/helpers/image-aspect-ratio.ts` 复用同一函数。
 

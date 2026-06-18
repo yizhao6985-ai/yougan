@@ -89,15 +89,10 @@
 
 ---
 
-## 6. 可绑定/发布平台（9 个）【已核验】
+## 6. 发布渠道【已核验】
 
-来源：`packages/domain/src/models/taxonomy/platform.ts` `KNOWN_PLATFORMS`。
-
-小红书（xiaohongshu）、微博（weibo）、Twitter/X（twitter）、LinkedIn（linkedin）、Instagram（instagram）、微信公众号（wechat）、抖音（douyin）、快手（kuaishou）、哔哩哔哩（bilibili）。
-
-- 绑定与令牌存于 `PlatformIntegration`（OAuth access/refresh token、scopes、`@@unique([userId, platform])`）。
-- 「发布到有感」公域不需 OAuth，已实现；第三方一键发布为 **OAuth 框架已具备、按平台分批配置上线**（Pro/Pro+ 权益）。
-- OAuth 配置见 `docs/platform-oauth.md`。
+- 创作台成稿可 **发布到有感** 公域（发现灵感、个人主页），已实现。
+- 暂不支持绑定或一键发布到第三方平台（小红书、公众号等）。
 
 ---
 
@@ -111,11 +106,10 @@
 | `UserSubscription` | planId、status、billingCycle、currentPeriodEnd、`aiUsageMicroCredits`、cancelAtPeriodEnd | 订阅与本周期用量 |
 | `AiUsageSettlement` | idempotencyKey、microCredits | 幂等计量流水 |
 | `BillingOrder` | planId、billingCycle、amountCents、status（pending/paid/failed/refunded）、paidAt | 账单订单 |
-| `PlatformIntegration` | platform、accessToken、refreshToken、scopes、status | 平台 OAuth 绑定 |
 | `Work` | profile / references / production（均为 JSON 物化视图）、headVersionId、sourceWorkId | 作品聚合根 |
 | `WorkVersion` | parentVersionId、kind、summary、snapshot | 单线版本时间轴 |
 | `WorkConversation` | threadId | 多轮对话，绑定 LangGraph checkpoint |
-| `Publication` | slug、platform、contentFormat/topicCategory/contentTopic/contentType、mediaTypes、viewCount、status | 公域发布与两层分类 |
+| `Publication` | slug、contentFormat/topicCategory/contentTopic/contentType、mediaTypes、viewCount、status | 公域发布与分类 |
 
 ---
 
@@ -132,7 +126,6 @@
 | 文生图 | MiniMax image-01 出图 → API 物化到自有存储（OSS/local）→ 前端图册 | 已实现 |
 | 会员计费 | 三档套餐、额度展示与用尽提示、订单列表、退款、取消续费 | 已实现（**模拟支付**） |
 | 真实支付通道 | 微信/支付宝在线收款 | **待接入**（文案标明「当前为模拟支付」） |
-| 平台一键发布 | 9 平台 OAuth 绑定与发布 | 部分实现（框架已有，按平台配置） |
 | 手机 App | 记灵感 + 与 Web 同步 | 规划中（介绍页已上线，下载链接待配置） |
 
 来源：`docs/business/feature-catalog.md`（功能项）+ 代码现状修订。

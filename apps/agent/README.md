@@ -91,30 +91,29 @@ START → planTurnQueue → dispatchTurnQueue → [*Graph] → advanceTurnQueue
 
 ## LLM 接入
 
-两个 Chat 模型，分工固定：
+统一走阿里百炼 DashScope。环境变量只配 `DASHSCOPE_API_KEY` 与 `DASHSCOPE_BASE_URL`；**模型 ID 在代码里维护**（`src/llm/providers/catalog.ts` 的 `DASHSCOPE_MODELS`）。
 
-| 模型 | 环境变量 | 用途 |
-|------|----------|------|
-| **Qwen** | `DASHSCOPE_API_KEY` + `DASHSCOPE_MODEL` | 对话、结构化 work |
-| **MiniMax** | `MINIMAX_API_KEY` + `MINIMAX_MODEL` | 多模态（参考素材分析等） |
-
-默认模型 ID 见 `src/llm/providers/catalog.ts`。文生图走 MiniMax image-01；ASR 仍走百炼原生 API。
+| 角色 | 配置字段 | 当前默认 |
+|------|----------|----------|
+| 文本 Chat | `DASHSCOPE_MODELS.chat` | `glm-5.2` |
+| 多模态分析 | `DASHSCOPE_MODELS.multimodal` | `qwen3.5-omni-flash-realtime` |
+| 文生图 | `DASHSCOPE_MODELS.image` | `qwen-image-2.0-pro-2026-04-22` |
 
 ## llm 分层
 
 | 子目录 | 内容 |
 |--------|------|
-| `llm/providers/` | `createChatModel`、`generateMiniMaxImage` |
+| `llm/providers/` | `createChatModel`、`createMultimodalChatModel`、`generateDesignImage` |
 | `llm/invoke/` | `streamChat`、`invokeStructured`、`invokeMultimodalStructured` |
 
 ## 模型分工
 
 | 场景 | 工厂 | 调用 | 模型 |
 |------|------|------|------|
-| 对话子图 | `createChatModel` | `streamChat` | Qwen |
-| 参考素材分析 | `createMultimodalChatModel` | `invokeMultimodalStructured` | MiniMax |
-| 结构化 work | `createChatModel` | `invokeStructured` | Qwen |
-| 文生图 | `generateMiniMaxImage` | — | MiniMax image-01 |
+| 对话子图 | `createChatModel` | `streamChat` | Chat（默认 glm-5.2） |
+| 参考素材分析 | `createMultimodalChatModel` | `invokeMultimodalStructured` | Omni |
+| 结构化 work | `createChatModel` | `invokeStructured` | Chat |
+| 文生图 | `generateDesignImage` | — | qwen-image |
 
 ## 相关文档
 

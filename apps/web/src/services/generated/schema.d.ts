@@ -1114,73 +1114,28 @@ export interface components {
             updatedAt: string;
         };
         WorkProfile: {
-            intent: {
+            direction: {
                 summary: string;
-            };
-            delivery: {
                 format: string | null;
-                modalities: string[];
-                platform?: string | null;
-                category?: string | null;
-                params: {
-                    /** @enum {string} */
-                    kind: "text";
-                    word_count?: {
-                        min?: number;
-                        max?: number;
-                    };
-                    /** @enum {string} */
-                    emoji_level?: "none" | "light" | "heavy";
-                } | {
-                    /** @enum {string} */
-                    kind: "illustration";
-                    aspect_ratio?: string;
-                    image_count?: number;
-                    negative_hints?: string[];
-                } | {
-                    /** @enum {string} */
-                    kind: "video";
-                    duration_sec?: number;
-                    aspect_ratio?: string;
-                    pacing?: string;
-                } | {
-                    /** @enum {string} */
-                    kind: "audio";
-                    duration_sec?: number;
-                    segment_count?: number;
-                };
-            };
-            expression: {
                 audience?: string | null;
+            };
+            style?: {
                 verbal?: string | null;
                 visual?: string | null;
             };
-            structure: {
-                settings: {
-                    id: string;
-                    confirmed_at: string;
-                    /** @enum {string} */
-                    kind: "character" | "world" | "other";
-                    title?: string | null;
-                    description: string;
-                }[];
-                segments: {
-                    id: string;
-                    confirmed_at: string;
-                    role?: string | null;
-                    title?: string | null;
-                    description: string;
-                }[];
-            };
-            constraints: {
-                rules: {
-                    id: string;
-                    description: string;
-                    /** @enum {string} */
-                    scope: "all" | "verbal" | "visual" | "audio" | "video";
-                    confirmed_at: string;
-                }[];
-            };
+            context: {
+                id: string;
+                spec: string;
+            }[];
+            sequence: {
+                id: string;
+                spec: string;
+                role?: string | null;
+            }[];
+            bounds: {
+                id: string;
+                spec: string;
+            }[];
         };
         Asset: {
             key: string;
@@ -1209,7 +1164,6 @@ export interface components {
         };
         WorkReferences: components["schemas"]["WorkReference"][];
         WorkPreview: {
-            platform: string;
             title?: string | null;
             hook?: string | null;
             hashtags?: string[];

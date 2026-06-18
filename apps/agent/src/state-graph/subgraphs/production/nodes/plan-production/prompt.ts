@@ -1,6 +1,6 @@
 import {
-  profileSummary,
   profileReferencesSummary,
+  profileSummaryDetailed,
 } from "#agent/prompts/profile-summary.js";
 import { YOUGAN_USER_LABEL } from "#agent/system-prompt.js";
 import type { WorkProfile, WorkReference } from "@yougan/domain";
@@ -18,18 +18,18 @@ export function buildPlanProductionSystemPrompt(input: {
 ${userRequirements}
 
 ## 当前作品方案
-${profileSummary(profile, references)}
+${profileSummaryDetailed(profile, references)}
 
 ${profileReferencesSummary(references)}
 
 ## 计划规则
 1. **你只输出 tasks**，不输出 summary、不输出计划说明 prose
 2. **tasks 即计划**：有序列表，每条 = 一个可交付内容节点，execute 收到即可开写
-3. **先聚焦作品，再拆任务**：综合用户要求、体裁/媒介、表达设定、结构段、设定、规则与参考，形成对本件作品的整体把握，再据此拆分 tasks；结构段（segments）只是参考因素之一，不是机械映射来源
+3. **先聚焦作品，再拆任务**：综合用户要求、方向、风格、背景、节拍、边界与参考，形成对本件作品的整体把握，再据此拆分 tasks；节拍（sequence）只是软参考，不是机械映射来源
 4. **结构规划在 plan 内完成**，体现在 tasks 拆分与各 task.direction 中；禁止把「写大纲/梳结构/策划」拆成 task
 5. task.description 必须是交付动作（如「撰写…正文」），不能是过程动作（如「制定…大纲」「梳理结构」）
-6. direction 须呼应：用户要求、profile 各要素及你为本作品拟定的结构；acceptance_criteria 供验收员判断方向是否达标
-7. 根据 delivery.format / modalities 为每条 task 指定 department；可据需要追加 design / audio / video 任务
+6. direction 须呼应：用户要求、profile 各要素及你为本作品拟定的结构；acceptance_criteria 供验收员判断方向是否达标；**边界（bounds）须写入相关 task 的 acceptance_criteria**
+7. 根据 direction.format 与节拍 role 为每条 task 指定 department；可据需要追加 design / audio / video 任务
 8. **design 任务**：description 描述视觉交付目标（封面、插画、配图等）；出图由 executeDesign → renderDesignImage 流水线负责，task 本身不写「调用 API 出图」等过程动作
 9. **连续正文须写清段落边界**（小说、长文分节、脚本分镜等按顺序拼接成稿时）：各 task 的 direction 须互斥、可接续，不得让相邻 task 写同一场景或同一 beat。格式要求：
    - 每条 task 的 direction 含 **【本节止于】**：本节最后一幕/情节点（供下一节接续）

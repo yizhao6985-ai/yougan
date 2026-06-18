@@ -5,6 +5,10 @@ import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
 import { emitPreprocessToolCalls } from "./helpers/emit-preprocess-tool-calls.js";
 import { listUnprocessedReferenceJobs } from "./helpers/list-unprocessed-jobs.js";
+import {
+  isSupportedReferencePreprocessKind,
+  skipUnsupportedReferenceJobs,
+} from "./helpers/skip-unsupported-reference-jobs.js";
 
 export async function preprocessReferencesNode(
   state: AgentStateType,
@@ -13,8 +17,16 @@ export async function preprocessReferencesNode(
   const jobs = listUnprocessedReferenceJobs(state);
   if (!jobs.length) return {};
 
-  const message = emitPreprocessToolCalls(jobs);
-  if (!message) return {};
+  const skipPatch = skipUnsupportedReferenceJobs(state, jobs);
+  const processableJobs = jobs.filter((job) =>
+    isSupportedReferencePreprocessKind(job.media_kind),
+  );
 
-  return { messages: [message] };
+  const message = emitPreprocessToolCalls(processableJobs);
+  if (!message) return skipPatch;
+
+  return {
+    ...skipPatch,
+    messages: [message],
+  };
 }

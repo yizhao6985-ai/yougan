@@ -32,16 +32,11 @@ export function ContentPreview({
       ) : (
         <div className="space-y-3">
           <div className="space-y-4 rounded-lg border border-border/80 bg-background/80 p-4">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                {preview.platform}
-              </p>
-              {preview.title ? (
-                <h4 className="mt-1.5 text-pretty text-lg font-semibold leading-7 text-foreground">
-                  {preview.title}
-                </h4>
-              ) : null}
-            </div>
+            {preview.title ? (
+              <h4 className="text-pretty text-lg font-semibold leading-7 text-foreground">
+                {preview.title}
+              </h4>
+            ) : null}
 
             <PreviewBlockList
               blocks={preview.blocks}

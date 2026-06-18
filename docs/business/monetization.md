@@ -28,10 +28,11 @@
 
 ## 计费规则
 
-1. LangGraph run **开始前**：`assertAiQuotaAvailable`（usagePercent < 100）。
-2. Agent 每轮 LLM 调用在 `llm/invoke/` 累计 `runMetering`。
-3. Stream **成功且 turn.committed** 后：`settleAiUsage(microCredits)`，按 checkpoint id 幂等。
-4. 单次消耗 = Σ(上行 token × 模型输入单价 + 下行 token × 模型输出单价)。
+1. LangGraph run **开始前**：`assertAiQuotaAvailable`（usagePercent < 100），超额返回 402；将 DB 用量注入 `aiUsage`。
+2. **Agent 调用进行中**：各节点将计量累加到 checkpoint 的 `aiUsage.settledMicroCredits`（含本调用未落库部分）。
+3. **Agent 调用结束或取消**：API proxy 读取 checkpoint 与 DB 的差额，`settleAiUsage` 入账并回写 checkpoint。
+4. 前端从 stream 事件或 `updateState` 响应的 `aiUsage` 同步展示，超额禁用输入。
+5. 单次消耗 = Σ(上行 token × 模型输入单价 + 下行 token × 模型输出单价)。
 
 模型单价表：`packages/domain/src/utils/ai-metering/pricing.ts`
 

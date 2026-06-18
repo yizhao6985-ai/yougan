@@ -5,6 +5,7 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import type { RunnableConfig } from "@langchain/core/runnables";
 
 import { invokeStructured } from "#agent/llm/invoke/index.js";
+import { patchAiUsageMetering } from "#agent/llm/invoke/metering.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
 import {
   EMPTY_WORK_PRODUCTION,
@@ -98,6 +99,7 @@ async function createProductionPlan(
     return {
       ...patchPendingProduction(state, applyPlanTasks(fresh, tasks)),
       ...patchRunProgress(progress),
+      ...patchAiUsageMetering(state.aiUsage, config),
     };
   } catch {
     const pending_tasks = sanitizePlanTasks([]).map((t) =>
@@ -112,6 +114,7 @@ async function createProductionPlan(
         pending_tasks,
       }),
       ...patchRunProgress(progress),
+      ...patchAiUsageMetering(state.aiUsage, config),
     };
   }
 }

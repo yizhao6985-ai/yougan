@@ -29,7 +29,7 @@
 | 步 | 用户动作 | 系统产出 |
 |----|----------|----------|
 | 01 | 新建作品（开屏给 7 条下一步建议） | 作品 + LangGraph thread |
-| 02 | 定方案对话或侧栏直改 | 侧栏「方案」（intent/delivery/expression/structure/constraints） |
+| 02 | 定方案对话或侧栏直改 | 侧栏「方案」（direction / style / context / sequence / bounds） |
 | 03 | 上传参考或维护借鉴意图 | 侧栏「参考」（多模态分析入库） |
 | 04 | 说「开始制作」，AI 团队编排计划 | 内部 production plan |
 | 05 | 按任务执行（文字/视觉/音视频） | 作品预览 preview（含文生图配图） |

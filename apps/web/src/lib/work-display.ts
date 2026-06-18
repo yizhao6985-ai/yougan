@@ -4,7 +4,7 @@ import type { Work } from "@/lib/types";
 export function workSubtitle(
   work: Pick<Work, "profile">,
 ): string | null {
-  const summary = work.profile?.intent?.summary?.trim();
+  const summary = work.profile?.direction?.summary?.trim();
   if (summary) return summary.length > 24 ? `${summary.slice(0, 24)}…` : summary;
   return null;
 }

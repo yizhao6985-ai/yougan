@@ -86,7 +86,7 @@ return new Command({
 
 | 子目录 | 职责 |
 |--------|------|
-| `llm/providers/` | **创建**客户端：`createChatModel`（Qwen）、`createMultimodalChatModel`（MiniMax）、`generateMiniMaxImage`（MiniMax 文生图） |
+| `llm/providers/` | **创建**客户端：`createChatModel`、`createMultimodalChatModel`（百炼）、`generateDesignImage`（百炼文生图） |
 | `llm/invoke/` | **调用**：`streamChat`（对话）、`invokeStructured`（文本结构化 work）、`invokeMultimodalStructured`（多模态结构化，保留 image_url） |
 
 ```typescript

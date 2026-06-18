@@ -16,15 +16,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import {
-  DISCOVER_FORMATS,
-  DISCOVER_MEDIA_TYPES,
-  DISCOVER_PLATFORMS,
   DISCOVER_TOPIC_CATEGORIES,
-  sortMediaModalities,
-  type MediaModalityId,
-  type PublicationMetadataOverrides,
-  type PublicationMetadataPreview,
+  type PublicationSummaryOverrides,
+  type PublicationSummaryPreview,
 } from "@/lib/discover-taxonomy";
 import { PUBLISH } from "@/lib/site-copy";
 import { cn } from "@/lib/utils";
@@ -32,170 +28,242 @@ import { cn } from "@/lib/utils";
 type PublishConfirmDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (metadata: PublicationMetadataOverrides) => Promise<void>;
+  onConfirm: (summary: PublicationSummaryOverrides) => Promise<void>;
   isSubmitting?: boolean;
-  preview: PublicationMetadataPreview | undefined;
+  preview: PublicationSummaryPreview | undefined;
   previewLoading: boolean;
   previewError: boolean;
 };
 
-function MetadataSelect({
-  label,
-  value,
-  options,
-  onChange,
+function FeedCardPreview({
+  title,
+  hook,
+  coverUrl,
+  compositionLabel,
+  consumptionHint,
+  topicLabel,
 }: {
-  label: string;
-  value: string;
-  options: ReadonlyArray<{ id: string; label: string }>;
-  onChange: (value: string) => void;
+  title: string;
+  hook: string;
+  coverUrl: string | null;
+  compositionLabel: string;
+  consumptionHint: string | null;
+  topicLabel: string | null;
 }) {
   return (
-    <div className="space-y-1.5">
-      <label className="text-xs font-medium text-muted-foreground">
-        {label}
-      </label>
-      <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="h-9">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map((option) => (
-            <SelectItem key={option.id} value={option.id}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  );
-}
-
-function MediaTypesPicker({
-  value,
-  onChange,
-}: {
-  value: MediaModalityId[];
-  onChange: (value: MediaModalityId[]) => void;
-}) {
-  const toggle = (id: MediaModalityId) => {
-    const next = new Set(value);
-    if (next.has(id)) {
-      if (next.size === 1) return;
-      next.delete(id);
-    } else {
-      next.add(id);
-    }
-    onChange(sortMediaModalities(next));
-  };
-
-  return (
-    <div className="space-y-1.5 sm:col-span-2">
-      <label className="text-xs font-medium text-muted-foreground">
-        {PUBLISH.fieldMedia}
-      </label>
-      <div className="flex flex-wrap gap-2">
-        {DISCOVER_MEDIA_TYPES.map((option) => {
-          const active = value.includes(option.id as MediaModalityId);
-          return (
-            <button
-              key={option.id}
-              type="button"
-              onClick={() => toggle(option.id as MediaModalityId)}
-              className={cn(
-                "rounded-md border px-2.5 py-1.5 text-xs font-medium transition",
-                active
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border bg-background text-muted-foreground hover:bg-muted",
-              )}
-            >
-              {option.label}
-            </button>
-          );
-        })}
+    <div className="overflow-hidden rounded-xl border border-border/80 bg-card">
+      <div
+        className={cn(
+          "aspect-[4/3] bg-secondary/50",
+          coverUrl
+            ? "bg-cover bg-center"
+            : "bg-gradient-to-br from-accent/50 via-card to-secondary/40",
+        )}
+        style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : undefined}
+      />
+      <div className="space-y-2 p-4">
+        {(compositionLabel || topicLabel) && (
+          <div className="flex flex-wrap items-center gap-1.5 text-xs">
+            {compositionLabel ? (
+              <span className="font-medium text-primary/90">
+                {compositionLabel}
+              </span>
+            ) : null}
+            {compositionLabel && topicLabel ? (
+              <span className="text-muted-foreground/50">·</span>
+            ) : null}
+            {topicLabel ? (
+              <span className="text-muted-foreground">{topicLabel}</span>
+            ) : null}
+          </div>
+        )}
+        <h4 className="line-clamp-2 text-base font-semibold leading-snug text-foreground">
+          {title}
+        </h4>
+        {hook ? (
+          <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">
+            {hook}
+          </p>
+        ) : null}
+        {consumptionHint ? (
+          <p className="text-xs text-muted-foreground/80">{consumptionHint}</p>
+        ) : null}
       </div>
     </div>
   );
 }
 
-function PublishMetadataForm({
+function PublishSummaryForm({
   preview,
   onConfirm,
   onCancel,
   isSubmitting,
 }: {
-  preview: PublicationMetadataPreview;
-  onConfirm: (metadata: PublicationMetadataOverrides) => Promise<void>;
+  preview: PublicationSummaryPreview;
+  onConfirm: (summary: PublicationSummaryOverrides) => Promise<void>;
   onCancel: () => void;
   isSubmitting: boolean;
 }) {
-  const [draft, setDraft] = useState<PublicationMetadataOverrides>(() => ({
-    platform: preview.metadata.platform,
-    contentFormat: preview.metadata.contentFormat,
-    topicCategory: preview.metadata.topicCategory,
-    mediaTypes: preview.metadata.mediaTypes,
+  const { summary, labels, coverOptions } = preview;
+  const [draft, setDraft] = useState<PublicationSummaryOverrides>(() => ({
+    title: summary.title,
+    hook: summary.hook,
+    compositionLabel: summary.compositionLabel,
+    topicCategory: summary.topicCategory,
+    coverBlockId: summary.cover.sourceBlockId,
   }));
 
-  const previewTags = preview.labels
-    ? [
-        preview.labels.contentFormat,
-        preview.labels.topicCategory,
-        preview.labels.mediaTypes,
-      ].filter(Boolean)
-    : [];
+  const selectedCover =
+    coverOptions.find((item) => item.blockId === draft.coverBlockId) ??
+    coverOptions[0] ??
+    null;
+
+  const coverUrl = selectedCover?.url ?? summary.cover.url ?? null;
 
   return (
     <>
       <div className="space-y-4">
-        {previewTags.length > 0 ? (
-          <div className="rounded-lg border border-border/80 bg-secondary/40 px-3 py-2.5">
-            <p className="text-xs font-medium text-muted-foreground">
-              {PUBLISH.inferredTags}
-            </p>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {previewTags.map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-md bg-background px-2.5 py-1 text-xs font-medium text-foreground ring-1 ring-border"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
-        ) : null}
+        <div>
+          <p className="mb-2 text-xs font-medium text-muted-foreground">
+            {PUBLISH.feedPreviewHeading}
+          </p>
+          <FeedCardPreview
+            title={draft.title ?? summary.title}
+            hook={draft.hook ?? summary.hook}
+            coverUrl={coverUrl}
+            compositionLabel={draft.compositionLabel ?? summary.compositionLabel}
+            consumptionHint={labels.consumptionHint}
+            topicLabel={
+              DISCOVER_TOPIC_CATEGORIES.find(
+                (item) => item.id === draft.topicCategory,
+              )?.label ?? labels.topicCategory
+            }
+          />
+        </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <MetadataSelect
-            label={PUBLISH.fieldFormat}
-            value={draft.contentFormat ?? ""}
-            options={DISCOVER_FORMATS}
-            onChange={(value) =>
-              setDraft((current) => ({ ...current, contentFormat: value }))
-            }
-          />
-          <MetadataSelect
-            label={PUBLISH.fieldTopic}
-            value={draft.topicCategory ?? ""}
-            options={DISCOVER_TOPIC_CATEGORIES}
-            onChange={(value) =>
-              setDraft((current) => ({ ...current, topicCategory: value }))
-            }
-          />
-          <MetadataSelect
-            label={PUBLISH.fieldPlatform}
-            value={draft.platform ?? ""}
-            options={DISCOVER_PLATFORMS}
-            onChange={(value) =>
-              setDraft((current) => ({ ...current, platform: value }))
-            }
-          />
-          <MediaTypesPicker
-            value={(draft.mediaTypes ?? ["text"]) as MediaModalityId[]}
-            onChange={(mediaTypes) =>
-              setDraft((current) => ({ ...current, mediaTypes }))
-            }
-          />
+        <div className="rounded-lg border border-border/80 bg-secondary/30 px-3 py-2.5">
+          <p className="text-xs font-medium text-muted-foreground">
+            {PUBLISH.blockCompositionHeading}
+          </p>
+          <p className="mt-1 text-sm text-foreground">
+            {summary.compositionLabel}
+            {labels.consumptionHint ? (
+              <span className="text-muted-foreground">
+                {" "}
+                · {labels.consumptionHint}
+              </span>
+            ) : null}
+          </p>
+        </div>
+
+        <div className="grid gap-3">
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">
+              {PUBLISH.fieldTitle}
+            </label>
+            <input
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+              value={draft.title ?? ""}
+              onChange={(event) =>
+                setDraft((current) => ({
+                  ...current,
+                  title: event.target.value,
+                }))
+              }
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">
+              {PUBLISH.fieldHook}
+            </label>
+            <Textarea
+              value={draft.hook ?? ""}
+              rows={3}
+              onChange={(event) =>
+                setDraft((current) => ({
+                  ...current,
+                  hook: event.target.value,
+                }))
+              }
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">
+              {PUBLISH.fieldCompositionLabel}
+            </label>
+            <input
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+              value={draft.compositionLabel ?? ""}
+              onChange={(event) =>
+                setDraft((current) => ({
+                  ...current,
+                  compositionLabel: event.target.value,
+                }))
+              }
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">
+              {PUBLISH.fieldTopic}
+            </label>
+            <Select
+              value={draft.topicCategory ?? ""}
+              onValueChange={(value) =>
+                setDraft((current) => ({ ...current, topicCategory: value }))
+              }
+            >
+              <SelectTrigger className="h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {DISCOVER_TOPIC_CATEGORIES.map((option) => (
+                  <SelectItem key={option.id} value={option.id}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {coverOptions.length > 1 ? (
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">
+                {PUBLISH.fieldCover}
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {coverOptions.map((option) => {
+                  const active = draft.coverBlockId === option.blockId;
+                  return (
+                    <button
+                      key={option.blockId}
+                      type="button"
+                      onClick={() =>
+                        setDraft((current) => ({
+                          ...current,
+                          coverBlockId: option.blockId,
+                        }))
+                      }
+                      className={cn(
+                        "overflow-hidden rounded-md border-2 transition",
+                        active
+                          ? "border-primary"
+                          : "border-transparent opacity-80 hover:opacity-100",
+                      )}
+                    >
+                      <img
+                        src={option.url}
+                        alt={option.label}
+                        className="size-16 object-cover"
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -210,7 +278,7 @@ function PublishMetadataForm({
         </Button>
         <Button
           type="button"
-          disabled={isSubmitting || !draft.contentFormat}
+          disabled={isSubmitting || !draft.title?.trim() || !draft.hook?.trim()}
           onClick={() => void onConfirm(draft)}
         >
           {isSubmitting ? PUBLISH.publishing : PUBLISH.confirmPublish}
@@ -231,16 +299,16 @@ export function PublishConfirmDialog({
 }: PublishConfirmDialogProps) {
   const previewKey = preview
     ? [
-        preview.metadata.platform,
-        preview.metadata.contentFormat,
-        preview.metadata.topicCategory,
-        preview.metadata.mediaTypes.join(","),
+        preview.summary.title,
+        preview.summary.hook,
+        preview.summary.compositionLabel,
+        preview.summary.cover.sourceBlockId,
       ].join("\u0000")
     : "loading";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{PUBLISH.confirmTitle}</DialogTitle>
           <DialogDescription>{PUBLISH.confirmDescription}</DialogDescription>
@@ -251,7 +319,7 @@ export function PublishConfirmDialog({
         ) : previewError || !preview ? (
           <p className="text-sm text-red-600">{PUBLISH.previewError}</p>
         ) : (
-          <PublishMetadataForm
+          <PublishSummaryForm
             key={previewKey}
             preview={preview}
             onConfirm={onConfirm}

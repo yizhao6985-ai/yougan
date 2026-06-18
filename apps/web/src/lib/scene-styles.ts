@@ -142,13 +142,4 @@ export const scene = {
     "rounded-2xl bg-card/80 p-6 ring-1 ring-border/60 sm:p-8 lg:p-10",
   settingsPanelCard:
     "rounded-2xl bg-card p-5 ring-1 ring-border/60 sm:p-6",
-
-  /** @deprecated 使用 page* token，保留别名便于渐进迁移 */
-  discoverTitle: "text-3xl font-semibold tracking-tight text-foreground sm:text-[2.5rem] sm:leading-tight",
-  discoverSubtitle: "text-base leading-7 text-muted-foreground sm:text-lg",
-  discoverSectionTitle: "text-lg font-semibold tracking-tight text-foreground",
-  discoverSectionHint: "text-sm text-muted-foreground",
-  discoverShell: "mx-auto w-full max-w-[1360px] px-5 sm:px-8 lg:px-10",
-  discoverFeedGrid:
-    "grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
 } as const;

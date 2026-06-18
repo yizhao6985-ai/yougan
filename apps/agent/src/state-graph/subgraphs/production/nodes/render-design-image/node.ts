@@ -1,7 +1,7 @@
-/** 设计任务：MiniMax image-01 文生图（临时 URL + transient；API sync 时物化） */
+/** 设计任务：百炼 qwen-image 文生图（临时 URL + transient；API sync 时物化） */
 import type { LangGraphRunnableConfig } from "@langchain/langgraph";
 
-import { generateMiniMaxImage } from "#agent/llm/providers/minimax-image.js";
+import { generateDesignImage } from "#agent/llm/providers/dashscope-image.js";
 import {
   patchRunProgress,
   withRunProgressHeartbeat,
@@ -62,7 +62,7 @@ export async function renderDesignImageNode(
   for (let attempt = 1; attempt <= MAX_RENDER_ATTEMPTS; attempt += 1) {
     try {
       const generated = await withRunProgressHeartbeat(progress, config, () =>
-        generateMiniMaxImage({
+        generateDesignImage({
           prompt: buildImageGenerationPrompt({
             body: promptBody,
             aspectRatio,
@@ -75,7 +75,7 @@ export async function renderDesignImageNode(
 
       const imageUrl = generated.imageUrl?.trim();
       if (!imageUrl) {
-        throw new Error("MINIMAX_IMAGE_URL_EMPTY");
+        throw new Error("DASHSCOPE_IMAGE_URL_EMPTY");
       }
 
       const images = [

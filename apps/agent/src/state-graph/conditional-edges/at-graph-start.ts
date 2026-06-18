@@ -1,12 +1,12 @@
 import type { AgentStateType } from "#agent/state.js";
 
-export type AtGraphStartTarget = "gateAiQuota";
+export type AtGraphStartTarget = "planTurnQueue";
 
-/** START：先检查 AI 额度，再进入 planTurnQueue */
+/** START：进入回合队列规划 */
 export function selectAtGraphStart(
   _state: AgentStateType,
 ): AtGraphStartTarget {
-  return "gateAiQuota";
+  return "planTurnQueue";
 }
 
-export const paths: AtGraphStartTarget[] = ["gateAiQuota"];
+export const paths: AtGraphStartTarget[] = ["planTurnQueue"];

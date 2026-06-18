@@ -131,12 +131,12 @@ export function PreviewBlockList({
 }
 
 export function publicationCoverFromBlocks(blocks: PreviewBlock[]): string | null {
-  return previewCoverUrl({ platform: "yougan", blocks });
+  return previewCoverUrl({ blocks });
 }
 
 export function publicationPlainExcerpt(
   blocks: PreviewBlock[],
   maxLength = 280,
 ): string {
-  return previewPlainText({ platform: "yougan", blocks }, maxLength);
+  return previewPlainText({ blocks }, maxLength);
 }

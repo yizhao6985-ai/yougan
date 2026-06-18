@@ -23,9 +23,10 @@ function isIntentActive(
   filters: DiscoverFilters,
   intentFilters: DiscoverFilters,
 ) {
-  return Object.entries(intentFilters).every(
-    ([key, value]) => filters[key as keyof DiscoverFilters] === value,
-  );
+  return Object.entries(intentFilters).every(([key, value]) => {
+    const current = filters[key as keyof DiscoverFilters];
+    return current === value;
+  });
 }
 
 function isAllActive(filters: DiscoverFilters) {
@@ -100,7 +101,10 @@ export function DiscoverControls({
   const intent = activeIntent(filters);
   const hasActiveFilters = !isAllActive(filters);
 
-  const updateFilter = (key: keyof DiscoverFilters, value?: string) => {
+  const updateFilter = (
+    key: "contentFormat" | "topicCategory" | "mediaType",
+    value?: string,
+  ) => {
     const next = { ...filters };
     if (!value) delete next[key];
     else next[key] = value;
@@ -108,7 +112,6 @@ export function DiscoverControls({
   };
 
   const groups: FilterGroup[] = [
-    { key: "platform", options: facets.platform },
     { key: "contentFormat", options: facets.contentFormat },
     { key: "topicCategory", options: facets.topicCategory },
     { key: "mediaType", options: facets.mediaType },

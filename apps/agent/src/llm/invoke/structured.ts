@@ -11,14 +11,17 @@ import type { z } from "zod";
 import type { MeteringModelId } from "@yougan/domain";
 
 import { sanitizeMessagesForTextChat } from "#agent/messages/llm-input.js";
-import { env } from "#agent/env.js";
+import { DASHSCOPE_MODELS } from "#agent/llm/providers/catalog.js";
 import {
   getRunMeteringAccumulator,
   recordRunMeteringUsageIfMissing,
-  resolveMinimaxMeteringModelId,
-  resolveQwenMeteringModelId,
+  resolveDashScopeMeteringModelId,
   withMeteringCallbacks,
 } from "./metering.js";
+import {
+  getDashScopeChatKwargs,
+  resolveDashScopeChatFamily,
+} from "#agent/llm/providers/dashscope-chat-config.js";
 
 type StructuredOutputMethod = "functionCalling" | "jsonMode";
 
@@ -52,16 +55,27 @@ export function isolatedStructuredConfig(
   return { ...config, tags };
 }
 
-/** Qwen：关闭 thinking；全模型：关闭 streaming（结构化产出专用非流式 invoke） */
+/** 关闭 thinking；结构化 invoke 关闭 streaming。 */
 function forStructuredInvoke(llm: BaseChatModel): BaseChatModel {
   const chat = llm as ChatModelWithKwargs;
   if ("streaming" in chat) {
     chat.streaming = false;
   }
+  const named = llm as ChatModelWithName;
+  const modelName =
+    typeof named.model === "string"
+      ? named.model
+      : typeof named.modelName === "string"
+        ? named.modelName
+        : DASHSCOPE_MODELS.chat;
+  const kwargs = getDashScopeChatKwargs(
+    resolveDashScopeChatFamily(modelName),
+    "structured",
+  );
   if (chat.modelKwargs !== undefined) {
     chat.modelKwargs = {
       ...chat.modelKwargs,
-      enable_thinking: false,
+      ...kwargs,
     };
   }
   return llm;
@@ -86,12 +100,8 @@ function resolveStructuredMeteringModelId(
       ? named.model
       : typeof named.modelName === "string"
         ? named.modelName
-        : env.dashscopeModel;
-  const normalized = modelName.toLowerCase();
-  if (normalized.includes("minimax")) {
-    return resolveMinimaxMeteringModelId(modelName);
-  }
-  return resolveQwenMeteringModelId(modelName);
+        : DASHSCOPE_MODELS.chat;
+  return resolveDashScopeMeteringModelId(modelName);
 }
 
 /** 同步结构化输出，返回 Zod 校验后的对象。 */

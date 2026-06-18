@@ -57,12 +57,6 @@
 | `brand` | 品牌营销 |
 | `general` | 综合 |
 
-### 4. 目标平台（`platform`）
-
-创作时的分发目标，同时参与体裁推断兜底。
-
-`yougan` · `xiaohongshu` · `weibo` · `wechat` · `douyin` · `kuaishou` · `bilibili`
-
 ---
 
 ## 分类推断流程
@@ -72,7 +66,7 @@ flowchart LR
   A[对话意图 / profile] --> B[buildPublicationMetadata]
   B --> C{正则匹配 content_type}
   C -->|命中| D[确定 contentFormat / mediaType]
-  C -->|未命中| E[平台 + 正文长度兜底]
+  C -->|未命中| E[正文长度 + 配图兜底]
   D --> F[发布确认弹窗]
   E --> F
   F -->|用户可改| G[Publication 入库]
@@ -81,9 +75,9 @@ flowchart LR
 
 ### 推断优先级
 
-1. **`profile.intent.summary`** 自由文本 → 正则映射到 `contentFormat` / `topicCategory`
-2. **`profile.delivery.format` / `profile.delivery.category`** → 结构化体裁与主题分类
-3. **平台 + 正文长度 + 是否有配图** → 兜底推断
+1. **`profile.direction.summary`** 自由文本 → 正则映射到 `contentFormat` / `topicCategory`
+2. **`profile.direction.format`** → 结构化体裁；媒介由 `resolveDeliveryFromProfile` 运行时推断
+3. **正文长度 + 是否有配图** → 兜底推断
 4. **发布时用户覆盖** → `applyMetadataOverrides` 校验 taxonomy ID 后写入
 
 ### 代码位置
@@ -106,7 +100,7 @@ flowchart LR
 1. production 子图生成 `preview.body`
 2. 点击「发布到有感」→ 打开确认弹窗
 3. 系统调用 `preview-metadata` 展示 AI 推断标签
-4. 用户可在下拉框中修改：体裁 / 主题 / 媒介 / 平台
+4. 用户可在下拉框中修改：体裁 / 主题 / 媒介
 5. 确认后携带 `metadata` 覆盖项发布
 
 ### 为什么只在发布时暴露
@@ -133,7 +127,7 @@ flowchart LR
 
 ### 详细筛选面板
 
-平台形态 · 内容体裁 · 主题类别 · 媒介形态（四维 facet，仅展示有内容的选项）
+内容体裁 · 主题类别 · 媒介形态（三维 facet，仅展示有内容的选项）
 
 ---
 
@@ -143,11 +137,11 @@ flowchart LR
 
 | 步骤 | 字段 | 用途 |
 |------|------|------|
-| ① 创作定位 | `intent.summary` | 一句话说清作品要做什么；发布推断 `contentTopic` |
-| ② 体裁与参数 | `delivery.format` / `params` / `platform` / `category` | 结构化体裁、平台与主题分类 |
-| ③ 表达设定 | `expression.*` | 受众、文字与画面风格 |
-| ④ 结构与要素 | `structure.settings` / `segments` | 固定设定与结构节拍 |
-| ⑤ 创作规则 | `constraints.rules` | 必须遵守或需避免的事项 |
+| ① 方向 | `direction.summary` / `format` / `audience` | 创作定位、内容形式与受众；发布推断 `contentTopic` |
+| ② 风格 | `style.verbal` / `visual` | 文字与画面默认调子 |
+| ③ 背景 | `context[]` | 世界设定、品牌背景等正向离散说明 |
+| ④ 节拍 | `sequence[]` | 有序内容意图（软参考，可含 `role`） |
+| ⑤ 边界 | `bounds[]` | 禁止项、红线等反向离散说明 |
 
 参考素材在 `Work.references` 顶层维护，不在 `profile` 内。
 
@@ -174,6 +168,5 @@ flowchart LR
 | 文本文案生成 | ✅ 已实现 | — |
 | 配图 | 部分（Publication 支持 images） | 生成工具写入 images |
 | 音频/视频 | taxonomy 已预留 | 增加生成 pipeline + 渲染组件 |
-| 外部平台一键发布 | OAuth 脚手架 | 与发布流程打通 |
 
 当音频/视频生成能力上线后，`mediaType=audio|video` 的推断将不仅依赖 `content_type` 关键词，还会检测成稿中的媒体附件。

@@ -55,7 +55,6 @@ export interface WorkPreviewImage {
  * 嵌套于 Work.production.preview；产出后可生成 WorkVersion（kind=preview）。
  */
 export interface WorkPreview {
-  platform: string;
   title?: string | null;
   hook?: string | null;
   hashtags?: string[];

@@ -15,6 +15,7 @@ import {
 } from "@yougan/domain";
 
 import { invokeStructured } from "#agent/llm/invoke/index.js";
+import { patchAiUsageMetering } from "#agent/llm/invoke/metering.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
 import { getProfile } from "#agent/state-io/index.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
@@ -141,5 +142,5 @@ export async function generateSuggestionsNode(
   }
 
   const nextStepSuggestions = await resolveNextStepSuggestions(state, config);
-  return { nextStepSuggestions };
+  return { nextStepSuggestions, ...patchAiUsageMetering(state.aiUsage, config) };
 }

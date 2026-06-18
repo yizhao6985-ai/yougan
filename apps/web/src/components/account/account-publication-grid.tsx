@@ -6,10 +6,9 @@ import {
   publicationPlainExcerpt,
 } from "@/components/preview-block-list";
 import {
-  formatLabel,
   topicCategoryLabel,
 } from "@/lib/discover-taxonomy";
-import { formatPublishedAt, platformLabel } from "@/lib/platform-labels";
+import { formatPublishedAt } from "@/lib/platform-labels";
 import { publicationContentPath } from "@/lib/publication-path";
 import type { Publication } from "@/lib/publication-types";
 import { cn } from "@/lib/utils";
@@ -25,7 +24,7 @@ export function AccountPublicationCard({
     ? formatPublishedAt(publication.publishedAt)
     : null;
   const badges = [
-    formatLabel(publication.contentFormat),
+    publication.compositionLabel?.trim(),
     topicCategoryLabel(publication.topicCategory),
   ].filter(Boolean);
 
@@ -53,13 +52,7 @@ export function AccountPublicationCard({
 
       <div className="flex flex-1 flex-col p-4 sm:p-5">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-          <span>{platformLabel(publication.platform)}</span>
-          {timeLabel ? (
-            <>
-              <span aria-hidden>·</span>
-              <span>{timeLabel}</span>
-            </>
-          ) : null}
+          {timeLabel ? <span>{timeLabel}</span> : null}
         </div>
 
         <h2 className="mt-2 line-clamp-2 text-base font-semibold leading-snug text-foreground transition group-hover:text-primary sm:text-lg">

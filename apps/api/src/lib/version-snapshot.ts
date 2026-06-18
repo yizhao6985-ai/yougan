@@ -32,7 +32,7 @@ export function parseSnapshot(raw: unknown): WorkVersionSnapshot {
     references:
       value.references !== undefined
         ? parseReferencesJson(value.references)
-        : resolveReferencesFromWork({ profile: value.profile }),
+        : [],
     production,
   };
 }
@@ -49,7 +49,6 @@ export function snapshotFromAgentValues(
     profile: parseProfileJson(values.profile),
     references: resolveReferencesFromWork({
       references: values.references,
-      profile: values.profile,
     }),
     production,
   };

@@ -1,6 +1,6 @@
 /**
- * LLM 调用计量：按 thread_id 聚合并写入 __runMeteringAcc，由 finalizeRunMetering 刷入 state。
- * 子图与主图的 RunnableConfig 不是同一对象，但 configurable.thread_id 相同。
+ * LLM 调用计量：按 thread_id 聚合；节点结束时刷入 aiUsage.settledMicroCredits。
+ * Agent 调用结束或取消时由 API proxy 将 checkpoint 与 DB 对齐入账。
  */
 import { BaseCallbackHandler } from "@langchain/core/callbacks/base";
 import { AIMessage } from "@langchain/core/messages";
@@ -8,7 +8,10 @@ import type { ChatGeneration, LLMResult } from "@langchain/core/outputs";
 import { mergeConfigs, type RunnableConfig } from "@langchain/core/runnables";
 import {
   buildRunMeteringDelta,
+  isUsageExceeded,
   mergeRunMetering,
+  toUsagePercent,
+  type AiUsageSnapshot,
   type MeteringModelId,
   type RunMetering,
   type UsageMetadataLike,
@@ -19,8 +22,8 @@ type MeteringConfigurable = {
   __runMeteringAcc?: RunMetering;
 };
 
-/** 子图 / 浅拷贝 config 不共享 configurable 引用时，仍可按 thread 聚合 */
 const accByThreadId = new Map<string, RunMetering>();
+const lastFlushedAccByThreadId = new Map<string, RunMetering>();
 
 function resolveThreadId(config?: RunnableConfig): string | undefined {
   const threadId = config?.configurable?.thread_id;
@@ -35,6 +38,36 @@ function ensureMeteringConfigurable(
   if (!config) return {};
   config.configurable ??= {};
   return config.configurable as MeteringConfigurable;
+}
+
+function meteringDeltaSince(
+  current: RunMetering,
+  previous: RunMetering,
+): RunMetering {
+  return {
+    inputTokens: Math.max(0, current.inputTokens - previous.inputTokens),
+    outputTokens: Math.max(0, current.outputTokens - previous.outputTokens),
+    microCredits: Math.max(0, current.microCredits - previous.microCredits),
+    callCount: Math.max(0, current.callCount - previous.callCount),
+  };
+}
+
+function getLastFlushedAcc(config?: RunnableConfig): RunMetering {
+  const threadId = resolveThreadId(config);
+  if (threadId) {
+    return lastFlushedAccByThreadId.get(threadId) ?? EMPTY_RUN_METERING;
+  }
+  return EMPTY_RUN_METERING;
+}
+
+function setLastFlushedAcc(
+  config: RunnableConfig | undefined,
+  acc: RunMetering,
+): void {
+  const threadId = resolveThreadId(config);
+  if (threadId) {
+    lastFlushedAccByThreadId.set(threadId, { ...acc });
+  }
 }
 
 export function getRunMeteringAccumulator(
@@ -69,7 +102,6 @@ export function recordRunMeteringUsage(
   Object.assign(acc, merged);
 }
 
-/** callback 未写入时，用 message.usage_metadata 等来源补记 */
 export function recordRunMeteringUsageIfMissing(
   config: RunnableConfig | undefined,
   modelId: MeteringModelId,
@@ -83,7 +115,7 @@ export function resetRunMeteringAccumulator(config?: RunnableConfig): void {
   const threadId = resolveThreadId(config);
   if (threadId) {
     accByThreadId.set(threadId, { ...EMPTY_RUN_METERING });
-    return;
+    lastFlushedAccByThreadId.delete(threadId);
   }
 
   const configurable = ensureMeteringConfigurable(config);
@@ -94,6 +126,48 @@ export function flushRunMeteringAccumulator(
   config?: RunnableConfig,
 ): RunMetering {
   return { ...getRunMeteringAccumulator(config) };
+}
+
+/** 将本节点新增计量累加到 aiUsage.settledMicroCredits */
+export function patchAiUsageMetering(
+  base: AiUsageSnapshot | undefined,
+  config?: RunnableConfig,
+): { aiUsage: AiUsageSnapshot } | Record<string, never> {
+  if (!base) return {};
+
+  const acc = { ...getRunMeteringAccumulator(config) };
+  const delta = meteringDeltaSince(acc, getLastFlushedAcc(config));
+  setLastFlushedAcc(config, acc);
+
+  if (delta.microCredits <= 0 && delta.callCount <= 0) {
+    return {
+      aiUsage: {
+        ...base,
+        usagePercent: toUsagePercent(
+          base.settledMicroCredits,
+          base.quotaMicroCredits,
+        ),
+        usageExceeded: isUsageExceeded(
+          base.settledMicroCredits,
+          base.quotaMicroCredits,
+        ),
+      },
+    };
+  }
+
+  const settledMicroCredits = base.settledMicroCredits + delta.microCredits;
+
+  return {
+    aiUsage: {
+      ...base,
+      settledMicroCredits,
+      usagePercent: toUsagePercent(settledMicroCredits, base.quotaMicroCredits),
+      usageExceeded: isUsageExceeded(
+        settledMicroCredits,
+        base.quotaMicroCredits,
+      ),
+    },
+  };
 }
 
 function extractUsageFromLlmResult(
@@ -168,15 +242,6 @@ export function withMeteringCallbacks(
   return mergeConfigs(config ?? {}, { callbacks: [handler] }) as RunnableConfig;
 }
 
-/** 将 env 模型名映射到计量单价表 */
-export function resolveQwenMeteringModelId(modelName: string): MeteringModelId {
-  const normalized = modelName.toLowerCase();
-  if (normalized.includes("plus")) return "qwen-plus";
-  return "qwen-max";
-}
+import { resolveDashScopeMeteringModelId as resolveDashScopeMeteringModelIdFromConfig } from "#agent/llm/providers/dashscope-chat-config.js";
 
-export function resolveMinimaxMeteringModelId(
-  _modelName: string,
-): MeteringModelId {
-  return "minimax-m3-s";
-}
+export { resolveDashScopeMeteringModelIdFromConfig as resolveDashScopeMeteringModelId };

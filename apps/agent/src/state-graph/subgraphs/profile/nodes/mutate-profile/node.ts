@@ -4,6 +4,7 @@ import type { RunnableConfig } from "@langchain/core/runnables";
 
 import { env } from "#agent/env.js";
 import { streamChat } from "#agent/llm/invoke/index.js";
+import { patchAiUsageMetering } from "#agent/llm/invoke/metering.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
 import { getLatestHumanMessageText } from "#agent/messages/human.js";
 import { prepareChatMessagesForLlm } from "#agent/messages/llm-input.js";
@@ -31,5 +32,5 @@ export async function mutateProfileNode(
     ],
     config,
   );
-  return { messages: [response] };
+  return { messages: [response], ...patchAiUsageMetering(state.aiUsage, config) };
 }

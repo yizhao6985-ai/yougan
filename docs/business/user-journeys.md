@@ -75,7 +75,7 @@ sequenceDiagram
 
 | 里程碑 | 用户动作 | 系统状态 |
 |--------|----------|----------|
-| M1 方案就绪 | 确认创作定位与体裁 | `profile.intent.summary` + `profile.delivery.format` 已填 |
+| M1 方案就绪 | 确认创作定位与体裁 | `profile.direction.summary` + `profile.direction.format` 已填 |
 | M2 参考就绪 | 上传或维护参考素材 | `references` 有条目 |
 | M3 开始制作 | 用户表达开写/出稿意图 | `turn.queue` 含 `production`，`productionPlan` 已编排任务 |
 | M4 首版成稿 | production 子图执行 | `preview` 有正文 |

@@ -4,11 +4,9 @@ import {
   type MediaModalityId,
 } from "../../models/taxonomy/content.js";
 import {
-  DISCOVER_PLATFORMS,
   DISCOVER_TOPIC_CATEGORIES,
   type DiscoverFormatId,
   type DiscoverMediaTypeId,
-  type DiscoverPlatformId,
   type DiscoverTopicCategoryId,
   type PublicationMetadata,
   type PublicationMetadataOverrides,
@@ -26,7 +24,7 @@ import {
   previewHasImages,
   previewTextLength,
 } from "../work/preview.js";
-import { parseProfileJson, resolveDeliveryFromProfile, getProfileSummary, getIntentSummary } from "../work/profile.js";
+import { parseProfileJson, resolveDeliveryFromProfile, getProfileSummary, getDirectionSummary } from "../work/profile.js";
 
 const FORMAT_LABELS = Object.fromEntries(
   CONTENT_FORMATS.map((item) => [item.id, item.label]),
@@ -36,12 +34,7 @@ const TOPIC_LABELS = Object.fromEntries(
   DISCOVER_TOPIC_CATEGORIES.map((item) => [item.id, item.label]),
 ) as Record<DiscoverTopicCategoryId, string>;
 
-const PLATFORM_LABELS = Object.fromEntries(
-  DISCOVER_PLATFORMS.map((item) => [item.id, item.label]),
-) as Record<DiscoverPlatformId, string>;
-
 type OutputLike = {
-  platform?: string;
   blocks?: PreviewBlock[];
 };
 
@@ -61,11 +54,6 @@ export function mediaTypeLabel(
   if (Array.isArray(input)) return mediaModalitiesLabel(input);
   if (!input) return null;
   return mediaModalityLabel(input);
-}
-
-export function platformTaxonomyLabel(id: string | null | undefined) {
-  if (!id) return null;
-  return PLATFORM_LABELS[id as DiscoverPlatformId] ?? id;
 }
 
 export function normalizeTopicCategory(topic: string | null | undefined) {
@@ -109,7 +97,6 @@ function normalizeContentFormatFromType(contentType: string | null | undefined) 
 }
 
 export function inferContentFormat(input: {
-  platform?: string | null;
   contentType?: string | null;
   body?: string | null;
   bodyLength?: number;
@@ -118,28 +105,13 @@ export function inferContentFormat(input: {
   const fromType = normalizeContentFormatFromType(input.contentType);
   if (fromType) return fromType;
 
-  const platform = input.platform ?? "yougan";
   const bodyLength =
     input.bodyLength ?? input.body?.trim().length ?? 0;
 
-  switch (platform) {
-    case "xiaohongshu":
-      return "note";
-    case "weibo":
-      return "short_post";
-    case "wechat":
-      return "article";
-    case "douyin":
-    case "kuaishou":
-      return "short_video";
-    case "bilibili":
-      return bodyLength > 900 ? "article" : "video_script";
-    default:
-      if (bodyLength > 900) return "article";
-      if (input.hasImage) return "note";
-      if (bodyLength > 280) return "short_post";
-      return "short_post";
-  }
+  if (bodyLength > 900) return "article";
+  if (input.hasImage) return "note";
+  if (bodyLength > 280) return "short_post";
+  return "short_post";
 }
 
 export function inferMediaTypes(input: {
@@ -149,12 +121,17 @@ export function inferMediaTypes(input: {
   contentFormat?: string | null;
 }): MediaModalityId[] {
   const blocks = input.blocks ?? [];
-  const bodyLength =
-    blocks.length > 0 ? previewTextLength(blocks) : 0;
-  const hasImage = Boolean(input.coverUrl) || previewHasImages(blocks);
+  if (blocks.length > 0) {
+    const fromBlocks = sortMediaModalities(
+      [...new Set(blocks.map((block) => block.type))].filter(
+        isMediaModalityId,
+      ),
+    );
+    if (fromBlocks.length) return fromBlocks;
+  }
 
-  if (blocks.some((block) => block.type === "audio")) return ["audio"];
-  if (blocks.some((block) => block.type === "video")) return ["video"];
+  const bodyLength = previewTextLength(blocks);
+  const hasImage = Boolean(input.coverUrl) || previewHasImages(blocks);
 
   return inferMediaModalities({
     contentType: input.contentType,
@@ -169,7 +146,6 @@ export function buildPublicationMetadata(input: {
   output?: OutputLike | null;
   coverUrl?: string | null;
   blocks?: PreviewBlock[] | null;
-  platform?: string | null;
 }): PublicationMetadata {
   const output = input.output ?? {};
   const blocks = input.blocks ?? output.blocks ?? [];
@@ -183,9 +159,7 @@ export function buildPublicationMetadata(input: {
 
   const profile = input.profile ? parseProfileJson(input.profile) : null;
 
-  const platform =
-    input.platform ?? output.platform ?? "yougan";
-  const contentTopic = profile ? getIntentSummary(profile) || null : null;
+  const contentTopic = profile ? getDirectionSummary(profile) || null : null;
   const contentType = profile ? getProfileSummary(profile) : null;
 
   const contentFormat =
@@ -193,7 +167,6 @@ export function buildPublicationMetadata(input: {
     CONTENT_FORMATS.some((item) => item.id === delivery.format)
       ? delivery.format
       : inferContentFormat({
-          platform,
           contentType,
           bodyLength,
           hasImage,
@@ -211,7 +184,6 @@ export function buildPublicationMetadata(input: {
       });
 
   return {
-    platform,
     contentFormat,
     topicCategory,
     contentTopic,
@@ -245,9 +217,6 @@ export function applyMetadataOverrides(
 
   return {
     ...metadata,
-    platform: isValidTaxonomyId(DISCOVER_PLATFORMS, overrides.platform)
-      ? overrides.platform!
-      : metadata.platform,
     contentFormat: isValidTaxonomyId(CONTENT_FORMATS, overrides.contentFormat)
       ? overrides.contentFormat!
       : metadata.contentFormat,
@@ -263,7 +232,6 @@ export function applyMetadataOverrides(
 
 export function buildMetadataLabels(metadata: PublicationMetadata) {
   return {
-    platform: platformTaxonomyLabel(metadata.platform),
     contentFormat: formatLabel(metadata.contentFormat),
     topicCategory: topicCategoryLabel(metadata.topicCategory),
     mediaTypes: mediaModalitiesLabel(metadata.mediaTypes),

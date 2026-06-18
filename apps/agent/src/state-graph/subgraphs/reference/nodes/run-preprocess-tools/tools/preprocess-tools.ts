@@ -37,7 +37,7 @@ function formatPreprocessMessage(summary: string): string {
 function preprocessTool(
   name: string,
   description: string,
-  expectedKind: "text" | "image" | "audio" | "video",
+  expectedKind: "text" | "image",
 ) {
   return tool(
     async (input, config) => {
@@ -85,16 +85,4 @@ export const preprocessReferenceImage = preprocessTool(
   PREPROCESS_REFERENCE_TOOL_NAMES.image,
   "预处理图片参考：视觉感知并生成客观分析摘要。",
   "image",
-);
-
-export const preprocessReferenceAudio = preprocessTool(
-  PREPROCESS_REFERENCE_TOOL_NAMES.audio,
-  "预处理音频参考：转写并生成客观分析摘要。",
-  "audio",
-);
-
-export const preprocessReferenceVideo = preprocessTool(
-  PREPROCESS_REFERENCE_TOOL_NAMES.video,
-  "预处理视频参考：关键帧与转写并生成客观分析摘要。",
-  "video",
 );

@@ -3,6 +3,7 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import type { LangGraphRunnableConfig } from "@langchain/langgraph";
 
 import { invokeStructured } from "#agent/llm/invoke/index.js";
+import { patchAiUsageMetering } from "#agent/llm/invoke/metering.js";
 import { createProductionChatModel } from "#agent/llm/providers/index.js";
 import {
   patchRunProgress,
@@ -140,5 +141,6 @@ export async function produceNextTask(
   return {
     ...patchPendingProductionFields(state, { ...plan, pending_tasks }),
     ...patchRunProgress(progress),
+    ...patchAiUsageMetering(state.aiUsage, config),
   };
 }
