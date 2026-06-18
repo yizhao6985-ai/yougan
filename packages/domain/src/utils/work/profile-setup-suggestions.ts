@@ -7,12 +7,11 @@ import type {
   ProfileStepId,
   WorkProfile,
 } from "../../models/work/profile.js";
-import { parseProfileJson } from "./profile.js";
+import { parseProfileJson, isProfileEmpty } from "./profile.js";
 import {
   PROFILE_SETUP_FLOW,
   getActiveProfileStep,
   getProfileSetupState,
-  isProfileSetupPhase,
   isProfileSetupReady,
   isProfileStepFilled,
 } from "./profile-setup.js";
@@ -20,8 +19,19 @@ import { getProfileStepCopy } from "./profile-step-copy.js";
 
 export type ProfileSetupSuggestionSlot = {
   role: ProfileSetupSuggestionRole;
-  step: ProfileStepId | "ready";
+  step?: ProfileStepId | "ready";
   layer: "consolidate" | "advance";
+};
+
+export type SuggestionLayerCounts = {
+  consolidate: number;
+  advance: number;
+};
+
+export type SuggestionContextInput = {
+  profile: WorkProfile | undefined;
+  beforeProfile?: WorkProfile | undefined;
+  hasPreview?: boolean;
 };
 
 export type ProfileSetupSuggestionFocus = {
@@ -188,66 +198,128 @@ function getConsolidationStep(
   return "intent";
 }
 
-function buildTurnSuggestionSlots(
+/** 是否已有方案/成稿，需要区分「扩展当前状态」与「下一步引导」 */
+export function hasSuggestionLayeredContext(
+  profile: WorkProfile | undefined,
+  options?: { hasPreview?: boolean },
+): boolean {
+  if (options?.hasPreview) return true;
+  return !isProfileEmpty(profile);
+}
+
+/** 按当前推进步充实程度，动态分配两层条数 */
+export function computeSuggestionLayerCounts(
+  count: number,
+  focus: ProfileSetupSuggestionFocus,
+  layered: boolean,
+): SuggestionLayerCounts {
+  if (!layered || count < 1) {
+    return { consolidate: 0, advance: count };
+  }
+  if (count === 1) {
+    return { consolidate: 0, advance: 1 };
+  }
+
+  let advanceRatio = 0.25;
+  if (focus.activeStatus === "empty") {
+    advanceRatio = 0.35;
+  } else if (focus.activeStatus === "partial") {
+    advanceRatio = 0.25;
+  } else if (focus.activeStatus === "filled") {
+    advanceRatio = 0.2;
+  }
+  if (focus.activeStep === "ready") {
+    advanceRatio = Math.max(advanceRatio, 0.25);
+  }
+
+  const advance = Math.max(
+    1,
+    Math.min(count - 1, Math.round(count * advanceRatio)),
+  );
+  return { consolidate: count - advance, advance };
+}
+
+function buildGuideOnlySlots(count: number): ProfileSetupSuggestionSlot[] {
+  return Array.from({ length: count }, () => ({
+    role: "navigate",
+    layer: "advance",
+  }));
+}
+
+function buildLayeredSlots(
   focus: ProfileSetupSuggestionFocus,
   profile: WorkProfile,
   count: number,
 ): ProfileSetupSuggestionSlot[] {
-  if (focus.activeStep === "ready") {
-    const consolidateStep = getConsolidationStep(focus, profile);
-    const readySlots: ProfileSetupSuggestionSlot[] = [
-      { role: "refine", step: consolidateStep, layer: "consolidate" },
-      { role: "refine", step: consolidateStep, layer: "consolidate" },
-      { role: "refine", step: consolidateStep, layer: "consolidate" },
-      { role: "navigate", step: "ready", layer: "advance" },
-    ];
-    return readySlots.slice(0, count);
-  }
-
+  const { consolidate, advance } = computeSuggestionLayerCounts(
+    count,
+    focus,
+    true,
+  );
   const consolidateStep = getConsolidationStep(focus, profile);
-  const nextStep = focus.nextStep ?? "ready";
-
-  if (count === 4) {
-    const turnSlots: ProfileSetupSuggestionSlot[] = [
-      { role: "refine", step: consolidateStep, layer: "consolidate" },
-      { role: "refine", step: consolidateStep, layer: "consolidate" },
-      { role: "refine", step: consolidateStep, layer: "consolidate" },
-      { role: "navigate", step: nextStep, layer: "advance" },
-    ];
-    return turnSlots;
-  }
+  const nextStep =
+    focus.activeStep === "ready" ? "ready" : (focus.nextStep ?? "ready");
 
   const slots: ProfileSetupSuggestionSlot[] = [];
-  const consolidateCount = Math.max(1, count - 1);
-  for (let i = 0; i < consolidateCount; i += 1) {
-    slots.push({ role: "refine", step: consolidateStep, layer: "consolidate" });
+  for (let i = 0; i < consolidate; i += 1) {
+    slots.push({
+      role: "refine",
+      step: consolidateStep,
+      layer: "consolidate",
+    });
   }
-  slots.push({ role: "navigate", step: nextStep, layer: "advance" });
-  return slots.slice(0, count);
+  for (let i = 0; i < advance; i += 1) {
+    slots.push({ role: "navigate", step: nextStep, layer: "advance" });
+  }
+  return slots;
+}
+
+function buildSuggestionSlots(
+  focus: ProfileSetupSuggestionFocus,
+  profile: WorkProfile,
+  count: number,
+  layered: boolean,
+): ProfileSetupSuggestionSlot[] {
+  if (!layered) {
+    return buildGuideOnlySlots(count);
+  }
+  return buildLayeredSlots(focus, profile, count);
 }
 
 export function buildProfileSetupSuggestionSlots(
   focus: ProfileSetupSuggestionFocus,
   count: number,
   profile?: WorkProfile,
+  options?: { hasPreview?: boolean },
 ): ProfileSetupSuggestionSlot[] {
   const parsed = parseProfileJson(profile);
-  return buildTurnSuggestionSlots(focus, parsed, count);
+  const layered = hasSuggestionLayeredContext(parsed, options);
+  return buildSuggestionSlots(focus, parsed, count, layered);
 }
 
-/** 方案引导阶段：按槽位配方覆盖 step/role，保证巩固 3 + 推进 1 分组稳定 */
+function applySuggestionSlots(
+  suggestions: NextStepSuggestion[],
+  slots: ProfileSetupSuggestionSlot[],
+): NextStepSuggestion[] {
+  return suggestions.map((item, index) => {
+    const slot = slots[index];
+    if (!slot) return item;
+    return {
+      ...item,
+      role: slot.role,
+      ...(slot.step ? { step: slot.step } : {}),
+    };
+  });
+}
+
+/** 按槽位覆盖 step/role，供前端分层展示 */
 export function resolveProfileSetupSuggestionRoles(
   suggestions: NextStepSuggestion[],
-  input: {
-    profile: WorkProfile | undefined;
-    beforeProfile?: WorkProfile | undefined;
-  },
+  input: SuggestionContextInput,
 ): NextStepSuggestion[] {
-  const profile = parseProfileJson(input.profile);
-  if (!isProfileSetupPhase(profile) || suggestions.length === 0) {
-    return suggestions;
-  }
+  if (suggestions.length === 0) return suggestions;
 
+  const profile = parseProfileJson(input.profile);
   const focus = buildProfileSetupSuggestionFocus({
     before: input.beforeProfile,
     after: profile,
@@ -256,35 +328,28 @@ export function resolveProfileSetupSuggestionRoles(
     focus,
     suggestions.length,
     profile,
+    { hasPreview: input.hasPreview },
   );
 
-  return suggestions.map((item, index) => {
-    const slot = slots[index];
-    if (!slot) return item;
-    return {
-      ...item,
-      step: slot.step,
-      role: slot.role,
-    };
-  });
+  return applySuggestionSlots(suggestions, slots);
 }
 
 export function splitProfileSetupSuggestionLayers(
   suggestions: NextStepSuggestion[],
-  input: {
-    profile: WorkProfile | undefined;
-    beforeProfile?: WorkProfile | undefined;
-  },
+  input: SuggestionContextInput,
 ): {
   consolidate: NextStepSuggestion[];
   advance: NextStepSuggestion[];
 } | null {
-  const normalized = resolveProfileSetupSuggestionRoles(suggestions, input);
   const profile = parseProfileJson(input.profile);
-  if (!isProfileSetupPhase(profile) || normalized.length < 2) {
+  const layered = hasSuggestionLayeredContext(profile, {
+    hasPreview: input.hasPreview,
+  });
+  if (!layered || suggestions.length < 2) {
     return null;
   }
 
+  const normalized = resolveProfileSetupSuggestionRoles(suggestions, input);
   const focus = buildProfileSetupSuggestionFocus({
     before: input.beforeProfile,
     after: profile,
@@ -293,6 +358,7 @@ export function splitProfileSetupSuggestionLayers(
     focus,
     normalized.length,
     profile,
+    { hasPreview: input.hasPreview },
   );
 
   const consolidate: NextStepSuggestion[] = [];
@@ -336,10 +402,36 @@ function formatStepLabel(
   return getProfileStepCopy(profile, step).title;
 }
 
+export function buildSuggestionLayerHint(
+  focus: ProfileSetupSuggestionFocus,
+  profile: WorkProfile | undefined,
+  layerCounts: SuggestionLayerCounts,
+  layered: boolean,
+): string | undefined {
+  if (!layered) return undefined;
+
+  const parsed = parseProfileJson(profile);
+  const { consolidate, advance } = layerCounts;
+
+  if (focus.activeStep === "ready") {
+    return `前 ${consolidate} 条补方案细节，后 ${advance} 条推进制作或发布`;
+  }
+
+  const activeTitle = getProfileStepCopy(parsed, focus.activeStep).title;
+  return `前 ${consolidate} 条延伸「${activeTitle}」，后 ${advance} 条引导下一步`;
+}
+
 export function buildProfileSetupSuggestionHint(
   focus: ProfileSetupSuggestionFocus,
   profile: WorkProfile | undefined,
+  layerCounts?: SuggestionLayerCounts,
+  layered = true,
 ): string {
+  const layeredHint =
+    layerCounts &&
+    buildSuggestionLayerHint(focus, profile, layerCounts, layered);
+  if (layeredHint) return layeredHint;
+
   const parsed = parseProfileJson(profile);
 
   if (focus.activeStep === "ready") {
@@ -350,10 +442,10 @@ export function buildProfileSetupSuggestionHint(
   const activeTitle = getProfileStepCopy(parsed, focus.activeStep).title;
 
   if (focus.activeStatus === "empty") {
-    return `当前「${activeTitle}」— 前 3 条给本步灵感，最后 1 条引导下一步`;
+    return `当前「${activeTitle}」— 点一条继续，或直接输入`;
   }
 
-  return `${activeLabel} — 前 3 条延伸本步灵感，最后 1 条引导下一步`;
+  return `${activeLabel} — 点一条继续，或直接输入`;
 }
 
 export function buildProfileSetupSuggestionPromptBlock(
@@ -365,9 +457,9 @@ export function buildProfileSetupSuggestionPromptBlock(
   const activeMeta = setup.steps.find((step) => step.id === focus.activeStep);
 
   const lines = [
-    "## 方案建议上下文（双焦点）",
-    "- 槽位配比：巩固层 3 条（当前步灵感）+ 推进层 1 条（引导进入下一步）",
-    "- **重要**：巩固层 step = 当前推进步；推进层 step = 下一步（见「再下一步」）；禁止写无关步骤内容",
+    "## 方案进度（生成建议时须对齐）",
+    "- **扩展当前状态**：锚定当前推进步或已有方案/成稿，给灵感、补全、微调",
+    "- **下一步引导**：像用户主动推进到方案下一步、开始制作或发布准备",
     `- 当前推进步：${activeMeta ? `第 ${activeMeta.index} 步 · ${activeMeta.title}` : focus.activeStep}（${focus.activeStatus}）`,
   ];
 
@@ -375,7 +467,7 @@ export function buildProfileSetupSuggestionPromptBlock(
     const copy = getProfileStepCopy(parsed, focus.activeStep);
     lines.push(`- 本步要填什么：${copy.hint}`);
     lines.push(
-      `- 本步灵感方向参考（巩固层须落在此步，勿逐字复制）：${copy.suggestionExamples.join("；")}`,
+      `- 本步灵感方向参考（扩展向须落在此步，勿逐字复制）：${copy.suggestionExamples.join("；")}`,
     );
     const activeSummary = summarizeProfileStepForSuggestions(
       parsed,
@@ -427,26 +519,50 @@ export function buildProfileSetupSuggestionPromptBlock(
   return lines.join("\n");
 }
 
+export function buildSuggestionSlotRecipe(
+  focus: ProfileSetupSuggestionFocus,
+  count: number,
+  profile: WorkProfile | undefined,
+  options?: { hasPreview?: boolean },
+): string {
+  const parsed = parseProfileJson(profile);
+  const layered = hasSuggestionLayeredContext(parsed, options);
+  const slots = buildProfileSetupSuggestionSlots(focus, count, parsed, options);
+  const layerCounts = computeSuggestionLayerCounts(count, focus, layered);
+  const layerLabels = {
+    consolidate: "扩展当前状态",
+    advance: "下一步引导",
+  } as const;
+
+  if (!layered) {
+    return [
+      "## 建议槽位配方（须逐条对应）",
+      `- 全部为**下一步引导**（${count} 条）：根据作品标题、参考素材与上下文，给出可立刻动手的具体方向；互斥、可区分`,
+      ...slots.map(
+        (_, index) => `${index + 1}. [${layerLabels.advance}] role=navigate`,
+      ),
+    ].join("\n");
+  }
+
+  const lines = slots.map((slot, index) => {
+    const stepTitle = slot.step
+      ? getProfileStepCopy(parsed, slot.step).title
+      : "（无步骤）";
+    return `${index + 1}. [${layerLabels[slot.layer]}] role=${slot.role}${slot.step ? ` · step=${slot.step}（${stepTitle}）` : ""}`;
+  });
+
+  return [
+    "## 建议槽位配方（须逐条对应）",
+    `- **扩展当前状态** ${layerCounts.consolidate} 条（refine）：锚定当前进度，给灵感/补全/微调`,
+    `- **下一步引导** ${layerCounts.advance} 条（navigate）：像用户主动推进；ready 时说开始制作，禁止元说明`,
+    ...lines,
+  ].join("\n");
+}
+
 export function buildProfileSetupSuggestionSlotRecipe(
   focus: ProfileSetupSuggestionFocus,
   count: number,
   profile: WorkProfile | undefined,
 ): string {
-  const parsed = parseProfileJson(profile);
-  const slots = buildProfileSetupSuggestionSlots(focus, count, parsed);
-  const layerLabels = {
-    consolidate: "巩固层",
-    advance: "推进层",
-  } as const;
-  const lines = slots.map((slot, index) => {
-    const stepTitle = getProfileStepCopy(parsed, slot.step).title;
-    return `${index + 1}. [${layerLabels[slot.layer]}] role=${slot.role} · step=${slot.step}（${stepTitle}）`;
-  });
-
-  return [
-    "## 建议槽位配方（须逐条对应）",
-    "- 巩固层 refine：step = 当前推进步；围绕本步给灵感/可填入示例",
-    "- 推进层 navigate：step = 下一步；message 像用户主动进入该步（或 ready 时说开始制作），禁止空泛套话",
-    ...lines,
-  ].join("\n");
+  return buildSuggestionSlotRecipe(focus, count, profile);
 }

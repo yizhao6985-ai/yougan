@@ -50,6 +50,13 @@ export function isLangGraphThreadMissingError(error: unknown): boolean {
   return normalized.includes("not found") && normalized.includes("thread");
 }
 
+/** production 环节进行中（含制作前确认 interrupt）时禁止前端取消 */
+export function isProductionTurnActive(
+  values: YouganValues | null | undefined,
+): boolean {
+  return values?.turn?.activeKind === "production";
+}
+
 /** checkpoint 是否表示回合仍在执行（非 committed / cancelled） */
 export function isTurnInFlight(values: YouganValues | null | undefined): boolean {
   const turn = values?.turn;

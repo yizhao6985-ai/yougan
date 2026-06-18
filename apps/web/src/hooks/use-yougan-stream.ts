@@ -19,6 +19,7 @@ import {
   getActiveLangGraphRunId,
   isActiveLangGraphRunStatus,
   isLangGraphThreadMissingError,
+  isProductionTurnActive,
   isTurnInFlight,
   TURN_EPHEMERAL_RESET,
 } from "@/lib/turn-lifecycle";
@@ -428,8 +429,13 @@ export function useYouganStream({
     submitOpeningBootstrap,
   });
 
+  const canCancelActiveTurn = useMemo(
+    () => !isProductionTurnActive(mergedStreamValues),
+    [mergedStreamValues],
+  );
+
   const cancelActiveTurn = useCallback(async () => {
-    if (isCancelling) return;
+    if (isCancelling || !canCancelActiveTurn) return;
     const values = stream.values as YouganValues | undefined;
     const canCancel =
       isStreamBusy ||
@@ -497,6 +503,7 @@ export function useYouganStream({
       setIsCancelling(false);
     }
   }, [
+    canCancelActiveTurn,
     conversationId,
     isCancelling,
     isStreamBusy,
@@ -630,6 +637,7 @@ export function useYouganStream({
     threadId,
     sendMessage,
     cancelActiveTurn,
+    canCancelActiveTurn,
     resumeProductionConfirm,
     productionConfirmInterrupt,
     isResumingInterrupt,

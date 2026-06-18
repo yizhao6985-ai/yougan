@@ -1,15 +1,16 @@
-/** suggestions 子图：生成 nextStepSuggestions（开屏 7 条 / 回合末 4 条） */
+/** suggestions 子图：生成 nextStepSuggestions（开屏 12 条 / 回合末 4 条） */
 import { HumanMessage } from "@langchain/core/messages";
 import type { RunnableConfig } from "@langchain/core/runnables";
 
 import {
   buildProfileSetupSuggestionFocus,
   buildProfileSetupSuggestionHint,
+  computeSuggestionLayerCounts,
+  hasSuggestionLayeredContext,
   OPENING_NEXT_STEP_SUGGESTIONS_COUNT,
   resolveProfileSetupSuggestionRoles,
   TURN_NEXT_STEP_SUGGESTIONS_COUNT,
   DEFAULT_NEXT_STEP_SUGGESTIONS_HINT,
-  isProfileSetupPhase,
   type NextStepSuggestions,
 } from "@yougan/domain";
 
@@ -19,7 +20,6 @@ import { getProfile } from "#agent/state-io/index.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
 import { extractLastMessages } from "./helpers/extract-last-messages.js";
-import { hasSuggestionWorkContext } from "./helpers/has-suggestion-work-context.js";
 import { newNextStepSuggestion } from "./helpers/suggestion-factory.js";
 import { buildNextStepSuggestionsPrompt } from "./prompt.js";
 import { nextStepSuggestionsResponseSchema } from "./schema.js";
@@ -42,22 +42,23 @@ async function invokeNextStepSuggestions(
   },
   config?: RunnableConfig,
 ): Promise<NextStepSuggestions | null> {
-  const topicMode = options.isOpening && !hasSuggestionWorkContext(state);
   const profile = getProfile(state);
-  const profileSetupMode =
-    !topicMode && isProfileSetupPhase(profile);
-  const profileSetupFocus = profileSetupMode
-    ? buildProfileSetupSuggestionFocus({
-        before: state.profile,
-        after: profile,
-      })
-    : undefined;
+  const hasPreview = Boolean(state.production?.preview?.blocks?.length);
+  const layered = hasSuggestionLayeredContext(profile, { hasPreview });
+  const profileSetupFocus = buildProfileSetupSuggestionFocus({
+    before: state.profile,
+    after: profile,
+  });
+  const layerCounts = computeSuggestionLayerCounts(
+    options.count,
+    profileSetupFocus,
+    layered,
+  );
 
   const llm = createChatModel({ temperature: options.temperature });
   const prompt = buildNextStepSuggestionsPrompt(state, {
     count: options.count,
     isOpening: options.isOpening,
-    topicMode,
     lastUserMessage: options.lastUserMessage,
     lastAssistantReply: options.lastAssistantReply,
   });
@@ -75,19 +76,23 @@ async function invokeNextStepSuggestions(
       {
         profile,
         beforeProfile: state.profile,
+        hasPreview,
       },
     );
     if (suggestions.length === 0) return null;
 
-    const profileSetupHint =
-      profileSetupFocus &&
-      buildProfileSetupSuggestionHint(profileSetupFocus, profile);
+    const layeredHint = buildProfileSetupSuggestionHint(
+      profileSetupFocus,
+      profile,
+      layerCounts,
+      layered,
+    );
 
     return {
       hint:
         parsed.hint?.trim() ||
-        profileSetupHint ||
-        (topicMode ? OPENING_HINT : DEFAULT_NEXT_STEP_SUGGESTIONS_HINT),
+        layeredHint ||
+        (options.isOpening ? OPENING_HINT : DEFAULT_NEXT_STEP_SUGGESTIONS_HINT),
       suggestions,
     };
   } catch {

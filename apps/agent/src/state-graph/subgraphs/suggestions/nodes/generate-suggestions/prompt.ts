@@ -1,7 +1,9 @@
-/** 下一步建议 prompt（开屏与回合末共用，仅条数与上下文不同） */
+/** 下一步建议 prompt（开屏与回合末共用：同一套规则，仅条数与对话上下文不同） */
 import {
   buildProfileSetupSuggestionFocus,
-  isProfileSetupPhase,
+  buildSuggestionSlotRecipe,
+  computeSuggestionLayerCounts,
+  hasSuggestionLayeredContext,
 } from "@yougan/domain";
 
 import { getProfile } from "#agent/state-io/index.js";
@@ -19,25 +21,30 @@ export type { NextStepSuggestionsPromptInput } from "./helpers/prompt/types.js";
 
 export function buildNextStepSuggestionsPrompt(
   state: AgentStateType,
-  input: Omit<
-    NextStepSuggestionsPromptInput,
-    "profileSetupMode" | "profileSetupFocus"
-  >,
+  input: Omit<NextStepSuggestionsPromptInput, "layered">,
 ): string {
   const profile = getProfile(state);
-  const profileSetupMode =
-    !input.topicMode && isProfileSetupPhase(profile);
-  const profileSetupFocus = profileSetupMode
-    ? buildProfileSetupSuggestionFocus({
-        before: state.profile,
-        after: profile,
-      })
-    : undefined;
+  const hasPreview = Boolean(state.production?.preview?.blocks?.length);
+  const layered = hasSuggestionLayeredContext(profile, { hasPreview });
+  const profileSetupFocus = buildProfileSetupSuggestionFocus({
+    before: state.profile,
+    after: profile,
+  });
+  const layerCounts = computeSuggestionLayerCounts(
+    input.count,
+    profileSetupFocus,
+    layered,
+  );
+  const slotRecipe = buildSuggestionSlotRecipe(
+    profileSetupFocus,
+    input.count,
+    profile,
+    { hasPreview },
+  );
 
   const promptInput: NextStepSuggestionsPromptInput = {
     ...input,
-    profileSetupMode,
-    profileSetupFocus,
+    layered,
   };
 
   const workContext = [
@@ -45,7 +52,11 @@ export function buildNextStepSuggestionsPrompt(
     [
       buildWorkStateSection(state, { profileSetupFocus }),
       buildRecentMessagesBlock(promptInput),
-      buildGenerationRequirements(promptInput, profile),
+      buildGenerationRequirements(input.count, {
+        layered,
+        layerCounts,
+        slotRecipe,
+      }),
     ].join(""),
   ].join("\n\n");
 

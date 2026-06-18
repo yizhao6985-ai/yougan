@@ -44,6 +44,7 @@ export function YouganChat() {
     runProgress,
     sendMessage,
     cancelActiveTurn,
+    canCancelActiveTurn,
     resumeProductionConfirm,
     productionConfirmInterrupt,
     isResumingInterrupt,
@@ -141,8 +142,13 @@ export function YouganChat() {
     [canSend, sendMessage],
   );
 
-  const chatStatus =
-    stream.isLoading || productionConfirmInterrupt ? "streaming" : "ready";
+  const isRunBusy =
+    stream.isLoading || productionConfirmInterrupt != null;
+  const chatStatus = !isRunBusy
+    ? "ready"
+    : canCancelActiveTurn
+      ? "streaming"
+      : "submitted";
 
   if (!activeWork) {
     return (
@@ -171,10 +177,25 @@ export function YouganChat() {
     if (productionConfirmInterrupt) {
       return CHAT_COPY.productionConfirm.statusHint;
     }
-    if (stream.isLoading && runProgress?.label) {
-      return runProgress.detail?.trim()
-        ? `${runProgress.label} · ${runProgress.detail.trim()}`
-        : runProgress.label;
+    if (stream.isLoading) {
+      if (runProgress?.label) {
+        return runProgress.detail?.trim()
+          ? `${runProgress.label} · ${runProgress.detail.trim()}`
+          : runProgress.label;
+      }
+      // submit 会清空 activeKind/runProgress，在 planner 写入前进度前先给中性加载文案
+      switch (activeKind) {
+        case "reference":
+          return CHAT_COPY.status.referenceProcessing;
+        case "production":
+          return CHAT_COPY.status.productionExecuting;
+        case "ask":
+          return CHAT_COPY.status.askExploring;
+        case "profile":
+          return CHAT_COPY.status.profileExploring;
+        default:
+          return CHAT_COPY.replying;
+      }
     }
     switch (activeKind) {
       case "reference":
@@ -388,7 +409,7 @@ export function YouganChat() {
                 input={input}
                 onInputChange={setInput}
                 onSend={handleSend}
-                onStop={cancelActiveTurn}
+                onStop={canCancelActiveTurn ? cancelActiveTurn : undefined}
                 chatStatus={chatStatus}
                 placeholder={composerPlaceholder}
               />

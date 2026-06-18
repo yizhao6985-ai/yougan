@@ -49,8 +49,8 @@ function buildLayeredGroups(
       step: "_consolidate",
       title:
         consolidateStep && consolidateStep !== "ready"
-          ? buildStepTitle(parsed, consolidateStep, "延伸灵感")
-          : "延伸灵感",
+          ? buildStepTitle(parsed, consolidateStep, "扩展当前状态")
+          : "扩展当前状态",
       suggestions: consolidate,
     });
   }
@@ -147,7 +147,7 @@ export function groupProfileSetupSuggestions(
         ? "开始制作"
         : buildStepTitle(parsed, step, "下一步")
       : hasRefine
-        ? `延伸灵感 · ${copy.title}`
+        ? `扩展当前状态 · ${copy.title}`
         : `补充${copy.title}`;
     result.push({ step, title, suggestions: items });
   }
