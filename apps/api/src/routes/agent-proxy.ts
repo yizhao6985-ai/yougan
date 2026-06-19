@@ -180,21 +180,29 @@ export async function injectWorkContext(
     }
 
     const input = (req.body.input ?? req.body) as Record<string, unknown>;
+    const command = req.body.command as { resume?: unknown } | undefined;
+    const isInterruptResume = command?.resume != null;
+
     req.body = {
       ...req.body,
-      input: {
-        ...input,
-        workId: context.workId,
-        workTitle: context.workTitle,
-        conversationTitle: context.conversationTitle,
-        profile: context.profile,
-        references: context.references,
-        production: context.production,
-        aiUsage: usage.aiUsage,
-      },
+      ...(isInterruptResume
+        ? {}
+        : {
+            input: {
+              ...input,
+              workId: context.workId,
+              workTitle: context.workTitle,
+              conversationTitle: context.conversationTitle,
+              profile: context.profile,
+              references: context.references,
+              production: context.production,
+              aiUsage: usage.aiUsage,
+            },
+          }),
     };
 
     req.body.config ??= {};
+    req.body.config.recursion_limit = 50;
     req.body.config.configurable ??= {};
     req.body.config.configurable.userId = req.userId;
     if (conversationId) {
@@ -241,7 +249,10 @@ async function syncWorkAfterStream(
       console.error("[agent-proxy] failed to auto-title conversation", error);
     }
   } catch (error) {
-    console.error("[agent-proxy] failed to read thread state after stream", error);
+    console.error(
+      "[agent-proxy] failed to read thread state after stream",
+      error,
+    );
   }
 }
 
@@ -273,7 +284,7 @@ export function createAgentProxy() {
           proxyRes.on("data", (chunk: Buffer) => chunks.push(chunk));
           proxyRes.on("end", () => {
             void (async () => {
-              let body = Buffer.concat(chunks);
+              let body: Buffer = Buffer.concat(chunks);
               const threadId = parseThreadIdFromAgentPath(
                 agentProxyPath(expressReq),
               );

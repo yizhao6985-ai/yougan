@@ -6,20 +6,27 @@ import {
   type ProductionConfirmInterruptValue,
 } from "@yougan/domain";
 
-import { getActiveTurnKind, patchTurn } from "#agent/state-io/index.js";
+import {
+  getActiveTurnKind,
+  getTurnQueue,
+  patchTurn,
+} from "#agent/state-io/index.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
 const PRODUCTION_CONFIRM_PAYLOAD: ProductionConfirmInterruptValue = {
   kind: PRODUCTION_CONFIRM_INTERRUPT_KIND,
   title: "开始创作",
   message:
-    "方案已就绪，即将进入制作环节。AI 团队会按计划执行各项任务，过程可能需要几分钟。确认开始吗？",
+    "方案已就绪，即将进入制作环节。AI 团队会按计划依次执行多个步骤，通常需要数分钟，并会消耗较多 Token，请保持页面打开。确认开始吗？",
 };
 
 export async function confirmProductionTurnNode(
   state: AgentStateType,
 ): Promise<AgentStatePatch> {
-  if (getActiveTurnKind(state) !== "production") return {};
+  const isProductionConfirm =
+    getActiveTurnKind(state) === "production" ||
+    getTurnQueue(state)[0] === "production";
+  if (!isProductionConfirm) return {};
 
   const decision = interrupt<
     ProductionConfirmInterruptValue,

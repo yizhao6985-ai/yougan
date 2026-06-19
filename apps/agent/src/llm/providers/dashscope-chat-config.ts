@@ -11,7 +11,9 @@ const USAGE_STREAM_OPTIONS = {
   stream_options: { include_usage: true },
 } as const;
 
-export function resolveDashScopeChatFamily(modelId: string): DashScopeChatFamily {
+export function resolveDashScopeChatFamily(
+  modelId: string,
+): DashScopeChatFamily {
   const normalized = modelId.toLowerCase();
   if (normalized.includes("omni")) return "omni";
   if (normalized.startsWith("glm") || normalized.includes("/glm")) {

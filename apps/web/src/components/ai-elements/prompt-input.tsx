@@ -1089,6 +1089,8 @@ export const PromptInputActionMenuItem = ({
 export type PromptInputSubmitProps = ComponentProps<typeof InputGroupButton> & {
   status?: ChatStatus;
   onStop?: () => void;
+  sendTooltip?: PromptInputButtonTooltip;
+  stopTooltip?: PromptInputButtonTooltip;
 };
 
 export const PromptInputSubmit = ({
@@ -1097,11 +1099,14 @@ export const PromptInputSubmit = ({
   size = "icon-sm",
   status,
   onStop,
+  sendTooltip,
+  stopTooltip,
   onClick,
   children,
   ...props
 }: PromptInputSubmitProps) => {
   const isGenerating = status === "submitted" || status === "streaming";
+  const canStop = isGenerating && Boolean(onStop);
 
   let Icon = <CornerDownLeftIcon className="size-4" />;
 
@@ -1115,28 +1120,65 @@ export const PromptInputSubmit = ({
 
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
-      if (isGenerating && onStop) {
+      if (canStop) {
         e.preventDefault();
-        onStop();
+        onStop?.();
         return;
       }
       onClick?.(e);
     },
-    [isGenerating, onStop, onClick],
+    [canStop, onStop, onClick],
   );
 
-  return (
+  const activeTooltip = canStop
+    ? stopTooltip
+    : isGenerating
+      ? undefined
+      : sendTooltip;
+  const ariaLabel =
+    typeof activeTooltip === "string"
+      ? activeTooltip
+      : typeof activeTooltip?.content === "string"
+        ? activeTooltip.content
+        : canStop
+          ? "Stop"
+          : "Submit";
+
+  const button = (
     <InputGroupButton
-      aria-label={isGenerating ? "Stop" : "Submit"}
+      aria-label={ariaLabel}
       className={cn(className)}
       onClick={handleClick}
       size={size}
-      type={isGenerating && onStop ? "button" : "submit"}
+      type={canStop ? "button" : "submit"}
       variant={variant}
       {...props}
     >
       {children ?? Icon}
     </InputGroupButton>
+  );
+
+  if (!activeTooltip) {
+    return button;
+  }
+
+  const tooltipContent =
+    typeof activeTooltip === "string" ? activeTooltip : activeTooltip.content;
+  const shortcut =
+    typeof activeTooltip === "string" ? undefined : activeTooltip.shortcut;
+  const side =
+    typeof activeTooltip === "string" ? "top" : (activeTooltip.side ?? "top");
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{button}</TooltipTrigger>
+      <TooltipContent side={side} sideOffset={6} collisionPadding={12}>
+        {tooltipContent}
+        {shortcut ? (
+          <span className="ml-2 text-muted-foreground">{shortcut}</span>
+        ) : null}
+      </TooltipContent>
+    </Tooltip>
   );
 };
 

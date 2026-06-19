@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useBoolean, useLatest, useMemoizedFn } from "ahooks";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import type { Client, Message } from "@langchain/langgraph-sdk";
@@ -34,6 +35,7 @@ import {
   fallbackConversationTitleFromText,
   isDefaultConversationTitle,
   type ProductionConfirmDecision,
+  type ProductionConfirmInterruptValue,
 } from "@yougan/domain";
 import {
   aiUsageFromThreadState,
@@ -44,7 +46,11 @@ import {
   isRunProgressCustomPayload,
   pickRunProgress,
 } from "@/lib/run-progress";
-import { getProductionConfirmInterrupt } from "@/lib/production-confirm-interrupt";
+import {
+  getProductionConfirmInterruptFromThreadState,
+  hasProductionConfirmInterrupt,
+  resolveProductionConfirmInterrupt,
+} from "@/lib/production-confirm-interrupt";
 import { useAuthToken } from "@/store/auth";
 import { patchConversationsCache } from "@/hooks/queries/conversations";
 
@@ -60,6 +66,13 @@ const SUBMIT_OPTIONS = {
   /** 连接意外断开时服务端继续执行；用户取消走 runs.cancel + updateState（proxy 响应含 aiUsage） */
   onDisconnect: "continue" as const,
   /** 保留 SSE 事件缓冲，供 joinStream 断点续传 */
+  streamResumable: true as const,
+};
+
+/** interrupt resume：勿用 multitaskStrategy interrupt，避免与 checkpoint 上的 HITL 冲突 */
+const RESUME_PRODUCTION_CONFIRM_OPTIONS = {
+  streamMode: [...LANGGRAPH_STREAM_MODE],
+  onDisconnect: "continue" as const,
   streamResumable: true as const,
 };
 
@@ -109,6 +122,14 @@ async function syncThreadHeadAfterRejoin(
   onRunComplete?.(workId, values);
 }
 
+async function syncProductionConfirmInterruptFromThread(
+  client: Client,
+  threadId: string,
+): Promise<ProductionConfirmInterruptValue | null> {
+  const state = await client.threads.getState(threadId);
+  return getProductionConfirmInterruptFromThreadState(state);
+}
+
 export function useYouganStream({
   work,
   conversation,
@@ -122,23 +143,31 @@ export function useYouganStream({
   const conversationId = conversation?.id ?? null;
   const token = useAuthToken();
 
-  const onRunCompleteRef = useRef(onRunComplete);
-  onRunCompleteRef.current = onRunComplete;
-
-  const onThreadIdRef = useRef(onThreadId);
-  onThreadIdRef.current = onThreadId;
+  const onRunCompleteRef = useLatest(onRunComplete);
+  const onThreadIdRef = useLatest(onThreadId);
 
   const cancelInFlightRef = useRef<Promise<void> | null>(null);
-  const [isCancelling, setIsCancelling] = useState(false);
-  const [isResumingInterrupt, setIsResumingInterrupt] = useState(false);
+  const [isCancelling, { setTrue: startCancelling, setFalse: finishCancelling }] =
+    useBoolean(false);
+  const [
+    isResumingInterrupt,
+    { setTrue: startResumingInterrupt, setFalse: finishResumingInterrupt },
+  ] = useBoolean(false);
   /** cancel finalize 后合并到 stream.values，直至下次 submit 或 thread 重载 */
   const [postCancelValues, setPostCancelValues] =
     useState<Partial<YouganValues> | null>(null);
   const [liveRunProgress, setLiveRunProgress] = useState<RunProgress | null>(
     null,
   );
-  const [isJoiningRun, setIsJoiningRun] = useState(false);
-  const [isRepairingStaleTurn, setIsRepairingStaleTurn] = useState(false);
+  const [isJoiningRun, { setTrue: startJoiningRun, setFalse: finishJoiningRun }] =
+    useBoolean(false);
+  const [
+    isRepairingStaleTurn,
+    { setTrue: startRepairingStaleTurn, setFalse: finishRepairingStaleTurn },
+  ] = useBoolean(false);
+  /** 刷新后从 getState 恢复的 production 确认 interrupt（stream.interrupt 可能短暂为空） */
+  const [persistedProductionConfirmInterrupt, setPersistedProductionConfirmInterrupt] =
+    useState<ProductionConfirmInterruptValue | null>(null);
   /** reconnect / runs.list 已完成，可区分「服务端仍在跑」与「checkpoint 脏态」 */
   const [runDiscoverySettled, setRunDiscoverySettled] = useState(false);
   const reconnectAttemptRef = useRef<string | null>(null);
@@ -283,6 +312,10 @@ export function useYouganStream({
       try {
         const run = await stream.client.runs.get(threadId, storedRunId);
         if (cancelled || isActiveLangGraphRunStatus(run.status)) return;
+        if (run.status === "interrupted") {
+          clearActiveLangGraphRunId(threadId);
+          return;
+        }
       } catch {
         if (cancelled) return;
       }
@@ -310,27 +343,56 @@ export function useYouganStream({
       if (cancelled) return;
 
       if (runId && !stream.isLoading) {
-        pendingRejoinSyncRef.current = true;
-        setIsJoiningRun(true);
         try {
-          await stream.joinStream(runId, "-1", {
-            streamMode: [...LANGGRAPH_STREAM_MODE],
-          });
+          const run = await stream.client.runs.get(threadId, runId);
+          if (cancelled) return;
+
+          if (run.status === "interrupted") {
+            clearActiveLangGraphRunId(threadId);
+            const interrupt = await syncProductionConfirmInterruptFromThread(
+              stream.client,
+              threadId,
+            );
+            if (!cancelled) {
+              setPersistedProductionConfirmInterrupt(interrupt);
+            }
+          } else {
+            pendingRejoinSyncRef.current = true;
+            startJoiningRun();
+            try {
+              await stream.joinStream(runId, "-1", {
+                streamMode: [...LANGGRAPH_STREAM_MODE],
+              });
+            } catch (error) {
+              if (isLangGraphThreadMissingError(error)) {
+                console.warn(
+                  "[yougan] stale thread id during join, clearing",
+                  threadId,
+                );
+                if (conversationId) {
+                  void onThreadIdRef.current?.(conversationId, null);
+                }
+              } else {
+                console.error("[yougan] join stream failed", error);
+              }
+              clearActiveLangGraphRunId(threadId);
+            } finally {
+              if (!cancelled) finishJoiningRun();
+            }
+          }
         } catch (error) {
           if (isLangGraphThreadMissingError(error)) {
             console.warn(
-              "[yougan] stale thread id during join, clearing",
+              "[yougan] stale thread id during run discovery, clearing",
               threadId,
             );
             if (conversationId) {
               void onThreadIdRef.current?.(conversationId, null);
             }
           } else {
-            console.error("[yougan] join stream failed", error);
+            console.error("[yougan] run discovery failed", error);
           }
           clearActiveLangGraphRunId(threadId);
-        } finally {
-          if (!cancelled) setIsJoiningRun(false);
         }
       }
 
@@ -356,10 +418,36 @@ export function useYouganStream({
     reconnectAttemptRef.current = null;
     pendingRejoinSyncRef.current = false;
     wasStreamBusyRef.current = false;
-    setIsRepairingStaleTurn(false);
+    finishRepairingStaleTurn();
     repairInFlightRef.current = null;
+    setPersistedProductionConfirmInterrupt(null);
     setRunDiscoverySettled(!threadId);
-  }, [threadId]);
+  }, [finishRepairingStaleTurn, threadId]);
+
+  /** thread head 就绪后，从 getState 恢复 HITL interrupt（SDK 在 isLoading 时会清空 interrupt） */
+  useEffect(() => {
+    if (!threadId || stream.isThreadLoading) return;
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const interrupt = await syncProductionConfirmInterruptFromThread(
+          stream.client,
+          threadId,
+        );
+        if (cancelled) return;
+        setPersistedProductionConfirmInterrupt(interrupt);
+      } catch (error) {
+        if (!isLangGraphThreadMissingError(error)) {
+          console.error("[yougan] sync production confirm interrupt failed", error);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [stream.client, stream.isThreadLoading, threadId]);
 
   const mergedStreamValues = useMemo((): YouganValues | undefined => {
     const base = stream.values as YouganValues | undefined;
@@ -367,9 +455,18 @@ export function useYouganStream({
     return { ...(base ?? {}), ...postCancelValues } as YouganValues;
   }, [postCancelValues, stream.values]);
 
-  const repairStaleTurnIfNeeded = useCallback(async () => {
+  const repairStaleTurnIfNeeded = useMemoizedFn(async () => {
     if (!threadId || isCancelling || stream.isLoading || isJoiningRun) return;
+    if (stream.isThreadLoading) return;
     if (getActiveLangGraphRunId(threadId)) return;
+    if (
+      hasProductionConfirmInterrupt(
+        stream.interrupt,
+        persistedProductionConfirmInterrupt,
+      )
+    ) {
+      return;
+    }
     if (!isTurnInFlight(mergedStreamValues)) return;
 
     if (repairInFlightRef.current) {
@@ -378,7 +475,7 @@ export function useYouganStream({
     }
 
     const repair = (async () => {
-      setIsRepairingStaleTurn(true);
+      startRepairingStaleTurn();
       const repairPatch = buildTurnFinalizePatch(
         mergedStreamValues,
         stream.messages,
@@ -398,7 +495,7 @@ export function useYouganStream({
       } catch (error) {
         console.error("[yougan] repair stale turn failed", error);
       } finally {
-        setIsRepairingStaleTurn(false);
+        finishRepairingStaleTurn();
       }
     })();
 
@@ -410,21 +507,13 @@ export function useYouganStream({
         repairInFlightRef.current = null;
       }
     }
-  }, [
-    isCancelling,
-    isJoiningRun,
-    mergedStreamValues,
-    queryClient,
-    stream.client,
-    stream.isLoading,
-    stream.messages,
-    threadId,
-  ]);
+  });
 
   /** run 已结束但 checkpoint 仍留 queue/activeKind/runProgress 时清理 */
   useEffect(() => {
     if (!threadId || !runDiscoverySettled || isCancelling) return;
     if (stream.isLoading || isJoiningRun || isRepairingStaleTurn) return;
+    if (stream.isThreadLoading) return;
     if (getActiveLangGraphRunId(threadId)) return;
     if (!isTurnInFlight(mergedStreamValues)) return;
 
@@ -436,7 +525,9 @@ export function useYouganStream({
     mergedStreamValues,
     repairStaleTurnIfNeeded,
     runDiscoverySettled,
+    stream.interrupt,
     stream.isLoading,
+    stream.isThreadLoading,
     threadId,
   ]);
 
@@ -448,17 +539,21 @@ export function useYouganStream({
     isJoiningRun ||
     isRepairingStaleTurn ||
     hasStoredActiveRun ||
+    hasProductionConfirmInterrupt(
+      stream.interrupt,
+      persistedProductionConfirmInterrupt,
+    ) ||
     (!runDiscoverySettled && isTurnInFlight(mergedStreamValues));
 
   const isStreamBusy = stream.isLoading || isJoiningRun;
 
-  const awaitCancelIfInFlight = useCallback(async () => {
+  const awaitCancelIfInFlight = useMemoizedFn(async () => {
     if (cancelInFlightRef.current) {
       await cancelInFlightRef.current;
     }
-  }, []);
+  });
 
-  const submitOpeningBootstrap = useCallback(async () => {
+  const submitOpeningBootstrap = useMemoizedFn(async () => {
     if (!work || !conversation || !token) return;
     if (stream.messages.length > 0) return;
     if (hasActiveRun) return;
@@ -471,15 +566,7 @@ export function useYouganStream({
       buildStreamSubmitInput(work, conversation, modelTemperature),
       SUBMIT_OPTIONS,
     );
-  }, [
-    awaitCancelIfInFlight,
-    conversation,
-    hasActiveRun,
-    modelTemperature,
-    stream,
-    token,
-    work,
-  ]);
+  });
 
   const openingBootstrapQuery = useOpeningBootstrapQuery({
     work,
@@ -493,11 +580,16 @@ export function useYouganStream({
   });
 
   const canCancelActiveTurn = useMemo(
-    () => !isProductionTurnActive(mergedStreamValues),
-    [mergedStreamValues],
+    () =>
+      !isProductionTurnActive(mergedStreamValues) &&
+      !hasProductionConfirmInterrupt(
+        stream.interrupt,
+        persistedProductionConfirmInterrupt,
+      ),
+    [mergedStreamValues, persistedProductionConfirmInterrupt, stream.interrupt],
   );
 
-  const cancelActiveTurn = useCallback(async () => {
+  const cancelActiveTurn = useMemoizedFn(async () => {
     if (isCancelling || !canCancelActiveTurn) return;
     const values = stream.values as YouganValues | undefined;
     const canCancel =
@@ -512,7 +604,7 @@ export function useYouganStream({
     }
 
     const run = (async () => {
-      setIsCancelling(true);
+      startCancelling();
 
       const cancelPatch = buildTurnFinalizePatch(
         stream.values as YouganValues,
@@ -574,20 +666,11 @@ export function useYouganStream({
       if (cancelInFlightRef.current === run) {
         cancelInFlightRef.current = null;
       }
-      setIsCancelling(false);
+      finishCancelling();
     }
-  }, [
-    canCancelActiveTurn,
-    conversationId,
-    isCancelling,
-    isStreamBusy,
-    queryClient,
-    stream,
-    threadId,
-    workId,
-  ]);
+  });
 
-  const sendMessage = useCallback(
+  const sendMessage = useMemoizedFn(
     async (
       text: string,
       attachments: Parameters<typeof buildSubmitHumanMessage>[1] = [],
@@ -623,41 +706,45 @@ export function useYouganStream({
         SUBMIT_OPTIONS,
       );
     },
-    [
-      awaitCancelIfInFlight,
-      conversation,
-      modelTemperature,
-      queryClient,
-      stream,
-      work,
-    ],
   );
 
-  const resumeProductionConfirm = useCallback(
+  const resumeProductionConfirm = useMemoizedFn(
     async (decision: ProductionConfirmDecision) => {
       if (isResumingInterrupt) return;
-      setIsResumingInterrupt(true);
+      startResumingInterrupt();
       setLiveRunProgress(null);
       try {
         await stream.submit(null, {
-          ...SUBMIT_OPTIONS,
+          ...RESUME_PRODUCTION_CONFIRM_OPTIONS,
           command: { resume: decision },
         });
+        setPersistedProductionConfirmInterrupt(null);
       } finally {
-        setIsResumingInterrupt(false);
+        finishResumingInterrupt();
       }
     },
-    [isResumingInterrupt, stream],
   );
 
   const productionConfirmInterrupt = useMemo(
-    () => getProductionConfirmInterrupt(stream.interrupt),
-    [stream.interrupt],
+    () =>
+      resolveProductionConfirmInterrupt(
+        stream.interrupt,
+        persistedProductionConfirmInterrupt,
+      ),
+    [persistedProductionConfirmInterrupt, stream.interrupt],
   );
 
+  const isAwaitingProductionConfirm = productionConfirmInterrupt != null;
+
+  /** interrupt 等待用户确认时 run 已结束，勿保留 sessionStorage，避免刷新后 SDK 误 join */
+  useEffect(() => {
+    if (!threadId || !isAwaitingProductionConfirm || stream.isLoading) return;
+    clearActiveLangGraphRunId(threadId);
+  }, [isAwaitingProductionConfirm, stream.isLoading, threadId]);
+
   const hasLiveProductionConfirm =
-    productionConfirmInterrupt != null &&
-    (stream.isLoading || isJoiningRun || hasStoredActiveRun);
+    isAwaitingProductionConfirm &&
+    (stream.isLoading || isJoiningRun || hasStoredActiveRun || isResumingInterrupt);
 
   const canChat = Boolean(work && conversation && token);
   const usageExceeded = mergedStreamValues?.aiUsage?.usageExceeded ?? false;
@@ -666,7 +753,8 @@ export function useYouganStream({
     !usageExceeded &&
     !hasActiveRun &&
     !isCancelling &&
-    !hasLiveProductionConfirm;
+    !isAwaitingProductionConfirm &&
+    !isResumingInterrupt;
 
   const hasOpeningSuggestions =
     (mergedStreamValues?.nextStepSuggestions?.suggestions?.length ?? 0) > 0;

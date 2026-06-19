@@ -23,8 +23,7 @@ export const scene = {
   studioPanelHeader:
     "flex min-h-[4.75rem] shrink-0 flex-col justify-center border-b border-border/80 bg-card/70 px-4 py-3 backdrop-blur",
   studioPanelHeaderTitle: "font-medium leading-5 text-foreground",
-  studioPanelHeaderHint:
-    "line-clamp-2 text-xs leading-4 text-muted-foreground",
+  studioPanelHeaderHint: "line-clamp-2 text-xs leading-5 text-muted-foreground",
 
   sidebar: "border-border/80 bg-secondary/35",
   sidebarSection: "space-y-2 border-b border-border/80 p-3",

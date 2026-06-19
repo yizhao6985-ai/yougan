@@ -13,7 +13,7 @@ function formatPreviewExcerpt(preview: WorkPreview): string {
   const plain = previewPlainText(preview, PREVIEW_EXCERPT_MAX);
   const title = preview.title?.trim();
   const titleBlock = title ? `**${title}**\n\n` : "";
-  return `${titleBlock}${plain || "（以配图/音视频为主）"}\n\n---\n完整成稿已同步到右侧「作品」面板，可复制或发布。`;
+  return `${titleBlock}${plain || "（以配图/音视频为主）"}\n\n---\n完整成稿已同步到右侧「作品」面板，可下载或发布。`;
 }
 
 /**

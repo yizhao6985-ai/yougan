@@ -67,7 +67,7 @@ export function ChatToolActivity({
             <p
               className={cn(
                 "mt-1 whitespace-pre-wrap wrap-break-word",
-                chatStreamBlock.muted,
+                chatStreamBlock.caption,
                 toolError && "text-destructive",
                 !expanded && "line-clamp-1",
               )}

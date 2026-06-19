@@ -5,7 +5,7 @@
  */
 export const DASHSCOPE_MODELS = {
   /** 主对话、结构化 work、tool calling */
-  chat: "qwen3.7-max-2026-05-17",
+  chat: "deepseek-v4-pro",
   /** 参考素材多模态分析 */
   multimodal: "qwen3.5-omni-flash-realtime",
   /** 设计任务文生图 */

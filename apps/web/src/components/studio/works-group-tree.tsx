@@ -34,6 +34,7 @@ type WorksGroupTreeProps = {
   onCreateWorkInGroup?: (groupId: string) => void;
   onRenameWork?: (workId: string, title: string) => void;
   onRenameGroup?: (groupId: string, title: string) => void;
+  onRenameConversation?: (conversationId: string, title: string) => void;
 };
 
 function WorkRow({
@@ -211,6 +212,7 @@ export function WorksGroupTree({
   onCreateWorkInGroup,
   onRenameWork,
   onRenameGroup,
+  onRenameConversation,
 }: WorksGroupTreeProps) {
   const { works, groups, activeWork, selectWork, deleteWork, deleteGroup } =
     useYouganStreamContext();
@@ -229,6 +231,7 @@ export function WorksGroupTree({
           work={work}
           isActive={activeWork?.id === work.id}
           onRename={() => onRenameWork?.(work.id, work.title)}
+          onRenameConversation={onRenameConversation}
           onDelete={() => void deleteWork(work.id)}
         />
       );

@@ -1,6 +1,11 @@
 import { Message, MessageContent } from "@/components/ai-elements/message";
 import { Button } from "@/components/ui/button";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   ChatStreamBlock,
   chatStreamBlock,
 } from "@/components/studio/chat-stream-block";
@@ -31,13 +36,10 @@ export function ProductionConfirmPrompt({
               className={cn(chatStreamBlock.headerDot, "bg-primary/70")}
               aria-hidden
             />
-            <div className="min-w-0 flex-1 space-y-2">
+            <div className="min-w-0 flex-1 space-y-1.5">
               <p className={chatStreamBlock.headerTitle}>{interrupt.title}</p>
-              <p className={cn(chatStreamBlock.body, "whitespace-pre-wrap")}>
+              <p className={cn(chatStreamBlock.caption, "whitespace-pre-wrap")}>
                 {interrupt.message}
-              </p>
-              <p className={chatStreamBlock.caption}>
-                {CHAT_COPY.productionConfirm.durationHint}
               </p>
             </div>
           </div>
@@ -47,25 +49,39 @@ export function ProductionConfirmPrompt({
               "flex flex-wrap items-center justify-end gap-1.5",
             )}
           >
-            <Button
-              type="button"
-              size="sm"
-              className="h-7 px-2.5 text-xs"
-              disabled={disabled}
-              onClick={() => void onConfirm()}
-            >
-              {CHAT_COPY.productionConfirm.confirm}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="h-7 px-2.5 text-xs"
-              disabled={disabled}
-              onClick={() => void onDecline()}
-            >
-              {CHAT_COPY.productionConfirm.decline}
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-7 px-2.5 text-xs"
+                  disabled={disabled}
+                  onClick={() => void onConfirm()}
+                >
+                  {CHAT_COPY.productionConfirm.confirm}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" sideOffset={6} collisionPadding={12}>
+                {CHAT_COPY.productionConfirm.confirmTooltip}
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-7 px-2.5 text-xs"
+                  disabled={disabled}
+                  onClick={() => void onDecline()}
+                >
+                  {CHAT_COPY.productionConfirm.decline}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" sideOffset={6} collisionPadding={12}>
+                {CHAT_COPY.productionConfirm.declineTooltip}
+              </TooltipContent>
+            </Tooltip>
           </div>
         </ChatStreamBlock>
       </MessageContent>

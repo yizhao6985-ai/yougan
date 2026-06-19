@@ -34,7 +34,7 @@ export function ChatRunProgress({
             <Shimmer className="text-foreground">{label}</Shimmer>
           </p>
           {trimmedDetail ? (
-            <p className={cn(chatStreamBlock.muted, "whitespace-pre-wrap")}>
+            <p className={cn(chatStreamBlock.caption, "whitespace-pre-wrap")}>
               {trimmedDetail}
             </p>
           ) : null}

@@ -3,7 +3,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useCallback } from "react";
+import { useMemoizedFn } from "ahooks";
 
 import { queryKeys } from "@/hooks/queries/keys";
 import type { WorkConversation } from "@/lib/types";
@@ -111,10 +111,10 @@ export function useDeleteWorkConversationMutation(workId: string | null) {
 export function useInvalidateWorkConversations(workId: string | null) {
   const queryClient = useQueryClient();
 
-  return useCallback(async () => {
+  return useMemoizedFn(async () => {
     if (!workId) return;
     await queryClient.invalidateQueries({
       queryKey: queryKeys.works.conversations(workId),
     });
-  }, [queryClient, workId]);
+  });
 }

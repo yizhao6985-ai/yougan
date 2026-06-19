@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useLatest, useMemoizedFn, useUnmount } from "ahooks";
+import { useState } from "react";
 import { inferMediaKind, type MediaKind } from "@yougan/domain";
 import { nanoid } from "nanoid";
 
@@ -37,43 +38,40 @@ function inferMediaKindFromFile(file: File): MediaKind {
   return "file";
 }
 
+function revokeBlobPreviewUrl(previewUrl: string) {
+  if (previewUrl.startsWith("blob:")) {
+    URL.revokeObjectURL(previewUrl);
+  }
+}
+
 export function useComposerAttachments() {
   const [items, setItems] = useState<ComposerAttachment[]>([]);
-  const itemsRef = useRef(items);
-  itemsRef.current = items;
+  const itemsRef = useLatest(items);
 
-  useEffect(() => {
-    return () => {
-      for (const item of itemsRef.current) {
-        if (item.previewUrl.startsWith("blob:")) {
-          URL.revokeObjectURL(item.previewUrl);
-        }
-      }
-    };
-  }, []);
+  useUnmount(() => {
+    for (const item of itemsRef.current) {
+      revokeBlobPreviewUrl(item.previewUrl);
+    }
+  });
 
-  const remove = useCallback((id: string) => {
+  const remove = useMemoizedFn((id: string) => {
     setItems((prev) => {
       const target = prev.find((item) => item.id === id);
-      if (target?.previewUrl.startsWith("blob:")) {
-        URL.revokeObjectURL(target.previewUrl);
-      }
+      if (target) revokeBlobPreviewUrl(target.previewUrl);
       return prev.filter((item) => item.id !== id);
     });
-  }, []);
+  });
 
-  const clear = useCallback(() => {
+  const clear = useMemoizedFn(() => {
     setItems((prev) => {
       for (const item of prev) {
-        if (item.previewUrl.startsWith("blob:")) {
-          URL.revokeObjectURL(item.previewUrl);
-        }
+        revokeBlobPreviewUrl(item.previewUrl);
       }
       return [];
     });
-  }, []);
+  });
 
-  const addFiles = useCallback(async (files: File[] | FileList) => {
+  const addFiles = useMemoizedFn(async (files: File[] | FileList) => {
     const incoming = [...files];
     if (incoming.length === 0) return;
 
@@ -129,17 +127,17 @@ export function useComposerAttachments() {
         );
       }
     }
-  }, []);
+  });
 
-  const readyAttachments = useCallback((): HumanAttachmentAsset[] => {
-    return items
+  const readyAttachments = useMemoizedFn((): HumanAttachmentAsset[] => {
+    return itemsRef.current
       .filter((item) => item.status === "ready" && item.url)
       .map((item) => ({
         url: item.url!,
         mime_type: item.mimeType,
         original_name: item.filename,
       }));
-  }, [items]);
+  });
 
   const hasUploading = items.some((item) => item.status === "uploading");
   const hasReady = items.some((item) => item.status === "ready");

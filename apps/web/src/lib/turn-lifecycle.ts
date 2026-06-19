@@ -10,6 +10,13 @@ const LANGGRAPH_STREAM_RUN_KEY_PREFIX = "lg:stream:";
 
 const ACTIVE_LANGGRAPH_RUN_STATUSES = new Set(["pending", "running"]);
 
+/** 仍可恢复/等待用户操作的 run（含 HITL interrupt） */
+const RESUMABLE_LANGGRAPH_RUN_STATUSES = new Set([
+  "pending",
+  "running",
+  "interrupted",
+]);
+
 /** 新 submit 前重置的回合运行时与验收产物 */
 export const TURN_EPHEMERAL_RESET: Pick<
   YouganValues,
@@ -34,6 +41,10 @@ export function isActiveLangGraphRunStatus(status: string): boolean {
   return ACTIVE_LANGGRAPH_RUN_STATUSES.has(status);
 }
 
+export function isResumableLangGraphRunStatus(status: string): boolean {
+  return RESUMABLE_LANGGRAPH_RUN_STATUSES.has(status);
+}
+
 /** LangGraph checkpoint 中不存在该 thread（常见：Agent 库重置后 conversation 仍保留 threadId） */
 export function isLangGraphThreadMissingError(error: unknown): boolean {
   const message =
@@ -54,7 +65,9 @@ export function isLangGraphThreadMissingError(error: unknown): boolean {
 export function isProductionTurnActive(
   values: YouganValues | null | undefined,
 ): boolean {
-  return values?.turn?.activeKind === "production";
+  const turn = values?.turn;
+  if (turn?.activeKind === "production") return true;
+  return turn?.queue[0] === "production";
 }
 
 /** checkpoint 是否表示回合仍在执行（非 committed / cancelled） */
@@ -74,7 +87,7 @@ export async function findResumableLangGraphRunId(
   if (storedRunId) {
     try {
       const run = await client.runs.get(threadId, storedRunId);
-      if (isActiveLangGraphRunStatus(run.status)) return storedRunId;
+      if (isResumableLangGraphRunStatus(run.status)) return storedRunId;
     } catch {
       // stale session entry
     }
@@ -82,7 +95,7 @@ export async function findResumableLangGraphRunId(
   }
 
   try {
-    for (const status of ["running", "pending"] as const) {
+    for (const status of ["interrupted", "running", "pending"] as const) {
       const runs = await client.runs.list(threadId, { status, limit: 1 });
       const runId = runs[0]?.run_id;
       if (runId) return runId;

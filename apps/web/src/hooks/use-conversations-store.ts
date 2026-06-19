@@ -1,6 +1,7 @@
-import { useCallback, useMemo } from "react";
-import { useAtom } from "jotai";
-import { atom } from "jotai";
+import { useLocalStorageState, useMemoizedFn } from "ahooks";
+import { useMemo } from "react";
+
+import { DEFAULT_CONVERSATION_TITLE } from "@yougan/domain";
 
 import {
   useCreateWorkConversationMutation,
@@ -11,43 +12,11 @@ import {
 import { ACTIVE_CONVERSATION_BY_WORK_KEY } from "@/lib/env";
 import type { WorkConversation } from "@/lib/types";
 
-function readActiveConversationMap(): Record<string, string> {
-  try {
-    const raw = localStorage.getItem(ACTIVE_CONVERSATION_BY_WORK_KEY);
-    if (!raw) return {};
-    const parsed: unknown = JSON.parse(raw);
-    if (!parsed || typeof parsed !== "object") return {};
-    return parsed as Record<string, string>;
-  } catch {
-    return {};
-  }
-}
-
-const activeConversationByWorkBaseAtom = atom(readActiveConversationMap());
-
-const activeConversationByWorkAtom = atom(
-  (get) => get(activeConversationByWorkBaseAtom),
-  (
-    get,
-    set,
-    update:
-      | Record<string, string>
-      | ((prev: Record<string, string>) => Record<string, string>),
-  ) => {
-    const prev = get(activeConversationByWorkBaseAtom);
-    const next = typeof update === "function" ? update(prev) : update;
-    localStorage.setItem(
-      ACTIVE_CONVERSATION_BY_WORK_KEY,
-      JSON.stringify(next),
-    );
-    set(activeConversationByWorkBaseAtom, next);
-  },
-);
-
 export function useConversationsStore(workId: string | null) {
-  const [activeConversationMap, setActiveConversationMap] = useAtom(
-    activeConversationByWorkAtom,
-  );
+  const [activeConversationMap, setActiveConversationMap] =
+    useLocalStorageState<Record<string, string>>(ACTIVE_CONVERSATION_BY_WORK_KEY, {
+      defaultValue: {},
+    });
   const conversationsQuery = useWorkConversationsQuery(workId);
   const createConversationMutation = useCreateWorkConversationMutation(workId);
   const updateConversationMutation = useUpdateWorkConversationMutation(workId);
@@ -55,7 +24,7 @@ export function useConversationsStore(workId: string | null) {
 
   const conversations = conversationsQuery.data ?? [];
   const activeConversationId = workId
-    ? (activeConversationMap[workId] ?? null)
+    ? (activeConversationMap?.[workId] ?? null)
     : null;
 
   const activeConversation = useMemo(() => {
@@ -75,18 +44,15 @@ export function useConversationsStore(workId: string | null) {
     return conversations[0] ?? null;
   }, [activeConversationId, conversations]);
 
-  const selectConversation = useCallback(
-    (conversationId: string) => {
-      if (!workId) return;
-      setActiveConversationMap((prev) => ({
-        ...prev,
-        [workId]: conversationId,
-      }));
-    },
-    [setActiveConversationMap, workId],
-  );
+  const selectConversation = useMemoizedFn((conversationId: string) => {
+    if (!workId) return;
+    setActiveConversationMap((prev) => ({
+      ...(prev ?? {}),
+      [workId]: conversationId,
+    }));
+  });
 
-  const createConversation = useCallback(
+  const createConversation = useMemoizedFn(
     async (options?: { title?: string }) => {
       const { conversation } = await createConversationMutation.mutateAsync(
         options,
@@ -97,16 +63,15 @@ export function useConversationsStore(workId: string | null) {
       };
       if (workId) {
         setActiveConversationMap((prev) => ({
-          ...prev,
+          ...(prev ?? {}),
           [workId]: normalized.id,
         }));
       }
       return normalized;
     },
-    [createConversationMutation, setActiveConversationMap, workId],
   );
 
-  const setConversationThreadId = useCallback(
+  const setConversationThreadId = useMemoizedFn(
     async (conversationId: string, threadId: string | null) => {
       if (!workId) return;
       await updateConversationMutation.mutateAsync({
@@ -114,30 +79,33 @@ export function useConversationsStore(workId: string | null) {
         patch: { threadId },
       });
     },
-    [updateConversationMutation, workId],
   );
 
-  const deleteConversation = useCallback(
-    async (conversationId: string) => {
+  const deleteConversation = useMemoizedFn(async (conversationId: string) => {
+    if (!workId) return;
+    await deleteConversationMutation.mutateAsync(conversationId);
+    setActiveConversationMap((prev) => {
+      const current = prev ?? {};
+      if (current[workId] !== conversationId) return current;
+      const remaining = conversations.filter(
+        (item) => item.id !== conversationId,
+      );
+      const next = { ...current };
+      if (remaining[0]) next[workId] = remaining[0].id;
+      else delete next[workId];
+      return next;
+    });
+  });
+
+  const renameConversation = useMemoizedFn(
+    async (conversationId: string, title: string) => {
       if (!workId) return;
-      await deleteConversationMutation.mutateAsync(conversationId);
-      setActiveConversationMap((prev) => {
-        if (prev[workId] !== conversationId) return prev;
-        const remaining = conversations.filter(
-          (item) => item.id !== conversationId,
-        );
-        const next = { ...prev };
-        if (remaining[0]) next[workId] = remaining[0].id;
-        else delete next[workId];
-        return next;
+      const normalized = title.trim() || DEFAULT_CONVERSATION_TITLE;
+      await updateConversationMutation.mutateAsync({
+        conversationId,
+        patch: { title: normalized },
       });
     },
-    [
-      conversations,
-      deleteConversationMutation,
-      setActiveConversationMap,
-      workId,
-    ],
   );
 
   return {
@@ -148,6 +116,7 @@ export function useConversationsStore(workId: string | null) {
     createConversation,
     setConversationThreadId,
     deleteConversation,
+    renameConversation,
   };
 }
 

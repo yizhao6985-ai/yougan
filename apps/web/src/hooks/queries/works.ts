@@ -3,7 +3,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useCallback } from "react";
+import { useMemoizedFn } from "ahooks";
 
 import { queryKeys } from "@/hooks/queries/keys";
 import { normalizeWork } from "@/lib/normalize-work";
@@ -164,10 +164,10 @@ export function useUpdateWorkMutation() {
 export function useInvalidateWorksQueries() {
   const queryClient = useQueryClient();
 
-  return useCallback(async () => {
+  return useMemoizedFn(async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: queryKeys.works.all }),
       queryClient.invalidateQueries({ queryKey: queryKeys.workGroups.all }),
     ]);
-  }, [queryClient]);
+  });
 }

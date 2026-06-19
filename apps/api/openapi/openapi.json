@@ -143,158 +143,29 @@
       "WorkProfile": {
         "type": "object",
         "properties": {
-          "intent": {
+          "direction": {
             "type": "object",
             "properties": {
               "summary": {
                 "type": "string"
-              }
-            },
-            "required": [
-              "summary"
-            ]
-          },
-          "delivery": {
-            "type": "object",
-            "properties": {
+              },
               "format": {
                 "type": "string",
                 "nullable": true
               },
-              "modalities": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              "platform": {
-                "type": "string",
-                "nullable": true
-              },
-              "category": {
-                "type": "string",
-                "nullable": true
-              },
-              "params": {
-                "oneOf": [
-                  {
-                    "type": "object",
-                    "properties": {
-                      "kind": {
-                        "type": "string",
-                        "enum": [
-                          "text"
-                        ]
-                      },
-                      "word_count": {
-                        "type": "object",
-                        "properties": {
-                          "min": {
-                            "type": "number"
-                          },
-                          "max": {
-                            "type": "number"
-                          }
-                        }
-                      },
-                      "emoji_level": {
-                        "type": "string",
-                        "enum": [
-                          "none",
-                          "light",
-                          "heavy"
-                        ]
-                      }
-                    },
-                    "required": [
-                      "kind"
-                    ]
-                  },
-                  {
-                    "type": "object",
-                    "properties": {
-                      "kind": {
-                        "type": "string",
-                        "enum": [
-                          "illustration"
-                        ]
-                      },
-                      "aspect_ratio": {
-                        "type": "string"
-                      },
-                      "image_count": {
-                        "type": "number"
-                      },
-                      "negative_hints": {
-                        "type": "array",
-                        "items": {
-                          "type": "string"
-                        }
-                      }
-                    },
-                    "required": [
-                      "kind"
-                    ]
-                  },
-                  {
-                    "type": "object",
-                    "properties": {
-                      "kind": {
-                        "type": "string",
-                        "enum": [
-                          "video"
-                        ]
-                      },
-                      "duration_sec": {
-                        "type": "number"
-                      },
-                      "aspect_ratio": {
-                        "type": "string"
-                      },
-                      "pacing": {
-                        "type": "string"
-                      }
-                    },
-                    "required": [
-                      "kind"
-                    ]
-                  },
-                  {
-                    "type": "object",
-                    "properties": {
-                      "kind": {
-                        "type": "string",
-                        "enum": [
-                          "audio"
-                        ]
-                      },
-                      "duration_sec": {
-                        "type": "number"
-                      },
-                      "segment_count": {
-                        "type": "number"
-                      }
-                    },
-                    "required": [
-                      "kind"
-                    ]
-                  }
-                ]
-              }
-            },
-            "required": [
-              "format",
-              "modalities",
-              "params"
-            ]
-          },
-          "expression": {
-            "type": "object",
-            "properties": {
               "audience": {
                 "type": "string",
                 "nullable": true
-              },
+              }
+            },
+            "required": [
+              "summary",
+              "format"
+            ]
+          },
+          "style": {
+            "type": "object",
+            "properties": {
               "verbal": {
                 "type": "string",
                 "nullable": true
@@ -305,128 +176,70 @@
               }
             }
           },
-          "structure": {
-            "type": "object",
-            "properties": {
-              "settings": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string"
-                    },
-                    "confirmed_at": {
-                      "type": "string"
-                    },
-                    "kind": {
-                      "type": "string",
-                      "enum": [
-                        "character",
-                        "world",
-                        "other"
-                      ]
-                    },
-                    "title": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "description": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "confirmed_at",
-                    "kind",
-                    "description"
-                  ]
+          "context": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "spec": {
+                  "type": "string"
                 }
               },
-              "segments": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string"
-                    },
-                    "confirmed_at": {
-                      "type": "string"
-                    },
-                    "role": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "title": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "description": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "confirmed_at",
-                    "description"
-                  ]
-                }
-              }
-            },
-            "required": [
-              "settings",
-              "segments"
-            ]
+              "required": [
+                "id",
+                "spec"
+              ]
+            }
           },
-          "constraints": {
-            "type": "object",
-            "properties": {
-              "rules": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string"
-                    },
-                    "description": {
-                      "type": "string"
-                    },
-                    "scope": {
-                      "type": "string",
-                      "enum": [
-                        "all",
-                        "verbal",
-                        "visual",
-                        "audio",
-                        "video"
-                      ]
-                    },
-                    "confirmed_at": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "description",
-                    "scope",
-                    "confirmed_at"
-                  ]
+          "sequence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "spec": {
+                  "type": "string"
+                },
+                "role": {
+                  "type": "string",
+                  "nullable": true
                 }
-              }
-            },
-            "required": [
-              "rules"
-            ]
+              },
+              "required": [
+                "id",
+                "spec"
+              ]
+            }
+          },
+          "bounds": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "spec": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "spec"
+              ]
+            }
           }
         },
         "required": [
-          "intent",
-          "delivery",
-          "expression",
-          "structure",
-          "constraints"
+          "direction",
+          "context",
+          "sequence",
+          "bounds"
         ]
       },
       "Asset": {
@@ -539,19 +352,164 @@
           "$ref": "#/components/schemas/WorkReference"
         }
       },
+      "PreviewBlock": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "taskId": {
+                "type": "string",
+                "nullable": true
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "text"
+                ]
+              },
+              "markdown": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "type",
+              "markdown"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "taskId": {
+                "type": "string",
+                "nullable": true
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "image"
+                ]
+              },
+              "url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "alt": {
+                "type": "string",
+                "nullable": true
+              },
+              "prompt": {
+                "type": "string",
+                "nullable": true
+              },
+              "transient": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "type",
+              "url"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "taskId": {
+                "type": "string",
+                "nullable": true
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "audio"
+                ]
+              },
+              "url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "title": {
+                "type": "string",
+                "nullable": true
+              },
+              "durationSec": {
+                "type": "number",
+                "nullable": true
+              },
+              "transcript": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "id",
+              "type",
+              "url"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "taskId": {
+                "type": "string",
+                "nullable": true
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "video"
+                ]
+              },
+              "url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "posterUrl": {
+                "type": "string",
+                "nullable": true,
+                "format": "uri"
+              },
+              "title": {
+                "type": "string",
+                "nullable": true
+              },
+              "durationSec": {
+                "type": "number",
+                "nullable": true
+              }
+            },
+            "required": [
+              "id",
+              "type",
+              "url"
+            ]
+          }
+        ]
+      },
       "WorkPreview": {
         "type": "object",
         "nullable": true,
         "properties": {
-          "platform": {
-            "type": "string"
-          },
           "title": {
             "type": "string",
             "nullable": true
           },
-          "body": {
-            "type": "string"
+          "hook": {
+            "type": "string",
+            "nullable": true
           },
           "hashtags": {
             "type": "array",
@@ -559,41 +517,20 @@
               "type": "string"
             }
           },
-          "hook": {
-            "type": "string",
-            "nullable": true
-          },
           "notes": {
             "type": "string",
             "nullable": true
           },
-          "images": {
+          "blocks": {
             "type": "array",
             "items": {
-              "type": "object",
-              "properties": {
-                "url": {
-                  "type": "string",
-                  "format": "uri"
-                },
-                "alt": {
-                  "type": "string",
-                  "nullable": true
-                },
-                "prompt": {
-                  "type": "string",
-                  "nullable": true
-                }
-              },
-              "required": [
-                "url"
-              ]
-            }
+              "$ref": "#/components/schemas/PreviewBlock"
+            },
+            "minItems": 1
           }
         },
         "required": [
-          "platform",
-          "body"
+          "blocks"
         ]
       },
       "WorkProduction": {
@@ -657,6 +594,32 @@
                     "notes": {
                       "type": "string",
                       "nullable": true
+                    },
+                    "images": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "url": {
+                            "type": "string",
+                            "format": "uri"
+                          },
+                          "alt": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "prompt": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "transient": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "url"
+                        ]
+                      }
                     }
                   },
                   "required": [

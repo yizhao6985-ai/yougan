@@ -1163,20 +1163,16 @@ export interface components {
             created_at: string;
         };
         WorkReferences: components["schemas"]["WorkReference"][];
-        WorkPreview: {
-            title?: string | null;
-            hook?: string | null;
-            hashtags?: string[];
-            notes?: string | null;
-            blocks: components["schemas"]["PreviewBlock"][];
-        } | null;
         PreviewBlock: {
             id: string;
             taskId?: string | null;
-        } & ({
+            /** @enum {string} */
             type: "text";
             markdown: string;
         } | {
+            id: string;
+            taskId?: string | null;
+            /** @enum {string} */
             type: "image";
             /** Format: uri */
             url: string;
@@ -1184,6 +1180,9 @@ export interface components {
             prompt?: string | null;
             transient?: boolean;
         } | {
+            id: string;
+            taskId?: string | null;
+            /** @enum {string} */
             type: "audio";
             /** Format: uri */
             url: string;
@@ -1191,13 +1190,24 @@ export interface components {
             durationSec?: number | null;
             transcript?: string | null;
         } | {
+            id: string;
+            taskId?: string | null;
+            /** @enum {string} */
             type: "video";
             /** Format: uri */
             url: string;
+            /** Format: uri */
             posterUrl?: string | null;
             title?: string | null;
             durationSec?: number | null;
-        });
+        };
+        WorkPreview: {
+            title?: string | null;
+            hook?: string | null;
+            hashtags?: string[];
+            notes?: string | null;
+            blocks: components["schemas"]["PreviewBlock"][];
+        } | null;
         WorkProduction: {
             pending_tasks: {
                 id: string;

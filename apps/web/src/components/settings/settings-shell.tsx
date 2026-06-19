@@ -27,8 +27,7 @@ export function SettingsUserStrip() {
   };
   const isPaid =
     subscription?.planId === "pro" ||
-    subscription?.planId === "pro_plus" ||
-    subscription?.planId === "creator";
+    subscription?.planId === "pro_plus";
 
   return (
     <section className={cn(scene.surface, "p-5 sm:p-6")}>
@@ -44,8 +43,7 @@ export function SettingsUserStrip() {
                 <Badge variant={isPaid ? "default" : "secondary"}>
                   {subscription.planId === "pro_plus"
                     ? MEMBERSHIP.proPlusBadge
-                    : subscription.planId === "pro" ||
-                        subscription.planId === "creator"
+                    : subscription.planId === "pro"
                       ? MEMBERSHIP.proBadge
                       : MEMBERSHIP.freeBadge}
                 </Badge>

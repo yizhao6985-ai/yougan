@@ -11,6 +11,7 @@ export function WorksAside() {
     openCreateGroup,
     openRenameWork,
     openRenameGroup,
+    openRenameConversation,
   } = useWorkItemNameDialog();
 
   return (
@@ -38,6 +39,7 @@ export function WorksAside() {
           onCreateWorkInGroup={(groupId) => openCreateWork(groupId)}
           onRenameWork={openRenameWork}
           onRenameGroup={openRenameGroup}
+          onRenameConversation={openRenameConversation}
         />
       </div>
 

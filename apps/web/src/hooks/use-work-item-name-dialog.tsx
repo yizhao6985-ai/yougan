@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useState } from "react";
+import { useMemoizedFn } from "ahooks";
+import { useMemo, useState } from "react";
 
 import { WorkItemNameDialog } from "@/components/studio/work-item-name-dialog";
 import { useYouganStreamContext } from "@/components/studio/yougan-stream-provider";
@@ -7,30 +8,42 @@ type DialogState =
   | { kind: "create-work"; groupId?: string | null }
   | { kind: "create-group" }
   | { kind: "rename-work"; id: string; initialTitle: string }
-  | { kind: "rename-group"; id: string; initialTitle: string };
+  | { kind: "rename-group"; id: string; initialTitle: string }
+  | { kind: "rename-conversation"; id: string; initialTitle: string };
 
 export function useWorkItemNameDialog() {
-  const { createWork, createGroup, renameWork, renameGroup } =
-    useYouganStreamContext();
+  const {
+    createWork,
+    createGroup,
+    renameWork,
+    renameGroup,
+    renameConversation,
+  } = useYouganStreamContext();
   const [state, setState] = useState<DialogState | null>(null);
 
-  const close = useCallback(() => setState(null), []);
+  const close = useMemoizedFn(() => setState(null));
 
-  const openCreateWork = useCallback((groupId?: string | null) => {
+  const openCreateWork = useMemoizedFn((groupId?: string | null) => {
     setState({ kind: "create-work", groupId });
-  }, []);
+  });
 
-  const openCreateGroup = useCallback(() => {
+  const openCreateGroup = useMemoizedFn(() => {
     setState({ kind: "create-group" });
-  }, []);
+  });
 
-  const openRenameWork = useCallback((id: string, initialTitle: string) => {
+  const openRenameWork = useMemoizedFn((id: string, initialTitle: string) => {
     setState({ kind: "rename-work", id, initialTitle });
-  }, []);
+  });
 
-  const openRenameGroup = useCallback((id: string, initialTitle: string) => {
+  const openRenameGroup = useMemoizedFn((id: string, initialTitle: string) => {
     setState({ kind: "rename-group", id, initialTitle });
-  }, []);
+  });
+
+  const openRenameConversation = useMemoizedFn(
+    (id: string, initialTitle: string) => {
+      setState({ kind: "rename-conversation", id, initialTitle });
+    },
+  );
 
   const dialogConfig = useMemo(() => {
     if (!state) return null;
@@ -80,8 +93,26 @@ export function useWorkItemNameDialog() {
             await renameGroup(state.id, name);
           },
         };
+      case "rename-conversation":
+        return {
+          title: "重命名对话",
+          description: undefined,
+          placeholder: "对话标题",
+          initialName: state.initialTitle,
+          submitLabel: "保存",
+          onSubmit: async (name: string) => {
+            await renameConversation(state.id, name);
+          },
+        };
     }
-  }, [state, createWork, createGroup, renameWork, renameGroup]);
+  }, [
+    state,
+    createWork,
+    createGroup,
+    renameWork,
+    renameGroup,
+    renameConversation,
+  ]);
 
   const dialog = dialogConfig ? (
     <WorkItemNameDialog
@@ -99,5 +130,6 @@ export function useWorkItemNameDialog() {
     openCreateGroup,
     openRenameWork,
     openRenameGroup,
+    openRenameConversation,
   };
 }

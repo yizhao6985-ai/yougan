@@ -34,7 +34,7 @@ function formatPeriodEnd(iso: string | null | undefined) {
 
 function planBadgeLabel(planId: string) {
   if (planId === "pro_plus") return MEMBERSHIP.proPlusBadge;
-  if (planId === "pro" || planId === "creator") return MEMBERSHIP.proBadge;
+  if (planId === "pro") return MEMBERSHIP.proBadge;
   return MEMBERSHIP.freeBadge;
 }
 
@@ -54,8 +54,7 @@ export function MembershipSettingsPanel() {
   const usagePercent = subscription?.usagePercent ?? 0;
   const isPaid =
     subscription?.planId === "pro" ||
-    subscription?.planId === "pro_plus" ||
-    subscription?.planId === "creator";
+    subscription?.planId === "pro_plus";
   const periodEndLabel = formatPeriodEnd(subscription?.currentPeriodEnd);
   const paidPlans = useMemo(
     () => plans.filter((plan) => plan.id === "pro" || plan.id === "pro_plus"),

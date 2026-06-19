@@ -3,7 +3,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useCallback } from "react";
+import { useMemoizedFn } from "ahooks";
 
 import { queryKeys } from "@/hooks/queries/keys";
 import { patchWorksCache } from "@/hooks/queries/works";
@@ -74,10 +74,10 @@ export function useDuplicateWorkMutation(sourceWorkId: string | null) {
 export function useInvalidateVersionQueries(workId: string | null) {
   const queryClient = useQueryClient();
 
-  return useCallback(async () => {
+  return useMemoizedFn(async () => {
     if (!workId) return;
     await queryClient.invalidateQueries({
       queryKey: queryKeys.works.versions(workId),
     });
-  }, [queryClient, workId]);
+  });
 }

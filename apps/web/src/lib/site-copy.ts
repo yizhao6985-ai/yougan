@@ -348,10 +348,17 @@ export const CHAT_COPY = {
   replying: "正在回复…",
   interrupted: "已中断",
   productionConfirm: {
-    durationHint: "制作会依次执行多个步骤，通常需要数分钟，请保持页面打开。",
     confirm: "开始创作",
+    confirmTooltip: "确认后开始执行制作，通常需要数分钟，并会消耗较多 Token",
     decline: "取消",
+    declineTooltip: "暂不制作，跳过本环节并继续后续步骤",
     statusHint: "等待确认是否开始创作",
+  },
+  composerSubmit: {
+    send: "发送",
+    sendTooltip: "发送消息",
+    cancel: "取消",
+    cancelTooltip: "取消当前回复",
   },
   stopRun: "停止",
   attachmentDrawer: {
@@ -442,6 +449,9 @@ export const PREVIEW_PANEL = {
   hint: "AI 团队按方案制作的文字、画面、脚本等，显示在这里",
   unsavedBadge: "（未保存）",
   empty: "进入制作环节后，作品内容会显示在这里。",
+  downloadAction: "下载资源包",
+  downloading: "打包下载中…",
+  downloadFailed: "下载失败，请稍后重试",
   openGallery: "查看大图",
   galleryTitle: "作品图册",
   galleryPrevious: "上一张",

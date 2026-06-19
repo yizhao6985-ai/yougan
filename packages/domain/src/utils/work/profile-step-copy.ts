@@ -42,7 +42,7 @@ const DEFAULT_EXAMPLES: Record<
     "开头讲防晒焦虑痛点",
     "三款产品对比配图",
     "给出选购建议",
-    "text 导语 → image 主图 → text 总结",
+    "文字导语 → 图片主图 → 文字总结",
   ],
   bounds: [
     "配图中不出现人脸",

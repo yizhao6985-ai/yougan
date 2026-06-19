@@ -21,11 +21,13 @@ export function WorkSidebarItem({
   work,
   isActive,
   onRename,
+  onRenameConversation,
   onDelete,
 }: {
   work: Work;
   isActive: boolean;
   onRename?: () => void;
+  onRenameConversation?: (conversationId: string, title: string) => void;
   onDelete: () => void;
 }) {
   const {
@@ -179,16 +181,35 @@ export function WorkSidebarItem({
                   </span>
                 </span>
               </button>
-              {conversations.length > 1 ? (
+              <div
+                className={cn(
+                  "flex shrink-0 items-center gap-0.5 opacity-0 transition group-hover/conv:opacity-100",
+                  selected && "opacity-100",
+                )}
+              >
                 <button
                   type="button"
-                  aria-label="删除对话"
-                  className="inline-flex size-6 shrink-0 items-center justify-center rounded-md opacity-0 transition hover:bg-background/80 hover:text-destructive group-hover/conv:opacity-100"
-                  onClick={() => void handleDeleteConversation(conversation.id)}
+                  aria-label="重命名对话"
+                  className="inline-flex size-6 items-center justify-center rounded-md hover:bg-background/80 hover:text-foreground"
+                  onClick={() =>
+                    onRenameConversation?.(conversation.id, conversation.title)
+                  }
                 >
-                  <Trash2Icon className="size-3" />
+                  <PencilIcon className="size-3" />
                 </button>
-              ) : null}
+                {conversations.length > 1 ? (
+                  <button
+                    type="button"
+                    aria-label="删除对话"
+                    className="inline-flex size-6 items-center justify-center rounded-md hover:bg-background/80 hover:text-destructive"
+                    onClick={() =>
+                      void handleDeleteConversation(conversation.id)
+                    }
+                  >
+                    <Trash2Icon className="size-3" />
+                  </button>
+                ) : null}
+              </div>
             </div>
           );
         })}

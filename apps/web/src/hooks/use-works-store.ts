@@ -1,4 +1,5 @@
-import { useCallback, useMemo } from "react";
+import { useMemoizedFn } from "ahooks";
+import { useMemo } from "react";
 import { useAtom } from "jotai";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -72,60 +73,42 @@ export function useWorksStore() {
     [resolvedActiveWorkId, works],
   );
 
-  const reload = useCallback(async () => {
+  const reload = useMemoizedFn(async () => {
     invalidateWorksQueries();
-  }, [invalidateWorksQueries]);
+  });
 
-  const createWork = useCallback(
-    async (title?: string, groupId?: string | null) => {
-      const { work } = await createWorkMutation.mutateAsync({ title, groupId });
-      const normalized = normalizeWork(work);
-      setActiveWorkId(normalized.id);
-      return normalized;
-    },
-    [createWorkMutation, setActiveWorkId],
-  );
+  const createWork = useMemoizedFn(async (title?: string, groupId?: string | null) => {
+    const { work } = await createWorkMutation.mutateAsync({ title, groupId });
+    const normalized = normalizeWork(work);
+    setActiveWorkId(normalized.id);
+    return normalized;
+  });
 
-  const createGroup = useCallback(
-    async (title?: string) => {
-      const { group } = await createGroupMutation.mutateAsync(title);
-      return group;
-    },
-    [createGroupMutation],
-  );
+  const createGroup = useMemoizedFn(async (title?: string) => {
+    const { group } = await createGroupMutation.mutateAsync(title);
+    return group;
+  });
 
-  const renameGroup = useCallback(
-    async (groupId: string, title: string) => {
-      const trimmed = title.trim();
-      if (!trimmed) return;
-      await updateGroupMutation.mutateAsync({ groupId, title: trimmed });
-    },
-    [updateGroupMutation],
-  );
+  const renameGroup = useMemoizedFn(async (groupId: string, title: string) => {
+    const trimmed = title.trim();
+    if (!trimmed) return;
+    await updateGroupMutation.mutateAsync({ groupId, title: trimmed });
+  });
 
-  const deleteGroup = useCallback(
-    async (groupId: string) => {
-      await deleteGroupMutation.mutateAsync(groupId);
-    },
-    [deleteGroupMutation],
-  );
+  const deleteGroup = useMemoizedFn(async (groupId: string) => {
+    await deleteGroupMutation.mutateAsync(groupId);
+  });
 
-  const deleteWork = useCallback(
-    async (workId: string) => {
-      await deleteWorkMutation.mutateAsync(workId);
-      setActiveWorkId((current) => (current === workId ? null : current));
-    },
-    [deleteWorkMutation, setActiveWorkId],
-  );
+  const deleteWork = useMemoizedFn(async (workId: string) => {
+    await deleteWorkMutation.mutateAsync(workId);
+    setActiveWorkId((current) => (current === workId ? null : current));
+  });
 
-  const selectWork = useCallback(
-    (workId: string) => {
-      setActiveWorkId(workId);
-    },
-    [setActiveWorkId],
-  );
+  const selectWork = useMemoizedFn((workId: string) => {
+    setActiveWorkId(workId);
+  });
 
-  const applyStreamValuesToCache = useCallback(
+  const applyStreamValuesToCache = useMemoizedFn(
     (workId: string, values: YouganValues) => {
       if (values.turn?.committed !== true || values.turn?.cancelled === true)
         return;
@@ -142,26 +125,22 @@ export function useWorksStore() {
         ),
       );
     },
-    [queryClient],
   );
 
-  const patchProfile = useCallback(
-    (workId: string, profile: WorkProfile) => {
-      patchWorksCache(queryClient, (works) =>
-        works.map((work) =>
-          work.id === workId ? { ...work, profile } : work,
-        ),
-      );
-      void updateWorkMutation
-        .mutateAsync({ workId, patch: { profile } })
-        .catch(() => {
-          void queryClient.invalidateQueries({ queryKey: queryKeys.works.list });
-        });
-    },
-    [queryClient, updateWorkMutation],
-  );
+  const patchProfile = useMemoizedFn((workId: string, profile: WorkProfile) => {
+    patchWorksCache(queryClient, (works) =>
+      works.map((work) =>
+        work.id === workId ? { ...work, profile } : work,
+      ),
+    );
+    void updateWorkMutation
+      .mutateAsync({ workId, patch: { profile } })
+      .catch(() => {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.works.list });
+      });
+  });
 
-  const updateProfileBound = useCallback(
+  const updateProfileBound = useMemoizedFn(
     (workId: string, itemId: string, spec: string) => {
       const current = queryClient
         .getQueryData<Work[]>(queryKeys.works.list)
@@ -170,33 +149,26 @@ export function useWorksStore() {
       const next = updateBoundItem(current.profile, itemId, spec);
       patchProfile(workId, next);
     },
-    [patchProfile, queryClient],
   );
 
-  const deleteProfileBound = useCallback(
-    (workId: string, itemId: string) => {
-      const current = queryClient
-        .getQueryData<Work[]>(queryKeys.works.list)
-        ?.find((work) => work.id === workId);
-      if (!current) return;
-      const next = deleteBoundItem(current.profile, itemId);
-      patchProfile(workId, next);
-    },
-    [patchProfile, queryClient],
-  );
+  const deleteProfileBound = useMemoizedFn((workId: string, itemId: string) => {
+    const current = queryClient
+      .getQueryData<Work[]>(queryKeys.works.list)
+      ?.find((work) => work.id === workId);
+    if (!current) return;
+    const next = deleteBoundItem(current.profile, itemId);
+    patchProfile(workId, next);
+  });
 
-  const clearWorkProfileBounds = useCallback(
-    (workId: string) => {
-      const current = queryClient
-        .getQueryData<Work[]>(queryKeys.works.list)
-        ?.find((work) => work.id === workId);
-      if (!current) return;
-      patchProfile(workId, clearBounds(current.profile));
-    },
-    [patchProfile, queryClient],
-  );
+  const clearWorkProfileBounds = useMemoizedFn((workId: string) => {
+    const current = queryClient
+      .getQueryData<Work[]>(queryKeys.works.list)
+      ?.find((work) => work.id === workId);
+    if (!current) return;
+    patchProfile(workId, clearBounds(current.profile));
+  });
 
-  const updateProfileSequence = useCallback(
+  const updateProfileSequence = useMemoizedFn(
     (workId: string, itemId: string, spec: string) => {
       const current = queryClient
         .getQueryData<Work[]>(queryKeys.works.list)
@@ -205,33 +177,26 @@ export function useWorksStore() {
       const next = updateSequenceItem(current.profile, itemId, spec);
       patchProfile(workId, next);
     },
-    [patchProfile, queryClient],
   );
 
-  const deleteProfileSequence = useCallback(
-    (workId: string, itemId: string) => {
-      const current = queryClient
-        .getQueryData<Work[]>(queryKeys.works.list)
-        ?.find((work) => work.id === workId);
-      if (!current) return;
-      const next = deleteSequenceItem(current.profile, itemId);
-      patchProfile(workId, next);
-    },
-    [patchProfile, queryClient],
-  );
+  const deleteProfileSequence = useMemoizedFn((workId: string, itemId: string) => {
+    const current = queryClient
+      .getQueryData<Work[]>(queryKeys.works.list)
+      ?.find((work) => work.id === workId);
+    if (!current) return;
+    const next = deleteSequenceItem(current.profile, itemId);
+    patchProfile(workId, next);
+  });
 
-  const clearWorkProfileSequence = useCallback(
-    (workId: string) => {
-      const current = queryClient
-        .getQueryData<Work[]>(queryKeys.works.list)
-        ?.find((work) => work.id === workId);
-      if (!current) return;
-      patchProfile(workId, clearSequence(current.profile));
-    },
-    [patchProfile, queryClient],
-  );
+  const clearWorkProfileSequence = useMemoizedFn((workId: string) => {
+    const current = queryClient
+      .getQueryData<Work[]>(queryKeys.works.list)
+      ?.find((work) => work.id === workId);
+    if (!current) return;
+    patchProfile(workId, clearSequence(current.profile));
+  });
 
-  const updateProfileContext = useCallback(
+  const updateProfileContext = useMemoizedFn(
     (workId: string, itemId: string, spec: string) => {
       const current = queryClient
         .getQueryData<Work[]>(queryKeys.works.list)
@@ -240,49 +205,38 @@ export function useWorksStore() {
       const next = updateContextItem(current.profile, itemId, spec);
       patchProfile(workId, next);
     },
-    [patchProfile, queryClient],
   );
 
-  const deleteProfileContext = useCallback(
-    (workId: string, itemId: string) => {
-      const current = queryClient
-        .getQueryData<Work[]>(queryKeys.works.list)
-        ?.find((work) => work.id === workId);
-      if (!current) return;
-      const next = deleteContextItem(current.profile, itemId);
-      patchProfile(workId, next);
-    },
-    [patchProfile, queryClient],
-  );
+  const deleteProfileContext = useMemoizedFn((workId: string, itemId: string) => {
+    const current = queryClient
+      .getQueryData<Work[]>(queryKeys.works.list)
+      ?.find((work) => work.id === workId);
+    if (!current) return;
+    const next = deleteContextItem(current.profile, itemId);
+    patchProfile(workId, next);
+  });
 
-  const clearWorkProfileContext = useCallback(
-    (workId: string) => {
-      const current = queryClient
-        .getQueryData<Work[]>(queryKeys.works.list)
-        ?.find((work) => work.id === workId);
-      if (!current) return;
-      patchProfile(workId, clearContext(current.profile));
-    },
-    [patchProfile, queryClient],
-  );
+  const clearWorkProfileContext = useMemoizedFn((workId: string) => {
+    const current = queryClient
+      .getQueryData<Work[]>(queryKeys.works.list)
+      ?.find((work) => work.id === workId);
+    if (!current) return;
+    patchProfile(workId, clearContext(current.profile));
+  });
 
-  const renameWork = useCallback(
-    async (workId: string, title: string) => {
-      const trimmed = title.trim();
-      if (!trimmed) return;
-      await updateWorkMutation.mutateAsync({
-        workId,
-        patch: { title: trimmed },
-      });
-    },
-    [updateWorkMutation],
-  );
+  const renameWork = useMemoizedFn(async (workId: string, title: string) => {
+    const trimmed = title.trim();
+    if (!trimmed) return;
+    await updateWorkMutation.mutateAsync({
+      workId,
+      patch: { title: trimmed },
+    });
+  });
 
-  const moveWorkToGroup = useCallback(
+  const moveWorkToGroup = useMemoizedFn(
     async (workId: string, groupId: string | null) => {
       await updateWorkMutation.mutateAsync({ workId, patch: { groupId } });
     },
-    [updateWorkMutation],
   );
 
   return {

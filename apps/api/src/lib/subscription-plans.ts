@@ -62,16 +62,11 @@ export const SUBSCRIPTION_PLANS: Record<
   },
 };
 
-/** 旧 planId 兼容（creator → pro） */
-const LEGACY_PLAN_ALIASES: Record<string, SubscriptionPlanId> = {
-  creator: "pro",
-};
-
 export function resolvePlanId(planId: string): SubscriptionPlanId {
   if (planId in SUBSCRIPTION_PLANS) {
     return planId as SubscriptionPlanId;
   }
-  return LEGACY_PLAN_ALIASES[planId] ?? "free";
+  return "free";
 }
 
 export function getPlanDefinition(planId: string): SubscriptionPlanDefinition {

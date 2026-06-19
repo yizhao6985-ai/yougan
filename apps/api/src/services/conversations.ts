@@ -89,7 +89,9 @@ export async function updateWorkConversation(
   const conversation = await prisma.workConversation.update({
     where: { id: conversationId },
     data: {
-      ...(data.title !== undefined ? { title: data.title } : {}),
+      ...(data.title !== undefined
+        ? { title: data.title.trim() || DEFAULT_CONVERSATION_TITLE }
+        : {}),
       ...(data.threadId !== undefined ? { threadId: data.threadId } : {}),
     },
   });

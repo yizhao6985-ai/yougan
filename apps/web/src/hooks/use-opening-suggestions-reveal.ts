@@ -1,4 +1,5 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useLatest, useTimeout, useUpdateEffect } from "ahooks";
+import { useMemo, useRef, useState } from "react";
 
 import { segmentGraphemes } from "@/lib/segment-graphemes";
 import type { NextStepSuggestion } from "@/lib/types";
@@ -68,10 +69,12 @@ export function useOpeningSuggestionsReveal({
   const [phase, setPhase] = useState<RevealPhase>(initial.phase);
   const completedRef = useRef(false);
   const hasAnimatedRef = useRef(animate);
+  const onCompleteRef = useLatest(onComplete);
 
   const isDone = phase === "done";
+  const currentSegments = segmentsByIndex[currentIndex] ?? [];
 
-  useLayoutEffect(() => {
+  useUpdateEffect(() => {
     completedRef.current = false;
     if (!animate || suggestions.length === 0 || prefersReducedMotion()) {
       hasAnimatedRef.current = false;
@@ -89,55 +92,42 @@ export function useOpeningSuggestionsReveal({
     setPhase("typing");
   }, [animate, fingerprint, suggestions.length]);
 
-  useEffect(() => {
+  useUpdateEffect(() => {
     if (phase !== "done" || !hasAnimatedRef.current || completedRef.current) {
       return;
     }
     completedRef.current = true;
-    onComplete?.();
-  }, [onComplete, phase]);
+    onCompleteRef.current?.();
+  }, [phase]);
 
-  useEffect(() => {
-    if (phase !== "typing" || currentIndex < 0) return;
-
-    const segments = segmentsByIndex[currentIndex] ?? [];
-    if (charIndex >= segments.length) {
-      if (currentIndex >= suggestions.length - 1) {
-        setPhase("done");
-        setCurrentIndex(-1);
+  useTimeout(
+    () => {
+      if (charIndex >= currentSegments.length) {
+        if (currentIndex >= suggestions.length - 1) {
+          setPhase("done");
+          setCurrentIndex(-1);
+          return;
+        }
+        setPhase("pause");
         return;
       }
-      setPhase("pause");
-      return;
-    }
-
-    const delay = msPerGrapheme(segments.length);
-    const timer = window.setTimeout(() => {
       setCharIndex((prev) => prev + 1);
-    }, delay);
+    },
+    phase === "typing" && currentIndex >= 0
+      ? msPerGrapheme(currentSegments.length)
+      : undefined,
+  );
 
-    return () => window.clearTimeout(timer);
-  }, [
-    charIndex,
-    currentIndex,
-    phase,
-    segmentsByIndex,
-    suggestions.length,
-  ]);
-
-  useEffect(() => {
-    if (phase !== "pause") return;
-
-    const timer = window.setTimeout(() => {
+  useTimeout(
+    () => {
       const nextIndex = currentIndex + 1;
       setCurrentIndex(nextIndex);
       setCharIndex(0);
       setVisibleCount(nextIndex + 1);
       setPhase("typing");
-    }, BETWEEN_ITEMS_MS);
-
-    return () => window.clearTimeout(timer);
-  }, [currentIndex, phase]);
+    },
+    phase === "pause" ? BETWEEN_ITEMS_MS : undefined,
+  );
 
   const getDisplayText = (index: number): string => {
     const segments = segmentsByIndex[index] ?? [];
