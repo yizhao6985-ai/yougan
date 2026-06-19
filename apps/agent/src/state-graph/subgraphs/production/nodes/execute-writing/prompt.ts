@@ -1,6 +1,6 @@
 import {
   getDirectionSummary,
-  resolveDeliveryFromProfile,
+  resolveContentFormFromProfile,
   type ContentFormatId,
   type ProductionTask,
   type WorkProfile,
@@ -37,10 +37,10 @@ export function buildProduceTaskSystemPrompt(input: {
   executorLabel: string;
 }): string {
   const { profile, references, userRequirements, executorLabel } = input;
-  const delivery = resolveDeliveryFromProfile(profile);
+  const contentForm = resolveContentFormFromProfile(profile);
   const formatGuidance = buildFormatGenerationGuidance(
-    delivery.format as ContentFormatId | null,
-    delivery.modalities?.[0] ?? null,
+    contentForm.format as ContentFormatId | null,
+    contentForm.modalities?.[0] ?? null,
     profile,
     { scope: "fragment" },
   );
@@ -58,8 +58,8 @@ ${profileSummary(profile, references)}
 用户要求：${userRequirements ?? "无"}
 
 主题：${getDirectionSummary(profile) || "未指定"}
-体裁：${delivery.format ?? "未指定"}
-媒介：${delivery.modalities?.join(",") ?? "未指定"}
+体裁：${contentForm.format ?? "未指定"}
+媒介：${contentForm.modalities?.join(",") ?? "未指定"}
 风格：${profile.style?.verbal?.trim() || "未指定"}
 受众：${profile.direction.audience ?? "未指定"}
 

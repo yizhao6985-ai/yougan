@@ -24,6 +24,6 @@
 | 作品 | `Work` | 跨对话共享的状态容器 |
 | 对话 | `WorkConversation` | 作品下独立 LangGraph `threadId` |
 
-`WorkProfile` 仅接受上述五步结构；媒介与画幅等运行时由 `resolveDeliveryFromProfile` 推断，不入库。
+`WorkProfile` 仅接受上述五步结构；媒介与画幅等运行时由 `resolveContentFormFromProfile` 推断，不入库。
 
 任务类型与路由详见 [agent-turn-queue.md](../technical/agent-turn-queue.md)。

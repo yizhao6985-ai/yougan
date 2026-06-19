@@ -5,8 +5,8 @@ import {
   buildPublicationMetadata,
   buildPublicationSummaryPreview,
   buildFacetOptions,
-  DISCOVER_FORMATS,
-  DISCOVER_MEDIA_TYPES,
+  CONTENT_FORMATS,
+  MEDIA_MODALITIES,
   DISCOVER_TOPIC_CATEGORIES,
   parseBlockComposition,
   previewHasContent,
@@ -176,7 +176,7 @@ async function buildFacets(query: PublicationFeedQuery) {
   ]);
 
   const mediaCounts = await Promise.all(
-    DISCOVER_MEDIA_TYPES.map(async (item) => ({
+    MEDIA_MODALITIES.map(async (item) => ({
       id: item.id,
       count: await prisma.publication.count({
         where: {
@@ -199,7 +199,7 @@ async function buildFacets(query: PublicationFeedQuery) {
 
   return {
     contentFormat: buildFacetOptions(
-      DISCOVER_FORMATS,
+      CONTENT_FORMATS,
       toCountMap(formatRows, "contentFormat"),
     ),
     topicCategory: buildFacetOptions(
@@ -207,7 +207,7 @@ async function buildFacets(query: PublicationFeedQuery) {
       toCountMap(topicRows, "topicCategory"),
     ),
     mediaType: buildFacetOptions(
-      DISCOVER_MEDIA_TYPES,
+      MEDIA_MODALITIES,
       Object.fromEntries(mediaCounts.map((row) => [row.id, row.count])),
     ),
   };

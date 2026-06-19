@@ -1,13 +1,13 @@
 import {
   CONTENT_FORMATS,
   type ContentFormatId,
-  type MediaModalityId,
-} from "../models/taxonomy/content.js";
-import type { DeliverySpec } from "../models/work/profile.js";
+} from "../models/content-form/formats.js";
+import type { MediaModalityId } from "../models/content-form/modalities.js";
+import type { ContentFormSpec } from "../models/work/profile.js";
 import {
   inferFormatFromModalities,
   syncModalitiesWithFormat,
-} from "./work/delivery-media-params.js";
+} from "./work/content-form-media-params.js";
 
 const FORMAT_IDS = new Set<string>(CONTENT_FORMATS.map((item) => item.id));
 
@@ -18,13 +18,13 @@ export function isValidContentFormat(
 }
 
 /** 补齐缺失或无效的 format / modalities（仅制作/发布等运行时推断，不写入 profile） */
-export function resolveDelivery(delivery: DeliverySpec): ResolvedDelivery {
+export function resolveContentForm(spec: ContentFormSpec): ResolvedContentForm {
   const modalities = syncModalitiesWithFormat(
-    delivery.format,
-    delivery.modalities ?? [],
+    spec.format,
+    spec.modalities ?? [],
   );
-  const format = isValidContentFormat(delivery.format)
-    ? delivery.format
+  const format = isValidContentFormat(spec.format)
+    ? spec.format
     : inferFormatFromModalities(modalities, null);
 
   return {
@@ -33,7 +33,7 @@ export function resolveDelivery(delivery: DeliverySpec): ResolvedDelivery {
   };
 }
 
-export type ResolvedDelivery = DeliverySpec & {
+export type ResolvedContentForm = ContentFormSpec & {
   modalities: MediaModalityId[];
   format: ContentFormatId;
 };
@@ -41,7 +41,7 @@ export type ResolvedDelivery = DeliverySpec & {
 export {
   defaultMediaParamsForFormat,
   inferFormatFromModalities,
-  mergeDeliveryMediaParams,
-  parseDeliveryMediaParams,
+  mergeContentFormMediaParams,
+  parseContentFormMediaParams,
   syncModalitiesWithFormat,
-} from "./work/delivery-media-params.js";
+} from "./work/content-form-media-params.js";

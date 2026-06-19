@@ -45,7 +45,8 @@
 - 定价/套餐：`apps/api/src/lib/subscription-plans.ts`
 - 计量与模型价：`packages/domain/src/utils/ai-metering/`（`pricing.ts`、`types.ts`）
 - 模型目录：`apps/agent/src/llm/providers/catalog.ts`
-- 平台清单：`packages/domain/src/models/taxonomy/platform.ts`
+- 内容形态目录：`packages/domain/src/models/content-form/formats.ts`（体裁）、`modalities.ts`（媒介）
+- 发现页目录：`packages/domain/src/models/discover/`
 - 数据模型：`apps/api/prisma/schema.prisma`
 - 产品文案：`apps/web/src/lib/site-copy.ts`、`product-capabilities.ts`
 - 文生图链路：`docs/technical/design-image-generation.md`

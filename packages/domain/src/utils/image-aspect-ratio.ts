@@ -4,31 +4,31 @@ import {
   normalizeProfileAspectRatio,
   type AspectRatioContext,
 } from "./aspect-ratio.js";
-import { imageAspectRatioFromMediaParams } from "./work/delivery-media-params.js";
+import { imageAspectRatioFromMediaParams } from "./work/content-form-media-params.js";
 import {
   inferModalitiesFromProfile,
   parseProfileJson,
-  resolveDeliveryFromProfile,
+  resolveContentFormFromProfile,
   resolveMediaParamsFromProfile,
 } from "./work/profile.js";
 
 function profileNeedsImageAspectRatio(profile: WorkProfile): boolean {
-  const delivery = resolveDeliveryFromProfile(profile);
+  const contentForm = resolveContentFormFromProfile(profile);
   return (
-    delivery.modalities.includes("image") ||
-    delivery.format === "illustration" ||
-    delivery.format === "short_video" ||
-    delivery.format === "video_script"
+    contentForm.modalities.includes("image") ||
+    contentForm.format === "illustration" ||
+    contentForm.format === "short_video" ||
+    contentForm.format === "video_script"
   );
 }
 
 function aspectRatioContextFromProfile(
   profile: WorkProfile,
 ): AspectRatioContext {
-  const delivery = resolveDeliveryFromProfile(profile);
+  const contentForm = resolveContentFormFromProfile(profile);
   return {
-    format: delivery.format,
-    modalities: delivery.modalities,
+    format: contentForm.format,
+    modalities: contentForm.modalities,
   };
 }
 

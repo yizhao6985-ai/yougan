@@ -1,5 +1,5 @@
-import type { DiscoverTopicCategoryId } from "../taxonomy/discover.js";
-import type { MediaModalityId } from "../taxonomy/content.js";
+import type { DiscoverTopicCategoryId } from "../discover/index.js";
+import type { MediaModalityId } from "../content-form/modalities.js";
 import type { PreviewBlockType } from "./preview.js";
 
 /** 从 blocks 机械统计的构成信息，用于发现页筛选 */

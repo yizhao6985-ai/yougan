@@ -9,7 +9,7 @@ import type { WorkPreview } from "../../models/work/preview.js";
 import {
   DISCOVER_TOPIC_CATEGORIES,
   type DiscoverTopicCategoryId,
-} from "../../models/taxonomy/discover.js";
+} from "../../models/discover/index.js";
 import {
   analyzeBlockComposition,
   blockTypesToMediaTypes,
@@ -24,7 +24,7 @@ import {
   previewPlainText,
 } from "../work/preview.js";
 import { getDirectionSummary, parseProfileJson } from "../work/profile.js";
-import { normalizeTopicCategory, topicCategoryLabel } from "./taxonomy.js";
+import { normalizeTopicCategory, topicCategoryLabel } from "./publication-metadata.js";
 
 export function buildPublicationSummary(input: {
   blocks: PreviewBlock[];

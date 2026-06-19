@@ -14,7 +14,7 @@ export type {
   ProfileSequenceItem,
   SequenceRole,
   ProfileStepId,
-  DeliveryMediaParams,
+  ContentFormMediaParams,
   NextStepSuggestion,
   NextStepSuggestions,
   ProductionDepartment,

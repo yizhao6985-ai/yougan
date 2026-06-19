@@ -2,7 +2,7 @@ import {
   buildProfileStepPromptSection,
   getDirectionSummary,
   getUserRequirements,
-  resolveDeliveryFromProfile,
+  resolveContentFormFromProfile,
   type ContentFormatId,
   type TaskDeliverable,
   type WorkProduction,
@@ -39,7 +39,7 @@ export function buildConsolidateSystemPrompt(input: {
   profile: WorkProfile;
 }): string {
   const { profile } = input;
-  const delivery = resolveDeliveryFromProfile(profile);
+  const contentForm = resolveContentFormFromProfile(profile);
 
   return `你是整理编辑，负责为**已通过验收**的作品预览补充元信息。
 
@@ -53,11 +53,11 @@ export function buildConsolidateSystemPrompt(input: {
 ## 作品方案
 ${profileSummary(profile)}
 
-体裁：${delivery.format ?? "未指定"}
+体裁：${contentForm.format ?? "未指定"}
 主题：${getDirectionSummary(profile) || "未指定"}
 
 ## 体裁参考
-${buildFormatGenerationGuidance(delivery.format as ContentFormatId | null, delivery.modalities?.[0] ?? null, profile)}`;
+${buildFormatGenerationGuidance(contentForm.format as ContentFormatId | null, contentForm.modalities?.[0] ?? null, profile)}`;
 }
 
 /** 总监工单层：用户要求与待整合片段（按 tasks 顺序） */

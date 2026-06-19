@@ -5,7 +5,7 @@
 ## 总览
 
 ```text
-profile.direction.format ──▶ resolveDeliveryFromProfile ──▶ resolveImageAspectRatio（画幅）
+profile.direction.format ──▶ resolveContentFormFromProfile ──▶ resolveImageAspectRatio（画幅）
                         │
 agent: production 子图   ▼
   planProduction ──▶ dispatchTask ──▶ executeDesign（写 prompt）

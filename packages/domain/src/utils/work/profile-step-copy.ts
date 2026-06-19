@@ -1,4 +1,5 @@
-import type { ContentFormatId, MediaModalityId } from "../../models/taxonomy/content.js";
+import type { ContentFormatId } from "../../models/content-form/formats.js";
+import type { MediaModalityId } from "../../models/content-form/modalities.js";
 import type { ProfileSetupStep, WorkProfile } from "../../models/work/profile.js";
 import { inferModalitiesFromProfile, parseProfileJson } from "./profile.js";
 

@@ -2,7 +2,7 @@ import {
   EMPTY_PROFILE_DIRECTION,
   EMPTY_WORK_PROFILE,
   SEQUENCE_ROLES,
-  type DeliveryMediaParams,
+  type ContentFormMediaParams,
   type ProfileDirection,
   type ProfileSequenceItem,
   type ProfileSpecItem,
@@ -13,13 +13,13 @@ import {
 import { parseReferencesJson } from "./reference.js";
 import {
   isValidContentFormat,
-  resolveDelivery,
-  type ResolvedDelivery,
-} from "../delivery.js";
+  resolveContentForm,
+  type ResolvedContentForm,
+} from "../content-form-resolve.js";
 import {
   defaultMediaParamsForFormat,
   syncModalitiesWithFormat,
-} from "./delivery-media-params.js";
+} from "./content-form-media-params.js";
 import { inferMediaModalities, sortMediaModalities } from "../media-modalities.js";
 
 function newId(prefix: string): string {
@@ -114,7 +114,7 @@ export function getDirectionSummary(profile: WorkProfile | undefined): string {
 
 export function getProfileFormat(
   profile: WorkProfile | undefined,
-): import("../../models/taxonomy/content.js").ContentFormatId | null {
+): import("../../models/content-form/formats.js").ContentFormatId | null {
   return parseProfileJson(profile).direction.format;
 }
 
@@ -188,19 +188,19 @@ export function resolveProfileFromWork(input: {
   return parseProfileJson(input.profile);
 }
 
-export function resolveDeliveryFromProfile(profile: WorkProfile): ResolvedDelivery {
+export function resolveContentFormFromProfile(profile: WorkProfile): ResolvedContentForm {
   const normalized = parseProfileJson(profile);
   const format = normalized.direction.format;
   const modalities = syncModalitiesWithFormat(
     format,
     inferModalitiesFromProfile(normalized),
   );
-  return resolveDelivery({ format, modalities });
+  return resolveContentForm({ format, modalities });
 }
 
 export function inferModalitiesFromProfile(
   profile: WorkProfile,
-): import("../../models/taxonomy/content.js").MediaModalityId[] {
+): import("../../models/content-form/modalities.js").MediaModalityId[] {
   const normalized = parseProfileJson(profile);
   const fromSequence = normalized.sequence
     .map((item) => item.role)
@@ -211,8 +211,8 @@ export function inferModalitiesFromProfile(
   return inferMediaModalities({ contentFormat: normalized.direction.format });
 }
 
-export function getDeliverySpec(profile: WorkProfile): import("../../models/work/profile.js").DeliverySpec {
-  const resolved = resolveDeliveryFromProfile(profile);
+export function getContentFormSpec(profile: WorkProfile): import("../../models/work/profile.js").ContentFormSpec {
+  const resolved = resolveContentFormFromProfile(profile);
   return {
     format: resolved.format,
     modalities: resolved.modalities,
@@ -222,8 +222,8 @@ export function getDeliverySpec(profile: WorkProfile): import("../../models/work
 /** 运行时从 format 推断媒介规格（不入库） */
 export function resolveMediaParamsFromProfile(
   profile: WorkProfile,
-): DeliveryMediaParams {
+): ContentFormMediaParams {
   const normalized = parseProfileJson(profile);
-  const delivery = resolveDeliveryFromProfile(normalized);
-  return defaultMediaParamsForFormat(delivery.format, delivery.modalities);
+  const contentForm = resolveContentFormFromProfile(normalized);
+  return defaultMediaParamsForFormat(contentForm.format, contentForm.modalities);
 }

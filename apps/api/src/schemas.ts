@@ -42,7 +42,7 @@ export const WorkReferencesSchema = z
   .array(WorkReferenceSchema)
   .openapi("WorkReferences");
 
-const DeliveryMediaParamsSchema = z.object({
+const ContentFormMediaParamsSchema = z.object({
   text: z
     .object({
       word_count: z

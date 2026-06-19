@@ -1,5 +1,5 @@
-import type { ContentFormatId } from "../models/taxonomy/content.js";
-import type { MediaModalityId } from "../models/taxonomy/content.js";
+import type { ContentFormatId } from "../models/content-form/formats.js";
+import type { MediaModalityId } from "../models/content-form/modalities.js";
 
 /** 设计出图支持的画幅比例 id */
 export const DESIGN_IMAGE_ASPECT_RATIOS = [

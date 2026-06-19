@@ -76,7 +76,7 @@ flowchart LR
 ### 推断优先级
 
 1. **`profile.direction.summary`** 自由文本 → 正则映射到 `contentFormat` / `topicCategory`
-2. **`profile.direction.format`** → 结构化体裁；媒介由 `resolveDeliveryFromProfile` 运行时推断
+2. **`profile.direction.format`** → 结构化体裁；媒介由 `resolveContentFormFromProfile` 运行时推断
 3. **正文长度 + 是否有配图** → 兜底推断
 4. **发布时用户覆盖** → `applyMetadataOverrides` 校验 taxonomy ID 后写入
 
@@ -84,7 +84,7 @@ flowchart LR
 
 | 模块 | 路径 |
 |------|------|
-| Taxonomy 定义与推断 | `packages/domain/src/utils/discover/taxonomy.ts` |
+| 目录定义与推断 | `packages/domain/src/models/content-form/`、`models/discover/`、`utils/content-form-resolve.ts`、`utils/discover/publication-metadata.ts` |
 | 体裁写作约束 | `apps/agent/src/state-graph/subgraphs/production/helpers/format-guidance.ts` |
 | 前端 taxonomy 展示 | `apps/web/src/lib/discover-taxonomy.ts` |
 | 发布入库 | `apps/api/src/services/publications.ts` |

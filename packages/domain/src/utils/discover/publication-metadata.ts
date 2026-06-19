@@ -1,16 +1,14 @@
 import {
   CONTENT_FORMATS,
   type ContentFormatId,
-  type MediaModalityId,
-} from "../../models/taxonomy/content.js";
+} from "../../models/content-form/formats.js";
+import type { MediaModalityId } from "../../models/content-form/modalities.js";
 import {
   DISCOVER_TOPIC_CATEGORIES,
-  type DiscoverFormatId,
-  type DiscoverMediaTypeId,
   type DiscoverTopicCategoryId,
   type PublicationMetadata,
   type PublicationMetadataOverrides,
-} from "../../models/taxonomy/discover.js";
+} from "../../models/discover/index.js";
 import type { WorkProfile } from "../../models/work/profile.js";
 import type { PreviewBlock } from "../../models/work/preview.js";
 import {
@@ -24,7 +22,7 @@ import {
   previewHasImages,
   previewTextLength,
 } from "../work/preview.js";
-import { parseProfileJson, resolveDeliveryFromProfile, getProfileSummary, getDirectionSummary } from "../work/profile.js";
+import { parseProfileJson, resolveContentFormFromProfile, getProfileSummary, getDirectionSummary } from "../work/profile.js";
 
 const FORMAT_LABELS = Object.fromEntries(
   CONTENT_FORMATS.map((item) => [item.id, item.label]),
@@ -153,8 +151,8 @@ export function buildPublicationMetadata(input: {
   const hasImage =
     Boolean(input.coverUrl) || previewHasImages(blocks);
 
-  const delivery = input.profile
-    ? resolveDeliveryFromProfile(parseProfileJson(input.profile))
+  const contentForm = input.profile
+    ? resolveContentFormFromProfile(parseProfileJson(input.profile))
     : null;
 
   const profile = input.profile ? parseProfileJson(input.profile) : null;
@@ -163,9 +161,9 @@ export function buildPublicationMetadata(input: {
   const contentType = profile ? getProfileSummary(profile) : null;
 
   const contentFormat =
-    delivery?.format &&
-    CONTENT_FORMATS.some((item) => item.id === delivery.format)
-      ? delivery.format
+    contentForm?.format &&
+    CONTENT_FORMATS.some((item) => item.id === contentForm.format)
+      ? contentForm.format
       : inferContentFormat({
           contentType,
           bodyLength,
@@ -174,8 +172,8 @@ export function buildPublicationMetadata(input: {
 
   const topicCategory = normalizeTopicCategory(contentTopic);
 
-  const mediaTypes = delivery?.modalities?.length
-    ? sortMediaModalities(delivery.modalities)
+  const mediaTypes = contentForm?.modalities?.length
+    ? sortMediaModalities(contentForm.modalities)
     : inferMediaTypes({
         coverUrl: input.coverUrl,
         blocks,
@@ -192,7 +190,7 @@ export function buildPublicationMetadata(input: {
   };
 }
 
-function isValidTaxonomyId<T extends { id: string }>(
+function isValidCatalogId<T extends { id: string }>(
   items: readonly T[],
   id: string | undefined,
 ) {
@@ -217,10 +215,10 @@ export function applyMetadataOverrides(
 
   return {
     ...metadata,
-    contentFormat: isValidTaxonomyId(CONTENT_FORMATS, overrides.contentFormat)
+    contentFormat: isValidCatalogId(CONTENT_FORMATS, overrides.contentFormat)
       ? overrides.contentFormat!
       : metadata.contentFormat,
-    topicCategory: isValidTaxonomyId(
+    topicCategory: isValidCatalogId(
       DISCOVER_TOPIC_CATEGORIES,
       overrides.topicCategory,
     )
@@ -250,5 +248,3 @@ export function buildFacetOptions<T extends { id: string; label: string }>(
     }))
     .filter((item) => item.count > 0);
 }
-
-export type { DiscoverFormatId, DiscoverMediaTypeId };

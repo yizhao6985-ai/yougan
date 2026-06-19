@@ -1,15 +1,8 @@
 /**
- * 发现页与发布元数据 taxonomy。
- * 复用 taxonomy/content 的体裁与媒介 id；扩展分类、意图入口与筛选结构。
+ * 发现页目录与筛选结构。
+ * 体裁与媒介使用 content-form 的受控 id；此处仅定义主题分类、意图入口与筛选类型。
  */
-import {
-  CONTENT_FORMATS,
-  MEDIA_MODALITIES,
-  type MediaModalityId,
-} from "./content.js";
-
-export { CONTENT_FORMATS as DISCOVER_FORMATS };
-export { MEDIA_MODALITIES as DISCOVER_MEDIA_TYPES };
+import type { MediaModalityId } from "../content-form/modalities.js";
 
 export const DISCOVER_TOPIC_CATEGORIES = [
   { id: "life", label: "生活方式" },
@@ -61,10 +54,8 @@ export const DISCOVER_INTENT_ENTRIES = [
   },
 ] as const;
 
-export type DiscoverFormatId = (typeof CONTENT_FORMATS)[number]["id"];
 export type DiscoverTopicCategoryId =
   (typeof DISCOVER_TOPIC_CATEGORIES)[number]["id"];
-export type DiscoverMediaTypeId = (typeof MEDIA_MODALITIES)[number]["id"];
 
 export type {
   PublicationSummaryOverrides,

@@ -1,6 +1,6 @@
 import {
   getDirectionSummary,
-  resolveDeliveryFromProfile,
+  resolveContentFormFromProfile,
   type ContentFormatId,
   type ProductionTask,
   type WorkProfile,
@@ -29,11 +29,11 @@ export function buildDesignTaskSystemPrompt(input: {
   userRequirements: string | null;
 }): string {
   const { profile, references, userRequirements } = input;
-  const delivery = resolveDeliveryFromProfile(profile);
+  const contentForm = resolveContentFormFromProfile(profile);
   const aspectRatio = resolveImageAspectRatio(profile);
   const formatGuidance = buildFormatGenerationGuidance(
-    delivery.format as ContentFormatId | null,
-    delivery.modalities?.[0] ?? null,
+    contentForm.format as ContentFormatId | null,
+    contentForm.modalities?.[0] ?? null,
     profile,
     { scope: "fragment" },
   );
@@ -54,8 +54,8 @@ ${profileSummary(profile, references)}
 用户要求：${userRequirements ?? "无"}
 
 主题：${getDirectionSummary(profile) || "未指定"}
-体裁：${delivery.format ?? "未指定"}
-媒介：${delivery.modalities?.join(",") ?? "未指定"}
+体裁：${contentForm.format ?? "未指定"}
+媒介：${contentForm.modalities?.join(",") ?? "未指定"}
 画幅：${aspectRatio}
 画面方向：${visualStyle}
 

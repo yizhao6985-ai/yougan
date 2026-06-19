@@ -5,7 +5,7 @@ import { routeParam } from "../lib/route-params.js";
 import type { AuthedRequest } from "../middleware/auth.js";
 import { requireAuth } from "../middleware/auth.js";
 import {
-  DISCOVER_FORMATS,
+  CONTENT_FORMATS,
   DISCOVER_TOPIC_CATEGORIES,
 } from "../lib/discover-taxonomy.js";
 import { PublicationStatusSchema } from "../schemas.js";
@@ -22,7 +22,7 @@ import {
 
 export const publicationsRouter = Router();
 
-const formatIds = DISCOVER_FORMATS.map((item) => item.id);
+const formatIds = CONTENT_FORMATS.map((item) => item.id);
 const topicIds = DISCOVER_TOPIC_CATEGORIES.map((item) => item.id);
 
 const FeedQuerySchema = z.object({

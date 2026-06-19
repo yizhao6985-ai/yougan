@@ -1,4 +1,5 @@
-export * from "./taxonomy/index.js";
+export * from "./content-form/index.js";
+export * from "./discover/index.js";
 export * from "./work/index.js";
 export * from "./agent/index.js";
 export * from "./conversation/index.js";

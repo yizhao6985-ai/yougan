@@ -1,4 +1,5 @@
-import type { ContentFormatId, MediaModalityId } from "../taxonomy/content.js";
+import type { ContentFormatId } from "../content-form/formats.js";
+import type { MediaModalityId } from "../content-form/modalities.js";
 
 /** 方案向导步骤（含虚拟完成态 ready） */
 export type ProfileSetupStep = ProfileStepId | "ready";
@@ -56,8 +57,8 @@ export interface WorkProfile {
   bounds: ProfileSpecItem[];
 }
 
-/** 运行时推断交付规格（创作阶段不含发布分类） */
-export type DeliverySpec = {
+/** 运行时推断的内容形态（创作阶段不含发布分类） */
+export type ContentFormSpec = {
   format: ContentFormatId | null;
   modalities: MediaModalityId[];
 };
@@ -83,7 +84,7 @@ export interface AudioMediaParams {
   duration_sec?: number;
 }
 
-export interface DeliveryMediaParams {
+export interface ContentFormMediaParams {
   text?: TextMediaParams;
   image?: ImageMediaParams;
   video?: VideoMediaParams;

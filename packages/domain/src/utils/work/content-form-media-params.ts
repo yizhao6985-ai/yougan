@@ -1,7 +1,8 @@
-import type { ContentFormatId, MediaModalityId } from "../../models/taxonomy/content.js";
+import type { ContentFormatId } from "../../models/content-form/formats.js";
+import type { MediaModalityId } from "../../models/content-form/modalities.js";
 import type {
   AudioMediaParams,
-  DeliveryMediaParams,
+  ContentFormMediaParams,
   ImageMediaParams,
   TextMediaParams,
   VideoMediaParams,
@@ -9,7 +10,7 @@ import type {
 import { inferMediaModalities, sortMediaModalities } from "../media-modalities.js";
 import { normalizeProfileAspectRatio, type AspectRatioContext } from "../aspect-ratio.js";
 
-export const EMPTY_DELIVERY_MEDIA_PARAMS: DeliveryMediaParams = {};
+export const EMPTY_CONTENT_FORM_MEDIA_PARAMS: ContentFormMediaParams = {};
 
 function parseTextMediaParams(raw: unknown): TextMediaParams | undefined {
   if (!raw || typeof raw !== "object") return undefined;
@@ -62,8 +63,8 @@ function parseAudioMediaParams(raw: unknown): AudioMediaParams | undefined {
   return { duration_sec };
 }
 
-export function parseDeliveryMediaParams(raw: unknown): DeliveryMediaParams {
-  if (!raw || typeof raw !== "object") return { ...EMPTY_DELIVERY_MEDIA_PARAMS };
+export function parseContentFormMediaParams(raw: unknown): ContentFormMediaParams {
+  if (!raw || typeof raw !== "object") return { ...EMPTY_CONTENT_FORM_MEDIA_PARAMS };
   const value = raw as Record<string, unknown>;
   const text = parseTextMediaParams(value.text);
   const image = parseImageMediaParams(value.image);
@@ -77,10 +78,10 @@ export function parseDeliveryMediaParams(raw: unknown): DeliveryMediaParams {
   };
 }
 
-export function mergeDeliveryMediaParams(
-  base: DeliveryMediaParams,
-  patch: DeliveryMediaParams,
-): DeliveryMediaParams {
+export function mergeContentFormMediaParams(
+  base: ContentFormMediaParams,
+  patch: ContentFormMediaParams,
+): ContentFormMediaParams {
   return {
     text: patch.text ? { ...base.text, ...patch.text } : base.text,
     image: patch.image ? { ...base.image, ...patch.image } : base.image,
@@ -92,9 +93,9 @@ export function mergeDeliveryMediaParams(
 export function defaultMediaParamsForFormat(
   format: ContentFormatId,
   modalities: MediaModalityId[],
-): DeliveryMediaParams {
+): ContentFormMediaParams {
   const set = new Set(sortMediaModalities(modalities));
-  const params: DeliveryMediaParams = {};
+  const params: ContentFormMediaParams = {};
 
   if (set.has("text") || format === "note" || format === "article" || format === "blog") {
     params.text = {};
@@ -141,7 +142,7 @@ export function syncModalitiesWithFormat(
 }
 
 export function imageAspectRatioFromMediaParams(
-  mediaParams: DeliveryMediaParams,
+  mediaParams: ContentFormMediaParams,
   ctx: AspectRatioContext,
 ): string | undefined {
   const raw = mediaParams.image?.aspect_ratio?.trim();
@@ -150,7 +151,7 @@ export function imageAspectRatioFromMediaParams(
 }
 
 export function videoAspectRatioFromMediaParams(
-  mediaParams: DeliveryMediaParams,
+  mediaParams: ContentFormMediaParams,
   ctx: AspectRatioContext,
 ): string | undefined {
   const raw = mediaParams.video?.aspect_ratio?.trim();
