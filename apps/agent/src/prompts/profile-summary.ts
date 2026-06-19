@@ -83,7 +83,7 @@ export function profileStyleSummary(profile: WorkProfile): string {
 }
 
 export function profileContextSummary(profile: WorkProfile): string {
-  return `背景设定（含 id，${profile.context.length} 条）：\n${formatSpecList(profile.context)}`;
+  return `设定（含 id，${profile.context.length} 条）：\n${formatSpecList(profile.context)}`;
 }
 
 export function profileSequenceSummary(profile: WorkProfile): string {
@@ -119,7 +119,7 @@ export function profileSummary(
   lines.push(`② 风格：${profileStyleSummary(profile)}`);
 
   if (profile.context.length) {
-    lines.push(`③ 背景：${profile.context.length} 条`);
+    lines.push(`③ 设定：${profile.context.length} 条`);
   }
   if (profile.sequence.length) {
     lines.push(`④ 节拍：${profile.sequence.length} 节（软参考）`);

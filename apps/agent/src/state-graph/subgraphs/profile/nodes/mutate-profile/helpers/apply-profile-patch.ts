@@ -132,15 +132,15 @@ export function applyProfilePatch(
 
   if (patch.clear_context) {
     next = clearContext(next);
-    changes.push("清空背景");
+    changes.push("清空设定");
   }
   if (patch.context_replace?.length) {
     next = replaceSpecs(next, patch.context_replace, "ctx");
-    changes.push("背景");
+    changes.push("设定");
   } else if (patch.context_append?.length) {
     const before = next.context.length;
     next = appendSpecs(next, patch.context_append, appendContext);
-    if (next.context.length > before) changes.push("背景");
+    if (next.context.length > before) changes.push("设定");
   }
 
   if (patch.clear_sequence) {

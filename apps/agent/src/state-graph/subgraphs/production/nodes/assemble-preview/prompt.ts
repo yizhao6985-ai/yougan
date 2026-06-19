@@ -46,7 +46,7 @@ export function buildConsolidateSystemPrompt(input: {
 ## 工作要求
 - **不要改写或合并**各任务片段正文；片段已按顺序映射为 preview blocks
 - 只输出元信息：title、hook、hashtags、notes
-- title / hook 应概括整件作品，供列表与分享使用
+- title / hook 应概括作品；若用户要求仅产出部分节拍/片段，可概括当前片段，勿为未产出部分编造内容
 - hashtags 3–8 个，不带 # 号
 - notes 仅放制作侧备注，默认不进公开展示
 

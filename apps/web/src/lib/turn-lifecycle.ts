@@ -67,14 +67,14 @@ export function isProductionTurnActive(
 ): boolean {
   const turn = values?.turn;
   if (turn?.activeKind === "production") return true;
-  return turn?.queue[0] === "production";
+  return turn?.queue?.[0] === "production";
 }
 
 /** checkpoint 是否表示回合仍在执行（非 committed / cancelled） */
 export function isTurnInFlight(values: YouganValues | null | undefined): boolean {
   const turn = values?.turn;
   if (!turn || turn.committed || turn.cancelled) return false;
-  if (turn.activeKind != null || turn.queue.length > 0) return true;
+  if (turn.activeKind != null || (turn.queue?.length ?? 0) > 0) return true;
   return values?.runProgress != null;
 }
 

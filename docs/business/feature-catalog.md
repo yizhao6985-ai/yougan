@@ -42,7 +42,7 @@
 
 | 功能 | 用户价值 | 状态 | 模型 |
 |------|----------|------|------|
-| 定方案对话 | 按步骤定方向、风格、背景、节拍与边界 | 已实现 | profile 子图 + 五步方案工具（`update_profile_direction` … `update_profile_bounds`） |
+| 定方案对话 | 按步骤定方向、风格、设定、节拍与边界 | 已实现 | profile 子图 + 五步方案工具（`update_profile_direction` … `update_profile_bounds`） |
 | 参考素材分析 | 上传附件自动分析入库 | 已实现 | reference 子图 + MiniMax 多模态 |
 | 聊天改状态 | 改方案、参考、作品预览 | 已实现 | profile / reference / production 子图 + 工具 |
 | 制作计划与出稿 | 排计划 + AI 团队执行 | 已实现 | production 子图 |

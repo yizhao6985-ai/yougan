@@ -63,7 +63,7 @@ ${profileSummary(profile, references)}
 风格：${profile.style?.verbal?.trim() || "未指定"}
 受众：${profile.direction.audience ?? "未指定"}
 
-背景设定：
+设定：
 ${context || "无"}
 
 内容节拍（软参考）：

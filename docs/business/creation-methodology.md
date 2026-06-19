@@ -33,7 +33,7 @@ Agent 每条用户消息先经 **回合队列**（`turn.queue`）workflow（见 
 profile
 ├── direction       ① 方向（summary, format, audience?）
 ├── style           ② 风格（verbal?, visual?）
-├── context[]       ③ 背景（正向离散 spec）
+├── context[]       ③ 设定（正向离散 spec）
 ├── sequence[]      ④ 节拍（有序 spec + role?，软参考）
 └── bounds[]        ⑤ 边界（反向离散 spec）
 ```

@@ -118,7 +118,7 @@ export function summarizeProfileStepForSuggestions(
     }
     case "context":
       return profile.context.length > 0
-        ? `背景 ${profile.context.length} 条`
+        ? `设定 ${profile.context.length} 条`
         : "（空）";
     case "sequence":
       return profile.sequence.length > 0

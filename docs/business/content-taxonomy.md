@@ -139,7 +139,7 @@ flowchart LR
 |------|------|------|
 | ① 方向 | `direction.summary` / `format` / `audience` | 创作定位、内容形式与受众；发布推断 `contentTopic` |
 | ② 风格 | `style.verbal` / `visual` | 文字与画面默认调子 |
-| ③ 背景 | `context[]` | 世界设定、品牌背景等正向离散说明 |
+| ③ 设定 | `context[]` | 世界设定、品牌信息等正向离散说明 |
 | ④ 节拍 | `sequence[]` | 有序内容意图（软参考，可含 `role`） |
 | ⑤ 边界 | `bounds[]` | 禁止项、红线等反向离散说明 |
 

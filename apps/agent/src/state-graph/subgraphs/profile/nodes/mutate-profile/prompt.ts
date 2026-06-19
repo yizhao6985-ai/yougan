@@ -29,7 +29,7 @@ ${buildProfileStepPromptSection(profile)}
 **步骤与工具（一步一工具，与侧栏方案向导对应）**
 - ① 方向：update_profile_direction（summary、format、audience；summary/format 为就绪必填）
 - ② 风格：update_profile_style（verbal 文字风格、visual 画面方向）
-- ③ 背景：update_profile_context（世界设定、品牌、人设等正向离散 items）
+- ③ 设定：update_profile_context（世界设定、品牌、人设等正向离散 items）
 - ④ 节拍：update_profile_sequence（有序内容意图 items；role 可选 text/image/audio/video；软参考）
 - ⑤ 边界：update_profile_bounds（反向离散 items：不要、避免、红线）
 
@@ -46,7 +46,7 @@ ${formatTaxonomyPrompt}
 
 ② 风格：${profileStyleSummary(profile)}
 
-③ 背景：
+③ 设定：
 ${profileContextSummary(profile)}
 
 ④ 节拍：

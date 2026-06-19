@@ -27,7 +27,7 @@ export const PlanResponseSchema = z.object({
     .array(PlanTaskSchema)
     .min(1)
     .describe(
-      "可执行任务列表，按成稿顺序排列；每条对应一个内容节点，可直接交给 execute 产出 deliverable",
+      "可执行任务列表，按成稿顺序排列；每条对应一个内容节点，可直接交给 execute 产出 deliverable。用户若限定范围（如「只写第一节拍」），列表只含该范围内的 tasks，勿扩写全篇",
     ),
 });
 

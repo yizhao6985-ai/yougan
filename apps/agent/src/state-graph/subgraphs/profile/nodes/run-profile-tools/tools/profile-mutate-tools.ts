@@ -39,10 +39,10 @@ export const updateProfileStyle = createProfileTool({
 export const updateProfileContext = createProfileTool({
   name: "update_profile_context",
   description:
-    "更新方案「背景」：世界设定、品牌背景、人设等正向离散说明（items + mode）。",
+    "更新方案「设定」：世界设定、品牌信息、人设等正向离散说明（items + mode）。",
   schema: contextFieldsSchema,
   toPatch: (input) => buildContextPatch(input),
-  emptyMessage: "未提供可更新的背景字段。",
+  emptyMessage: "未提供可更新的设定字段。",
 });
 
 export const updateProfileSequence = createProfileTool({

@@ -95,11 +95,11 @@ const DEFAULT_STEP_COPY: Record<
     placeholder: "说说文字与画面风格…",
   },
   context: {
-    title: "背景",
-    hint: "世界设定、品牌背景、人设等正向离散说明",
-    emptyTitle: "暂无背景设定",
+    title: "设定",
+    hint: "世界设定、品牌信息、人设等正向离散说明",
+    emptyTitle: "暂无设定",
     emptyBody: "例如：「主角是产品经理」「虚构品牌名」",
-    placeholder: "说说设定、品牌或背景…",
+    placeholder: "说说世界观、品牌或人设…",
   },
   sequence: {
     title: "节拍",
@@ -138,7 +138,7 @@ export function getProfileStepCopy(
   if (step === "ready") {
     return {
       title: "方案就绪",
-      hint: "必填项已齐，可说「开始制作」；也可继续补充风格、背景、节拍与边界",
+      hint: "必填项已齐，可说「开始制作」；也可继续补充风格、设定、节拍与边界",
       emptyTitle: "",
       emptyBody: "",
       placeholder: "说「开始制作」，或继续补充方案…",

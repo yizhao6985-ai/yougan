@@ -4,6 +4,7 @@ import { CheckIcon, PencilIcon, Trash2Icon } from "lucide-react";
 import {
   EMPTY_WORK_PROFILE,
   getProfileStepCopy,
+  mediaModalityLabel,
   parseProfileJson,
   type ProfileSetupStep,
 } from "@yougan/domain";
@@ -448,8 +449,8 @@ function StepContent({
           onDelete={onDeleteContext}
           onClear={onClearContext}
           clearLabel={PROFILE_WIZARD.clearContext}
-          editLabel="修改背景"
-          deleteLabel="删除背景"
+          editLabel="修改设定"
+          deleteLabel="删除设定"
         />
       ) : (
         empty
@@ -476,7 +477,7 @@ function StepContent({
                 spec={item.spec}
                 heading={
                   item.role
-                    ? `${index + 1}. ${formatLabel(item.role) ?? item.role}`
+                    ? `${index + 1}. ${mediaModalityLabel(item.role) ?? item.role}`
                     : `${index + 1}.`
                 }
                 editable={editable}

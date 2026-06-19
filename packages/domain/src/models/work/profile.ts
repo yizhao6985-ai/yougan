@@ -49,7 +49,7 @@ export interface ProfileSequenceItem {
 export interface WorkProfile {
   direction: ProfileDirection;
   style?: ProfileStyle;
-  /** 正向离散：世界设定、品牌背景等 */
+  /** 正向离散：世界设定、品牌信息等 */
   context: ProfileSpecItem[];
   /** 有序意图：成文节拍、插图/插媒体（软参考） */
   sequence: ProfileSequenceItem[];

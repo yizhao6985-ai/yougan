@@ -44,7 +44,7 @@ ${afterSummary}
 
 ② 风格：${profileStyleSummary(input.after)}
 
-③ 背景：
+③ 设定：
 ${profileContextSummary(input.after)}
 
 ④ 节拍：

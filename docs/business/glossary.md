@@ -14,7 +14,7 @@
 | 制作方案 | `Work.profile` | 按步骤组织：`direction`、`style`、`context`、`sequence`、`bounds` |
 | 方向 | `profile.direction` | 第 1 步：`summary`（创作定位）、`format`（内容形式）、`audience`（受众，可选） |
 | 风格 | `profile.style` | 第 2 步：`verbal`（文字风格）、`visual`（画面方向） |
-| 背景 | `profile.context` | 第 3 步：正向离散说明（世界设定、品牌背景等 `{ id, spec }[]`） |
+| 设定 | `profile.context` | 第 3 步：正向离散说明（世界设定、品牌信息等 `{ id, spec }[]`） |
 | 节拍 | `profile.sequence` | 第 4 步：有序内容意图（软参考 `{ id, spec, role? }[]`） |
 | 边界 | `profile.bounds` | 第 5 步：反向离散说明（禁止项、红线 `{ id, spec }[]`） |
 | 方案就绪 | `isProfileSetupReady` | `direction.summary` + `direction.format` 已填即可进入制作 |
