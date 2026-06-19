@@ -5,9 +5,7 @@ import {
   publicationCoverFromBlocks,
   publicationPlainExcerpt,
 } from "@/components/preview-block-list";
-import {
-  topicCategoryLabel,
-} from "@/lib/discover-taxonomy";
+import { topicCategoryLabel } from "@yougan/domain";
 import { formatPublishedAt } from "@/lib/platform-labels";
 import { publicationContentPath } from "@/lib/publication-path";
 import type { Publication } from "@/lib/publication-types";

@@ -1,5 +1,9 @@
 import type { Client, Message } from "@langchain/langgraph-sdk";
-import { EMPTY_TURN_RUNTIME, mergeTurnRuntime } from "@yougan/domain";
+import {
+  EMPTY_TURN_RUNTIME,
+  mergeTurnRuntime,
+  type TurnRuntime,
+} from "@yougan/domain";
 
 import type { YouganValues } from "@/lib/types";
 
@@ -61,20 +65,33 @@ export function isLangGraphThreadMissingError(error: unknown): boolean {
   return normalized.includes("not found") && normalized.includes("thread");
 }
 
+function resolveTurnRuntime(
+  values: YouganValues | null | undefined,
+): TurnRuntime {
+  return mergeTurnRuntime(EMPTY_TURN_RUNTIME, values?.turn ?? {});
+}
+
 /** production 环节进行中（含制作前确认 interrupt）时禁止前端取消 */
 export function isProductionTurnActive(
   values: YouganValues | null | undefined,
 ): boolean {
-  const turn = values?.turn;
-  if (turn?.activeKind === "production") return true;
-  return turn?.queue?.[0] === "production";
+  const turn = resolveTurnRuntime(values);
+  if (turn.activeKind === "production") return true;
+  return turn.queue[0] === "production";
+}
+
+/** production 回合不得走启发式 repair（由 thread-run-coordination 在 bootstrap 阶段保护） */
+export function isProtectedFromStaleTurnRepair(
+  values: YouganValues | null | undefined,
+): boolean {
+  return isProductionTurnActive(values);
 }
 
 /** checkpoint 是否表示回合仍在执行（非 committed / cancelled） */
 export function isTurnInFlight(values: YouganValues | null | undefined): boolean {
-  const turn = values?.turn;
-  if (!turn || turn.committed || turn.cancelled) return false;
-  if (turn.activeKind != null || (turn.queue?.length ?? 0) > 0) return true;
+  const turn = resolveTurnRuntime(values);
+  if (turn.committed || turn.cancelled) return false;
+  if (turn.activeKind != null || turn.queue.length > 0) return true;
   return values?.runProgress != null;
 }
 

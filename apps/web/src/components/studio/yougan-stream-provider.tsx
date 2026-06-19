@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
 
 import {
   useConversationsStore,
@@ -10,6 +10,7 @@ import {
   useInvalidateWorkConversations,
 } from "@/hooks/queries/conversations";
 import { useInvalidateVersionQueries } from "@/hooks/queries/versions";
+import { queryKeys } from "@/hooks/queries/keys";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   countHumanCheckpointMessages,
@@ -22,7 +23,7 @@ import {
   type YouganStream,
 } from "@/hooks/use-yougan-stream";
 import { useWorksStore, type WorksStore } from "@/hooks/use-works-store";
-import type { YouganValues } from "@/lib/types";
+import type { Work, YouganValues } from "@/lib/types";
 
 type StudioContextValue = WorksStore &
   ConversationsStore &
@@ -104,8 +105,55 @@ function ConversationStreamKeyed({
     onRunComplete: handleRunComplete,
   });
 
+  const syncProfileAfterPatch = useCallback(
+    (patchedWorkId: string) => {
+      const work = queryClient
+        .getQueryData<Work[]>(queryKeys.works.list)
+        ?.find((item) => item.id === patchedWorkId);
+      if (work?.profile) {
+        streamState.syncMaterializedProfileToStream(work.profile);
+      }
+    },
+    [queryClient, streamState.syncMaterializedProfileToStream],
+  );
+
+  const profileMutations = useMemo(() => {
+    const withProfileSync =
+      <Args extends [string, ...unknown[]]>(fn: (...args: Args) => void) =>
+      (...args: Args) => {
+        fn(...args);
+        syncProfileAfterPatch(args[0]);
+      };
+
+    return {
+      updateProfileBound: withProfileSync(worksStore.updateProfileBound),
+      deleteProfileBound: withProfileSync(worksStore.deleteProfileBound),
+      clearWorkProfileBounds: withProfileSync(worksStore.clearWorkProfileBounds),
+      updateProfileSequence: withProfileSync(worksStore.updateProfileSequence),
+      deleteProfileSequence: withProfileSync(worksStore.deleteProfileSequence),
+      clearWorkProfileSequence: withProfileSync(
+        worksStore.clearWorkProfileSequence,
+      ),
+      updateProfileContext: withProfileSync(worksStore.updateProfileContext),
+      deleteProfileContext: withProfileSync(worksStore.deleteProfileContext),
+      clearWorkProfileContext: withProfileSync(worksStore.clearWorkProfileContext),
+    };
+  }, [
+    syncProfileAfterPatch,
+    worksStore.clearWorkProfileBounds,
+    worksStore.clearWorkProfileContext,
+    worksStore.clearWorkProfileSequence,
+    worksStore.deleteProfileBound,
+    worksStore.deleteProfileContext,
+    worksStore.deleteProfileSequence,
+    worksStore.updateProfileBound,
+    worksStore.updateProfileContext,
+    worksStore.updateProfileSequence,
+  ]);
+
   const value: StudioContextValue = {
     ...worksStore,
+    ...profileMutations,
     ...conversationsStore,
     ...streamState,
     modelTemperatureLevel: temperatureControl.level,

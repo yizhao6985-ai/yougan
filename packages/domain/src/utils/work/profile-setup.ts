@@ -71,6 +71,60 @@ export function isProfileStepFilled(
   }
 }
 
+export function summarizeProfileStepForSuggestions(
+  profile: WorkProfile,
+  step: ProfileStepId,
+): string {
+  switch (step) {
+    case "direction": {
+      const parts: string[] = [];
+      if (profile.direction.summary.trim()) {
+        parts.push(profile.direction.summary.trim());
+      }
+      if (profile.direction.format) {
+        parts.push(`形式 ${profile.direction.format}`);
+      }
+      if (profile.direction.audience?.trim()) {
+        parts.push(`受众 ${profile.direction.audience.trim()}`);
+      }
+      return parts.join("；") || "（空）";
+    }
+    case "style": {
+      const parts: string[] = [];
+      if (profile.style?.verbal?.trim()) {
+        parts.push(`文字 ${profile.style.verbal.trim()}`);
+      }
+      if (profile.style?.visual?.trim()) {
+        parts.push(`画面 ${profile.style.visual.trim()}`);
+      }
+      return parts.join("；") || "（空）";
+    }
+    case "context":
+      if (profile.context.length === 0) return "（空）";
+      return profile.context
+        .map((item) => item.spec.trim())
+        .filter(Boolean)
+        .slice(0, 3)
+        .join("；");
+    case "sequence":
+      if (profile.sequence.length === 0) return "（空）";
+      return profile.sequence
+        .map((item) => item.spec.trim())
+        .filter(Boolean)
+        .slice(0, 3)
+        .join(" → ");
+    case "bounds":
+      if (profile.bounds.length === 0) return "（空）";
+      return profile.bounds
+        .map((item) => item.spec.trim())
+        .filter(Boolean)
+        .slice(0, 3)
+        .join("；");
+    default:
+      return "（空）";
+  }
+}
+
 function buildStepItems(
   profile: WorkProfile,
   step: ProfileStepId,
@@ -258,6 +312,18 @@ export function buildProfileStepPromptSection(raw: WorkProfile | undefined): str
 
   if (completedTitles.length) {
     lines.push(`- 已完成步骤：${completedTitles.join("、")}`);
+    const prior = PROFILE_SETUP_FLOW.filter((step) =>
+      isProfileStepFilled(profile, step),
+    )
+      .map((step) => {
+        const title = getProfileStepCopy(profile, step).title;
+        const summary = summarizeProfileStepForSuggestions(profile, step);
+        return summary !== "（空）" ? `${title}：${summary}` : title;
+      })
+      .join("；");
+    if (prior) {
+      lines.push(`- 已定方案摘要：${prior}`);
+    }
   }
   if (gaps) {
     lines.push(`- 本步缺口：${gaps}`);

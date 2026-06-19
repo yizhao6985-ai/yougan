@@ -22,7 +22,7 @@ import {
   parseDiscoverFilters,
   type DiscoverFilters,
 } from "@/lib/discover-filters";
-import { type DiscoverFacets } from "@/lib/discover-taxonomy";
+import { type DiscoverFacets } from "@yougan/domain";
 
 const EMPTY_FACETS: DiscoverFacets = {
   contentFormat: [],

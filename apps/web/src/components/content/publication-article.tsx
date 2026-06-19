@@ -4,9 +4,7 @@ import { ArrowRightIcon } from "lucide-react";
 import { AuthorAvatar } from "@/components/content/author-avatar";
 import { PreviewBlockList } from "@/components/preview-block-list";
 import { authorDisplayName } from "@/lib/publication-utils";
-import {
-  topicCategoryLabel,
-} from "@/lib/discover-taxonomy";
+import { topicCategoryLabel } from "@yougan/domain";
 import { formatPublishedAt } from "@/lib/platform-labels";
 import type { Publication } from "@/lib/publication-types";
 import { scene } from "@/lib/scene-styles";

@@ -396,21 +396,33 @@ export type CreativeContextTabId = keyof typeof CREATIVE_CONTEXT_PANEL.tabs;
 /** 作品面板 · 版本 */
 export const WORK_HISTORY_PANEL = {
   loading: "加载版本记录…",
-  duplicateTitle: "另存为新作品",
-  duplicateHint:
-    "需要换主题或换方向时，从当前进度复制为新作品，不影响原作品。",
+  exploreTitle: "平行探索",
+  exploreHint:
+    "换选题或换方向时，从当前最新进度复制为新作品，原作品不变。含尚未重新出稿的方案修改。",
   duplicateAction: "另存为新作品",
   duplicating: "正在创建…",
-  duplicateFromHere: "从此版本复制",
-  timelineTitle: "版本记录",
-  timelineHint: "每次产出作品内容后会记录一版，可回到任意版本继续编辑。",
+  forkFromVersion: "从此分叉为新作品",
+  forkHint: "从该版出稿时的方案、参考和成稿分叉，不影响原作品。",
+  timelineTitle: "版本历史",
+  timelineHint:
+    "每次产出作品内容时记录一版。时间轴只记成稿时刻的快照；此后对方案、参考的修改不会单独记版。",
+  restoreNotice:
+    "恢复某一版时，方案、参考和成稿会一起切回该版记录时的状态。若你在上次出稿后又改了方案或参考、但还没重新出稿，这些新修改会被覆盖。",
   empty: "还没有版本记录。制作产出作品后会出现。",
   headBadge: "当前",
-  restore: "回到这一版",
-  restoreTitle: "回到这一版？",
-  restoreDescription:
-    "将切换到所选版本，当前进度会被替换，历史记录保留。",
-  confirmRestore: "确认回到这一版",
+  restore: "恢复到此版",
+  restoreTitle: "恢复到此版？",
+  restoreDescription: "将把这件作品切回以下版本出稿时的完整状态：",
+  restoreWarningTitle: "以下内容会被覆盖",
+  restoreWarningItems: [
+    "制作方案 → 恢复为该版出稿时的方案",
+    "参考素材 → 恢复为该版出稿时的参考",
+    "作品内容 → 恢复为该版成稿",
+    "上次出稿后、尚未重新出稿的方案与参考修改 → 会丢失",
+  ] as const,
+  restoreAlternative:
+    "若想保留当前最新方案再继续改，请改用上方「另存为新作品」，或对该版本使用「从此分叉为新作品」。",
+  confirmRestore: "确认恢复",
   restoring: "恢复中…",
   cancel: "取消",
 } as const;

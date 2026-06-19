@@ -5,7 +5,7 @@ import {
   type DiscoverFacetOption,
   type DiscoverFacets,
   type DiscoverFilters,
-} from "@/lib/discover-taxonomy";
+} from "@yougan/domain";
 import { cn } from "@/lib/utils";
 
 type DiscoverControlsProps = {

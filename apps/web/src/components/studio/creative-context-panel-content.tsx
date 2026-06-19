@@ -38,6 +38,7 @@ type CreativeContextPanelContentProps = {
   preview?: WorkPreview | null;
   previewUnsaved?: boolean;
   onDuplicated?: (workId: string) => void;
+  onRestored?: (work: Work) => void | Promise<void>;
   onUpdateBound?: (itemId: string, spec: string) => void;
   onDeleteBound?: (itemId: string) => void;
   onClearBounds?: () => void;
@@ -56,6 +57,7 @@ export function CreativeContextPanelContent({
   preview,
   previewUnsaved,
   onDuplicated,
+  onRestored,
   onUpdateBound,
   onDeleteBound,
   onClearBounds,
@@ -159,8 +161,9 @@ export function CreativeContextPanelContent({
           >
             <WorkHistoryPanel
               workId={activeWork.id}
+              headVersionId={activeWork.headVersionId}
               onDuplicated={onDuplicated}
-              compact
+              onRestored={onRestored}
             />
           </div>
         ) : null}

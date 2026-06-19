@@ -51,6 +51,20 @@ const DEFAULT_EXAMPLES: Record<
   ],
 };
 
+const STYLE_VISUAL_EXAMPLES = [
+  "扁平矢量插画风，粉蓝马卡龙配色",
+  "复古手绘线条，手帐贴纸感",
+  "电影感构图，高饱和霓虹夜景",
+  "简约留白，日系水彩晕染",
+] as const;
+
+const STYLE_MIXED_EXAMPLES = [
+  "语气轻松口语，配简约产品摄影感",
+  "治愈软萌文案，画面干净留白",
+  "专业克制短文，配高对比封面图",
+  "种草笔记口吻，九宫格拼图风",
+] as const;
+
 const FORMAT_DIRECTION: Partial<Record<ContentFormatId, StepCopyVariant>> = {
   illustration: {
     title: "画面方向",
@@ -153,18 +167,51 @@ export function getProfileStepCopy(
     return mergeStepCopy("direction", FORMAT_DIRECTION[format]);
   }
 
+  if (step === "style") {
+    const fields = getStyleFieldsForProfile(profile);
+    const variant: Partial<StepCopyVariant> = {
+      suggestionExamples: getStyleSuggestionExamples(profile),
+    };
+    if (fields.length === 1 && fields[0] === "visual") {
+      variant.hint = "画面风格：构图、笔触、配色与光影";
+      variant.emptyBody = "例如：「扁平矢量插画风，粉蓝马卡龙配色」";
+      variant.placeholder = "说说画面风格…";
+    } else if (fields.length === 1 && fields[0] === "verbal") {
+      variant.hint = "文字语气与文风";
+      variant.emptyBody = "例如：「语气轻松口语，像朋友聊天」";
+      variant.placeholder = "说说文字语气与文风…";
+    }
+    return mergeStepCopy("style", variant);
+  }
+
   return mergeStepCopy(step);
+}
+
+function getStyleSuggestionExamples(profile: WorkProfile): string[] {
+  const fields = getStyleFieldsForProfile(profile);
+  if (fields.length === 1 && fields[0] === "visual") {
+    return [...STYLE_VISUAL_EXAMPLES];
+  }
+  const modalities = inferModalitiesFromProfile(profile);
+  if (modalities.includes("image") && modalities.includes("text")) {
+    return [...STYLE_MIXED_EXAMPLES];
+  }
+  return DEFAULT_EXAMPLES.style;
 }
 
 /** 风格步骤应突出哪些子字段 */
 export function getStyleFieldsForProfile(
   profile: WorkProfile,
 ): Array<"verbal" | "visual"> {
-  const fields: Array<"verbal" | "visual"> = ["verbal", "visual"];
   const format = profile.direction.format;
-  if (format === "illustration") return ["visual"];
+  const modalities = inferModalitiesFromProfile(profile);
+  const hasImage = modalities.includes("image");
+  const hasText = modalities.includes("text");
+
+  if (format === "illustration" || (hasImage && !hasText)) return ["visual"];
+  if (hasText && !hasImage) return ["verbal"];
   if (format === "music" || format === "podcast") return ["verbal", "visual"];
-  return fields;
+  return ["verbal", "visual"];
 }
 
 /** 从 profile 推断媒介组合 */

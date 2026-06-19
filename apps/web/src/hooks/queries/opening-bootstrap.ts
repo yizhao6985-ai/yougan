@@ -14,6 +14,9 @@ interface UseOpeningBootstrapQueryOptions {
   submitOpeningBootstrap: () => Promise<void>;
 }
 
+/** opening bootstrap 仅触发 side effect；query data 用 null 占位以满足 React Query 约束 */
+type OpeningBootstrapQueryData = null;
+
 export function useOpeningBootstrapQuery({
   work,
   conversation,
@@ -34,12 +37,15 @@ export function useOpeningBootstrapQuery({
     !isCancelling &&
     !hasActiveRun;
 
-  return useQuery({
+  return useQuery<OpeningBootstrapQueryData>({
     queryKey:
       workId && conversationId
         ? queryKeys.works.openingBootstrap(workId, conversationId)
         : (["works", "opening-bootstrap", "disabled"] as const),
-    queryFn: submitOpeningBootstrap,
+    queryFn: async () => {
+      await submitOpeningBootstrap();
+      return null;
+    },
     enabled,
     staleTime: Number.POSITIVE_INFINITY,
     gcTime: Number.POSITIVE_INFINITY,

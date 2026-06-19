@@ -2,6 +2,7 @@
 import type { LangGraphRunnableConfig } from "@langchain/langgraph";
 
 import { generateDesignImage } from "#agent/llm/providers/dashscope-image.js";
+import { resolveImageAspectRatio } from "@yougan/domain";
 import {
   patchRunProgress,
   withRunProgressHeartbeat,
@@ -13,7 +14,6 @@ import {
 } from "#agent/state-io/index.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
-import { resolveImageAspectRatio } from "../../helpers/image-aspect-ratio.js";
 import { productionRenderDesignProgress } from "../../helpers/progress-labels.js";
 import { currentActiveTask } from "../../helpers/task-plan.js";
 

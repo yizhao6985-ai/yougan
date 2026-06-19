@@ -8,6 +8,7 @@ import { useMemoizedFn } from "ahooks";
 import { queryKeys } from "@/hooks/queries/keys";
 import { patchWorksCache } from "@/hooks/queries/works";
 import { normalizeWork } from "@/lib/normalize-work";
+import type { Work, WorkVersion } from "@/lib/types";
 import {
   duplicateWork,
   listWorkVersions,
@@ -28,7 +29,12 @@ export function useWorkVersionsQuery(workId: string | null) {
   });
 }
 
-export function useRestoreWorkVersionMutation(workId: string | null) {
+export function useRestoreWorkVersionMutation(
+  workId: string | null,
+  options?: {
+    onRestored?: (work: Work) => void | Promise<void>;
+  },
+) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -36,16 +42,18 @@ export function useRestoreWorkVersionMutation(workId: string | null) {
       if (!workId) throw new Error("No active work");
       return restoreWorkVersion(workId, versionId);
     },
-    onSuccess: ({ work }) => {
+    onSuccess: async ({ work }) => {
       if (!workId) return;
+      const normalized = normalizeWork(work);
       patchWorksCache(queryClient, (works) =>
         works.map((item) =>
-          item.id === workId ? normalizeWork(work) : item,
+          item.id === workId ? normalized : item,
         ),
       );
-      void queryClient.invalidateQueries({
+      await queryClient.invalidateQueries({
         queryKey: queryKeys.works.versions(workId),
       });
+      await options?.onRestored?.(normalized);
     },
   });
 }
@@ -76,8 +84,18 @@ export function useInvalidateVersionQueries(workId: string | null) {
 
   return useMemoizedFn(async () => {
     if (!workId) return;
-    await queryClient.invalidateQueries({
+    await queryClient.refetchQueries({
       queryKey: queryKeys.works.versions(workId),
     });
+    const versions = queryClient.getQueryData<WorkVersion[]>(
+      queryKeys.works.versions(workId),
+    );
+    const headId = versions?.[0]?.id;
+    if (!headId) return;
+    patchWorksCache(queryClient, (works) =>
+      works.map((work) =>
+        work.id === workId ? { ...work, headVersionId: headId } : work,
+      ),
+    );
   });
 }

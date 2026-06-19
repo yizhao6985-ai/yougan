@@ -16,6 +16,7 @@ import {
   snapshotsEqual,
   snapshotFromAgentValues,
 } from "./versions.js";
+import { syncMaterializedStateToAgentThreads } from "./agent-thread-sync.js";
 import { materializeAgentRunValues } from "./materialize-preview-images.js";
 
 function snapshotFromWorkColumns(work: {
@@ -124,9 +125,21 @@ export async function listWorkVersions(userId: string, workId: string) {
     orderBy: { createdAt: "desc" },
   });
 
-  return versions
+  const visible = versions
     .filter((version) => hasValidPreview(parseSnapshot(version.snapshot)))
     .map(toVersionDTO);
+
+  if (!work.headVersionId) {
+    return visible;
+  }
+
+  return visible.sort((left, right) => {
+    if (left.id === work.headVersionId) return -1;
+    if (right.id === work.headVersionId) return 1;
+    return (
+      new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
+    );
+  });
 }
 
 export async function restoreWorkToVersion(
@@ -153,6 +166,12 @@ export async function restoreWorkToVersion(
       ...columns,
       headVersionId: version.id,
     },
+  });
+
+  await syncMaterializedStateToAgentThreads(workId, {
+    profile: columns.profile,
+    references: columns.references,
+    production: columns.production,
   });
 
   return toVersionDTO(version);

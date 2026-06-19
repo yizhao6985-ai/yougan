@@ -4,7 +4,7 @@ import type {
   DiscoverFilters,
   PublicationSummaryOverrides,
   PublicationSummaryPreview,
-} from "@/lib/discover-taxonomy";
+} from "@yougan/domain";
 import type { Publication, PublicationStatus } from "@/lib/publication-types";
 
 export type PublicationFeedResponse = {

@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useState } from "react";
 
 import { chatStreamBlock } from "@/components/studio/chat-stream-block";
+import { DEFAULT_NEXT_STEP_SUGGESTIONS_HINT } from "@yougan/domain";
 import {
-  DEFAULT_NEXT_STEP_SUGGESTIONS_HINT,
   type NextStepSuggestions,
   type WorkProfile,
 } from "@/lib/types";

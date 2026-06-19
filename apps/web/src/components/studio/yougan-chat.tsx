@@ -123,6 +123,7 @@ export function YouganChat() {
   );
   const showShimmer =
     stream.isLoading &&
+    !productionConfirmInterrupt &&
     !hasStreamingAi &&
     !hasStreamingTool &&
     items.length > 0 &&
@@ -210,14 +211,16 @@ export function YouganChat() {
     }
   })();
 
-  const conversationRunProgress = runProgress?.label
-    ? {
-        label: runProgress.label,
-        detail: runProgress.detail?.trim() || null,
-      }
-    : stream.isLoading
-      ? { label: statusHint, detail: null }
-      : null;
+  const conversationRunProgress = productionConfirmInterrupt
+    ? null
+    : runProgress?.label
+      ? {
+          label: runProgress.label,
+          detail: runProgress.detail?.trim() || null,
+        }
+      : stream.isLoading
+        ? { label: statusHint, detail: null }
+        : null;
 
   const composerPlaceholder = profileSetupPlaceholder(
     profile,

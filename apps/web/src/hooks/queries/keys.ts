@@ -1,4 +1,4 @@
-import type { DiscoverFilters } from "@/lib/discover-taxonomy";
+import type { DiscoverFilters } from "@yougan/domain";
 
 export const queryKeys = {
   auth: {

@@ -1,10 +1,9 @@
-import { buildPublicationSlug } from "@yougan/domain";
-
 import {
   applyPublicationSummaryOverrides,
   buildPublicationMetadata,
   buildPublicationSummaryPreview,
   buildFacetOptions,
+  buildPublicationSlug,
   CONTENT_FORMATS,
   MEDIA_MODALITIES,
   DISCOVER_TOPIC_CATEGORIES,
@@ -12,7 +11,7 @@ import {
   previewHasContent,
   type PublicationSummaryOverrides,
   type WorkPreview,
-} from "../lib/discover-taxonomy.js";
+} from "@yougan/domain";
 import {
   cacheGetJson,
   cacheKeys,

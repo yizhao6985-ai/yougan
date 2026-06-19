@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckIcon, PencilIcon, Trash2Icon } from "lucide-react";
 
 import {
@@ -18,7 +18,7 @@ import {
 import { cn } from "@/lib/utils";
 import { PROFILE_WIZARD } from "@/lib/site-copy";
 import { buildProfileSetupView } from "@/lib/profile-setup-display";
-import { formatLabel } from "@/lib/discover-taxonomy";
+import { formatLabel } from "@yougan/domain";
 import type { WorkProfile } from "@/lib/types";
 
 function GuidedEmpty({
@@ -57,6 +57,12 @@ function EditableSpecItem({
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(spec);
+
+  useEffect(() => {
+    if (!editing) {
+      setDraft(spec);
+    }
+  }, [editing, spec]);
 
   const save = () => {
     const trimmed = draft.trim();

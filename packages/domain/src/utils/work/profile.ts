@@ -208,7 +208,10 @@ export function inferModalitiesFromProfile(
   if (fromSequence.length) {
     return sortMediaModalities(fromSequence);
   }
-  return inferMediaModalities({ contentFormat: normalized.direction.format });
+  return inferMediaModalities({
+    contentFormat: normalized.direction.format,
+    contentType: normalized.direction.summary,
+  });
 }
 
 export function getContentFormSpec(profile: WorkProfile): import("../../models/work/profile.js").ContentFormSpec {

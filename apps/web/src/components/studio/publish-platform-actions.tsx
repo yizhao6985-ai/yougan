@@ -10,10 +10,9 @@ import {
   usePublishWorkMutation,
 } from "@/hooks/queries/publications";
 import { DISCOVER_SECTION } from "@/lib/content-section";
-import type { PublicationSummaryOverrides } from "@/lib/discover-taxonomy";
+import { previewHasContent, type PublicationSummaryOverrides } from "@yougan/domain";
 import { PUBLISH, STUDIO } from "@/lib/site-copy";
 import { publicationContentPath } from "@/lib/publication-path";
-import { previewHasContent } from "@yougan/domain";
 import type { WorkPreview } from "@/lib/types";
 
 export function PublishPlatformActions({

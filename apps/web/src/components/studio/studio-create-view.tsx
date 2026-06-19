@@ -11,6 +11,7 @@ export function StudioCreateView() {
     activeWork,
     stream,
     selectWork,
+    applyMaterializedWorkState,
     updateProfileBound,
     deleteProfileBound,
     clearWorkProfileBounds,
@@ -54,6 +55,7 @@ export function StudioCreateView() {
       preview={preview}
       previewUnsaved={previewUnsaved}
       onDuplicated={selectWork}
+      onRestored={applyMaterializedWorkState}
       onUpdateBound={
         activeWork
           ? (itemId, spec) => updateProfileBound(activeWork.id, itemId, spec)

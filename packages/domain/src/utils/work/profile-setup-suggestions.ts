@@ -14,8 +14,9 @@ import {
   getProfileSetupState,
   isProfileSetupReady,
   isProfileStepFilled,
+  summarizeProfileStepForSuggestions,
 } from "./profile-setup.js";
-import { getProfileStepCopy } from "./profile-step-copy.js";
+import { getProfileStepCopy, getStyleFieldsForProfile } from "./profile-step-copy.js";
 
 export type ProfileSetupSuggestionSlot = {
   role: ProfileSetupSuggestionRole;
@@ -88,49 +89,160 @@ export function diffNewlyFilledProfileSteps(
   );
 }
 
-export function summarizeProfileStepForSuggestions(
+function formatStyleFieldFocus(profile: WorkProfile): string {
+  const fields = getStyleFieldsForProfile(profile);
+  if (fields.length === 1 && fields[0] === "visual") {
+    return "画面风格（构图、笔触、配色、光影）；不要写语气、文风";
+  }
+  if (fields.length === 1 && fields[0] === "verbal") {
+    return "文字语气与文风；不要写画面、配色";
+  }
+  return "文字语气与画面方向；可分别给语气向或画面向，但须紧扣已定方向";
+}
+
+function getPriorFilledSteps(
+  profile: WorkProfile,
+  beforeStep: ProfileStepId | "ready",
+): ProfileStepId[] {
+  if (beforeStep === "ready") {
+    return PROFILE_SETUP_FLOW.filter((step) =>
+      isProfileStepFilled(profile, step),
+    );
+  }
+  const idx = PROFILE_SETUP_FLOW.indexOf(beforeStep);
+  if (idx <= 0) return [];
+  return PROFILE_SETUP_FLOW.slice(0, idx).filter((step) =>
+    isProfileStepFilled(profile, step),
+  );
+}
+
+function summarizePriorSteps(
+  profile: WorkProfile,
+  beforeStep: ProfileStepId | "ready",
+): string {
+  const prior = getPriorFilledSteps(profile, beforeStep);
+  if (!prior.length) return "（无）";
+  return prior
+    .map((step) => {
+      const title = getProfileStepCopy(profile, step).title;
+      const summary = summarizeProfileStepForSuggestions(profile, step);
+      return `${title}：${summary}`;
+    })
+    .join("；");
+}
+
+function getStepConsolidateFocusHint(
   profile: WorkProfile,
   step: ProfileStepId,
-): string {
+): string | null {
   switch (step) {
-    case "direction": {
-      const parts: string[] = [];
-      if (profile.direction.summary.trim()) {
-        parts.push(profile.direction.summary.trim());
-      }
-      if (profile.direction.format) {
-        parts.push(`形式 ${profile.direction.format}`);
-      }
-      if (profile.direction.audience?.trim()) {
-        parts.push(`受众 ${profile.direction.audience.trim()}`);
-      }
-      return parts.join("；") || "（空）";
-    }
-    case "style": {
-      const parts: string[] = [];
-      if (profile.style?.verbal?.trim()) {
-        parts.push(`文字 ${profile.style.verbal.trim()}`);
-      }
-      if (profile.style?.visual?.trim()) {
-        parts.push(`画面 ${profile.style.visual.trim()}`);
-      }
-      return parts.join("；") || "（空）";
-    }
+    case "direction":
+      return null;
+    case "style":
+      return formatStyleFieldFocus(profile);
     case "context":
-      return profile.context.length > 0
-        ? `设定 ${profile.context.length} 条`
-        : "（空）";
+      return "人设、场景、品牌等正向设定；须呼应已定方向与风格";
     case "sequence":
-      return profile.sequence.length > 0
-        ? `节拍 ${profile.sequence.length} 节`
-        : "（空）";
+      return "内容顺序与节拍；须呼应方向、风格与已有设定";
     case "bounds":
-      return profile.bounds.length > 0
-        ? `边界 ${profile.bounds.length} 条`
-        : "（空）";
+      return "这件作品需避免的具体元素；须针对已定主题，不要泛泛禁忌";
     default:
-      return "（空）";
+      return null;
   }
+}
+
+function buildStepAnchorLines(
+  profile: WorkProfile,
+  activeStep: ProfileSetupStep,
+): string[] {
+  if (activeStep === "ready") {
+    const prior = summarizePriorSteps(profile, "ready");
+    if (prior === "（无）") return [];
+    return [
+      `- 已定方案摘要：${prior}`,
+      "- 扩展向建议须在此基础上补细节或微调，禁止脱离主题",
+    ];
+  }
+
+  const prior = summarizePriorSteps(profile, activeStep);
+  const lines: string[] = [];
+  if (prior !== "（无）") {
+    lines.push(
+      `- 前述已定（扩展向须紧扣，禁止泛泛套话）：${prior}`,
+    );
+  }
+
+  const focusHint = getStepConsolidateFocusHint(profile, activeStep);
+  if (focusHint) {
+    lines.push(`- 本步侧重：${focusHint}`);
+  }
+
+  if (activeStep === "direction" && profile.direction.summary.trim()) {
+    lines.push(
+      `- 方向原文：「${profile.direction.summary.trim()}」— 扩展向须能直接看出是在说这件作品`,
+    );
+  }
+
+  return lines;
+}
+
+function buildAdvanceGuidanceLines(
+  profile: WorkProfile,
+  nextStep: ProfileStepId | "ready",
+): string[] {
+  if (nextStep === "ready") {
+    const prior = summarizePriorSteps(profile, "ready");
+    return [
+      "- 下一步引导向：用户会说「开始制作」或带具体侧重的开制说法",
+      prior !== "（无）"
+        ? `- 开制说法须紧扣已定方案：${prior}`
+        : "- 开制说法须紧扣已定方案主题",
+      "- 禁止：「方案好了帮我制作」「推进到制作」等元说明",
+    ];
+  }
+
+  const copy = getProfileStepCopy(profile, nextStep);
+  const prior = summarizePriorSteps(profile, nextStep);
+  return [
+    `- 下一步引导向：直接写「${copy.title}」的可发送内容（不是描述要填哪一步）`,
+    prior !== "（无）"
+      ? `- 引导向须紧扣前述：${prior}`
+      : "- 引导向须紧扣已定方向主题",
+    `- 引导向示例方向（须结合作品具体化，勿逐字复制）：${copy.suggestionExamples.join("；")}`,
+    `- 引导向禁止：「推进到下一步」「帮我填${copy.title}」「${copy.title}定了…」等流程元说明`,
+  ];
+}
+
+function buildSlotAnchorNote(
+  slot: ProfileSetupSuggestionSlot,
+  profile: WorkProfile,
+): string {
+  if (!slot.step) return "";
+
+  if (slot.layer === "consolidate") {
+    const prior = summarizePriorSteps(profile, slot.step);
+    if (prior === "（无）") return "";
+
+    const focusHint = getStepConsolidateFocusHint(profile, slot.step);
+    const focusNote = focusHint ? `；${focusHint}` : "";
+    return ` — 紧扣前述：${prior}${focusNote}`;
+  }
+
+  if (slot.layer === "advance") {
+    if (slot.step === "ready") {
+      const prior = summarizePriorSteps(profile, "ready");
+      return prior !== "（无）"
+        ? ` — 说开始制作或开制说法，紧扣：${prior}`
+        : " — 说开始制作，紧扣已定方案";
+    }
+
+    const copy = getProfileStepCopy(profile, slot.step);
+    const prior = summarizePriorSteps(profile, slot.step);
+    const priorNote = prior !== "（无）" ? `，紧扣：${prior}` : "";
+    return ` — 直接写「${copy.title}」内容${priorNote}；禁止元说明`;
+  }
+
+  return "";
 }
 
 export function buildProfileSetupSuggestionFocus(input: {
@@ -448,8 +560,8 @@ export function buildProfileSetupSuggestionPromptBlock(
 
   const lines = [
     "## 方案进度（生成建议时须对齐）",
-    "- **扩展当前状态**：锚定当前推进步或已有方案/成稿，给灵感、补全、微调",
-    "- **下一步引导**：像用户主动推进到方案下一步、开始制作或发布准备",
+    "- **扩展当前状态**：锚定当前推进步，给灵感、补全、微调；须紧扣前述已定内容，禁止泛泛套话",
+    "- **下一步引导**：像用户直接说出下一步要填的**具体内容**（不是描述要填哪一步、不是流程元说明）",
     `- 当前推进步：${activeMeta ? `第 ${activeMeta.index} 步 · ${activeMeta.title}` : focus.activeStep}（${focus.activeStatus}）`,
   ];
 
@@ -459,6 +571,7 @@ export function buildProfileSetupSuggestionPromptBlock(
     lines.push(
       `- 本步灵感方向参考（扩展向须落在此步，勿逐字复制）：${copy.suggestionExamples.join("；")}`,
     );
+    lines.push(...buildStepAnchorLines(parsed, focus.activeStep));
     const activeSummary = summarizeProfileStepForSuggestions(
       parsed,
       focus.activeStep,
@@ -488,6 +601,7 @@ export function buildProfileSetupSuggestionPromptBlock(
     lines.push(
       `- 再下一步：${nextMeta ? `第 ${nextMeta.index} 步 · ${nextMeta.title}` : focus.nextStep}`,
     );
+    lines.push(...buildAdvanceGuidanceLines(parsed, focus.nextStep));
   }
 
   if (focus.activeGaps.length > 0) {
@@ -538,13 +652,14 @@ export function buildSuggestionSlotRecipe(
     const stepTitle = slot.step
       ? getProfileStepCopy(parsed, slot.step).title
       : "（无步骤）";
-    return `${index + 1}. [${layerLabels[slot.layer]}] role=${slot.role}${slot.step ? ` · step=${slot.step}（${stepTitle}）` : ""}`;
+    const anchorNote = buildSlotAnchorNote(slot, parsed);
+    return `${index + 1}. [${layerLabels[slot.layer]}] role=${slot.role}${slot.step ? ` · step=${slot.step}（${stepTitle}）` : ""}${anchorNote}`;
   });
 
   return [
     "## 建议槽位配方（须逐条对应）",
-    `- **扩展当前状态** ${layerCounts.consolidate} 条（refine）：锚定当前进度，给灵感/补全/微调`,
-    `- **下一步引导** ${layerCounts.advance} 条（navigate）：像用户主动推进；ready 时说开始制作，禁止元说明`,
+    `- **扩展当前状态** ${layerCounts.consolidate} 条（refine）：锚定当前步，给灵感/补全/微调；紧扣前述已定内容`,
+    `- **下一步引导** ${layerCounts.advance} 条（navigate）：直接写下一步的可发送内容；ready 时说开始制作；禁止流程元说明`,
     ...lines,
   ].join("\n");
 }

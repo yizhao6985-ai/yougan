@@ -7,7 +7,7 @@ import { requireAuth } from "../middleware/auth.js";
 import {
   CONTENT_FORMATS,
   DISCOVER_TOPIC_CATEGORIES,
-} from "../lib/discover-taxonomy.js";
+} from "@yougan/domain";
 import { PublicationStatusSchema } from "../schemas.js";
 import {
   createPublicationFromWork,

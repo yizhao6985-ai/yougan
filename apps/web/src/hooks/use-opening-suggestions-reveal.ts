@@ -1,5 +1,5 @@
-import { useLatest, useTimeout, useUpdateEffect } from "ahooks";
-import { useMemo, useRef, useState } from "react";
+import { useLatest, useUpdateEffect } from "ahooks";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { segmentGraphemes } from "@/lib/segment-graphemes";
 import type { NextStepSuggestion } from "@/lib/types";
@@ -100,8 +100,10 @@ export function useOpeningSuggestionsReveal({
     onCompleteRef.current?.();
   }, [phase]);
 
-  useTimeout(
-    () => {
+  useEffect(() => {
+    if (phase !== "typing" || currentIndex < 0) return;
+
+    const timer = window.setTimeout(() => {
       if (charIndex >= currentSegments.length) {
         if (currentIndex >= suggestions.length - 1) {
           setPhase("done");
@@ -112,22 +114,30 @@ export function useOpeningSuggestionsReveal({
         return;
       }
       setCharIndex((prev) => prev + 1);
-    },
-    phase === "typing" && currentIndex >= 0
-      ? msPerGrapheme(currentSegments.length)
-      : undefined,
-  );
+    }, msPerGrapheme(currentSegments.length));
 
-  useTimeout(
-    () => {
+    return () => window.clearTimeout(timer);
+  }, [
+    charIndex,
+    currentIndex,
+    currentSegments.length,
+    phase,
+    suggestions.length,
+  ]);
+
+  useEffect(() => {
+    if (phase !== "pause") return;
+
+    const timer = window.setTimeout(() => {
       const nextIndex = currentIndex + 1;
       setCurrentIndex(nextIndex);
       setCharIndex(0);
       setVisibleCount(nextIndex + 1);
       setPhase("typing");
-    },
-    phase === "pause" ? BETWEEN_ITEMS_MS : undefined,
-  );
+    }, BETWEEN_ITEMS_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [currentIndex, phase]);
 
   const getDisplayText = (index: number): string => {
     const segments = segmentsByIndex[index] ?? [];

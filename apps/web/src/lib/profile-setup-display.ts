@@ -32,11 +32,19 @@ export function resolveStreamProfile(
   const hasPendingStaging = Boolean(
     staging && stream?.turn?.committed !== true,
   );
-  let merged = mergeProfileForDisplay(cached, stream?.profile);
   if (hasPendingStaging) {
-    merged = mergeProfileForDisplay(merged, staging?.profile);
+    let merged = mergeProfileForDisplay(cached, stream?.profile);
+    return mergeProfileForDisplay(merged, staging?.profile) ?? merged;
   }
-  return merged;
+
+  // 无进行中 staging：作品物化列（含侧栏手改）优先于 checkpoint 里可能滞后的 profile
+  if (cached != null) {
+    return parseProfileJson(cached);
+  }
+  if (stream?.profile != null) {
+    return parseProfileJson(stream.profile);
+  }
+  return undefined;
 }
 
 export function buildProfileSetupView(

@@ -7,9 +7,7 @@ import {
   publicationPlainExcerpt,
 } from "@/components/preview-block-list";
 import { authorDisplayName } from "@/lib/publication-utils";
-import {
-  topicCategoryLabel,
-} from "@/lib/discover-taxonomy";
+import { topicCategoryLabel } from "@yougan/domain";
 import { formatPublishedAt } from "@/lib/platform-labels";
 import { publicationContentPath } from "@/lib/publication-path";
 import type { Publication } from "@/lib/publication-types";

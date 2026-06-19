@@ -21,7 +21,7 @@ import {
   DISCOVER_TOPIC_CATEGORIES,
   type PublicationSummaryOverrides,
   type PublicationSummaryPreview,
-} from "@/lib/discover-taxonomy";
+} from "@yougan/domain";
 import { PUBLISH } from "@/lib/site-copy";
 import { cn } from "@/lib/utils";
 

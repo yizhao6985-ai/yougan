@@ -11,7 +11,7 @@ export function buildConstraintsSection(
   input: NextStepSuggestionsPromptInput,
 ): string {
   const layerRule = input.layered
-    ? "- 有方案/成稿进展时：扩展向建议锚定当前进度，引导向建议指向下一步或制作/发布动作"
+    ? "- 有方案/成稿进展时：扩展向锚定当前步并紧扣前述已定内容；引导向须直接写下一步的具体内容草案，禁止流程元说明"
     : "- 尚无方案时：全部为引导向建议，基于标题与上下文给可执行起点";
 
   return `## 禁止

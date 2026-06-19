@@ -22,9 +22,7 @@ import { formatPublishedAt } from "@/lib/platform-labels";
 import { DISCOVER_SECTION } from "@/lib/content-section";
 import { publicationContentPath } from "@/lib/publication-path";
 import { PUBLISH, SETTINGS } from "@/lib/site-copy";
-import {
-  topicCategoryLabel,
-} from "@/lib/discover-taxonomy";
+import { topicCategoryLabel } from "@yougan/domain";
 import {
   PUBLICATION_STATUS_LABELS,
   type PublicationStatus,

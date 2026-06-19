@@ -3,6 +3,9 @@ export const TOOL_LABELS: Record<string, string> = {
   preprocess_reference_image: "预处理图片参考",
   preprocess_reference_audio: "预处理音频参考",
   preprocess_reference_video: "预处理视频参考",
+  delete_reference: "删除参考素材",
+  update_reference_intent: "记录借鉴说明",
+  set_pending_references_context: "写入统一借鉴说明",
   reference_apply_patch: "更新参考素材",
   update_profile_direction: "更新方向",
   update_profile_style: "更新风格",
@@ -92,6 +95,11 @@ export function getToolInputSummary(
       }
       return "更新参考素材";
     }
+    case "delete_reference":
+      return "删除一条参考素材";
+    case "update_reference_intent":
+    case "set_pending_references_context":
+      return readString(toolInput.user_context);
     case "add_plan_task":
       return readString(toolInput.description);
     case "revise_production_plan":

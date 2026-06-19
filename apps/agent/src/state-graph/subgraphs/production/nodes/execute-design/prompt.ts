@@ -1,6 +1,7 @@
 import {
   getDirectionSummary,
   resolveContentFormFromProfile,
+  resolveImageAspectRatio,
   type ContentFormatId,
   type ProductionTask,
   type WorkProfile,
@@ -8,7 +9,6 @@ import {
 } from "@yougan/domain";
 import { profileSummary } from "#agent/prompts/profile-summary.js";
 
-import { resolveImageAspectRatio } from "../../helpers/image-aspect-ratio.js";
 import { buildFormatGenerationGuidance } from "../../helpers/format-guidance.js";
 import { defaultTaskGuidance } from "../../helpers/task-plan.js";
 import type { ProduceTaskPromptInput } from "../execute-writing/prompt.js";

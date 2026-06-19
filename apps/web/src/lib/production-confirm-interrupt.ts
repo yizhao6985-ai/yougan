@@ -1,4 +1,9 @@
-import type { Interrupt, ThreadState } from "@langchain/langgraph-sdk";
+import type {
+  Interrupt,
+  Thread,
+  ThreadState,
+  ThreadTask,
+} from "@langchain/langgraph-sdk";
 import {
   PRODUCTION_CONFIRM_INTERRUPT_KIND,
   type ProductionConfirmInterruptValue,
@@ -13,6 +18,27 @@ function isProductionConfirmPayload(
     "kind" in value &&
     value.kind === PRODUCTION_CONFIRM_INTERRUPT_KIND
   );
+}
+
+function findProductionConfirmInInterruptList(
+  interrupts: readonly Interrupt[],
+): ProductionConfirmInterruptValue | null {
+  for (const item of interrupts) {
+    if (isProductionConfirmPayload(item.value)) return item.value;
+  }
+  return null;
+}
+
+function findProductionConfirmInTasks(
+  tasks: readonly ThreadTask[],
+): ProductionConfirmInterruptValue | null {
+  for (const task of tasks) {
+    const hit = findProductionConfirmInInterruptList(task.interrupts ?? []);
+    if (hit) return hit;
+    const nested = findProductionConfirmInTasks(task.state?.tasks ?? []);
+    if (nested) return nested;
+  }
+  return null;
 }
 
 function asInterruptList(
@@ -40,10 +66,17 @@ export function getProductionConfirmInterrupt(
 export function getProductionConfirmInterruptFromThreadState(
   state: Pick<ThreadState, "tasks"> | null | undefined,
 ): ProductionConfirmInterruptValue | null {
-  for (const task of state?.tasks ?? []) {
-    for (const item of task.interrupts ?? []) {
-      if (isProductionConfirmPayload(item.value)) return item.value;
-    }
+  return findProductionConfirmInTasks(state?.tasks ?? []);
+}
+
+/** threads.get 返回的 thread.interrupts 兜底（仅 thread 仍处于 interrupted 时可信） */
+export function getProductionConfirmInterruptFromThread(
+  thread: Pick<Thread, "interrupts" | "status"> | null | undefined,
+): ProductionConfirmInterruptValue | null {
+  if (!thread || thread.status !== "interrupted") return null;
+  for (const items of Object.values(thread.interrupts ?? {})) {
+    const hit = findProductionConfirmInInterruptList(items);
+    if (hit) return hit;
   }
   return null;
 }
