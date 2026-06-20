@@ -128,7 +128,7 @@ export const HOME = {
   ctaFeatures: "了解产品能力",
   formsLabel: "支持的创作形态",
   featuresBridge:
-    "有感不只是一套创作工具，也连接创作者与读者——先把作品做出来，再决定如何发布与分享。",
+    "有感包含创作、平台与助手三个部分——先把作品做出来，再发布分享；拿不准的地方，有感助手在页头等你。",
   creationEyebrow: "创作",
   creationTitle: "从想法到成稿，步步可控",
   creationSubtitle:
@@ -143,6 +143,26 @@ export const HOME = {
   capabilitiesLink: "查看完整产品能力 →",
 } as const;
 
+/** 页头 RAG 产品助手（有感助手） */
+export const HELP_ASSISTANT = {
+  eyebrow: "助手",
+  title: "有疑问，随时问有感助手",
+  subtitle:
+    "基于产品知识库的问答助手，帮你弄清功能与用法，不用翻文档也能快速上手。",
+  highlights: [
+    "页头一键打开，不离开当前页面",
+    "解答创作流程、会员额度与发布说明",
+    "回答有据可查，附产品文档来源",
+  ],
+  sampleQuestionsTitle: "可以这样问",
+  sampleQuestions: [
+    "有感是什么？适合做什么内容？",
+    "如何开始第一次创作？",
+    "会员和 AI 额度怎么算？",
+  ],
+  entryHint: "点击页头导航栏中的「有感助手」即可打开。",
+} as const;
+
 export const FEATURES_PAGE = {
   back: "返回首页",
   eyebrow: "产品能力",
@@ -150,7 +170,7 @@ export const FEATURES_PAGE = {
   subtitle:
     "有感把创作拆成可确认、可回溯的完整链路——定方案、解析素材、执行制作，还能迭代版本、分叉探索，并发布到内容平台。",
   bridge:
-    "下面按「创作」与「平台」两部分说明。创作章节讲怎么做作品；平台章节讲如何发布与被发现。",
+    "下面按「创作」「平台」「助手」三部分说明：怎么做作品、如何发布与被发现、以及怎样快速弄清产品用法。",
   creationEyebrow: "创作",
   creationTitle: "从想法到成稿，步步可控",
   creationSubtitle:

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 
+import { HomeAssistantSpotlight } from "@/components/marketing/home-assistant-spotlight";
 import { HomeFeatureChapter } from "@/components/marketing/home-feature-chapter";
 import { HomePlatformSpotlight } from "@/components/marketing/home-platform-spotlight";
 import { HomeStudioPreview } from "@/components/marketing/home-studio-preview";
@@ -12,7 +13,7 @@ import {
   PRODUCTION_FORMS,
 } from "@/lib/product-capabilities";
 import { scene } from "@/lib/scene-styles";
-import { HOME } from "@/lib/site-copy";
+import { HELP_ASSISTANT, HOME } from "@/lib/site-copy";
 import { cn } from "@/lib/utils";
 
 function HomeHeroBackground() {
@@ -96,7 +97,7 @@ export function HomePage() {
           <div className="relative mt-20 space-y-24 lg:mt-24 lg:space-y-32">
             <div
               aria-hidden
-              className="pointer-events-none absolute top-[38%] right-0 left-0 hidden h-px bg-gradient-to-r from-transparent via-border to-transparent lg:block"
+              className="pointer-events-none absolute top-[55%] right-0 left-0 hidden h-px bg-gradient-to-r from-transparent via-border to-transparent lg:block"
             />
 
             <HomeFeatureChapter
@@ -149,6 +150,14 @@ export function HomePage() {
               hint={HOME.platformSubtitle}
             >
               <HomePlatformSpotlight />
+            </HomeFeatureChapter>
+
+            <HomeFeatureChapter
+              eyebrow={HELP_ASSISTANT.eyebrow}
+              title={HELP_ASSISTANT.title}
+              hint={HELP_ASSISTANT.subtitle}
+            >
+              <HomeAssistantSpotlight />
             </HomeFeatureChapter>
           </div>
 

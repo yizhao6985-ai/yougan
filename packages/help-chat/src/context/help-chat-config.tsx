@@ -9,8 +9,8 @@ import type { HelpChatConfig } from "../types";
 
 const DEFAULT_CONFIG: HelpChatConfig = {
   apiUrl: "http://localhost:4000/api/v1/chat",
-  launcherLabel: "了解有感",
-  launcherPlaceholder: "了解有感，打开产品助手",
+  launcherLabel: "有感助手",
+  launcherPlaceholder: "有感助手，打开产品助手",
   panelTitle: "有感助手",
   panelDescription: "基于产品知识库回答使用与功能问题",
   emptyTitle: "有什么想了解的？",

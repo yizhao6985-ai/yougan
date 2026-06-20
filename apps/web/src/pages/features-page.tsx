@@ -6,6 +6,7 @@ import {
   FeaturesCapabilityDetail,
   FeaturesStudioFlow,
 } from "@/components/marketing/features-capability-detail";
+import { HomeAssistantSpotlight } from "@/components/marketing/home-assistant-spotlight";
 import { HomeFeatureChapter } from "@/components/marketing/home-feature-chapter";
 import { HomePlatformSpotlight } from "@/components/marketing/home-platform-spotlight";
 import {
@@ -24,7 +25,7 @@ import {
   STUDIO_PANELS,
 } from "@/lib/product-capabilities";
 import { scene } from "@/lib/scene-styles";
-import { FEATURES_PAGE } from "@/lib/site-copy";
+import { FEATURES_PAGE, HELP_ASSISTANT } from "@/lib/site-copy";
 import { cn } from "@/lib/utils";
 
 function FeaturesPageBackground() {
@@ -80,7 +81,7 @@ export function FeaturesPage() {
         <div className="relative mt-16 space-y-28 lg:mt-20 lg:space-y-36">
           <div
             aria-hidden
-            className="pointer-events-none absolute top-[45%] right-0 left-0 hidden h-px bg-gradient-to-r from-transparent via-border to-transparent lg:block"
+            className="pointer-events-none absolute top-[58%] right-0 left-0 hidden h-px bg-gradient-to-r from-transparent via-border to-transparent lg:block"
           />
 
           <HomeFeatureChapter
@@ -186,6 +187,16 @@ export function FeaturesPage() {
             className="scroll-mt-32"
           >
             <HomePlatformSpotlight />
+          </HomeFeatureChapter>
+
+          <HomeFeatureChapter
+            id="assistant-heading"
+            eyebrow={HELP_ASSISTANT.eyebrow}
+            title={HELP_ASSISTANT.title}
+            hint={HELP_ASSISTANT.subtitle}
+            className="scroll-mt-32"
+          >
+            <HomeAssistantSpotlight />
           </HomeFeatureChapter>
         </div>
 

@@ -226,6 +226,7 @@ export const FEATURES_ANCHOR_LINKS = [
   { href: "#fork", label: "分叉" },
   { href: "#studio-heading", label: "创作台" },
   { href: "#platform-heading", label: "平台" },
+  { href: "#assistant-heading", label: "助手" },
 ] as const;
 
 /** 首页 · 内容平台要点 */
