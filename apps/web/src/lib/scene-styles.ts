@@ -53,9 +53,9 @@ export const scene = {
     "text-muted-foreground hover:bg-secondary hover:text-foreground",
 
   ctaPrimary:
-    "rounded-full bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-sm shadow-primary/20 transition-colors duration-200 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+    "rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-sm shadow-primary/20 transition-colors duration-200 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
   ctaSecondary:
-    "rounded-full border border-border bg-card/85 px-6 py-3 text-sm font-medium text-foreground/90 backdrop-blur transition-colors duration-200 hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+    "rounded-lg border border-border bg-card/85 px-6 py-3 text-sm font-medium text-foreground/90 backdrop-blur transition-colors duration-200 hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
 
   tag: "rounded-md bg-accent px-2.5 py-1 text-xs font-medium text-primary",
   tagMuted:

@@ -1,106 +1,51 @@
 import { Link } from "react-router-dom";
-import { ArrowLeftIcon, CheckIcon, XIcon } from "lucide-react";
+import { ArrowLeftIcon } from "lucide-react";
 
+import { FeaturesAnchorNav } from "@/components/marketing/features-anchor-nav";
+import {
+  FeaturesCapabilityDetail,
+  FeaturesStudioFlow,
+} from "@/components/marketing/features-capability-detail";
+import { HomeFeatureChapter } from "@/components/marketing/home-feature-chapter";
+import { HomePlatformSpotlight } from "@/components/marketing/home-platform-spotlight";
 import {
   MarketingBackLink,
   MarketingPageFooter,
   MarketingPageHeader,
   MarketingPageShell,
-  MarketingSection,
 } from "@/components/marketing/marketing-page-layout";
 import { SiteHeader } from "@/components/site-header";
 import {
+  EXTRA_CAPABILITIES,
+  FEATURES_ANCHOR_LINKS,
+  FEATURES_LIFECYCLE_CAPABILITIES,
   PRODUCTION_FORMS,
   STUDIO_CAPABILITIES,
-  EXTRA_CAPABILITIES,
   STUDIO_PANELS,
-  WORKFLOW_STEPS,
 } from "@/lib/product-capabilities";
 import { scene } from "@/lib/scene-styles";
 import { FEATURES_PAGE } from "@/lib/site-copy";
 import { cn } from "@/lib/utils";
 
-function CapabilitySection({
-  capability,
-  index,
-}: {
-  capability: (typeof STUDIO_CAPABILITIES)[number];
-  index: number;
-}) {
-  const Icon = capability.icon;
-  const reversed = index % 2 === 1;
-
+function FeaturesPageBackground() {
   return (
-    <section
-      id={capability.anchor}
-      className={cn(scene.surface, "scroll-mt-24 p-6 sm:p-8")}
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-96 overflow-hidden"
     >
       <div
-        className={cn(
-          "flex flex-col gap-8 lg:flex-row lg:items-start",
-          reversed && "lg:flex-row-reverse",
-        )}
-      >
-        <div className="flex shrink-0 flex-col items-start gap-4 lg:w-56">
-          <span className="inline-flex size-12 items-center justify-center rounded-xl bg-accent text-primary">
-            <Icon className="size-6" aria-hidden />
-          </span>
-          <div>
-            <p className={scene.pageEyebrow}>{capability.label}</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
-              {capability.tagline}
-            </h2>
-          </div>
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <p className="text-base leading-7 text-muted-foreground">
-            {capability.summary}
-          </p>
-
-          <div className="mt-8 grid gap-8 sm:grid-cols-2">
-            <div>
-              <h3 className="text-sm font-semibold text-foreground">
-                {FEATURES_PAGE.capabilityBenefitsHeading}
-              </h3>
-              <ul className="mt-3 space-y-2.5">
-                {capability.highlights.map((item) => (
-                  <li
-                    key={item}
-                    className="flex gap-2 text-sm leading-6 text-muted-foreground"
-                  >
-                    <CheckIcon
-                      className="mt-0.5 size-4 shrink-0 text-primary"
-                      aria-hidden
-                    />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-foreground">
-                {FEATURES_PAGE.capabilityLimitsHeading}
-              </h3>
-              <ul className="mt-3 space-y-2.5">
-                {capability.avoids.map((item) => (
-                  <li
-                    key={item}
-                    className="flex gap-2 text-sm leading-6 text-muted-foreground"
-                  >
-                    <XIcon
-                      className="mt-0.5 size-4 shrink-0 text-muted-foreground/70"
-                      aria-hidden
-                    />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+        className="absolute inset-0 opacity-[0.28] dark:opacity-[0.16]"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, var(--color-border) 1px, transparent 1px), linear-gradient(to bottom, var(--color-border) 1px, transparent 1px)",
+          backgroundSize: "3.5rem 3.5rem",
+          maskImage:
+            "linear-gradient(to bottom, black 0%, black 50%, transparent 100%)",
+        }}
+      />
+      <div className="absolute -top-16 right-[12%] size-56 rounded-full bg-sky-200/30 blur-3xl dark:bg-sky-900/20" />
+      <div className="absolute top-10 left-[8%] size-40 rounded-full bg-primary/10 blur-3xl" />
+    </div>
   );
 }
 
@@ -109,7 +54,9 @@ export function FeaturesPage() {
     <div className={scene.marketing}>
       <SiteHeader />
 
-      <MarketingPageShell>
+      <MarketingPageShell className="relative pb-20">
+        <FeaturesPageBackground />
+
         <MarketingBackLink to="/" className="mb-8">
           <ArrowLeftIcon className="size-4" aria-hidden />
           {FEATURES_PAGE.back}
@@ -122,84 +69,127 @@ export function FeaturesPage() {
           wide
         />
 
-        <div className={cn("mt-12", scene.sectionStackLoose)}>
-          <MarketingSection title={FEATURES_PAGE.platformsIntro}>
-            <div className="flex flex-wrap gap-2">
-              {PRODUCTION_FORMS.map((form) => (
-                <span key={form} className={scene.pill}>
-                  {form}
-                </span>
-              ))}
-            </div>
-          </MarketingSection>
+        <p className={cn("mt-8 max-w-2xl", scene.pageSubtitle)}>
+          {FEATURES_PAGE.bridge}
+        </p>
 
-          <MarketingSection
-            id="workflow-heading"
-            title={FEATURES_PAGE.workflowTitle}
-            hint={FEATURES_PAGE.workflowSubtitle}
-            heading
-          >
-            <ol className={scene.contentGrid2}>
-              {WORKFLOW_STEPS.map((item) => (
-                <li key={item.step} className={cn(scene.featureCard, "relative")}>
-                  <span className="font-mono text-xs font-medium text-primary">
-                    {item.step}
-                  </span>
-                  <h3 className="mt-2 text-lg font-semibold text-foreground">
-                    {item.title}
-                  </h3>
-                  <p className={cn("mt-2", scene.body)}>{item.body}</p>
-                </li>
-              ))}
-            </ol>
-          </MarketingSection>
-
-          <MarketingSection
-            id="capabilities-heading"
-            title={FEATURES_PAGE.capabilitiesDetailTitle}
-            hint={FEATURES_PAGE.capabilitiesDetailSubtitle}
-            heading
-          >
-            <div className="space-y-6">
-              {STUDIO_CAPABILITIES.map((capability, index) => (
-                <CapabilitySection
-                  key={capability.anchor}
-                  capability={capability}
-                  index={index}
-                />
-              ))}
-            </div>
-          </MarketingSection>
-
-          <MarketingSection
-            id="studio-heading"
-            title={FEATURES_PAGE.studioTitle}
-            hint={FEATURES_PAGE.studioSubtitle}
-            heading
-          >
-            <div className={scene.contentGrid2}>
-              {STUDIO_PANELS.map(({ icon: Icon, title, body }) => (
-                <article key={title} className={scene.featureCard}>
-                  <Icon className="size-5 text-primary" aria-hidden />
-                  <h3 className="mt-3 font-semibold text-foreground">{title}</h3>
-                  <p className={cn("mt-2", scene.body)}>{body}</p>
-                </article>
-              ))}
-            </div>
-          </MarketingSection>
-
-          <div className={scene.contentGrid2}>
-            {EXTRA_CAPABILITIES.map(({ icon: Icon, title, body }) => (
-              <article key={title} className={scene.featureCard}>
-                <Icon className="size-5 text-primary" aria-hidden />
-                <h3 className="mt-3 font-semibold text-foreground">{title}</h3>
-                <p className={cn("mt-2", scene.body)}>{body}</p>
-              </article>
-            ))}
-          </div>
+        <div className="mt-10">
+          <FeaturesAnchorNav links={FEATURES_ANCHOR_LINKS} />
         </div>
 
-        <MarketingPageFooter className="mt-16">
+        <div className="relative mt-16 space-y-28 lg:mt-20 lg:space-y-36">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute top-[45%] right-0 left-0 hidden h-px bg-gradient-to-r from-transparent via-border to-transparent lg:block"
+          />
+
+          <HomeFeatureChapter
+            eyebrow={FEATURES_PAGE.creationEyebrow}
+            title={FEATURES_PAGE.creationTitle}
+            hint={FEATURES_PAGE.creationSubtitle}
+          >
+            <div className={cn(scene.surfaceInset, "mt-0")}>
+              <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                {FEATURES_PAGE.platformsIntro}
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {PRODUCTION_FORMS.map((form) => (
+                  <span key={form} className={scene.pill}>
+                    {form}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-12 space-y-0">
+              <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+                <div>
+                  <h3 className={scene.sectionHeading}>
+                    {FEATURES_PAGE.capabilitiesDetailTitle}
+                  </h3>
+                  <p className={cn("mt-2 max-w-2xl", scene.sectionHint)}>
+                    {FEATURES_PAGE.capabilitiesDetailSubtitle}
+                  </p>
+                </div>
+              </div>
+
+              <div id="capabilities-heading" className="scroll-mt-32 space-y-0">
+                {STUDIO_CAPABILITIES.map((capability, index) => (
+                  <FeaturesCapabilityDetail
+                    key={capability.anchor}
+                    capability={capability}
+                    step={String(index + 1).padStart(2, "0")}
+                    showConnector={index < STUDIO_CAPABILITIES.length - 1}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-14">
+              <div className="mb-8">
+                <h3 className={scene.sectionHeading}>
+                  {FEATURES_PAGE.creationLifecycleLabel}
+                </h3>
+                <p className={cn("mt-2 max-w-2xl", scene.sectionHint)}>
+                  {FEATURES_PAGE.creationLifecycleHint}
+                </p>
+              </div>
+
+              <div className="mt-6 grid gap-6 sm:grid-cols-2 sm:items-stretch">
+                {FEATURES_LIFECYCLE_CAPABILITIES.map((capability) => (
+                  <FeaturesCapabilityDetail
+                    key={capability.anchor}
+                    capability={capability}
+                    compact
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div id="studio-heading" className="mt-14 scroll-mt-32">
+              <h3 className={scene.sectionHeading}>
+                {FEATURES_PAGE.studioTitle}
+              </h3>
+              <p className={cn("mt-2 max-w-2xl", scene.sectionHint)}>
+                {FEATURES_PAGE.studioSubtitle}
+              </p>
+
+              <div className="mt-8">
+                <FeaturesStudioFlow panels={STUDIO_PANELS} />
+              </div>
+
+              <div className="mt-8 grid gap-6 sm:grid-cols-2">
+                {EXTRA_CAPABILITIES.map(({ icon: Icon, title, body }) => (
+                  <article key={title} className={scene.featureCard}>
+                    <div className="flex items-start gap-4">
+                      <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent text-primary">
+                        <Icon className="size-5" aria-hidden />
+                      </span>
+                      <div>
+                        <h4 className="font-semibold text-foreground">
+                          {title}
+                        </h4>
+                        <p className={cn("mt-2", scene.body)}>{body}</p>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </HomeFeatureChapter>
+
+          <HomeFeatureChapter
+            id="platform-heading"
+            eyebrow={FEATURES_PAGE.platformEyebrow}
+            title={FEATURES_PAGE.platformTitle}
+            hint={FEATURES_PAGE.platformSubtitle}
+            className="scroll-mt-32"
+          >
+            <HomePlatformSpotlight />
+          </HomeFeatureChapter>
+        </div>
+
+        <MarketingPageFooter className="mt-20">
           <Link to="/studio" className={scene.ctaPrimary}>
             {FEATURES_PAGE.ctaStudio}
           </Link>

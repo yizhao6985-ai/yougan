@@ -32,6 +32,8 @@ export const LOCALE = {
 } as const;
 
 export const NAV = {
+  studio: "开始创作",
+  studioShort: "创作",
   about: "关于我们",
   aboutShort: "关于",
   features: "产品能力",
@@ -121,30 +123,55 @@ export const HOME = {
   title: "有感",
   titleSuffix: "AI 创作助手",
   subtitle:
-    "先想清楚，再开始创作。文章、插画、脚本与音视频，AI 团队陪你一步步完成，过程看得明白，想改也随时能改。",
+    "从灵感到发布，有感帮你把创作走得稳、改得动、发得出。文章、插画、脚本与音视频都能做，过程透明，方向随时能调。",
   ctaStudio: "开始创作",
   ctaFeatures: "了解产品能力",
-  capabilitiesTitle: "定方案、去制作、随时问",
-  capabilitiesLink: "查看说明 →",
+  formsLabel: "支持的创作形态",
+  featuresBridge:
+    "有感不只是一套创作工具，也连接创作者与读者——先把作品做出来，再决定如何发布与分享。",
+  creationEyebrow: "创作",
+  creationTitle: "从想法到成稿，步步可控",
+  creationSubtitle:
+    "定方案、解析参考素材、执行制作、随时提问——成稿之后还能回溯版本、分叉探索新方向。",
+  creationLifecycleLabel: "作品迭代",
+  creationLifecycleHint: "不怕改错方向，也不怕走死胡同。",
+  platformEyebrow: "平台",
+  platformTitle: "作品值得被看见",
+  platformSubtitle:
+    "「发现灵感」是有感的内容平台——发布、浏览与积累作品集，让创作走出工作台。",
+  platformCta: "去发现灵感",
+  capabilitiesLink: "查看完整产品能力 →",
 } as const;
 
 export const FEATURES_PAGE = {
   back: "返回首页",
   eyebrow: "产品能力",
-  title: "从定方案到作品产出",
+  title: "从灵感到发布",
   subtitle:
-    "不跳过确认环节。先整理制作方案，AI 团队排计划并执行；制作中可随时提问、调整方案，对话里持续迭代。",
+    "有感把创作拆成可确认、可回溯的完整链路——定方案、解析素材、执行制作，还能迭代版本、分叉探索，并发布到内容平台。",
+  bridge:
+    "下面按「创作」与「平台」两部分说明。创作章节讲怎么做作品；平台章节讲如何发布与被发现。",
+  creationEyebrow: "创作",
+  creationTitle: "从想法到成稿，步步可控",
+  creationSubtitle:
+    "定方案、解析参考素材、执行制作、随时提问——成稿之后还能回溯版本、分叉探索新方向。",
+  creationOverviewTitle: "核心环节",
+  creationLifecycleLabel: "作品迭代",
+  creationLifecycleHint: "不怕改错方向，也不怕走死胡同。",
   platformsIntro: "支持的创作形态",
-  workflowTitle: "推荐使用流程",
-  workflowSubtitle: "从新建作品到可以发布，建议按以下步骤",
-  capabilitiesDetailTitle: "能帮你做什么",
+  capabilitiesDetailTitle: "各环节说明",
   capabilitiesDetailSubtitle:
-    "通过对话推进各环节，系统会在背后整理方案、执行制作、回答问题。",
-  studioTitle: "创作台布局",
+    "每个环节职责清晰：只做该做的事，你通过对话或侧栏推进，系统自动路由。",
+  studioTitle: "创作台一览",
   studioSubtitle: "左侧作品列表、中间对话、右侧作品面板（方案 / 参考 / 作品 / 版本）",
+  extrasTitle: "更多能力",
+  platformEyebrow: "平台",
+  platformTitle: "作品值得被看见",
+  platformSubtitle:
+    "「发现灵感」是有感的内容平台——发布、浏览与积累作品集，让创作走出工作台。",
   capabilityBenefitsHeading: "会帮你做",
   capabilityLimitsHeading: "这一步不做",
-  ctaStudio: "打开创作台",
+  ctaStudio: "开始创作",
   ctaMobile: "下载手机 App",
 } as const;
 

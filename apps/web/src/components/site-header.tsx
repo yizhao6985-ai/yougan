@@ -6,6 +6,7 @@ import {
   LayersIcon,
   MessageSquarePlusIcon,
   NewspaperIcon,
+  PenLineIcon,
   SmartphoneIcon,
 } from "lucide-react";
 
@@ -80,6 +81,7 @@ export function SiteHeader() {
   const onFeedbackPage = pathname === "/feedback";
   const onFeaturesPage = pathname === "/features";
   const onMobilePage = pathname === "/mobile";
+  const onStudioPage = pathname.startsWith("/studio");
   const onContentPage =
     pathname === "/content" || pathname.startsWith("/content/");
   const tagline = isAppContext ? BRAND.taglineApp : BRAND.taglineLanding;
@@ -140,6 +142,13 @@ export function SiteHeader() {
       <nav className="flex min-w-0 items-center gap-2 sm:gap-3 lg:gap-4">
         {!isSettings ? (
           <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2">
+            <HeaderNavItem
+              to="/studio"
+              active={onStudioPage}
+              label={NAV.studio}
+              shortLabel={NAV.studioShort}
+              icon={<PenLineIcon className="size-4 shrink-0" aria-hidden />}
+            />
             <HeaderNavItem
               to="/content"
               active={onContentPage}

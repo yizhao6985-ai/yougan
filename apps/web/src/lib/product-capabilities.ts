@@ -2,9 +2,12 @@ import type { LucideIcon } from "lucide-react";
 import {
   BookOpenIcon,
   FolderKanbanIcon,
+  GitBranchIcon,
+  HistoryIcon,
   ImageIcon,
   ListTreeIcon,
   MessageSquareTextIcon,
+  ScanSearchIcon,
   SparklesIcon,
   WandSparklesIcon,
 } from "lucide-react";
@@ -50,6 +53,22 @@ export const STUDIO_CAPABILITIES: StudioCapability[] = [
     avoids: ["不直接产出作品内容", "不执行制作任务"],
   },
   {
+    anchor: "reference",
+    icon: ScanSearchIcon,
+    label: "素材解析",
+    teaser: "上传并分析参考素材，记录借鉴意图。",
+    tagline: "参考素材",
+    summary:
+      "上传文本、图片、音视频等参考素材，系统自动分析内容与可借鉴要点，并记录借鉴意图，汇总在侧栏「参考」面板，供定方案与制作时引用。",
+    highlights: [
+      "支持文本、图片、音频、视频等多种参考形态",
+      "对话附带附件时自动触发分析",
+      "分析结果与借鉴意图写入「参考」面板",
+      "可在侧栏直接维护参考素材列表",
+    ],
+    avoids: ["不直接修改制作方案", "不产出作品内容"],
+  },
+  {
     anchor: "production",
     icon: WandSparklesIcon,
     label: "制作",
@@ -83,29 +102,6 @@ export const STUDIO_CAPABILITIES: StudioCapability[] = [
   },
 ];
 
-export const WORKFLOW_STEPS = [
-  {
-    step: "01",
-    title: "新建作品",
-    body: "每件作品是一段独立创作对话，可分组管理，便于按系列或栏目组织。",
-  },
-  {
-    step: "02",
-    title: "定制作方案",
-    body: "对话整理主题、体裁、表达与结构，侧栏「方案」实时同步。",
-  },
-  {
-    step: "03",
-    title: "执行制作",
-    body: "方案确认后 AI 团队制定计划并制作，产出写入「作品」，可按版本继续修改。",
-  },
-  {
-    step: "04",
-    title: "提问答疑",
-    body: "制作全程可提问：优化建议、方法答疑与背景知识，系统按意图处理。",
-  },
-] as const;
-
 export const STUDIO_PANELS = [
   {
     icon: MessageSquareTextIcon,
@@ -118,17 +114,126 @@ export const STUDIO_PANELS = [
     body: "主题、要求与内容结构，确认后实时汇总。",
   },
   {
+    icon: ScanSearchIcon,
+    title: "参考素材",
+    body: "上传的参考经分析后汇总在这里，含内容与借鉴意图。",
+  },
+  {
     icon: ImageIcon,
     title: "作品内容",
     body: "AI 团队按方案制作的文字、画面、脚本等，显示在这里。",
   },
+  {
+    icon: HistoryIcon,
+    title: "版本记录",
+    body: "每次产出作品内容记一版，可回溯对比或分叉探索。",
+  },
 ] as const;
+
+/** 能力页 · 作品迭代（版本 / 分叉） */
+export const FEATURES_LIFECYCLE_CAPABILITIES: StudioCapability[] = [
+  {
+    anchor: "versions",
+    icon: HistoryIcon,
+    label: "版本记录",
+    teaser: "成稿里程碑自动记版，可回溯对比。",
+    tagline: "版本历史",
+    summary:
+      "每次产出作品内容时追加一个版本节点，记录该时刻的方案、参考与成稿快照。可随时回到历史版本，或以此为起点分叉探索。",
+    highlights: [
+      "仅作品预览里程碑写入时间轴",
+      "方案与参考的 interim 修改不单独占版",
+      "支持恢复到任一历史成稿状态",
+      "便于对比不同阶段的成稿差异",
+    ],
+    avoids: ["不记录无成稿的方案修改"],
+  },
+  {
+    anchor: "fork",
+    icon: GitBranchIcon,
+    label: "作品分叉",
+    teaser: "另存或从历史版本分叉，探索新方向。",
+    tagline: "平行探索",
+    summary:
+      "想换选题或换方向时，可从当前进度另存为新作品，或从历史某一版分叉——新作品继承该版快照，原作路线不受影响。",
+    highlights: [
+      "另存为新作品：复制当前进度，不带走版本历史",
+      "从版本分叉：继承该版出稿时的完整状态",
+      "记录来源作品与版本，便于追溯",
+      "适合平行尝试不同体裁或表达",
+    ],
+    avoids: ["不修改原作品的版本时间轴"],
+  },
+];
 
 export const HOME_FEATURE_TEASERS = STUDIO_CAPABILITIES.map((capability) => ({
   title: capability.label,
   body: capability.teaser,
   href: `/features#${capability.anchor}`,
 }));
+
+/** 首页 · 创作核心能力（含素材解析） */
+export const HOME_CREATION_WORKFLOW = [
+  {
+    icon: ListTreeIcon,
+    title: "定方案",
+    body: "整理主题、体裁、表达与结构，确认后再进入制作。",
+    href: "/features#profile",
+  },
+  {
+    icon: ScanSearchIcon,
+    title: "素材解析",
+    body: "上传文本、图片、音视频等参考，自动分析内容与可借鉴要点，汇总到「参考」面板。",
+    href: "/features#reference",
+  },
+  {
+    icon: WandSparklesIcon,
+    title: "制作",
+    body: "AI 团队排计划，按方案执行文字、画面、脚本与音视频制作。",
+    href: "/features#production",
+  },
+  {
+    icon: BookOpenIcon,
+    title: "提问",
+    body: "制作过程中的优化建议、方法答疑与背景知识，随时发问。",
+    href: "/features#ask",
+  },
+] as const;
+
+/** 首页 · 创作迭代（版本 / 分叉） */
+export const HOME_CREATION_LIFECYCLE = [
+  {
+    icon: HistoryIcon,
+    title: "版本记录",
+    body: "每次产出作品内容自动记一版，可对比回溯，回到任一历史成稿时的完整状态。",
+    href: "/features#versions",
+  },
+  {
+    icon: GitBranchIcon,
+    title: "作品分叉",
+    body: "想换选题或换方向？另存为新作品，或从历史某一版分叉探索，原作路线不受影响。",
+    href: "/features#fork",
+  },
+] as const;
+
+/** 能力页锚点导航 */
+export const FEATURES_ANCHOR_LINKS = [
+  { href: "#profile", label: "定方案" },
+  { href: "#reference", label: "素材解析" },
+  { href: "#production", label: "制作" },
+  { href: "#ask", label: "提问" },
+  { href: "#versions", label: "版本" },
+  { href: "#fork", label: "分叉" },
+  { href: "#studio-heading", label: "创作台" },
+  { href: "#platform-heading", label: "平台" },
+] as const;
+
+/** 首页 · 内容平台要点 */
+export const HOME_PLATFORM_HIGHLIGHTS = [
+  "一键发布到有感公域",
+  "浏览创作者公开分享的混排作品",
+  "个人主页沉淀已发布作品集",
+] as const;
 
 export const EXTRA_CAPABILITIES = [
   {

@@ -47,7 +47,7 @@ export function MarketingFeatureCard({
     return (
       <Link
         to={href}
-        className={cn(scene.featureCardInteractive, "group", className)}
+        className={cn(scene.featureCardInteractive, "group h-full", className)}
       >
         {content}
       </Link>
@@ -55,6 +55,8 @@ export function MarketingFeatureCard({
   }
 
   return (
-    <article className={cn(scene.featureCard, className)}>{content}</article>
+    <article className={cn(scene.featureCard, "h-full", className)}>
+      {content}
+    </article>
   );
 }
