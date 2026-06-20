@@ -7,23 +7,22 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
+import type { PreviewImageItem } from "@/components/preview-image-list";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogOverlay, DialogPortal } from "@/components/ui/dialog";
 import { PREVIEW_PANEL, REFERENCE_PANEL } from "@/lib/site-copy";
 import { cn } from "@/lib/utils";
 
-import type { WorkPreviewImageItem } from "./work-preview-images";
-
-function imageLabel(image: WorkPreviewImageItem, index: number) {
+function imageLabel(image: PreviewImageItem, index: number) {
   return image.alt?.trim() || `配图 ${index + 1}`;
 }
 
-export function WorkPreviewImageGallery({
+export function PreviewImageGallery({
   images,
   openIndex,
   onOpenIndexChange,
 }: {
-  images: WorkPreviewImageItem[];
+  images: PreviewImageItem[];
   openIndex: number | null;
   onOpenIndexChange: (index: number | null) => void;
 }) {

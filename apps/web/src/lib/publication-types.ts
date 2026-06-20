@@ -6,7 +6,8 @@ export type PublicationStatus = "draft" | "published" | "archived";
 export interface PublicationAuthor {
   id: string;
   name: string | null;
-  email: string;
+  email: string | null;
+  phone?: string | null;
   bio?: string | null;
   avatarUrl?: string | null;
 }

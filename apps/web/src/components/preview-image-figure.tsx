@@ -1,12 +1,11 @@
 import { ChevronDownIcon, ImageOffIcon, SparklesIcon } from "lucide-react";
 import { useState } from "react";
 
+import type { PreviewImageItem } from "@/components/preview-image-list";
 import { PREVIEW_PANEL, REFERENCE_PANEL } from "@/lib/site-copy";
 import { cn } from "@/lib/utils";
 
-import type { WorkPreviewImageItem } from "./work-preview-images";
-
-function WorkPreviewImagePrompt({ prompt }: { prompt: string }) {
+function PreviewImagePrompt({ prompt }: { prompt: string }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -36,13 +35,13 @@ function WorkPreviewImagePrompt({ prompt }: { prompt: string }) {
   );
 }
 
-export function WorkPreviewImageFigure({
+export function PreviewImageFigure({
   image,
   index,
   compact,
   onOpenGallery,
 }: {
-  image: WorkPreviewImageItem;
+  image: PreviewImageItem;
   index: number;
   compact?: boolean;
   onOpenGallery: (index: number) => void;
@@ -90,7 +89,7 @@ export function WorkPreviewImageFigure({
           {caption}
         </figcaption>
       ) : null}
-      {prompt ? <WorkPreviewImagePrompt prompt={prompt} /> : null}
+      {prompt ? <PreviewImagePrompt prompt={prompt} /> : null}
     </figure>
   );
 }

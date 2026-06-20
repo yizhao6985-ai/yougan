@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ExternalLinkIcon } from "lucide-react";
 
+import { maskChinaMobilePhone } from "@yougan/domain";
+
 import { AuthorAvatar } from "@/components/content/author-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,6 +24,7 @@ export function SettingsUserStrip() {
     id: user.id,
     name: user.name,
     email: user.email,
+    phone: user.phone,
     bio: user.bio,
     avatarUrl: user.avatarUrl ?? null,
   };
@@ -49,7 +52,10 @@ export function SettingsUserStrip() {
                 </Badge>
               ) : null}
             </div>
-            <p className="truncate text-sm text-muted-foreground">{user.email}</p>
+            <p className="truncate text-sm text-muted-foreground">
+              {user.email ??
+                (user.phone ? maskChinaMobilePhone(user.phone) : "未绑定联系方式")}
+            </p>
           </div>
         </div>
 

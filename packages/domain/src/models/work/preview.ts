@@ -42,14 +42,6 @@ export type PreviewBlock =
   | AudioPreviewBlock
   | VideoPreviewBlock;
 
-/** 任务 deliverable 中的单张配图（整合前进 preview.blocks） */
-export interface WorkPreviewImage {
-  url: string;
-  alt?: string | null;
-  prompt?: string | null;
-  transient?: boolean;
-}
-
 /**
  * 作品预览（制作子图交付物）。
  * 嵌套于 Work.production.preview；产出后可生成 WorkVersion（kind=preview）。

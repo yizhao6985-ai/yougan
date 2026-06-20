@@ -22,7 +22,7 @@ import {
 import { prisma } from "../db.js";
 import type { Prisma } from "@prisma/client";
 import type { PublicationDTO, PublicationStatus } from "../schemas.js";
-import { parsePublicationBlocks } from "./materialize-preview-images.js";
+import { parsePublicationBlocks } from "./materialize-production-draft-images.js";
 import { summarizePublicationSummary } from "./summarize-publication-summary.js";
 import { getWork } from "./works.js";
 
@@ -56,7 +56,8 @@ type PublicationRow = {
   user?: {
     id: string;
     name: string | null;
-    email: string;
+    email: string | null;
+    phone: string | null;
     bio?: string | null;
     avatarUrl?: string | null;
   };
@@ -92,6 +93,7 @@ function toPublicationDTO(publication: PublicationRow): PublicationDTO {
           id: publication.user.id,
           name: publication.user.name,
           email: publication.user.email,
+          phone: publication.user.phone,
           bio: publication.user.bio ?? null,
           avatarUrl: publication.user.avatarUrl ?? null,
         }
@@ -129,6 +131,7 @@ const userInclude = {
       id: true,
       name: true,
       email: true,
+      phone: true,
       bio: true,
       avatarUrl: true,
     },

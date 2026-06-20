@@ -17,7 +17,7 @@ import {
   snapshotFromAgentValues,
 } from "./versions.js";
 import { syncMaterializedStateToAgentThreads } from "./agent-thread-sync.js";
-import { materializeAgentRunValues } from "./materialize-preview-images.js";
+import { materializeAgentRunValues } from "./materialize-production-draft-images.js";
 
 function snapshotFromWorkColumns(work: {
   profile: unknown;

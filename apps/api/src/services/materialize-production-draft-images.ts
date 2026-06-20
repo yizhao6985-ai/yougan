@@ -2,7 +2,7 @@ import { nanoid } from "nanoid";
 import type {
   ImagePreviewBlock,
   PreviewBlock,
-  WorkPreviewImage,
+  ProductionDraftImage,
   WorkProduction,
 } from "@yougan/domain";
 import { parsePreviewBlocks } from "@yougan/domain";
@@ -108,9 +108,9 @@ async function persistRemoteImage(sourceUrl: string): Promise<string> {
   return uploaded.url;
 }
 
-async function materializePreviewImage(
-  image: WorkPreviewImage,
-): Promise<WorkPreviewImage> {
+async function materializeDraftImage(
+  image: ProductionDraftImage,
+): Promise<ProductionDraftImage> {
   if (!imageNeedsMaterialize(image)) {
     const { transient: _transient, ...stable } = image;
     return stable;
@@ -124,18 +124,21 @@ async function materializePreviewImage(
       prompt: image.prompt ?? null,
     };
   } catch (error) {
-    console.error("[materialize-preview-images] failed to persist image", {
-      url: image.url,
-      error,
-    });
+    console.error(
+      "[materialize-production-draft-images] failed to persist image",
+      {
+        url: image.url,
+        error,
+      },
+    );
     return image;
   }
 }
 
-async function materializeImageBlock(
+async function materializePreviewImageBlock(
   block: ImagePreviewBlock,
 ): Promise<ImagePreviewBlock> {
-  const materialized = await materializePreviewImage({
+  const materialized = await materializeDraftImage({
     url: block.url,
     alt: block.alt,
     prompt: block.prompt,
@@ -150,11 +153,11 @@ async function materializeImageBlock(
   };
 }
 
-async function materializeImageList(
-  images: WorkPreviewImage[] | undefined,
-): Promise<WorkPreviewImage[] | undefined> {
+async function materializeDraftImageList(
+  images: ProductionDraftImage[] | undefined,
+): Promise<ProductionDraftImage[] | undefined> {
   if (!images?.length) return images;
-  return Promise.all(images.map(materializePreviewImage));
+  return Promise.all(images.map(materializeDraftImage));
 }
 
 async function materializePreviewBlocks(
@@ -164,7 +167,7 @@ async function materializePreviewBlocks(
   return Promise.all(
     blocks.map(async (block) => {
       if (block.type !== "image") return block;
-      return materializeImageBlock(block);
+      return materializePreviewImageBlock(block);
     }),
   );
 }
@@ -185,7 +188,7 @@ export async function materializeWorkProductionImages(
   const pending_tasks = await Promise.all(
     (production.pending_tasks ?? []).map(async (task) => {
       if (!task.deliverable?.images?.length) return task;
-      const images = await materializeImageList(task.deliverable.images);
+      const images = await materializeDraftImageList(task.deliverable.images);
       return {
         ...task,
         deliverable: {

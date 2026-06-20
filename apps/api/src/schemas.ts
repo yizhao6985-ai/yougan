@@ -254,7 +254,9 @@ export const WorkConversationSchema = z
 export const UserSchema = z
   .object({
     id: z.string(),
-    email: z.string().email(),
+    email: z.string().email().nullable(),
+    phone: z.string().nullable(),
+    hasPassword: z.boolean(),
     name: z.string().nullable(),
     bio: z.string().nullable(),
     avatarUrl: z.string().url().nullable(),
@@ -336,7 +338,8 @@ export const PublicationStatusSchema = z.enum([
 export const PublicationAuthorSchema = z.object({
   id: z.string(),
   name: z.string().nullable(),
-  email: z.string().email(),
+  email: z.string().email().nullable(),
+  phone: z.string().nullable().optional(),
   bio: z.string().nullable().optional(),
   avatarUrl: z.string().url().nullable().optional(),
 });

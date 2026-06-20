@@ -1,11 +1,11 @@
 import { nanoid } from "nanoid";
 
+import type { ProductionDraftImage } from "../../models/work/production-draft.js";
 import type {
   ImagePreviewBlock,
   PreviewBlock,
   PreviewBlockType,
   WorkPreview,
-  WorkPreviewImage,
 } from "../../models/work/preview.js";
 import type { ProductionTask } from "../../models/work/production.js";
 
@@ -188,8 +188,8 @@ export function previewTextLength(blocks: PreviewBlock[] | null | undefined): nu
     .reduce((sum, block) => sum + block.markdown.trim().length, 0);
 }
 
-function imageBlockFromDeliverable(
-  image: WorkPreviewImage,
+function imageBlockFromDraftImage(
+  image: ProductionDraftImage,
   taskId: string,
   index: number,
 ): ImagePreviewBlock | null {
@@ -234,7 +234,7 @@ export function blocksFromProductionTasks(
 
       const images = deliverable.images ?? [];
       images.forEach((image, index) => {
-        const block = imageBlockFromDeliverable(image, task.id, index);
+        const block = imageBlockFromDraftImage(image, task.id, index);
         if (block) blocks.push(block);
       });
       continue;

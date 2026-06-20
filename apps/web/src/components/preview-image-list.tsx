@@ -1,19 +1,22 @@
 import { useState } from "react";
 
-import { WorkPreviewImageGallery } from "@/components/work-preview-image-gallery";
-import { WorkPreviewImageFigure } from "@/components/work-preview-image-figure";
+import { PreviewImageGallery } from "@/components/preview-image-gallery";
+import { PreviewImageFigure } from "@/components/preview-image-figure";
 import { cn } from "@/lib/utils";
 
-import type { WorkPreviewImageItem } from "./work-preview-images";
+/** 预览展示用配图项（来自 ImagePreviewBlock，不含 block 元数据） */
+export type PreviewImageItem = {
+  url: string;
+  alt?: string | null;
+  prompt?: string | null;
+};
 
-export type { WorkPreviewImageItem } from "./work-preview-images";
-
-export function WorkPreviewImages({
+export function PreviewImageList({
   images,
   compact = false,
   className,
 }: {
-  images: WorkPreviewImageItem[];
+  images: PreviewImageItem[];
   compact?: boolean;
   className?: string;
 }) {
@@ -25,7 +28,7 @@ export function WorkPreviewImages({
     <>
       <div className={cn("space-y-3", className)}>
         {images.map((image, index) => (
-          <WorkPreviewImageFigure
+          <PreviewImageFigure
             key={`${image.url}-${index}`}
             image={image}
             index={index}
@@ -35,7 +38,7 @@ export function WorkPreviewImages({
         ))}
       </div>
 
-      <WorkPreviewImageGallery
+      <PreviewImageGallery
         images={images}
         openIndex={galleryIndex}
         onOpenIndexChange={setGalleryIndex}

@@ -1,4 +1,5 @@
-import type { WorkPreview, WorkPreviewImage } from "./preview.js";
+import type { ProductionDraftImage } from "./production-draft.js";
+import type { WorkPreview } from "./preview.js";
 
 // —— 部门 ——
 
@@ -31,8 +32,8 @@ export interface ProductionTaskDeliverable {
   body: string;
   title?: string | null;
   notes?: string | null;
-  /** 设计任务：render 节点写入的成图 */
-  images?: WorkPreviewImage[];
+  /** 设计任务：render 节点写入的成图草稿 */
+  images?: ProductionDraftImage[];
   /** 设计任务：文生图 API 失败原因 */
   render_error?: string | null;
   /** 设计任务：负面 prompt（staging，commit 时剥离） */

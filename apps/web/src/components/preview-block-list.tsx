@@ -3,12 +3,12 @@ import type { PreviewBlock } from "@yougan/domain";
 import { previewCoverUrl, previewPlainText } from "@yougan/domain";
 
 import { MarkdownContent } from "@/components/markdown-content";
-import { WorkPreviewImageGallery } from "@/components/work-preview-image-gallery";
-import type { WorkPreviewImageItem } from "@/components/work-preview-images";
-import { WorkPreviewImageFigure } from "@/components/work-preview-image-figure";
+import { PreviewImageGallery } from "@/components/preview-image-gallery";
+import type { PreviewImageItem } from "@/components/preview-image-list";
+import { PreviewImageFigure } from "@/components/preview-image-figure";
 import { cn } from "@/lib/utils";
 
-function blocksToImageItems(blocks: PreviewBlock[]): WorkPreviewImageItem[] {
+function blocksToImageItems(blocks: PreviewBlock[]): PreviewImageItem[] {
   return blocks
     .filter((block): block is Extract<PreviewBlock, { type: "image" }> =>
       block.type === "image",
@@ -95,7 +95,7 @@ export function PreviewBlockList({
               const index = imageCursor;
               imageCursor += 1;
               return (
-                <WorkPreviewImageFigure
+                <PreviewImageFigure
                   key={block.id}
                   image={{
                     url: block.url,
@@ -119,7 +119,7 @@ export function PreviewBlockList({
       </div>
 
       {imageItems.length > 0 ? (
-        <WorkPreviewImageGallery
+        <PreviewImageGallery
           key={galleryKey}
           images={imageItems}
           openIndex={galleryIndex}

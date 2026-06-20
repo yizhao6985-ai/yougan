@@ -22,6 +22,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AuthorAvatar } from "@/components/content/author-avatar";
+import { formatAccountLabel, maskChinaMobilePhone } from "@yougan/domain";
+
 import { useLogoutMutation, useMeQuery } from "@/hooks/queries/auth";
 import { BILLING, FEEDBACK, MEMBERSHIP, SETTINGS } from "@/lib/site-copy";
 import type { AuthUser } from "@/services/auth";
@@ -57,9 +59,14 @@ const USER_MENU_GROUPS: Array<{ label: string; items: UserMenuItem[] }> = [
 ];
 
 function getDisplayName(user: AuthUser | null | undefined) {
-  if (!user) return "用户";
-  if (user.name?.trim()) return user.name.trim();
-  return user.email.split("@")[0] || "用户";
+  if (!user) return "有感";
+  return formatAccountLabel(user);
+}
+
+function getAccountHint(user: AuthUser) {
+  if (user.email) return user.email;
+  if (user.phone) return maskChinaMobilePhone(user.phone);
+  return null;
 }
 
 export function UserMenu() {
@@ -73,6 +80,7 @@ export function UserMenu() {
         id: user.id,
         name: user.name,
         email: user.email,
+        phone: user.phone,
         avatarUrl: user.avatarUrl ?? null,
       }
     : undefined;
@@ -105,8 +113,10 @@ export function UserMenu() {
           <p className="truncate text-sm font-medium text-foreground">
             {displayName}
           </p>
-          {user?.email ? (
-            <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+          {user ? (
+            <p className="truncate text-xs text-muted-foreground">
+              {getAccountHint(user)}
+            </p>
           ) : null}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

@@ -14,6 +14,8 @@ import {
   useUpdateProfileMutation,
 } from "@/hooks/queries/auth";
 import { ApiError } from "@/services/client";
+import { formatAccountLabel } from "@yougan/domain";
+
 import type { AuthUser } from "@/services/auth";
 
 const BIO_MAX_LENGTH = 160;
@@ -100,11 +102,7 @@ function ProfileSettingsForm({
         description="头像与封面将展示在个人主页顶部，与访客看到的布局相同。"
       >
         <ProfileAppearanceEditor
-          displayName={
-            name.trim() ||
-            (user?.email ? user.email.split("@")[0] : "") ||
-            "用户"
-          }
+          displayName={name.trim() || formatAccountLabel(user ?? {})}
           avatarUrl={avatarUrl}
           coverUrl={coverUrl}
           disabled={updateProfileMutation.isPending}
@@ -129,7 +127,7 @@ function ProfileSettingsForm({
               placeholder="显示名称"
             />
             <p className="text-xs text-muted-foreground">
-              用于内容作者展示、菜单显示等场景。未设置时将使用邮箱前缀。
+              用于内容作者展示、菜单显示等场景。未设置时将自动生成「有感青柠」这类昵称，有邮箱时可用邮箱前缀。
             </p>
           </div>
 

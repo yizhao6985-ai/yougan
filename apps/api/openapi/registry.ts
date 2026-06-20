@@ -41,7 +41,7 @@ registry.registerPath({
       content: {
         "application/json": {
           schema: z.object({
-            email: z.string().email(),
+            login: z.string().min(1),
             password: z.string().min(6),
             name: z.string().optional(),
           }),
@@ -55,7 +55,7 @@ registry.registerPath({
       content: { "application/json": { schema: AuthTokenSchema } },
     },
     409: {
-      description: "Email exists",
+      description: "Account exists",
       content: { "application/json": { schema: ErrorSchema } },
     },
   },
@@ -70,7 +70,7 @@ registry.registerPath({
       content: {
         "application/json": {
           schema: z.object({
-            email: z.string().email(),
+            login: z.string().min(1),
             password: z.string(),
           }),
         },
@@ -80,6 +80,59 @@ registry.registerPath({
   responses: {
     200: {
       description: "Logged in",
+      content: { "application/json": { schema: AuthTokenSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/auth/sms/send",
+  tags: ["Auth"],
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: z.object({ phone: z.string().min(1) }),
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: "SMS code sent",
+      content: {
+        "application/json": {
+          schema: z.object({
+            ok: z.literal(true),
+            cooldownSeconds: z.number(),
+            devCode: z.string().optional(),
+          }),
+        },
+      },
+    },
+  },
+});
+
+registry.registerPath({
+  method: "post",
+  path: "/api/auth/sms/login",
+  tags: ["Auth"],
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            phone: z.string().min(1),
+            code: z.string().length(6),
+          }),
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: "Logged in with SMS",
       content: { "application/json": { schema: AuthTokenSchema } },
     },
   },

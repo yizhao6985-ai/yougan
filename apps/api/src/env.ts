@@ -38,6 +38,12 @@ const ApiEnvSchema = z
     SMTP_USER: optionalString,
     SMTP_PASS: optionalString,
     MAIL_FROM: optionalString,
+    SMS_PROVIDER: z.enum(["console", "aliyun"]).default("console"),
+    SMS_ACCESS_KEY_ID: optionalString,
+    SMS_ACCESS_KEY_SECRET: optionalString,
+    SMS_SIGN_NAME: optionalString,
+    SMS_TEMPLATE_CODE: optionalString,
+    SMS_REGION_ID: optionalString,
     DASHSCOPE_API_KEY: optionalString,
     DASHSCOPE_BASE_URL: optionalString,
     DASHSCOPE_CHAT_MODEL: optionalString,
@@ -78,6 +84,24 @@ const ApiEnvSchema = z
         port: env.SMTP_PORT,
         user: env.SMTP_USER ?? null,
         pass: env.SMTP_PASS ?? null,
+      },
+    },
+    sms: {
+      provider: env.SMS_PROVIDER,
+      configured:
+        env.SMS_PROVIDER === "aliyun" &&
+        Boolean(
+          env.SMS_ACCESS_KEY_ID &&
+            env.SMS_ACCESS_KEY_SECRET &&
+            env.SMS_SIGN_NAME &&
+            env.SMS_TEMPLATE_CODE,
+        ),
+      aliyun: {
+        accessKeyId: env.SMS_ACCESS_KEY_ID ?? null,
+        accessKeySecret: env.SMS_ACCESS_KEY_SECRET ?? null,
+        signName: env.SMS_SIGN_NAME ?? null,
+        templateCode: env.SMS_TEMPLATE_CODE ?? null,
+        regionId: env.SMS_REGION_ID ?? "cn-hangzhou",
       },
     },
     isProduction: (process.env.NODE_ENV ?? "development") === "production",

@@ -1,6 +1,11 @@
 import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
 import jwt from "jsonwebtoken";
+import {
+  generateDefaultDisplayName,
+  normalizeChinaMobilePhone,
+  parseLoginIdentifier,
+} from "@yougan/domain";
 
 import { env } from "../env.js";
 import {
@@ -12,6 +17,13 @@ import {
   invalidateUserCache,
 } from "../lib/cache.js";
 import { sendEmailChangeEmail, sendPasswordResetEmail } from "../lib/mail.js";
+import {
+  generateSmsCode,
+  getSmsCooldownRemaining,
+  storeSmsCode,
+  verifySmsCode,
+} from "../lib/sms-otp.js";
+import { sendSmsVerificationCode } from "../lib/sms.js";
 import { prisma } from "../db.js";
 import { ensureUserSubscription } from "./subscription.js";
 
@@ -20,7 +32,9 @@ const EMAIL_CHANGE_TTL_MS = 60 * 60 * 1000;
 
 export interface AuthUser {
   id: string;
-  email: string;
+  email: string | null;
+  phone: string | null;
+  hasPassword: boolean;
   name: string | null;
   bio: string | null;
   avatarUrl: string | null;
@@ -29,7 +43,9 @@ export interface AuthUser {
 
 function toAuthUser(user: {
   id: string;
-  email: string;
+  email: string | null;
+  phone: string | null;
+  passwordHash: string | null;
   name: string | null;
   bio: string | null;
   avatarUrl: string | null;
@@ -39,6 +55,8 @@ function toAuthUser(user: {
   return {
     id: user.id,
     email: user.email,
+    phone: user.phone,
+    hasPassword: Boolean(user.passwordHash),
     name: user.name,
     bio: user.bio,
     avatarUrl: user.avatarUrl,
@@ -48,42 +66,128 @@ function toAuthUser(user: {
 }
 
 export function signToken(user: AuthUser) {
-  return jwt.sign({ sub: user.id, email: user.email }, env.jwtSecret, {
-    expiresIn: "30d",
-  });
+  return jwt.sign(
+    {
+      sub: user.id,
+      email: user.email,
+      phone: user.phone,
+    },
+    env.jwtSecret,
+    { expiresIn: "30d" },
+  );
 }
 
-export function verifyToken(token: string): { sub: string; email: string } {
-  return jwt.verify(token, env.jwtSecret) as { sub: string; email: string };
+export function verifyToken(token: string): {
+  sub: string;
+  email?: string | null;
+  phone?: string | null;
+} {
+  return jwt.verify(token, env.jwtSecret) as {
+    sub: string;
+    email?: string | null;
+    phone?: string | null;
+  };
+}
+
+type LoginIdentifier = NonNullable<ReturnType<typeof parseLoginIdentifier>>;
+
+async function findUserByIdentifier(identifier: LoginIdentifier) {
+  if (identifier.kind === "email") {
+    return prisma.user.findFirst({
+      where: { email: { equals: identifier.email, mode: "insensitive" } },
+    });
+  }
+  return prisma.user.findUnique({ where: { phone: identifier.phone } });
 }
 
 export async function registerUser(input: {
-  email: string;
+  login: string;
   password: string;
   name?: string;
 }) {
-  const existing = await prisma.user.findUnique({
-    where: { email: input.email },
-  });
-  if (existing) throw new Error("EMAIL_EXISTS");
+  const identifier = parseLoginIdentifier(input.login);
+  if (!identifier) throw new Error("INVALID_LOGIN");
+
+  const existing = await findUserByIdentifier(identifier);
+  if (existing) {
+    throw new Error(
+      identifier.kind === "email" ? "EMAIL_EXISTS" : "PHONE_EXISTS",
+    );
+  }
 
   const passwordHash = await bcrypt.hash(input.password, 10);
   const user = await prisma.user.create({
     data: {
-      email: input.email,
+      email: identifier.kind === "email" ? identifier.email : null,
+      phone: identifier.kind === "phone" ? identifier.phone : null,
+      phoneVerifiedAt:
+        identifier.kind === "phone" ? new Date() : null,
       passwordHash,
-      name: input.name ?? null,
+      name: input.name?.trim()
+        || (identifier.kind === "phone"
+          ? generateDefaultDisplayName(identifier.phone)
+          : null),
     },
   });
   await ensureUserSubscription(user.id);
   return toAuthUser(user);
 }
 
+/** @deprecated 兼容旧客户端；请使用 loginWithPassword */
 export async function loginUser(email: string, password: string) {
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) throw new Error("INVALID_CREDENTIALS");
+  return loginWithPassword(email, password);
+}
+
+export async function loginWithPassword(login: string, password: string) {
+  const identifier = parseLoginIdentifier(login);
+  if (!identifier) throw new Error("INVALID_LOGIN");
+
+  const user = await findUserByIdentifier(identifier);
+  if (!user || !user.passwordHash) throw new Error("INVALID_CREDENTIALS");
+
   const ok = await bcrypt.compare(password, user.passwordHash);
   if (!ok) throw new Error("INVALID_CREDENTIALS");
+  return toAuthUser(user);
+}
+
+export async function sendSmsLoginCode(phoneInput: string) {
+  const phone = normalizeChinaMobilePhone(phoneInput);
+  if (!phone) throw new Error("INVALID_PHONE");
+
+  const cooldown = await getSmsCooldownRemaining(phone);
+  if (cooldown > 0) {
+    throw new Error(`SMS_COOLDOWN:${cooldown}`);
+  }
+
+  const code = generateSmsCode();
+  await storeSmsCode(phone, code);
+  const result = await sendSmsVerificationCode(phone, code);
+  return { ok: true as const, cooldownSeconds: 60, ...result };
+}
+
+export async function loginWithSmsCode(phoneInput: string, code: string) {
+  const phone = normalizeChinaMobilePhone(phoneInput);
+  if (!phone) throw new Error("INVALID_PHONE");
+
+  await verifySmsCode(phone, code);
+
+  let user = await prisma.user.findUnique({ where: { phone } });
+  if (!user) {
+    user = await prisma.user.create({
+      data: {
+        phone,
+        phoneVerifiedAt: new Date(),
+        name: generateDefaultDisplayName(phone),
+      },
+    });
+    await ensureUserSubscription(user.id);
+  } else if (!user.phoneVerifiedAt) {
+    user = await prisma.user.update({
+      where: { id: user.id },
+      data: { phoneVerifiedAt: new Date() },
+    });
+  }
+
   return toAuthUser(user);
 }
 
@@ -141,14 +245,18 @@ export async function updateUserProfile(
   }
 
   if (input.newPassword) {
-    if (!input.currentPassword) {
-      throw new Error("CURRENT_PASSWORD_REQUIRED");
-    }
-    const ok = await bcrypt.compare(input.currentPassword, user.passwordHash);
-    if (!ok) throw new Error("INVALID_CURRENT_PASSWORD");
     if (input.newPassword.length < 6) {
       throw new Error("PASSWORD_TOO_SHORT");
     }
+
+    if (user.passwordHash) {
+      if (!input.currentPassword) {
+        throw new Error("CURRENT_PASSWORD_REQUIRED");
+      }
+      const ok = await bcrypt.compare(input.currentPassword, user.passwordHash);
+      if (!ok) throw new Error("INVALID_CURRENT_PASSWORD");
+    }
+
     data.passwordHash = await bcrypt.hash(input.newPassword, 10);
   }
 
@@ -175,16 +283,23 @@ function hashToken(rawToken: string) {
 }
 
 export async function requestPasswordReset(
-  email: string,
+  login: string,
 ): Promise<{ devResetUrl?: string }> {
-  const normalizedEmail = email.trim().toLowerCase();
-  const user = await prisma.user.findFirst({
-    where: { email: { equals: normalizedEmail, mode: "insensitive" } },
-  });
-  if (!user) {
+  const identifier = parseLoginIdentifier(login);
+  if (!identifier || identifier.kind !== "email") {
     if (!env.isProduction) {
       console.info(
-        `[auth] Password reset requested, but no account found for ${normalizedEmail}`,
+        `[auth] Password reset requested for non-email identifier: ${login}`,
+      );
+    }
+    return {};
+  }
+
+  const user = await findUserByIdentifier(identifier);
+  if (!user?.email) {
+    if (!env.isProduction) {
+      console.info(
+        `[auth] Password reset requested, but no account found for ${identifier.email}`,
       );
     }
     return {};
@@ -268,8 +383,16 @@ export async function requestEmailChange(
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw new Error("USER_NOT_FOUND");
 
+  if (!user.email) {
+    throw new Error("EMAIL_NOT_BOUND");
+  }
+
   if (normalizedEmail === user.email.toLowerCase()) {
     throw new Error("EMAIL_UNCHANGED");
+  }
+
+  if (!user.passwordHash) {
+    throw new Error("PASSWORD_NOT_SET");
   }
 
   const ok = await bcrypt.compare(currentPassword, user.passwordHash);
@@ -349,6 +472,8 @@ export async function confirmEmailChange(rawToken: string) {
   const authUser: AuthUser = {
     id: updated.id,
     email: updated.email,
+    phone: updated.phone,
+    hasPassword: Boolean(updated.passwordHash),
     name: updated.name,
     bio: updated.bio,
     avatarUrl: updated.avatarUrl,

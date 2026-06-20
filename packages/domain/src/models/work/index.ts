@@ -3,6 +3,7 @@ export * from "./asset.js";
 export * from "./reference.js";
 export * from "./profile.js";
 export * from "./production.js";
+export * from "./production-draft.js";
 export * from "./preview.js";
 export * from "./publication-summary.js";
 export * from "./version.js";

@@ -13,6 +13,7 @@ import {
   useRequestEmailChangeMutation,
   useUpdateProfileMutation,
 } from "@/hooks/queries/auth";
+import { maskChinaMobilePhone } from "@yougan/domain";
 import { ACCOUNT } from "@/lib/site-copy";
 import { ApiError } from "@/services/client";
 
@@ -51,14 +52,16 @@ export function AccountSettingsPanel() {
       setError("两次输入的新密码不一致");
       return;
     }
-    if (!currentPassword) {
+
+    const hasPassword = Boolean(user?.hasPassword);
+    if (hasPassword && !currentPassword) {
       setError("修改密码需要填写当前密码");
       return;
     }
 
     try {
       await updateProfileMutation.mutateAsync({
-        currentPassword,
+        ...(currentPassword ? { currentPassword } : {}),
         newPassword,
       });
       setCurrentPassword("");
@@ -108,8 +111,19 @@ export function AccountSettingsPanel() {
         description="管理登录邮箱与密码。"
       />
 
-      <SettingsPanelCard title="当前登录邮箱">
-        <p className="text-sm text-foreground">{user?.email ?? ""}</p>
+      <SettingsPanelCard title="登录方式">
+        <div className="space-y-2 text-sm">
+          <p>
+            <span className="text-muted-foreground">手机号：</span>
+            <span className="text-foreground">
+              {user?.phone ? maskChinaMobilePhone(user.phone) : "未绑定"}
+            </span>
+          </p>
+          <p>
+            <span className="text-muted-foreground">邮箱：</span>
+            <span className="text-foreground">{user?.email ?? "未绑定"}</span>
+          </p>
+        </div>
       </SettingsPanelCard>
 
       <SettingsPanelCard
@@ -139,14 +153,23 @@ export function AccountSettingsPanel() {
         </form>
       </SettingsPanelCard>
 
-      <SettingsPanelCard title="修改密码" description="建议定期更换密码，保障账号安全。">
+      <SettingsPanelCard
+        title={user?.hasPassword ? "修改密码" : "设置登录密码"}
+        description={
+          user?.hasPassword
+            ? "建议定期更换密码，保障账号安全。"
+            : "设置后可使用手机号/邮箱 + 密码登录。"
+        }
+      >
         <form className="space-y-4" onSubmit={(e) => void handlePasswordSubmit(e)}>
-          <Input
-            type="password"
-            value={currentPassword}
-            onChange={(event) => setCurrentPassword(event.target.value)}
-            placeholder="当前密码"
-          />
+          {user?.hasPassword ? (
+            <Input
+              type="password"
+              value={currentPassword}
+              onChange={(event) => setCurrentPassword(event.target.value)}
+              placeholder="当前密码"
+            />
+          ) : null}
           <Input
             type="password"
             value={newPassword}

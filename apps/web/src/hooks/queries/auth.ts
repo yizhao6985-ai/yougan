@@ -9,8 +9,10 @@ import { queryKeys } from "@/hooks/queries/keys";
 import {
   fetchMe,
   login as loginRequest,
+  loginWithSms as loginWithSmsRequest,
   logout as logoutRequest,
   register as registerRequest,
+  sendSmsCode as sendSmsCodeRequest,
   confirmEmailChange,
   requestEmailChange,
   requestPasswordReset,
@@ -36,12 +38,12 @@ export function useLoginMutation() {
 
   return useMutation({
     mutationFn: ({
-      email,
+      login,
       password,
     }: {
-      email: string;
+      login: string;
       password: string;
-    }) => loginRequest(email, password),
+    }) => loginRequest(login, password),
     onSuccess: (data) => {
       setToken(data.token);
       queryClient.setQueryData(queryKeys.auth.me, { user: data.user });
@@ -54,8 +56,28 @@ export function useRegisterMutation() {
   const setToken = useSetAtom(authTokenAtom);
 
   return useMutation({
-    mutationFn: (input: { email: string; password: string; name?: string }) =>
+    mutationFn: (input: { login: string; password: string; name?: string }) =>
       registerRequest(input),
+    onSuccess: (data) => {
+      setToken(data.token);
+      queryClient.setQueryData(queryKeys.auth.me, { user: data.user });
+    },
+  });
+}
+
+export function useSendSmsCodeMutation() {
+  return useMutation({
+    mutationFn: (phone: string) => sendSmsCodeRequest(phone),
+  });
+}
+
+export function useSmsLoginMutation() {
+  const queryClient = useQueryClient();
+  const setToken = useSetAtom(authTokenAtom);
+
+  return useMutation({
+    mutationFn: ({ phone, code }: { phone: string; code: string }) =>
+      loginWithSmsRequest(phone, code),
     onSuccess: (data) => {
       setToken(data.token);
       queryClient.setQueryData(queryKeys.auth.me, { user: data.user });
@@ -91,7 +113,7 @@ export function useUpdateProfileMutation() {
 
 export function useForgotPasswordMutation() {
   return useMutation({
-    mutationFn: (email: string) => requestPasswordReset(email),
+    mutationFn: (login: string) => requestPasswordReset(login),
   });
 }
 

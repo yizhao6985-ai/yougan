@@ -27,3 +27,5 @@ export * from "./utils/discover/publication-summary.js";
 export * from "./utils/work/block-composition.js";
 export * from "./utils/publication-slug.js";
 export * from "./utils/ai-metering/index.js";
+export * from "./utils/phone.js";
+export * from "./utils/default-display-name.js";

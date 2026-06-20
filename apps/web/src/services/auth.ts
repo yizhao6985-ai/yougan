@@ -4,7 +4,9 @@ import { writeStoredString } from "@/lib/storage-value";
 
 export type AuthUser = {
   id: string;
-  email: string;
+  email: string | null;
+  phone: string | null;
+  hasPassword: boolean;
   name: string | null;
   bio: string | null;
   avatarUrl: string | null;
@@ -13,21 +15,39 @@ export type AuthUser = {
 };
 
 export async function register(input: {
-  email: string;
+  login: string;
   password: string;
   name?: string;
 }) {
-  return apiFetch<{ token: string; user: AuthUser }>(
-    "/api/auth/register",
-    { method: "POST", body: JSON.stringify(input) },
-  );
+  return apiFetch<{ token: string; user: AuthUser }>("/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }
 
-export async function login(email: string, password: string) {
-  return apiFetch<{ token: string; user: AuthUser }>(
-    "/api/auth/login",
-    { method: "POST", body: JSON.stringify({ email, password }) },
-  );
+export async function login(loginId: string, password: string) {
+  return apiFetch<{ token: string; user: AuthUser }>("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ login: loginId, password }),
+  });
+}
+
+export async function sendSmsCode(phone: string) {
+  return apiFetch<{
+    ok: true;
+    cooldownSeconds: number;
+    devCode?: string;
+  }>("/api/auth/sms/send", {
+    method: "POST",
+    body: JSON.stringify({ phone }),
+  });
+}
+
+export async function loginWithSms(phone: string, code: string) {
+  return apiFetch<{ token: string; user: AuthUser }>("/api/auth/sms/login", {
+    method: "POST",
+    body: JSON.stringify({ phone, code }),
+  });
 }
 
 export async function logout() {
@@ -59,12 +79,12 @@ export async function updateProfile(input: {
   });
 }
 
-export async function requestPasswordReset(email: string) {
+export async function requestPasswordReset(login: string) {
   return apiFetch<{ ok: true; devResetUrl?: string }>(
     "/api/auth/forgot-password",
     {
       method: "POST",
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ login }),
     },
   );
 }
