@@ -8,7 +8,8 @@ function notesBlock(notes: string[]): string {
 }
 
 const ANALYZE_INSTRUCTIONS = `请客观分析参考素材的内容、风格、结构与可借鉴要点（仅输出 analysis 字段）。
-- 图片素材的 visual_cues 请填写视觉要点摘要`;
+- 图片素材的 visual_cues 请填写视觉要点摘要
+- 音频素材须输出完整 transcript（逐字转写稿）`;
 
 function mediaInstruction(mediaKind: ReferenceAssetPrep["media_kind"]): string {
   switch (mediaKind) {
@@ -16,6 +17,8 @@ function mediaInstruction(mediaKind: ReferenceAssetPrep["media_kind"]): string {
       return "请阅读下方参考原文并完成分析。";
     case "image":
       return "请直接观察下方图片并完成分析。";
+    case "audio":
+      return "请收听下方音频并完成分析，务必输出完整转写稿。";
     default:
       return "请基于文件信息保守分析。";
   }
@@ -47,6 +50,27 @@ export function buildAnalyzeReferenceMessage(
 
     return new HumanMessage(
       `${header}（未能加载图片内容，请主要依据文件信息保守分析）`,
+    );
+  }
+
+  if (prep.media_kind === "audio") {
+    if (prep.audio_data) {
+      return new HumanMessage({
+        content: [
+          { type: "text", text: header },
+          {
+            type: "input_audio",
+            input_audio: {
+              data: prep.audio_data,
+              format: prep.audio_format ?? "wav",
+            },
+          },
+        ],
+      });
+    }
+
+    return new HumanMessage(
+      `${header}（未能加载音频内容，请主要依据文件信息保守分析）`,
     );
   }
 

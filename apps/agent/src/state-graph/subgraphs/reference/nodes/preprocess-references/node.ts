@@ -1,14 +1,14 @@
-/** 参考素材预处理：对待分析资源生成预处理 tool_calls */
+/** 参考素材预处理调度：跳过不支持的媒介，具体执行由 runPreprocessTools 负责 */
 import type { RunnableConfig } from "@langchain/core/runnables";
 
+import {
+  getReferences,
+  patchPendingReferences,
+} from "#agent/state-io/index.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
-import { emitPreprocessToolCalls } from "./helpers/emit-preprocess-tool-calls.js";
+import { applyUnsupportedReferenceSkips } from "../../helpers/skip-unsupported-references.js";
 import { listUnprocessedReferenceJobs } from "./helpers/list-unprocessed-jobs.js";
-import {
-  isSupportedReferencePreprocessKind,
-  skipUnsupportedReferenceJobs,
-} from "./helpers/skip-unsupported-reference-jobs.js";
 
 export async function preprocessReferencesNode(
   state: AgentStateType,
@@ -17,16 +17,6 @@ export async function preprocessReferencesNode(
   const jobs = listUnprocessedReferenceJobs(state);
   if (!jobs.length) return {};
 
-  const skipPatch = skipUnsupportedReferenceJobs(state, jobs);
-  const processableJobs = jobs.filter((job) =>
-    isSupportedReferencePreprocessKind(job.media_kind),
-  );
-
-  const message = emitPreprocessToolCalls(processableJobs);
-  if (!message) return skipPatch;
-
-  return {
-    ...skipPatch,
-    messages: [message],
-  };
+  const references = applyUnsupportedReferenceSkips(getReferences(state), jobs);
+  return patchPendingReferences(state, references);
 }

@@ -43,8 +43,7 @@ export function listUnprocessedReferenceJobs(
     if (!url || seenUrls.has(url)) continue;
     if (!referenceNeedsAnalysis(url, references)) continue;
     seenUrls.add(url);
-    const mime =
-      raw.mime_type?.trim() || assetFromUrl(url).mime_type;
+    const mime = raw.mime_type?.trim() || assetFromUrl(url).mime_type;
     jobs.push({
       asset_url: url,
       mime_type: mime,

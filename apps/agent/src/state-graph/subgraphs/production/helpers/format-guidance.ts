@@ -27,7 +27,7 @@ const MODALITY_GUIDANCE: Record<string, string> = {
   text: "输出以纯文字内容为主。",
   image: "主交付含配图：design 任务走 executeDesign → renderDesignImage 流水线；文案任务在 notes 中给出配图建议。",
   mixed: "输出长文或笔记正文，并在 notes 中给出配图/封面建议。",
-  audio: "输出适合朗读的口播稿；音频文件生成功能即将上线，当前先出文字稿。",
+  audio: "用户上传音频素材时：规划 audio 部门任务解析入库（ingestProductionAudio 多模态转写）；无上传时输出适合朗读的口播稿。",
   video: "输出视频脚本或口播分镜；视频合成即将上线，当前先出脚本稿。",
 };
 

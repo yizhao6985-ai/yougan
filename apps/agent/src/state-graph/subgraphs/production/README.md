@@ -8,7 +8,8 @@
 START → planProduction → dispatchTask
                               ├─ executeWriting → acceptTask → routeProduction
                               ├─ executeDesign → renderDesignImage → acceptTask → routeProduction
-                              │     （design 必经 executeDesign，dispatch 不直达 renderDesignImage）
+                              ├─ ingestProductionAudio → acceptTask → routeProduction
+                              │     （用户上传音频 + audio 部门任务）
                               └─ summarizeProduction（计划为空 / 无法执行）
 routeProduction
   ├─ dispatchTask（尚有未完成任务）
@@ -34,6 +35,7 @@ dispatch 在「已有 prompt、待出图」时仍路由到 executeDesign（no-op
 | `planProduction`                   | llm-work | 写入用户要求（summary），生成可执行 `pending_tasks` |
 | `dispatchTask`                     | plain    | 标记当前 `in_progress` 任务                           |
 | `executeWriting` / `executeDesign` | llm-work | 单任务产出 → `deliverable`（design 产出 prompt + 短说明） |
+| `ingestProductionAudio` | plain | 用户上传音频：多模态转写 → deliverable（body=URL，notes=转写稿） |
 | `renderDesignImage` | plain | design 任务：MiniMax image-01 出图，写入临时 URL（`transient`）；stream 结束后由 API sync 物化 |
 | `acceptTask` | llm-work | 方向性验收；失败重试或标 `failed` |
 | `routeProduction`                  | plain    | 流转锚点（无状态变更）                                |

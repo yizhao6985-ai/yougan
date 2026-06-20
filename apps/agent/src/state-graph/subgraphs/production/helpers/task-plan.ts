@@ -1,8 +1,23 @@
 /** 制作计划任务路由与 patch 辅助 */
 import type { ProductionTask, WorkProduction } from "@yougan/domain";
 
+import type { AgentStateType } from "#agent/state.js";
+import { resolveProductionAudioAsset } from "./resolve-production-audio-asset.js";
+
 import { acceptAttemptsExhausted } from "./pipeline.js";
 import { isValidDesignPromptDeliverable } from "../nodes/accept-task/helpers/deliverable.js";
+
+export function isAudioTask(task: ProductionTask): boolean {
+  return task.department === "audio";
+}
+
+export function audioTaskNeedsIngest(
+  state: AgentStateType,
+  task: ProductionTask,
+): boolean {
+  if (!isAudioTask(task)) return false;
+  return resolveProductionAudioAsset(state) != null;
+}
 
 export function isDesignTask(task: ProductionTask): boolean {
   return task.department === "design";
@@ -26,11 +41,21 @@ export function isTaskReady(task: ProductionTask): boolean {
 
 export function taskAwaitingAccept(task: ProductionTask): boolean {
   if (task.status !== "in_progress") return false;
-  if (!task.deliverable?.body?.trim()) return false;
   if (isDesignTask(task)) {
+    if (!task.deliverable?.body?.trim()) return false;
     return designTaskHasRenderedImage(task);
   }
+  if (isAudioTask(task) && audioDeliverableHasTranscript(task)) {
+    return Boolean(task.deliverable?.body?.trim());
+  }
+  if (!task.deliverable?.body?.trim()) return false;
   return true;
+}
+
+function audioDeliverableHasTranscript(task: ProductionTask): boolean {
+  const url = task.deliverable?.body?.trim() ?? "";
+  if (!url) return false;
+  return Boolean(task.deliverable?.notes?.trim());
 }
 
 export function taskHasTerminalFailure(task: ProductionTask): boolean {
@@ -120,6 +145,14 @@ export function taskNeedsProduce(task: ProductionTask): boolean {
   if (taskNeedsRender(task)) return false;
   if (acceptAttemptsExhausted(task)) return false;
   return true;
+}
+
+/** dispatch 路由：音频素材入库任务走 ingestProductionAudio */
+export function audioTaskNeedsIngestProduce(
+  state: AgentStateType,
+  task: ProductionTask,
+): boolean {
+  return isAudioTask(task) && audioTaskNeedsIngest(state, task) && taskNeedsProduce(task);
 }
 
 /** 将指定任务标为 in_progress，其余未 ready 的 in_progress 退回 pending */

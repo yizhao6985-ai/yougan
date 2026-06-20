@@ -15,6 +15,7 @@ import { getReferences, getState } from "#agent/state-io/index.js";
 export async function executeReferencePreprocess(
   asset: Asset,
   expectedKind: MediaKind,
+  references = getReferences(getState()),
 ): Promise<
   | { ok: true; summary: string; references: WorkReference[] }
   | { ok: false; message: string }
@@ -27,7 +28,6 @@ export async function executeReferencePreprocess(
     };
   }
 
-  const state = getState();
   const prep = await prepareReferenceAsset(asset);
   const analysis = await analyzeReferenceContent(prep);
   const reference = newWorkReference({
@@ -37,7 +37,6 @@ export async function executeReferencePreprocess(
     analyzed_at: new Date().toISOString(),
   });
 
-  let references = getReferences(state);
   references = upsertAssetReference(references, reference);
 
   return {

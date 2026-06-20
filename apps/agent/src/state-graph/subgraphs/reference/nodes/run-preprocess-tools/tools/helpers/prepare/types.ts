@@ -6,5 +6,7 @@ export type ReferenceAssetPrep = {
   descriptor: string;
   text_excerpt?: string;
   image_url?: string;
+  audio_data?: string;
+  audio_format?: string;
   notes: string[];
 };

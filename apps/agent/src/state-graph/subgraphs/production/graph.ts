@@ -14,6 +14,7 @@ import { assemblePreviewNode } from "./nodes/assemble-preview/node.js";
 import { dispatchTaskNode } from "./nodes/dispatch-task/node.js";
 import { executeDesignNode } from "./nodes/execute-design/node.js";
 import { executeWritingNode } from "./nodes/execute-writing/node.js";
+import { ingestProductionAudioNode } from "./nodes/ingest-production-audio/node.js";
 import { planProductionNode } from "./nodes/plan-production/node.js";
 import { renderDesignImageNode } from "./nodes/render-design-image/node.js";
 import { routeProductionNode } from "./nodes/route-production/node.js";
@@ -24,6 +25,7 @@ export const productionGraph = new StateGraph(AgentState)
   .addNode("dispatchTask", dispatchTaskNode)
   .addNode("executeWriting", executeWritingNode)
   .addNode("executeDesign", executeDesignNode)
+  .addNode("ingestProductionAudio", ingestProductionAudioNode)
   .addNode("renderDesignImage", renderDesignImageNode)
   .addNode("acceptTask", acceptTaskNode)
   .addNode("routeProduction", routeProductionNode)
@@ -38,6 +40,7 @@ export const productionGraph = new StateGraph(AgentState)
   )
   .addEdge("executeWriting", "acceptTask")
   .addEdge("executeDesign", "renderDesignImage")
+  .addEdge("ingestProductionAudio", "acceptTask")
   .addEdge("renderDesignImage", "acceptTask")
   .addEdge("acceptTask", "routeProduction")
   .addConditionalEdges(

@@ -25,7 +25,7 @@ ${profileReferencesSummary(references)}
 ## 计划规则
 1. **你只输出 tasks**，不输出 summary、不输出计划说明 prose
 2. **制作范围以用户要求为准（最高优先级）**：用户若限定范围（某一节拍/节/段落/开头/部分/标题等），**只**规划覆盖该范围的 tasks；未明确要求全篇、整稿、全部节拍或完整成稿时，**禁止**为其余节拍或未点名内容拆 task
-3. **节拍序号对齐**：用户说「第 N 节拍/节」时，对照方案 sequence 的序号（从 1 起）与 id，只写对应那一节；task.direction 注明对应 `[sequence_id]`；该节若含 image/audio/video role，可追加配套 design/audio/video task，但不得扩写到其他节
+3. **节拍序号对齐**：用户说「第 N 节拍/节」时，对照方案 sequence 的序号（从 1 起）与 id，只写对应那一节；task.direction 注明对应 sequence id；该节若含 image/audio/video role，可追加配套 design/audio/video task，但不得扩写到其他节
 4. **tasks 即计划**：有序列表，每条 = 一个可交付内容节点，execute 收到即可开写
 5. **先理解作品再拆任务**：可读全方案以把握调性与结构，但 task 数量与边界必须服从第 2、3 条；禁止因「整体把握」而默认拆完全篇；节拍（sequence）是软参考，不是机械 1:1 映射，**范围约束优先于全篇映射**
 6. **结构规划在 plan 内完成**，体现在 tasks 拆分与各 task.direction 中；禁止把「写大纲/梳结构/策划」拆成 task
@@ -33,7 +33,8 @@ ${profileReferencesSummary(references)}
 8. direction 须呼应：用户要求、profile 各要素及你为本作品拟定的结构；acceptance_criteria 供验收员判断方向是否达标；**边界（bounds）须写入相关 task 的 acceptance_criteria**
 9. 根据 direction.format 与节拍 role 为每条 task 指定 department；可据需要追加 design / audio / video 任务
 10. **design 任务**：description 描述视觉交付目标（封面、插画、配图等）；出图由 executeDesign → renderDesignImage 流水线负责，task 本身不写「调用 API 出图」等过程动作
-11. **连续正文须写清段落边界**（小说、长文分节、脚本分镜等按顺序拼接成稿时）：各 task 的 direction 须互斥、可接续，不得让相邻 task 写同一场景或同一 beat。格式要求：
+11. **audio 任务（用户上传音频）**：若本轮消息含音频附件或参考列表有音频素材，须规划 department=audio 的入库任务（description 如「解析并入库用户上传的音频素材」）；由 ingestProductionAudio 多模态转写，deliverable.body 为音频 URL、notes 为转写稿；无上传时 audio 任务仍可口播稿/脚本类文案产出
+12. **连续正文须写清段落边界**（小说、长文分节、脚本分镜等按顺序拼接成稿时）：各 task 的 direction 须互斥、可接续，不得让相邻 task 写同一场景或同一 beat。格式要求：
    - 每条 task 的 direction 含 **【本节止于】**：本节最后一幕/情节点（供下一节接续）
    - 第 2 条及以后的 task 另含 **【下节起笔】**（从上一节【本节止于】之后写起）与 **【禁止重复】**（与上一节已完成的动作、场景、人物反应互斥，不得换词重写）
    - 各 task 只写本节新增信息；标题/hook/标签等元信息 task 与正文 task 须分工，禁止正文 task 写标题、禁止元信息 task 复述正文场景

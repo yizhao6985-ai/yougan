@@ -8,6 +8,7 @@ export type RunProgressPhase =
   | "production_execute_writing"
   | "production_execute_design"
   | "production_render_design"
+  | "production_ingest_audio"
   | "production_accept"
   | "production_assemble"
   | "production_summarize"

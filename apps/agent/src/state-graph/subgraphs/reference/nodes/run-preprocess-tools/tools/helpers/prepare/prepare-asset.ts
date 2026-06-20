@@ -1,5 +1,6 @@
 import { inferMediaKind, type Asset } from "@yougan/domain";
 
+import { prepareReferenceAudio } from "./prep-audio.js";
 import { prepareReferenceImage } from "./prep-image.js";
 import { prepareReferenceText } from "./prep-text.js";
 import type { ReferenceAssetPrep } from "./types.js";
@@ -41,6 +42,18 @@ export async function prepareReferenceAsset(
     const result = await prepareReferenceImage(url, asset.mime_type);
     notes.push(...result.notes);
     prep.image_url = result.image_url;
+    return prep;
+  }
+
+  if (mediaKind === "audio") {
+    const result = await prepareReferenceAudio(
+      url,
+      asset.mime_type,
+      asset.original_name,
+    );
+    notes.push(...result.notes);
+    prep.audio_data = result.audio_data;
+    prep.audio_format = result.audio_format;
     return prep;
   }
 

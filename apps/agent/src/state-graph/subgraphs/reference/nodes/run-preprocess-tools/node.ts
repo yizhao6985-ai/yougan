@@ -1,6 +1,13 @@
-/** 执行 reference 预处理 tool_calls */
-import { ToolNode } from "@langchain/langgraph/prebuilt";
+/** 执行单条 reference 预处理（由图边路由，不依赖 message tool_calls） */
+import type { RunnableConfig } from "@langchain/core/runnables";
 
-import { PREPROCESS_REFERENCE_TOOLS } from "./tools/index.js";
+import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
-export const runPreprocessToolsNode = new ToolNode(PREPROCESS_REFERENCE_TOOLS);
+import { runPreprocessReferenceJob } from "./tools/run-preprocess-reference-job.js";
+
+export async function runPreprocessToolsNode(
+  state: AgentStateType,
+  _config?: RunnableConfig,
+): Promise<AgentStatePatch> {
+  return runPreprocessReferenceJob(state);
+}

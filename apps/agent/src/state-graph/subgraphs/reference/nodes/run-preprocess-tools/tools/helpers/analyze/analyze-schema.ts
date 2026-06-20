@@ -7,4 +7,8 @@ export const ReferenceContentAnalyzeSchema = z.object({
   style_hints: z.array(z.string()).optional(),
   structure_hints: z.array(z.string()).optional(),
   visual_cues: z.string().optional().describe("视觉感知摘要，图片素材"),
+  transcript: z
+    .string()
+    .optional()
+    .describe("音频完整转写稿（逐字稿），音频素材必填"),
 });

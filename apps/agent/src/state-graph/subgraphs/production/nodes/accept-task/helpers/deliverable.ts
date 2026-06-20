@@ -23,13 +23,24 @@ export function isValidTaskDeliverable(
   deliverable: ProductionTaskDeliverable | null | undefined,
   task?: ProductionTask,
 ): boolean {
+  if (task?.department === "design") {
+    const body = deliverable?.body?.trim() ?? "";
+    if (body.length < MIN_BODY_LENGTH) return false;
+    if (isPlaceholderDeliverableText(body)) return false;
+    return Boolean(deliverable?.images?.[0]?.url?.trim());
+  }
+
+  if (task?.department === "audio") {
+    const url = deliverable?.body?.trim() ?? "";
+    if (!url) return false;
+    const transcript = deliverable?.notes?.trim() ?? "";
+    if (!transcript || isPlaceholderDeliverableText(transcript)) return false;
+    return true;
+  }
+
   const body = deliverable?.body?.trim() ?? "";
   if (body.length < MIN_BODY_LENGTH) return false;
   if (isPlaceholderDeliverableText(body)) return false;
-
-  if (task?.department === "design") {
-    return Boolean(deliverable?.images?.[0]?.url?.trim());
-  }
 
   return true;
 }

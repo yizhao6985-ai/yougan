@@ -44,6 +44,16 @@ export function productionRenderDesignProgress(
   );
 }
 
+export function productionIngestAudioProgress(
+  taskDescription?: string,
+): RunProgress {
+  return buildRunProgress(
+    "production_ingest_audio",
+    "正在解析音频素材…",
+    taskDescription?.trim() || null,
+  );
+}
+
 export function productionAcceptProgress(taskDescription?: string): RunProgress {
   return buildRunProgress(
     "production_accept",
