@@ -125,21 +125,9 @@ export async function listWorkVersions(userId: string, workId: string) {
     orderBy: { createdAt: "desc" },
   });
 
-  const visible = versions
+  return versions
     .filter((version) => hasValidPreview(parseSnapshot(version.snapshot)))
     .map(toVersionDTO);
-
-  if (!work.headVersionId) {
-    return visible;
-  }
-
-  return visible.sort((left, right) => {
-    if (left.id === work.headVersionId) return -1;
-    if (right.id === work.headVersionId) return 1;
-    return (
-      new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
-    );
-  });
 }
 
 export async function restoreWorkToVersion(
@@ -177,72 +165,6 @@ export async function restoreWorkToVersion(
   return toVersionDTO(version);
 }
 
-async function copyUserVisibleVersions(
-  sourceWorkId: string,
-  targetWorkId: string,
-  upToVersionId?: string,
-) {
-  let upToCreatedAt: Date | undefined;
-  if (upToVersionId) {
-    const upTo = await prisma.workVersion.findFirst({
-      where: { id: upToVersionId, workId: sourceWorkId },
-    });
-    if (!upTo) return null;
-    upToCreatedAt = upTo.createdAt;
-  }
-
-  const sourceVersions = await prisma.workVersion.findMany({
-    where: { workId: sourceWorkId },
-    orderBy: { createdAt: "asc" },
-  });
-
-  const visible = sourceVersions.filter((version) => {
-    if (!hasValidPreview(parseSnapshot(version.snapshot))) {
-      return false;
-    }
-    if (upToCreatedAt && version.createdAt > upToCreatedAt) {
-      return false;
-    }
-    return true;
-  });
-
-  if (!visible.length) {
-    return null;
-  }
-
-  const idMap = new Map<string, string>();
-  let lastCopiedId: string | null = null;
-
-  await prisma.$transaction(async (tx) => {
-    for (const source of visible) {
-      const created = await tx.workVersion.create({
-        data: {
-          workId: targetWorkId,
-          parentVersionId: source.parentVersionId
-            ? (idMap.get(source.parentVersionId) ?? null)
-            : null,
-          conversationId: null,
-          kind: "preview",
-          summary: source.summary,
-          snapshot: source.snapshot as object,
-          createdAt: source.createdAt,
-        },
-      });
-      idMap.set(source.id, created.id);
-      lastCopiedId = created.id;
-    }
-
-    if (lastCopiedId) {
-      await tx.work.update({
-        where: { id: targetWorkId },
-        data: { headVersionId: lastCopiedId },
-      });
-    }
-  });
-
-  return lastCopiedId;
-}
-
 export async function duplicateWorkFromVersion(
   userId: string,
   sourceWorkId: string,
@@ -259,14 +181,22 @@ export async function duplicateWorkFromVersion(
 
   let snapshot = (await getWorkCurrentSnapshot(sourceWorkId)) ?? emptySnapshot();
   let sourceVersionId = source.headVersionId;
+  let forkVersion: {
+    summary: string;
+    snapshot: unknown;
+    createdAt: Date;
+  } | null = null;
 
   if (options?.versionId) {
     const version = await prisma.workVersion.findFirst({
       where: { id: options.versionId, workId: sourceWorkId },
     });
     if (!version) return null;
-    snapshot = parseSnapshot(version.snapshot);
+    const parsed = parseSnapshot(version.snapshot);
+    if (!hasValidPreview(parsed)) return null;
+    snapshot = parsed;
     sourceVersionId = version.id;
+    forkVersion = version;
   }
 
   const title = options?.title?.trim() || `${source.title} · 副本`;
@@ -303,16 +233,31 @@ export async function duplicateWorkFromVersion(
       },
     });
 
+    if (forkVersion) {
+      const seededVersion = await tx.workVersion.create({
+        data: {
+          workId: createdWork.id,
+          parentVersionId: null,
+          conversationId: null,
+          kind: "preview",
+          summary: forkVersion.summary,
+          snapshot: forkVersion.snapshot as object,
+          createdAt: forkVersion.createdAt,
+        },
+      });
+      await tx.work.update({
+        where: { id: createdWork.id },
+        data: { headVersionId: seededVersion.id },
+      });
+    }
+
     return { work: createdWork, conversationId: conversation.id };
   });
 
-  await copyUserVisibleVersions(
-    sourceWorkId,
-    result.work.id,
-    options?.versionId,
-  );
-
-  return result.work;
+  const refreshed = await prisma.work.findUnique({
+    where: { id: result.work.id },
+  });
+  return refreshed;
 }
 
 function toVersionDTO(version: {

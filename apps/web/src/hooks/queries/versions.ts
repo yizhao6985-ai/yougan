@@ -84,17 +84,23 @@ export function useInvalidateVersionQueries(workId: string | null) {
 
   return useMemoizedFn(async () => {
     if (!workId) return;
+    const previous = queryClient.getQueryData<WorkVersion[]>(
+      queryKeys.works.versions(workId),
+    );
+    const previousIds = new Set(previous?.map((version) => version.id) ?? []);
+
     await queryClient.refetchQueries({
       queryKey: queryKeys.works.versions(workId),
     });
     const versions = queryClient.getQueryData<WorkVersion[]>(
       queryKeys.works.versions(workId),
     );
-    const headId = versions?.[0]?.id;
-    if (!headId) return;
+    const newVersion = versions?.find((version) => !previousIds.has(version.id));
+    if (!newVersion) return;
+
     patchWorksCache(queryClient, (works) =>
       works.map((work) =>
-        work.id === workId ? { ...work, headVersionId: headId } : work,
+        work.id === workId ? { ...work, headVersionId: newVersion.id } : work,
       ),
     );
   });

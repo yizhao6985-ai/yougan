@@ -109,9 +109,7 @@ export function WorkHistoryPanel({
   );
 
   const versions = versionsQuery.data ?? [];
-  // 版本列表由 API 按 headVersionId 排序；优先信任列表，避免作品缓存里的 head 滞后。
-  const resolvedHeadVersionId =
-    versions.length > 0 ? versions[0].id : (headVersionId ?? null);
+  const resolvedHeadVersionId = headVersionId ?? null;
 
   const handleRestore = () => {
     if (!pendingRestore) return;

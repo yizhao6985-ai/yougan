@@ -16,15 +16,16 @@
 | `Work.headVersionId` | 当前所处的版本节点 |
 | 物化列 | `Work.profile / references / productionPlan / preview` 始终反映最新进度 |
 | 新建作品 | 无版本记录，直到首次生成作品预览 |
-| 另存为新作品 | 复制源作品可见版本链 + 当前 snapshot |
+| 另存为新作品 | 复制当前 snapshot 到新 `Work`，不复制版本历史 |
+| 从此分叉为新作品 | 复制所选 version 的 snapshot，并在新作品保留该版一条记录 |
 | 回到这一版 | 将 head 指回所选节点并物化，不追加操作记录 |
 
 ## 平行探索：另存为新作品
 
 `POST /api/works/:id/duplicate`：
 
-- 从当前进度或指定 version 复制 snapshot 到新 `Work`
-- **复用**源作品上已有的作品预览版本链（可选截断到指定 version）
+- 从当前进度复制 snapshot 到新 `Work`，不复制版本历史
+- 指定 `versionId` 时分叉：复制该版 snapshot，新作品仅保留这一条版本记录
 - 记录 `sourceWorkId` / `sourceVersionId`
 
 ## 数据流
