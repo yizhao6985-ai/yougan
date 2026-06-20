@@ -28,7 +28,7 @@ export const THEME = {
 
 export const LOCALE = {
   label: "语言",
-  comingSoon: "即将推出",
+  comingSoon: "敬请期待",
 } as const;
 
 export const NAV = {
