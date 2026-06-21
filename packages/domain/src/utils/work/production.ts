@@ -1,3 +1,4 @@
+import type { ContentFormatId } from "../../models/content-form/formats.js";
 import {
   committedProduction,
   EMPTY_WORK_PRODUCTION,
@@ -36,13 +37,15 @@ export function parseProductionJson(raw: unknown): WorkProduction {
 export function resolvePreviewFromWork(input: {
   preview?: unknown | null;
   production?: unknown;
+  format?: ContentFormatId | null;
 }): ReturnType<typeof parseWorkPreview> {
+  const options = { format: input.format };
   if (input.preview !== undefined && input.preview !== null) {
-    return parseWorkPreview(input.preview);
+    return parseWorkPreview(input.preview, options);
   }
   const legacy = extractLegacyPreview(input.production);
   if (legacy !== undefined) {
-    return legacy === null ? null : parseWorkPreview(legacy);
+    return legacy === null ? null : parseWorkPreview(legacy, options);
   }
   return null;
 }

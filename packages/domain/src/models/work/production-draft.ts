@@ -1,4 +1,4 @@
-/** 制作环节 staging 草稿类型（验收前；assemble 后进 preview.blocks，commit 时剥离） */
+/** 制作环节 staging 草稿类型（验收前；assemble 后进 preview.content，commit 时剥离） */
 
 /** 设计任务 deliverable 中的单张配图草稿 */
 export interface ProductionDraftImage {

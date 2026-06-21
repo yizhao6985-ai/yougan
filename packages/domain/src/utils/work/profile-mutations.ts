@@ -1,16 +1,14 @@
 import {
   EMPTY_WORK_PROFILE,
   type ProfileDirection,
-  type ProfileSequenceItem,
   type ProfileSpecItem,
   type ProfileStyle,
-  type SequenceRole,
   type WorkProfile,
 } from "../../models/work/profile.js";
 import {
-  newProfileSequenceItem,
+  newProfileRequirementItem,
   newProfileSpecItem,
-  normalizeSequenceRole,
+  normalizeProfileTextField,
 } from "./profile.js";
 
 export function patchDirection(
@@ -45,8 +43,14 @@ export function patchStyle(
   return {
     ...base,
     style: {
-      verbal: style.verbal !== undefined ? style.verbal : base.style?.verbal,
-      visual: style.visual !== undefined ? style.visual : base.style?.visual,
+      verbal:
+        style.verbal !== undefined
+          ? normalizeProfileTextField(style.verbal)
+          : base.style?.verbal,
+      visual:
+        style.visual !== undefined
+          ? normalizeProfileTextField(style.visual)
+          : base.style?.visual,
     },
   };
 }
@@ -67,7 +71,7 @@ function deleteSpecItem(items: ProfileSpecItem[], itemId: string): ProfileSpecIt
   return items.filter((item) => item.id !== itemId);
 }
 
-export function updateContextItem(
+export function updateSettingItem(
   profile: WorkProfile | undefined,
   itemId: string,
   spec: string,
@@ -75,24 +79,52 @@ export function updateContextItem(
   const base = profile ?? EMPTY_WORK_PROFILE;
   return {
     ...base,
-    context: updateSpecItem(base.context, itemId, spec),
+    setting: updateSpecItem(base.setting, itemId, spec),
   };
 }
 
-export function deleteContextItem(
+export function deleteSettingItem(
   profile: WorkProfile | undefined,
   itemId: string,
 ): WorkProfile {
   const base = profile ?? EMPTY_WORK_PROFILE;
   return {
     ...base,
-    context: deleteSpecItem(base.context, itemId),
+    setting: deleteSpecItem(base.setting, itemId),
   };
 }
 
-export function clearContext(profile: WorkProfile | undefined): WorkProfile {
+export function clearSetting(profile: WorkProfile | undefined): WorkProfile {
   const base = profile ?? EMPTY_WORK_PROFILE;
-  return { ...base, context: [] };
+  return { ...base, setting: [] };
+}
+
+export function updateRequirementItem(
+  profile: WorkProfile | undefined,
+  itemId: string,
+  spec: string,
+): WorkProfile {
+  const base = profile ?? EMPTY_WORK_PROFILE;
+  return {
+    ...base,
+    requirements: updateSpecItem(base.requirements, itemId, spec),
+  };
+}
+
+export function deleteRequirementItem(
+  profile: WorkProfile | undefined,
+  itemId: string,
+): WorkProfile {
+  const base = profile ?? EMPTY_WORK_PROFILE;
+  return {
+    ...base,
+    requirements: deleteSpecItem(base.requirements, itemId),
+  };
+}
+
+export function clearRequirements(profile: WorkProfile | undefined): WorkProfile {
+  const base = profile ?? EMPTY_WORK_PROFILE;
+  return { ...base, requirements: [] };
 }
 
 export function updateBoundItem(
@@ -123,56 +155,31 @@ export function clearBounds(profile: WorkProfile | undefined): WorkProfile {
   return { ...base, bounds: [] };
 }
 
-export function updateSequenceItem(
-  profile: WorkProfile | undefined,
-  itemId: string,
-  spec: string,
-  role?: SequenceRole | string | null,
-): WorkProfile {
-  const base = profile ?? EMPTY_WORK_PROFILE;
-  const trimmed = spec.trim();
-  if (!trimmed) return base;
-  return {
-    ...base,
-    sequence: base.sequence.map((item) =>
-      item.id === itemId
-        ? {
-            ...item,
-            spec: trimmed,
-            role: role === undefined ? item.role : normalizeSequenceRole(role),
-          }
-        : item,
-    ),
-  };
-}
-
-export function deleteSequenceItem(
-  profile: WorkProfile | undefined,
-  itemId: string,
-): WorkProfile {
-  const base = profile ?? EMPTY_WORK_PROFILE;
-  return {
-    ...base,
-    sequence: base.sequence.filter((item) => item.id !== itemId),
-  };
-}
-
-export function clearSequence(profile: WorkProfile | undefined): WorkProfile {
-  const base = profile ?? EMPTY_WORK_PROFILE;
-  return { ...base, sequence: [] };
-}
-
-export function appendContext(
+export function appendSetting(
   profile: WorkProfile | undefined,
   spec: string,
 ): WorkProfile {
   const base = profile ?? EMPTY_WORK_PROFILE;
   const trimmed = spec.trim();
   if (!trimmed) return base;
-  if (base.context.some((item) => item.spec === trimmed)) return base;
+  if (base.setting.some((item) => item.spec === trimmed)) return base;
   return {
     ...base,
-    context: [...base.context, newProfileSpecItem(trimmed, "ctx")],
+    setting: [...base.setting, newProfileSpecItem(trimmed, "set")],
+  };
+}
+
+export function appendRequirement(
+  profile: WorkProfile | undefined,
+  spec: string,
+): WorkProfile {
+  const base = profile ?? EMPTY_WORK_PROFILE;
+  const trimmed = spec.trim();
+  if (!trimmed) return base;
+  if (base.requirements.some((item) => item.spec === trimmed)) return base;
+  return {
+    ...base,
+    requirements: [...base.requirements, newProfileRequirementItem(trimmed)],
   };
 }
 
@@ -190,19 +197,4 @@ export function appendBound(
   };
 }
 
-export function appendSequence(
-  profile: WorkProfile | undefined,
-  spec: string,
-  role?: SequenceRole | string | null,
-): WorkProfile {
-  const base = profile ?? EMPTY_WORK_PROFILE;
-  const trimmed = spec.trim();
-  if (!trimmed) return base;
-  if (base.sequence.some((item) => item.spec === trimmed)) return base;
-  return {
-    ...base,
-    sequence: [...base.sequence, newProfileSequenceItem(trimmed, role)],
-  };
-}
-
-export type { ProfileSequenceItem, ProfileSpecItem };
+export type { ProfileSpecItem };

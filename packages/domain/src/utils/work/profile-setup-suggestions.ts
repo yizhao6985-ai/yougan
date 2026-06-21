@@ -7,9 +7,11 @@ import type {
   ProfileStepId,
   WorkProfile,
 } from "../../models/work/profile.js";
+import type { WorkProduction } from "../../models/work/production.js";
 import { parseProfileJson, isProfileEmpty } from "./profile.js";
 import {
   PROFILE_SETUP_FLOW,
+  buildProfileSetupProgressOptions,
   getActiveProfileStep,
   getProfileSetupState,
   isProfileSetupReady,
@@ -140,10 +142,10 @@ function getStepConsolidateFocusHint(
       return null;
     case "style":
       return formatStyleFieldFocus(profile);
-    case "context":
-      return "人设、场景、品牌等正向设定；须呼应已定方向与风格";
-    case "sequence":
-      return "内容顺序与节拍；须呼应方向、风格与已有设定";
+    case "setting":
+      return "品牌、人物、故事背景等固定信息；须呼应已定方向与风格";
+    case "requirements":
+      return "对成稿的期望（字数、结构顺序等）；须呼应方向、风格与背景";
     case "bounds":
       return "这件作品需避免的具体元素；须针对已定主题，不要泛泛禁忌";
     default:
@@ -251,10 +253,21 @@ function buildSlotAnchorNote(
 export function buildProfileSetupSuggestionFocus(input: {
   before: WorkProfile | undefined;
   after: WorkProfile | undefined;
+  hasPreview?: boolean;
+  production?: WorkProduction | null;
 }): ProfileSetupSuggestionFocus {
   const afterProfile = parseProfileJson(input.after);
+  const progressOptions = buildProfileSetupProgressOptions({
+    profile: afterProfile,
+    production: input.production,
+    hasPreview: input.hasPreview,
+  });
   const newlyFilledSteps = diffNewlyFilledProfileSteps(input.before, input.after);
-  const activeStep = getActiveProfileStep(afterProfile);
+  const activeStep = getActiveProfileStep(
+    afterProfile,
+    progressOptions.skippedSteps,
+    progressOptions,
+  );
   const activeStatus = getActiveStepStatus(afterProfile, activeStep);
   const activeGaps = getActiveGaps(afterProfile, activeStep);
   const nextStep = getNextProfileStep(activeStep);
@@ -428,6 +441,7 @@ export function resolveProfileSetupSuggestionRoles(
   const focus = buildProfileSetupSuggestionFocus({
     before: input.beforeProfile,
     after: profile,
+    hasPreview: input.hasPreview,
   });
   const slots = buildProfileSetupSuggestionSlots(
     focus,
@@ -458,6 +472,7 @@ export function splitProfileSetupSuggestionLayers(
   const focus = buildProfileSetupSuggestionFocus({
     before: input.beforeProfile,
     after: profile,
+    hasPreview: input.hasPreview,
   });
   const slots = buildProfileSetupSuggestionSlots(
     focus,

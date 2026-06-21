@@ -34,7 +34,7 @@ function aspectRatioContextFromProfile(
 
 /**
  * 解析 design 出图应使用的画幅比例 id。
- * 运行时从 format 推断；context/sequence 中的画幅描述由 LLM 理解。
+ * 运行时从 format 推断；setting/requirements 中的画幅描述由 LLM 理解。
  */
 export function resolveImageAspectRatio(profile: WorkProfile): string {
   const normalized = parseProfileJson(profile);

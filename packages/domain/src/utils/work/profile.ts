@@ -1,16 +1,12 @@
 import {
   EMPTY_PROFILE_DIRECTION,
   EMPTY_WORK_PROFILE,
-  SEQUENCE_ROLES,
-  type ContentFormMediaParams,
   type ProfileDirection,
-  type ProfileSequenceItem,
+  type ProfileRequirementItem,
   type ProfileSpecItem,
   type ProfileStyle,
-  type SequenceRole,
   type WorkProfile,
 } from "../../models/work/profile.js";
-import { parseReferencesJson } from "./reference.js";
 import {
   isValidContentFormat,
   resolveContentForm,
@@ -20,36 +16,37 @@ import {
   defaultMediaParamsForFormat,
   syncModalitiesWithFormat,
 } from "./content-form-media-params.js";
-import { inferMediaModalities, sortMediaModalities } from "../media-modalities.js";
+import { inferMediaModalities } from "../media-modalities.js";
+import { parseReferencesJson } from "./reference.js";
 
 function newId(prefix: string): string {
   return `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
 }
 
-export function newProfileSpecItem(spec: string, prefix = "ctx"): ProfileSpecItem {
+const NULLISH_PROFILE_TEXT = new Set(["null", "undefined"]);
+
+/** 方案内可选文本字段：去空白，过滤 null / "null" 等无效占位。 */
+export function normalizeProfileTextField(value: unknown): string | null {
+  if (value == null) return null;
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed || NULLISH_PROFILE_TEXT.has(trimmed.toLowerCase())) {
+    return null;
+  }
+  return trimmed;
+}
+
+export function newProfileSpecItem(spec: string, prefix = "set"): ProfileSpecItem {
   return {
     id: newId(prefix),
     spec: spec.trim(),
   };
 }
 
-export function newProfileSequenceItem(
+export function newProfileRequirementItem(
   spec: string,
-  role?: SequenceRole | string | null,
-): ProfileSequenceItem {
-  return {
-    id: newId("seq"),
-    spec: spec.trim(),
-    role: normalizeSequenceRole(role),
-  };
-}
-
-export function normalizeSequenceRole(value: unknown): SequenceRole | null {
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim().toLowerCase();
-  return SEQUENCE_ROLES.includes(trimmed as SequenceRole)
-    ? (trimmed as SequenceRole)
-    : null;
+): ProfileRequirementItem {
+  return newProfileSpecItem(spec, "req");
 }
 
 function parseSpecItems(raw: unknown, prefix: string): ProfileSpecItem[] {
@@ -66,19 +63,21 @@ function parseSpecItems(raw: unknown, prefix: string): ProfileSpecItem[] {
     .filter((item) => item.spec);
 }
 
-function parseSequence(raw: unknown): ProfileSequenceItem[] {
-  if (!Array.isArray(raw)) return [];
-  return raw
-    .filter((item): item is Record<string, unknown> => !!item && typeof item === "object")
-    .map((item) => {
-      const spec = typeof item.spec === "string" ? item.spec.trim() : "";
-      return {
-        id: String(item.id ?? newId("seq")),
-        spec,
-        role: normalizeSequenceRole(item.role),
-      };
-    })
-    .filter((item) => item.spec);
+function parseRequirements(raw: unknown): ProfileRequirementItem[] {
+  if (Array.isArray(raw)) {
+    return parseSpecItems(raw, "req");
+  }
+  return [];
+}
+
+function parseProfileValue(value: Record<string, unknown>): WorkProfile {
+  return {
+    direction: parseDirection(value.direction),
+    style: parseStyle(value.style),
+    setting: parseSpecItems(value.setting, "set"),
+    requirements: parseRequirements(value.requirements),
+    bounds: parseSpecItems(value.bounds, "bnd"),
+  };
 }
 
 function parseDirection(raw: unknown): ProfileDirection {
@@ -88,12 +87,10 @@ function parseDirection(raw: unknown): ProfileDirection {
     typeof value.summary === "string" ? value.summary.trim() : "";
   const rawFormat = typeof value.format === "string" ? value.format : null;
   const format = isValidContentFormat(rawFormat) ? rawFormat : null;
-  const audience =
-    typeof value.audience === "string" ? value.audience.trim() || null : null;
   return {
     summary,
     format,
-    audience,
+    audience: normalizeProfileTextField(value.audience),
   };
 }
 
@@ -101,10 +98,8 @@ function parseStyle(raw: unknown): ProfileStyle {
   if (!raw || typeof raw !== "object") return {};
   const value = raw as Record<string, unknown>;
   return {
-    verbal:
-      typeof value.verbal === "string" ? value.verbal.trim() || null : null,
-    visual:
-      typeof value.visual === "string" ? value.visual.trim() || null : null,
+    verbal: normalizeProfileTextField(value.verbal),
+    visual: normalizeProfileTextField(value.visual),
   };
 }
 
@@ -124,11 +119,11 @@ export function isProfileEmpty(profile: WorkProfile | undefined): boolean {
   return (
     !normalized.direction.summary.trim() &&
     !normalized.direction.format &&
-    normalized.context.length === 0 &&
-    normalized.sequence.length === 0 &&
+    normalized.setting.length === 0 &&
+    normalized.requirements.length === 0 &&
     normalized.bounds.length === 0 &&
-    !normalized.style?.verbal?.trim() &&
-    !normalized.style?.visual?.trim() &&
+    !normalizeProfileTextField(normalized.style?.verbal) &&
+    !normalizeProfileTextField(normalized.style?.visual) &&
     !normalized.direction.audience?.trim()
   );
 }
@@ -138,8 +133,8 @@ export function hasProfileContent(profile: WorkProfile | undefined): boolean {
   const normalized = parseProfileJson(profile);
   return (
     Boolean(normalized.direction.summary.trim()) ||
-    normalized.sequence.length > 0 ||
-    normalized.context.length > 0
+    normalized.requirements.length > 0 ||
+    normalized.setting.length > 0
   );
 }
 
@@ -147,8 +142,8 @@ export function getProfileSummary(profile: WorkProfile): string | null {
   const normalized = parseProfileJson(profile);
   const summary = normalized.direction.summary.trim();
   if (summary) return summary;
-  if (normalized.sequence.length === 0) return null;
-  return normalized.sequence.map((item) => item.spec).join("；");
+  if (normalized.requirements.length === 0) return null;
+  return normalized.requirements.map((item) => item.spec).join("；");
 }
 
 export function parseProfileJson(raw: unknown): WorkProfile {
@@ -167,13 +162,7 @@ export function parseProfileJson(raw: unknown): WorkProfile {
     };
   }
 
-  return {
-    direction: parseDirection(value.direction),
-    style: parseStyle(value.style),
-    context: parseSpecItems(value.context, "ctx"),
-    sequence: parseSequence(value.sequence),
-    bounds: parseSpecItems(value.bounds, "bnd"),
-  };
+  return parseProfileValue(value);
 }
 
 export function resolveReferencesFromWork(input: {
@@ -202,12 +191,6 @@ export function inferModalitiesFromProfile(
   profile: WorkProfile,
 ): import("../../models/content-form/modalities.js").MediaModalityId[] {
   const normalized = parseProfileJson(profile);
-  const fromSequence = normalized.sequence
-    .map((item) => item.role)
-    .filter((role): role is SequenceRole => role != null);
-  if (fromSequence.length) {
-    return sortMediaModalities(fromSequence);
-  }
   return inferMediaModalities({
     contentFormat: normalized.direction.format,
     contentType: normalized.direction.summary,
@@ -225,7 +208,7 @@ export function getContentFormSpec(profile: WorkProfile): import("../../models/w
 /** 运行时从 format 推断媒介规格（不入库） */
 export function resolveMediaParamsFromProfile(
   profile: WorkProfile,
-): ContentFormMediaParams {
+): import("../../models/work/profile.js").ContentFormMediaParams {
   const normalized = parseProfileJson(profile);
   const contentForm = resolveContentFormFromProfile(normalized);
   return defaultMediaParamsForFormat(contentForm.format, contentForm.modalities);

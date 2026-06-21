@@ -8,8 +8,8 @@ export type ProfileSetupStep = ProfileStepId | "ready";
 export type ProfileStepId =
   | "direction"
   | "style"
-  | "context"
-  | "sequence"
+  | "setting"
+  | "requirements"
   | "bounds";
 
 /** 方向链：定位 · 形式 · 受众 */
@@ -25,22 +25,14 @@ export interface ProfileStyle {
   visual?: string | null;
 }
 
-/** 离散说明（context / bounds 共用） */
+/** 离散说明（setting / bounds / requirements 共用） */
 export interface ProfileSpecItem {
   id: string;
   spec: string;
 }
 
-/** 有序节拍 */
-export const SEQUENCE_ROLES = ["text", "image", "audio", "video"] as const;
-
-export type SequenceRole = (typeof SEQUENCE_ROLES)[number];
-
-export interface ProfileSequenceItem {
-  id: string;
-  spec: string;
-  role?: SequenceRole | null;
-}
+/** 需求项（有序列表；数组顺序即内容顺序） */
+export type ProfileRequirementItem = ProfileSpecItem;
 
 /**
  * 作品制作方案。
@@ -49,11 +41,11 @@ export interface ProfileSequenceItem {
 export interface WorkProfile {
   direction: ProfileDirection;
   style?: ProfileStyle;
-  /** 正向离散：世界设定、品牌信息等 */
-  context: ProfileSpecItem[];
-  /** 有序意图：成文节拍、插图/插媒体（软参考） */
-  sequence: ProfileSequenceItem[];
-  /** 反向离散：边界与禁止项 */
+  /** 背景/设定：品牌事实、故事背景、人设等 */
+  setting: ProfileSpecItem[];
+  /** 需求：对成稿的期望（规格、结构顺序等） */
+  requirements: ProfileRequirementItem[];
+  /** 边界：不要出现的内容与写法禁忌 */
   bounds: ProfileSpecItem[];
 }
 
@@ -100,15 +92,15 @@ export const EMPTY_PROFILE_DIRECTION: ProfileDirection = {
 export const EMPTY_WORK_PROFILE: WorkProfile = {
   direction: { ...EMPTY_PROFILE_DIRECTION },
   style: {},
-  context: [],
-  sequence: [],
+  setting: [],
+  requirements: [],
   bounds: [],
 };
 
 export const PROFILE_STEP_IDS: ProfileStepId[] = [
   "direction",
   "style",
-  "context",
-  "sequence",
+  "setting",
+  "requirements",
   "bounds",
 ];

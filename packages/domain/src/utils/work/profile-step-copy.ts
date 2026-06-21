@@ -32,22 +32,22 @@ const DEFAULT_EXAMPLES: Record<
     "口播亲切、像朋友聊天",
     "高饱和霓虹，电影感构图",
   ],
-  context: [
+  setting: [
     "林晓，内向产品经理",
     "虚构品牌，不对应真实商品",
-    "全文约 800 字",
     "品牌主色蓝白，科技感",
+    "故事发生在 2030 年上海",
   ],
-  sequence: [
+  requirements: [
+    "全文约 800 字",
     "开头讲防晒焦虑痛点",
-    "三款产品对比配图",
-    "给出选购建议",
-    "文字导语 → 图片主图 → 文字总结",
+    "三款产品对比",
+    "结尾给出选购建议",
   ],
   bounds: [
     "配图中不出现人脸",
     "不出现真实品牌 logo",
-    "第二节不揭示结局",
+    "不要用震惊体标题",
   ],
 };
 
@@ -89,6 +89,23 @@ const FORMAT_DIRECTION: Partial<Record<ContentFormatId, StepCopyVariant>> = {
   },
 };
 
+const FORMAT_SETTING: Partial<Record<ContentFormatId, StepCopyVariant>> = {
+  novel: {
+    title: "故事背景",
+    hint: "人物、时代、地点、世界观等创作依据",
+    emptyTitle: "暂无故事背景",
+    emptyBody: "例如：「主角林晓，28 岁内向产品经理」",
+    placeholder: "说说人物与故事背景…",
+  },
+  illustration: {
+    title: "创作背景",
+    hint: "系列主题、世界观或固定视觉元素",
+    emptyTitle: "暂无创作背景",
+    emptyBody: "例如：「同一赛博朋克世界观下的城市角落」",
+    placeholder: "说说系列背景…",
+  },
+};
+
 const DEFAULT_STEP_COPY: Record<
   Exclude<ProfileSetupStep, "ready">,
   StepCopyVariant
@@ -108,26 +125,26 @@ const DEFAULT_STEP_COPY: Record<
     emptyBody: "例如：「语气轻松」「画面简约蓝白」",
     placeholder: "说说文字与画面风格…",
   },
-  context: {
-    title: "设定",
-    hint: "世界设定、品牌信息、人设等正向离散说明",
-    emptyTitle: "暂无设定",
-    emptyBody: "例如：「主角是产品经理」「虚构品牌名」",
-    placeholder: "说说世界观、品牌或人设…",
+  setting: {
+    title: "背景",
+    hint: "品牌事实、故事背景、人设等 AI 需要知道的固定信息",
+    emptyTitle: "暂无背景信息",
+    emptyBody: "例如：「虚构品牌名」「主角是产品经理」",
+    placeholder: "说说品牌、人物或故事背景…",
   },
-  sequence: {
-    title: "节拍",
-    hint: "有序内容意图：成文顺序、插图/插媒体位置（软参考，不 1:1 对应成稿）",
-    emptyTitle: "暂无内容节拍",
-    emptyBody: "例如：「先讲痛点 → 配图对比 → 总结推荐」",
-    placeholder: "说说内容顺序与节拍…",
+  requirements: {
+    title: "需求",
+    hint: "对成稿的期望：字数、结构顺序、必含模块等",
+    emptyTitle: "暂无需求说明",
+    emptyBody: "例如：「800 字」「先讲痛点 → 三款对比 → 总结推荐」",
+    placeholder: "说说字数、结构或对成稿的要求…",
   },
   bounds: {
     title: "边界",
-    hint: "反向离散说明：不要出现的元素、需避免的事项",
-    emptyTitle: "暂无边界设定",
+    hint: "不要出现的内容、需避免的写法",
+    emptyTitle: "暂无边界说明",
     emptyBody: "例如：「配图中不要人脸」「不要真实品牌名」",
-    placeholder: "说说需要避免的边界…",
+    placeholder: "说说需要避开的内容…",
   },
 };
 
@@ -152,11 +169,11 @@ export function getProfileStepCopy(
   if (step === "ready") {
     return {
       title: "方案就绪",
-      hint: "必填项已齐，可说「开始制作」；也可继续补充风格、设定、节拍与边界",
+      hint: "必填项已齐，可说「开始制作」；也可继续补充风格、背景、需求与边界",
       emptyTitle: "",
       emptyBody: "",
       placeholder: "说「开始制作」，或继续补充方案…",
-      suggestionExamples: ["开始制作", "先补充风格再制作"],
+      suggestionExamples: ["开始制作", "先补充背景和需求再制作"],
     };
   }
 
@@ -165,6 +182,10 @@ export function getProfileStepCopy(
 
   if (step === "direction" && format && FORMAT_DIRECTION[format]) {
     return mergeStepCopy("direction", FORMAT_DIRECTION[format]);
+  }
+
+  if (step === "setting" && format && FORMAT_SETTING[format]) {
+    return mergeStepCopy("setting", FORMAT_SETTING[format]);
   }
 
   if (step === "style") {

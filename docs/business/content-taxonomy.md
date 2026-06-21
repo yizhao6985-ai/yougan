@@ -139,8 +139,8 @@ flowchart LR
 |------|------|------|
 | ① 方向 | `direction.summary` / `format` / `audience` | 创作定位、内容形式与受众；发布推断 `contentTopic` |
 | ② 风格 | `style.verbal` / `visual` | 文字与画面默认调子 |
-| ③ 设定 | `context[]` | 世界设定、品牌信息等正向离散说明 |
-| ④ 节拍 | `sequence[]` | 有序内容意图（软参考，可含 `role`） |
+| ③ 背景 | `setting[]` | 品牌事实、故事背景、人设等 |
+| ④ 需求 | `requirements[]` | 对成稿的期望（字数、结构顺序、必含模块等） |
 | ⑤ 边界 | `bounds[]` | 禁止项、红线等反向离散说明 |
 
 参考素材在 `Work.references` 顶层维护，不在 `profile` 内。

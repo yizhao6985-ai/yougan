@@ -55,7 +55,7 @@ START
 | kind | 主图节点 | 行为 |
 |------|----------|------|
 | `reference` | `referenceGraph` | 分析新附件 / 删改参考素材 |
-| `profile` | `profileGraph` | 作品方案对话（按步骤改 `direction` / `style` / `context` / `sequence` / `bounds`） |
+| `profile` | `profileGraph` | 作品方案对话（按步骤改 `direction` / `style` / `setting` / `requirements` / `bounds`） |
 | `production` | `productionGraph` | 制作计划 + 出稿 + 质检 |
 | `ask` | `askGraph` | 提问答疑 |
 

@@ -1,10 +1,13 @@
+import type { WorkProduction } from "../../models/work/production.js";
+import type { WorkPreview } from "../../models/work/preview.js";
 import {
   PROFILE_STEP_IDS,
   type ProfileSetupStep,
   type ProfileStepId,
   type WorkProfile,
 } from "../../models/work/profile.js";
-import { parseProfileJson } from "./profile.js";
+import { normalizeProfileTextField, parseProfileJson } from "./profile.js";
+import { previewHasContent } from "./preview.js";
 import { getProfileStepCopy } from "./profile-step-copy.js";
 
 export type ProfileStepStatus = "pending" | "active" | "done" | "skipped";
@@ -33,11 +36,18 @@ export type ProfileSetupState = {
   ready: boolean;
 };
 
+export type ProfileSetupStateOptions = {
+  skippedSteps?: ProfileSetupStep[];
+  /** 已有成稿或已进入制作时，当前步骤停在「方案就绪」 */
+  lockAtReady?: boolean;
+};
+
 export const PROFILE_SETUP_FLOW = PROFILE_STEP_IDS;
 
 function hasStyle(profile: WorkProfile): boolean {
   return Boolean(
-    profile.style?.verbal?.trim() || profile.style?.visual?.trim(),
+    normalizeProfileTextField(profile.style?.verbal) ||
+      normalizeProfileTextField(profile.style?.visual),
   );
 }
 
@@ -60,10 +70,10 @@ export function isProfileStepFilled(
       );
     case "style":
       return hasStyle(profile);
-    case "context":
-      return profile.context.length > 0;
-    case "sequence":
-      return profile.sequence.length > 0;
+    case "setting":
+      return profile.setting.length > 0;
+    case "requirements":
+      return profile.requirements.length > 0;
     case "bounds":
       return profile.bounds.length > 0;
     default:
@@ -91,24 +101,26 @@ export function summarizeProfileStepForSuggestions(
     }
     case "style": {
       const parts: string[] = [];
-      if (profile.style?.verbal?.trim()) {
-        parts.push(`文字 ${profile.style.verbal.trim()}`);
+      const verbal = normalizeProfileTextField(profile.style?.verbal);
+      const visual = normalizeProfileTextField(profile.style?.visual);
+      if (verbal) {
+        parts.push(`文字 ${verbal}`);
       }
-      if (profile.style?.visual?.trim()) {
-        parts.push(`画面 ${profile.style.visual.trim()}`);
+      if (visual) {
+        parts.push(`画面 ${visual}`);
       }
       return parts.join("；") || "（空）";
     }
-    case "context":
-      if (profile.context.length === 0) return "（空）";
-      return profile.context
+    case "setting":
+      if (profile.setting.length === 0) return "（空）";
+      return profile.setting
         .map((item) => item.spec.trim())
         .filter(Boolean)
         .slice(0, 3)
         .join("；");
-    case "sequence":
-      if (profile.sequence.length === 0) return "（空）";
-      return profile.sequence
+    case "requirements":
+      if (profile.requirements.length === 0) return "（空）";
+      return profile.requirements
         .map((item) => item.spec.trim())
         .filter(Boolean)
         .slice(0, 3)
@@ -156,19 +168,19 @@ function buildStepItems(
           tier: "recommended",
         },
       ];
-    case "context":
+    case "setting":
       return [
         {
-          key: "context",
-          filled: profile.context.length > 0,
+          key: "setting",
+          filled: profile.setting.length > 0,
           tier: "optional",
         },
       ];
-    case "sequence":
+    case "requirements":
       return [
         {
-          key: "sequence",
-          filled: profile.sequence.length > 0,
+          key: "requirements",
+          filled: profile.requirements.length > 0,
           tier: "optional",
         },
       ];
@@ -189,28 +201,98 @@ function stepIsRequired(step: ProfileStepId): boolean {
   return step === "direction";
 }
 
+function getFurthestFilledStepIndex(
+  profile: WorkProfile,
+  skipped: ProfileSetupStep[],
+): number {
+  let furthest = -1;
+  for (let i = 0; i < PROFILE_SETUP_FLOW.length; i += 1) {
+    const step = PROFILE_SETUP_FLOW[i]!;
+    if (skipped.includes(step)) continue;
+    if (isProfileStepFilled(profile, step)) {
+      furthest = i;
+    }
+  }
+  return furthest;
+}
+
+/** 作品已进入制作或已有成稿时，方案向导停在「方案就绪」 */
+export function resolveProfileSetupLockAtReady(input: {
+  profile: WorkProfile | undefined;
+  preview?: WorkPreview | null;
+  production?: WorkProduction | null;
+}): boolean {
+  const profile = parseProfileJson(input.profile);
+  if (!isProfileSetupReady(profile)) return false;
+  if (previewHasContent(input.preview)) return true;
+  return (input.production?.pending_tasks?.length ?? 0) > 0;
+}
+
+export function buildProfileSetupProgressOptions(input: {
+  profile?: WorkProfile | undefined;
+  preview?: WorkPreview | null;
+  production?: WorkProduction | null;
+  skippedSteps?: ProfileSetupStep[];
+  lockAtReady?: boolean;
+  hasPreview?: boolean;
+}): ProfileSetupStateOptions {
+  const profile = parseProfileJson(input.profile);
+  return {
+    skippedSteps: input.skippedSteps,
+    lockAtReady:
+      input.lockAtReady ??
+      (input.hasPreview
+        ? isProfileSetupReady(profile)
+        : resolveProfileSetupLockAtReady({
+            profile,
+            preview: input.preview,
+            production: input.production,
+          })),
+  };
+}
+
 export function getActiveProfileStep(
   profile: WorkProfile,
   skippedSteps: ProfileSetupStep[] = [],
+  options?: Pick<ProfileSetupStateOptions, "lockAtReady">,
 ): ProfileSetupStep {
+  const skipped = skippedSteps;
+
   for (const step of PROFILE_SETUP_FLOW) {
-    if (skippedSteps.includes(step)) continue;
+    if (!stepIsRequired(step)) break;
+    if (skipped.includes(step)) continue;
     if (!isProfileStepFilled(profile, step)) {
-      if (stepIsRequired(step)) return step;
-      if (!isProfileSetupReady(profile)) continue;
       return step;
     }
   }
+
+  if (!isProfileSetupReady(profile)) {
+    return "direction";
+  }
+
+  if (options?.lockAtReady) {
+    return "ready";
+  }
+
+  const furthestIndex = getFurthestFilledStepIndex(profile, skipped);
+  for (let i = furthestIndex + 1; i < PROFILE_SETUP_FLOW.length; i += 1) {
+    const step = PROFILE_SETUP_FLOW[i]!;
+    if (skipped.includes(step)) continue;
+    if (!isProfileStepFilled(profile, step)) {
+      return step;
+    }
+  }
+
   return "ready";
 }
 
 export function getProfileSetupState(
   raw: WorkProfile | undefined,
-  options?: { skippedSteps?: ProfileSetupStep[] },
+  options?: ProfileSetupStateOptions,
 ): ProfileSetupState {
   const profile = parseProfileJson(raw);
   const skipped = options?.skippedSteps ?? [];
-  const activeStep = getActiveProfileStep(profile, skipped);
+  const activeStep = getActiveProfileStep(profile, skipped, options);
   const ready = isProfileSetupReady(profile);
 
   const flowSteps: ProfileSetupStepState[] = PROFILE_SETUP_FLOW.map(
@@ -269,10 +351,10 @@ export function getProfileSetupHeadline(state: ProfileSetupState): string {
 
 export function getProfileSetupStatusHint(
   raw: WorkProfile | undefined,
-  skippedSteps: ProfileSetupStep[] = [],
+  options?: ProfileSetupStateOptions,
 ): string {
   const profile = parseProfileJson(raw);
-  const state = getProfileSetupState(profile, { skippedSteps });
+  const state = getProfileSetupState(profile, options);
   if (state.activeStep === "ready") {
     return "制作方案已就绪，可说「开始制作」";
   }
@@ -282,16 +364,23 @@ export function getProfileSetupStatusHint(
 
 export function getProfileSetupPlaceholder(
   raw: WorkProfile | undefined,
-  skippedSteps: ProfileSetupStep[] = [],
+  options?: ProfileSetupStateOptions,
 ): string {
   const profile = parseProfileJson(raw);
-  const activeStep = getActiveProfileStep(profile, skippedSteps);
+  const activeStep = getActiveProfileStep(
+    profile,
+    options?.skippedSteps ?? [],
+    options,
+  );
   return getProfileStepCopy(profile, activeStep).placeholder;
 }
 
-export function buildProfileStepPromptSection(raw: WorkProfile | undefined): string {
+export function buildProfileStepPromptSection(
+  raw: WorkProfile | undefined,
+  options?: ProfileSetupStateOptions,
+): string {
   const profile = parseProfileJson(raw);
-  const state = getProfileSetupState(profile);
+  const state = getProfileSetupState(profile, options);
   const copy = getProfileStepCopy(profile, state.activeStep);
   const stepMeta = state.steps.find((step) => step.id === state.activeStep);
   const completedTitles = PROFILE_SETUP_FLOW.filter((step) =>
@@ -333,7 +422,10 @@ export function buildProfileStepPromptSection(raw: WorkProfile | undefined): str
   return lines.join("\n");
 }
 
-export function isProfileSetupPhase(raw: WorkProfile | undefined): boolean {
+export function isProfileSetupPhase(
+  raw: WorkProfile | undefined,
+  options?: ProfileSetupStateOptions,
+): boolean {
   const profile = parseProfileJson(raw);
-  return getActiveProfileStep(profile) !== "ready";
+  return getActiveProfileStep(profile, options?.skippedSteps ?? [], options) !== "ready";
 }

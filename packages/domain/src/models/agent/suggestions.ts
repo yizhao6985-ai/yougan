@@ -27,7 +27,7 @@ export interface NextStepSuggestions {
 export const DEFAULT_NEXT_STEP_SUGGESTIONS_HINT = "点一条继续，或直接输入";
 
 /** 开屏下一步建议条数 */
-export const OPENING_NEXT_STEP_SUGGESTIONS_COUNT = 12;
+export const OPENING_NEXT_STEP_SUGGESTIONS_COUNT = 9;
 
 /** 回合末下一步建议条数（方案引导：巩固 3 + 推进 1） */
 export const TURN_NEXT_STEP_SUGGESTIONS_COUNT = 4;

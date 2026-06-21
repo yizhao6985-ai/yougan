@@ -23,6 +23,7 @@ export type NormalizableWorkFields = {
 
 /** 规范化作品 JSON 字段与空值 */
 export function normalizeWorkDto<T extends NormalizableWorkFields>(work: T): T {
+  const profile = parseProfileJson(work.profile);
   const production = parseProductionFromLegacyFields({
     production: work.production,
     productionPlan: work.productionPlan,
@@ -30,6 +31,7 @@ export function normalizeWorkDto<T extends NormalizableWorkFields>(work: T): T {
   const preview = resolvePreviewFromWork({
     preview: work.preview,
     production: work.production,
+    format: profile.direction.format,
   });
   const revision = parseRevisionJson(work.revision);
 
@@ -39,7 +41,7 @@ export function normalizeWorkDto<T extends NormalizableWorkFields>(work: T): T {
     headVersionId: work.headVersionId ?? null,
     sourceWorkId: work.sourceWorkId ?? null,
     sourceVersionId: work.sourceVersionId ?? null,
-    profile: parseProfileJson(work.profile),
+    profile,
     references: resolveReferencesFromWork({
       references: work.references,
     }),
