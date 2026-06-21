@@ -155,7 +155,7 @@ export function MobileAppPage() {
             {MOBILE_PAGE.ctaStudio}
           </Link>
           <Link to="/features" className={scene.ctaSecondary}>
-            {MOBILE_PAGE.ctaFeatures}
+            {MOBILE_PAGE.ctaGuide}
           </Link>
         </MarketingPageFooter>
       </MarketingPageShell>

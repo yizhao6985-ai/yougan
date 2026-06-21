@@ -36,8 +36,8 @@ export const NAV = {
   studioShort: "创作",
   about: "关于我们",
   aboutShort: "关于",
-  features: "产品能力",
-  featuresShort: "能力",
+  features: "使用指南",
+  featuresShort: "指南",
   mobile: "手机 App",
   mobileShort: "App",
   feedback: "问题反馈",
@@ -109,13 +109,13 @@ export const ABOUT_PAGE = {
   productTitle: "我们的产品",
   productBody:
     "每件作品对应一段持续对话。系统按消息推进方案、制作或答疑；右侧作品面板同步制作方案与作品内容，对话中可查看制作计划。完成后可发布到「发现灵感」。",
-  productLink: "了解产品能力",
+  productLink: "使用指南",
   contactTitle: "联系我们",
   contactBody:
     "产品反馈、商务合作或媒体咨询，欢迎发送邮件。我们会在工作日尽快回复。",
   contactEmail: "hello@yougan.com",
   ctaStudio: "开始创作",
-  ctaFeatures: "了解产品能力",
+  ctaGuide: "使用指南",
 } as const;
 
 export const HOME = {
@@ -125,7 +125,7 @@ export const HOME = {
   subtitle:
     "维护制作方案、解析参考素材、AI 团队按计划出稿——文章、插画、脚本与音视频都能做，还能版本回溯与一键发布。",
   ctaStudio: "开始创作",
-  ctaFeatures: "了解产品能力",
+  ctaGuide: "使用指南",
   modalitiesLabel: "支持媒介",
   formsLabel: "创作形态",
   formsEyebrow: "创作形态",
@@ -137,7 +137,12 @@ export const HOME = {
   featuresEyebrow: "核心功能",
   featuresTitle: "有感能帮你做什么",
   featuresSubtitle:
-    "每项能力独立可用；完整使用流程与各环节说明见产品能力页。",
+    "每项能力独立可用；具体操作步骤与标准流程见使用指南。",
+  studioEyebrow: "创作台",
+  studioTitle: "对话 + 作品面板，一页搞定",
+  studioSubtitle:
+    "左侧作品列表、中间对话区、右侧方案 / 参考 / 作品 / 版本四个 Tab，同步展示创作状态。",
+  extrasTitle: "更多能力",
   platformEyebrow: "平台",
   platformTitle: "作品值得被看见",
   platformSubtitle:
@@ -147,7 +152,7 @@ export const HOME = {
   assistantTitle: "有疑问，随时问有感助手",
   assistantSubtitle:
     "页头一键打开，帮你弄清功能与用法，不用翻文档也能快速上手。",
-  capabilitiesLink: "查看完整产品能力 →",
+  guideLink: "查看使用指南 →",
 } as const;
 
 /** 页头 RAG 产品助手（有感助手） */
@@ -170,37 +175,60 @@ export const HELP_ASSISTANT = {
   entryHint: "点击页头导航栏中的「有感助手」即可打开。",
 } as const;
 
-export const FEATURES_PAGE = {
+export const GUIDE_PAGE = {
   back: "返回首页",
-  eyebrow: "产品能力",
-  title: "从灵感到发布",
+  eyebrow: "使用指南",
+  title: "上手有感创作台",
   subtitle:
-    "有感把创作拆成可确认、可回溯的完整链路——定方案、解析素材、执行制作，还能迭代版本、分叉探索，并发布到内容平台。",
+    "从新建作品到发布分享，按实际操作顺序说明怎么用。功能概览与能力边界见首页。",
   bridge:
-    "下面按「创作」「平台」「助手」三部分说明：怎么做作品、如何发布与被发现、以及怎样快速弄清产品用法。",
-  creationEyebrow: "创作",
-  creationTitle: "从想法到成稿，步步可控",
-  creationSubtitle:
-    "定方案、解析参考素材、执行制作、随时提问——成稿之后还能回溯版本、分叉探索新方向。",
-  creationOverviewTitle: "核心环节",
-  creationLifecycleLabel: "作品迭代",
-  creationLifecycleHint: "不怕改错方向，也不怕走死胡同。",
-  platformsIntro: "支持的创作形态",
-  capabilitiesDetailTitle: "各环节说明",
+    "先熟悉创作台布局，再按标准流程走完一件作品；版本管理与发布操作见后文。",
+  overviewLink: "查看首页功能概览 →",
+  quickStartEyebrow: "快速上手",
+  quickStartTitle: "第一次创作",
+  quickStartSubtitle:
+    "注册登录后进入创作台，按下面五步即可完成第一件作品。",
+  studioEyebrow: "创作台",
+  workflowEyebrow: "创作流程",
+  workflowTitle: "标准创作流程",
+  workflowSubtitle:
+    "定方案 → 备参考 → 制作 → 提问与修改；每条消息系统自动路由到对应环节。",
+  capabilitiesDetailTitle: "各环节怎么用",
   capabilitiesDetailSubtitle:
-    "每个环节职责清晰：只做该做的事，你通过对话或侧栏推进，系统自动路由。",
-  studioTitle: "创作台一览",
-  studioSubtitle: "左侧作品列表、中间对话、右侧作品面板（方案 / 参考 / 作品 / 版本）",
-  extrasTitle: "更多能力",
-  platformEyebrow: "平台",
-  platformTitle: "作品值得被看见",
-  platformSubtitle:
-    "「发现灵感」是有感的内容平台——发布、浏览与积累作品集，让创作走出工作台。",
+    "下面按操作顺序说明：你在对话里做什么、系统会产出什么、这一步不会做什么。",
+  creationLifecycleLabel: "版本与分叉",
+  creationLifecycleHint:
+    "成稿后想对比历史、或换方向平行探索，可以这样操作。",
+  studioTitle: "创作台布局",
+  studioSubtitle:
+    "左侧作品列表、中间对话、右侧作品面板（方案 / 参考 / 作品 / 版本）",
+  extrasTitle: "辅助能力",
+  publishEyebrow: "发布",
+  publishTitle: "发布与分享",
+  publishSubtitle:
+    "作品完成后，可在创作台内发布到有感公域，或绑定第三方平台一键分发。",
+  publishSteps: [
+    {
+      title: "发布到有感",
+      body: "在创作台确认作品内容后，选择「发布到有感」，作品将出现在「发现灵感」公域。",
+    },
+    {
+      title: "绑定第三方平台",
+      body: "在设置中绑定小红书、微博、公众号等平台账号，发布时选择目标平台，减少复制粘贴。",
+    },
+    {
+      title: "积累作品集",
+      body: "已发布作品汇总在个人主页，展示阅读量与发布趋势，便于沉淀作者品牌。",
+    },
+  ] as const,
   capabilityBenefitsHeading: "会帮你做",
   capabilityLimitsHeading: "这一步不做",
   ctaStudio: "开始创作",
   ctaMobile: "下载手机 App",
 } as const;
+
+/** @deprecated 使用 GUIDE_PAGE */
+export const FEATURES_PAGE = GUIDE_PAGE;
 
 export const MOBILE_PAGE = {
   back: "返回首页",
@@ -216,7 +244,7 @@ export const MOBILE_PAGE = {
     "请在部署环境设置 VITE_MOBILE_DOWNLOAD_URL，或分别配置 iOS / Android 链接。",
   downloadAdminHint: "下载链接尚未配置，请联系管理员设置环境变量",
   ctaStudio: "打开 Web 创作台",
-  ctaFeatures: "了解产品能力",
+  ctaGuide: "使用指南",
   features: [
     {
       title: "记录灵感与参考",

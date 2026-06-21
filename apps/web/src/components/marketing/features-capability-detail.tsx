@@ -3,7 +3,7 @@ import type { LucideIcon } from "lucide-react";
 
 import type { StudioCapability } from "@/lib/product-capabilities";
 import { scene } from "@/lib/scene-styles";
-import { FEATURES_PAGE } from "@/lib/site-copy";
+import { GUIDE_PAGE } from "@/lib/site-copy";
 import { cn } from "@/lib/utils";
 
 export function FeaturesCapabilityDetail({
@@ -113,7 +113,7 @@ export function FeaturesCapabilityDetail({
             >
               <div className="flex h-full flex-col rounded-xl bg-accent/25 p-4 ring-1 ring-primary/10">
                 <h4 className="text-sm font-semibold text-foreground">
-                  {FEATURES_PAGE.capabilityBenefitsHeading}
+                  {GUIDE_PAGE.capabilityBenefitsHeading}
                 </h4>
                 <ul className="mt-3 space-y-2">
                   {capability.highlights.map((item) => (
@@ -134,7 +134,7 @@ export function FeaturesCapabilityDetail({
               {capability.avoids.length > 0 ? (
                 <div className="flex h-full flex-col rounded-xl bg-secondary/40 p-4 ring-1 ring-border/50">
                   <h4 className="text-sm font-semibold text-foreground">
-                    {FEATURES_PAGE.capabilityLimitsHeading}
+                    {GUIDE_PAGE.capabilityLimitsHeading}
                   </h4>
                   <ul className="mt-3 space-y-2">
                     {capability.avoids.map((item) => (

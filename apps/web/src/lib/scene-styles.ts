@@ -1,6 +1,6 @@
 /**
  * 营销页 / 静态内容页 / 设置页 — 统一布局与排版约定
- * （发现灵感、主页、产品能力、手机 App、关于我们、个人设置）
+ * （发现灵感、主页、使用指南、手机 App、关于我们、个人设置）
  */
 export const scene = {
   marketing: "flex min-h-screen flex-col page-gradient",

@@ -131,7 +131,7 @@ export function AboutPage() {
             {ABOUT_PAGE.ctaStudio}
           </Link>
           <Link to="/features" className={scene.ctaSecondary}>
-            {ABOUT_PAGE.ctaFeatures}
+            {ABOUT_PAGE.ctaGuide}
           </Link>
         </MarketingPageFooter>
       </MarketingPageShell>

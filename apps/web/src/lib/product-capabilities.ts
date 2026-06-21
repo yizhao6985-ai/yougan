@@ -1,13 +1,16 @@
 import type { LucideIcon } from "lucide-react";
 import {
   BookOpenIcon,
+  FilePlusIcon,
   FolderKanbanIcon,
   GitBranchIcon,
   HistoryIcon,
   ImageIcon,
   ListTreeIcon,
   MessageSquareTextIcon,
+  PencilLineIcon,
   ScanSearchIcon,
+  Share2Icon,
   SparklesIcon,
   WandSparklesIcon,
 } from "lucide-react";
@@ -264,17 +267,49 @@ export const HOME_CREATION_LIFECYCLE = [
   },
 ] as const;
 
-/** 能力页锚点导航 */
-export const FEATURES_ANCHOR_LINKS = [
+/** 使用指南 · 锚点导航 */
+export const GUIDE_ANCHOR_LINKS = [
+  { href: "#quick-start", label: "快速上手" },
+  { href: "#studio-heading", label: "创作台" },
   { href: "#profile", label: "定方案" },
-  { href: "#reference", label: "素材解析" },
+  { href: "#reference", label: "备参考" },
   { href: "#production", label: "制作" },
   { href: "#ask", label: "提问" },
   { href: "#versions", label: "版本" },
   { href: "#fork", label: "分叉" },
-  { href: "#studio-heading", label: "创作台" },
-  { href: "#platform-heading", label: "平台" },
-  { href: "#assistant-heading", label: "助手" },
+  { href: "#publish-heading", label: "发布" },
+] as const;
+
+/** @deprecated 使用 GUIDE_ANCHOR_LINKS */
+export const FEATURES_ANCHOR_LINKS = GUIDE_ANCHOR_LINKS;
+
+/** 使用指南 · 快速上手步骤 */
+export const GUIDE_QUICK_START_STEPS = [
+  {
+    icon: FilePlusIcon,
+    title: "新建作品",
+    body: "进入创作台，点击「新建作品」并输入标题。一件作品对应一段持续对话与独立制作状态。",
+  },
+  {
+    icon: ListTreeIcon,
+    title: "定制作方案",
+    body: "通过对话或侧栏维护主题、体裁与结构；空作品打开时可点选开屏建议快速开始。",
+  },
+  {
+    icon: WandSparklesIcon,
+    title: "开始制作",
+    body: "方案就绪后说「开始制作」，AI 团队制定计划并按步骤出稿至侧栏「作品」。",
+  },
+  {
+    icon: PencilLineIcon,
+    title: "查看与修改",
+    body: "成稿后可继续对话修改；制作过程中也可随时提问优化方向或创作方法。",
+  },
+  {
+    icon: Share2Icon,
+    title: "发布分享",
+    body: "确认内容后发布到「发现灵感」，或绑定第三方平台一键分发。",
+  },
 ] as const;
 
 /** 首页 · 内容平台要点 */

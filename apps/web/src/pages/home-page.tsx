@@ -5,12 +5,15 @@ import { HomeCreationShowcase } from "@/components/marketing/home-creation-showc
 import { HomeFeatureChapter } from "@/components/marketing/home-feature-chapter";
 import { HomePlatformSpotlight } from "@/components/marketing/home-platform-spotlight";
 import { HomeStudioPreview } from "@/components/marketing/home-studio-preview";
+import { FeaturesStudioFlow } from "@/components/marketing/features-capability-detail";
 import { MarketingFeatureCard } from "@/components/marketing/marketing-feature-card";
 import { MarketingPageShell } from "@/components/marketing/marketing-page-layout";
 import { SiteHeader } from "@/components/site-header";
 import {
+  EXTRA_CAPABILITIES,
   HOME_CORE_FEATURES,
   HOME_MEDIA_MODALITIES,
+  STUDIO_PANELS,
 } from "@/lib/product-capabilities";
 import { scene } from "@/lib/scene-styles";
 import { HOME } from "@/lib/site-copy";
@@ -64,7 +67,7 @@ export function HomePage() {
                 {HOME.ctaStudio}
               </Link>
               <Link to="/features" className={scene.ctaSecondary}>
-                {HOME.ctaFeatures}
+                {HOME.ctaGuide}
               </Link>
             </div>
 
@@ -115,9 +118,11 @@ export function HomePage() {
             </HomeFeatureChapter>
 
             <HomeFeatureChapter
+              id="features-heading"
               eyebrow={HOME.featuresEyebrow}
               title={HOME.featuresTitle}
               hint={HOME.featuresSubtitle}
+              className="scroll-mt-32"
             >
               <div className={cn(scene.contentGrid2, "lg:grid-cols-3")}>
                 {HOME_CORE_FEATURES.map((item) => (
@@ -129,6 +134,35 @@ export function HomePage() {
                     href={item.href}
                   />
                 ))}
+              </div>
+            </HomeFeatureChapter>
+
+            <HomeFeatureChapter
+              eyebrow={HOME.studioEyebrow}
+              title={HOME.studioTitle}
+              hint={HOME.studioSubtitle}
+            >
+              <FeaturesStudioFlow panels={STUDIO_PANELS} />
+
+              <div className="mt-8">
+                <h3 className={scene.sectionHeading}>{HOME.extrasTitle}</h3>
+                <div className="mt-6 grid gap-6 sm:grid-cols-2">
+                  {EXTRA_CAPABILITIES.map(({ icon: Icon, title, body }) => (
+                    <article key={title} className={scene.featureCard}>
+                      <div className="flex items-start gap-4">
+                        <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent text-primary">
+                          <Icon className="size-5" aria-hidden />
+                        </span>
+                        <div>
+                          <h4 className="font-semibold text-foreground">
+                            {title}
+                          </h4>
+                          <p className={cn("mt-2", scene.body)}>{body}</p>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
               </div>
             </HomeFeatureChapter>
 
@@ -151,7 +185,7 @@ export function HomePage() {
 
           <div className="mt-20 flex justify-center lg:mt-24">
             <Link to="/features" className={scene.link}>
-              {HOME.capabilitiesLink}
+              {HOME.guideLink}
             </Link>
           </div>
         </div>

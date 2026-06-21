@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ClapperboardIcon,
   ImageIcon,
@@ -73,20 +73,40 @@ const MAX_PREVIEW_LINES = 3;
 
 export function HomeStudioPreview() {
   const [activeIndex, setActiveIndex] = useState(0);
+  const rotateTimerRef = useRef<number | null>(null);
   const scenario = SCENARIOS[activeIndex]!;
 
-  useEffect(() => {
-    const timer = window.setInterval(() => {
+  const startAutoRotate = useCallback(() => {
+    if (rotateTimerRef.current !== null) {
+      window.clearInterval(rotateTimerRef.current);
+    }
+    rotateTimerRef.current = window.setInterval(() => {
       setActiveIndex((current) => (current + 1) % SCENARIOS.length);
     }, ROTATE_MS);
-    return () => window.clearInterval(timer);
   }, []);
+
+  const selectScenario = useCallback(
+    (index: number) => {
+      setActiveIndex(index);
+      startAutoRotate();
+    },
+    [startAutoRotate],
+  );
+
+  useEffect(() => {
+    startAutoRotate();
+    return () => {
+      if (rotateTimerRef.current !== null) {
+        window.clearInterval(rotateTimerRef.current);
+      }
+    };
+  }, [startAutoRotate]);
 
   const workItems = SCENARIOS.map((item) => item.workTitle);
 
   return (
     <div
-      aria-hidden
+      aria-label="创作台预览演示"
       className="relative mx-auto w-full max-w-xl lg:mx-0 lg:max-w-none"
     >
       <div className="pointer-events-none absolute -inset-6 rounded-[2rem] bg-gradient-to-br from-primary/15 via-transparent to-amber-200/20 blur-2xl dark:from-primary/10 dark:to-amber-900/15" />
@@ -115,18 +135,24 @@ export function HomeStudioPreview() {
             <p className="px-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
               作品
             </p>
-            <ul className="mt-2 space-y-1">
+            <ul className="mt-2 space-y-1" role="listbox" aria-label="作品列表">
               {workItems.map((item, index) => (
-                <li
-                  key={item}
-                  className={cn(
-                    "truncate rounded-md px-2 py-1.5 text-[11px] transition-colors duration-300",
-                    index === activeIndex
-                      ? "bg-accent font-medium text-primary"
-                      : "text-muted-foreground",
-                  )}
-                >
-                  {item}
+                <li key={item}>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={index === activeIndex}
+                    onClick={() => selectScenario(index)}
+                    className={cn(
+                      "w-full truncate rounded-md px-2 py-1.5 text-left text-[11px] transition-colors duration-300",
+                      "cursor-pointer hover:bg-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                      index === activeIndex
+                        ? "bg-accent font-medium text-primary"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    {item}
+                  </button>
                 </li>
               ))}
             </ul>
@@ -194,13 +220,24 @@ export function HomeStudioPreview() {
               })}
             </div>
 
-            <div className="mt-auto flex shrink-0 justify-center gap-1.5 pt-4">
+            <div
+              className="mt-auto flex shrink-0 justify-center gap-1.5 pt-4"
+              role="tablist"
+              aria-label="预览切换"
+            >
               {SCENARIOS.map((item, index) => (
-                <span
+                <button
                   key={item.workTitle}
+                  type="button"
+                  role="tab"
+                  aria-selected={index === activeIndex}
+                  aria-label={item.workTitle}
+                  onClick={() => selectScenario(index)}
                   className={cn(
-                    "size-1.5 rounded-full transition-all duration-300",
-                    index === activeIndex ? "w-4 bg-primary" : "bg-border",
+                    "size-1.5 rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                    index === activeIndex
+                      ? "w-4 bg-primary"
+                      : "cursor-pointer bg-border hover:bg-primary/40",
                   )}
                 />
               ))}

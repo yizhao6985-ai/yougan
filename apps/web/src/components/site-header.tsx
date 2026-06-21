@@ -2,8 +2,8 @@ import type { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   ArrowLeftIcon,
+  BookOpenIcon,
   Building2Icon,
-  LayersIcon,
   MessageSquarePlusIcon,
   NewspaperIcon,
   PenLineIcon,
@@ -79,7 +79,7 @@ export function SiteHeader() {
     isProfilePage;
   const onAboutPage = pathname === "/about";
   const onFeedbackPage = pathname === "/feedback";
-  const onFeaturesPage = pathname === "/features";
+  const onGuidePage = pathname === "/features";
   const onMobilePage = pathname === "/mobile";
   const onStudioPage = pathname.startsWith("/studio");
   const onContentPage =
@@ -150,18 +150,18 @@ export function SiteHeader() {
               icon={<PenLineIcon className="size-4 shrink-0" aria-hidden />}
             />
             <HeaderNavItem
+              to="/features"
+              active={onGuidePage}
+              label={NAV.features}
+              shortLabel={NAV.featuresShort}
+              icon={<BookOpenIcon className="size-4 shrink-0" aria-hidden />}
+            />
+            <HeaderNavItem
               to="/content"
               active={onContentPage}
               label={DISCOVER_SECTION.navLabel}
               shortLabel={DISCOVER_SECTION.navLabelShort}
               icon={<NewspaperIcon className="size-4 shrink-0" aria-hidden />}
-            />
-            <HeaderNavItem
-              to="/features"
-              active={onFeaturesPage}
-              label={NAV.features}
-              shortLabel={NAV.featuresShort}
-              icon={<LayersIcon className="size-4 shrink-0" aria-hidden />}
             />
             <HeaderNavItem
               to="/mobile"
