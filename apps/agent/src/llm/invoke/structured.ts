@@ -33,6 +33,8 @@ export type StructuredInvokeOptions = {
   /** 保留 human 消息中的 image_url / 多模态 part（默认会压平成纯文本） */
   preserveMultimodal?: boolean;
   timeoutMs?: number;
+  /** 超时重试次数，默认 2；传 1 表示不重试 */
+  maxAttempts?: number;
 };
 
 type ChatModelWithKwargs = BaseChatModel & {
@@ -130,6 +132,7 @@ export async function invokeStructured<T extends Record<string, unknown>>(
   return withLlmRetry({
     parentSignal: config?.signal,
     timeoutMs,
+    maxAttempts: options?.maxAttempts,
     run: async (signal) => {
       const callCountBefore = getRunMeteringAccumulator(config).callCount;
       const meteredConfig = withMeteringCallbacks(

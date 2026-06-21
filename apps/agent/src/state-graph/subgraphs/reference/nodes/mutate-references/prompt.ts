@@ -23,7 +23,7 @@ export function buildMutateReferencesPrompt(state: AgentStateType): string {
 **规则**
 - 删、改可组合；每种意图分别调用对应工具，可一轮多次 tool_call
 - 明确针对某条 → update_reference_intent；笼统说明借鉴方式 → set_pending_references_context
-- 若只是确认/闲聊、无删改意图 → 不调用工具，简短说明无变更即可
+- 若只是确认/闲聊、无删改意图 → 不调用工具，**不要输出任何对用户可见的文字**
 - 禁止修改 analysis；禁止直接写 intent.summary
 - 禁止向${YOUGAN_USER_LABEL}做完整回合回复（后续 summarize 节点负责）
 

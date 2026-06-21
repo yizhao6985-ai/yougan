@@ -2,8 +2,8 @@
 export const LLM_TIMEOUT_MS = {
   chat: 120_000,
   structured: 180_000,
-  /** 下一步建议：条数少、失败可静默跳过，上限应低于 structured */
-  suggestions: 120_000,
+  /** 下一步建议：条数少、失败可静默跳过，单次调用不重试 */
+  suggestions: 60_000,
   production: 480_000,
   image: 90_000,
 } as const;
@@ -80,13 +80,16 @@ function throwLlmTimeout(
 export async function withLlmRetry<T>(opts: {
   parentSignal?: AbortSignal;
   timeoutMs: number;
+  /** 默认 2；suggestions 等可跳过环节传 1 禁用超时重试 */
+  maxAttempts?: number;
   run: (signal: AbortSignal) => Promise<T>;
   /** streamChat：已有 chunk 输出时不重试 */
   canRetry?: () => boolean;
 }): Promise<T> {
+  const maxAttempts = Math.max(1, opts.maxAttempts ?? MAX_ATTEMPTS);
   let lastError: unknown;
 
-  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const deadline = AbortSignal.timeout(opts.timeoutMs);
     const signal = opts.parentSignal
       ? AbortSignal.any([opts.parentSignal, deadline])
@@ -114,8 +117,8 @@ export async function withLlmRetry<T>(opts: {
         throw error;
       }
 
-      if (attempt === MAX_ATTEMPTS - 1) {
-        throwLlmTimeout(opts.timeoutMs, MAX_ATTEMPTS, error);
+      if (attempt === maxAttempts - 1) {
+        throwLlmTimeout(opts.timeoutMs, maxAttempts, error);
       }
     } finally {
       hardTimeout.clear();
@@ -123,8 +126,8 @@ export async function withLlmRetry<T>(opts: {
   }
 
   if (lastError != null) {
-    throwLlmTimeout(opts.timeoutMs, MAX_ATTEMPTS, lastError);
+    throwLlmTimeout(opts.timeoutMs, maxAttempts, lastError);
   }
 
-  throw new LlmTimeoutError(opts.timeoutMs, MAX_ATTEMPTS);
+  throw new LlmTimeoutError(opts.timeoutMs, maxAttempts);
 }

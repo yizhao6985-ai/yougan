@@ -1,4 +1,8 @@
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
+import {
+  buildCollectRevisionHumanPrompt,
+  buildCollectRevisionSystemPrompt,
+} from "./prompt.js";
 import type { RunnableConfig } from "@langchain/core/runnables";
 
 import { invokeStructured } from "#agent/llm/invoke/index.js";
@@ -10,7 +14,6 @@ import {
   previewContentToLegacyBlocks,
 } from "@yougan/domain";
 import { getLatestHumanMessagePreviewSelections, getLatestHumanMessageText } from "#agent/messages/human.js";
-import { YOUGAN_USER_LABEL } from "#agent/system-prompt.js";
 import {
   patchPendingRevision,
   getPreview,
@@ -90,11 +93,12 @@ export async function collectRevisionNode(
       llm,
       CollectRevisionSchema,
       [
-        new SystemMessage(
-          `提取${YOUGAN_USER_LABEL}对**当前成稿**的改稿意见。只输出 instruction 与可选 quote（引号内原文）。`,
-        ),
+        new SystemMessage(buildCollectRevisionSystemPrompt()),
         new HumanMessage(
-          `当前成稿摘要：\n${previewText || "（无正文）"}\n\n${YOUGAN_USER_LABEL}消息：\n${userMessage}`,
+          buildCollectRevisionHumanPrompt({
+            previewText,
+            userMessage,
+          }),
         ),
       ],
       { name: "collect_revision" },

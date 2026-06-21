@@ -4,6 +4,7 @@
 import { END, START, StateGraph } from "@langchain/langgraph";
 
 import { checkpointer } from "./checkpointer.js";
+import * as afterCommitTurn from "./state-graph/conditional-edges/after-commit-turn.js";
 import * as afterConfirmProductionTurn from "./state-graph/conditional-edges/after-confirm-production-turn.js";
 import * as afterConfirmReviseTurn from "./state-graph/conditional-edges/after-confirm-revise-turn.js";
 import * as afterAdvanceTurnQueue from "./state-graph/conditional-edges/after-advance-turn-queue.js";
@@ -69,13 +70,17 @@ const workflow = new StateGraph(AgentState)
   .addEdge("collectRevisionGraph", "advanceTurnQueue")
   .addEdge("reviseGraph", "advanceTurnQueue")
   .addEdge("askGraph", "advanceTurnQueue")
-  .addEdge("suggestionsGraph", "advanceTurnQueue")
   .addConditionalEdges(
     afterAdvanceTurnQueue.from,
     afterAdvanceTurnQueue.selectAfterAdvanceTurnQueue,
     afterAdvanceTurnQueue.paths,
   )
-  .addEdge("commitTurn", "summarizeMessages")
+  .addConditionalEdges(
+    afterCommitTurn.from,
+    afterCommitTurn.selectAfterCommitTurn,
+    afterCommitTurn.paths,
+  )
+  .addEdge("suggestionsGraph", "summarizeMessages")
   .addEdge("summarizeMessages", "finalizeRunMetering")
   .addEdge("finalizeRunMetering", END);
 

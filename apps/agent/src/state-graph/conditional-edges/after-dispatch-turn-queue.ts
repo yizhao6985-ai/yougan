@@ -10,15 +10,17 @@ import type { AgentStateType } from "#agent/state.js";
 export const from = "dispatchTurnQueue" as const;
 
 export type AfterDispatchTurnQueueTarget =
+  | "advanceTurnQueue"
   | "referenceGraph"
   | "profileGraph"
   | "confirmProductionTurn"
   | "confirmReviseTurn"
   | "collectRevisionGraph"
-  | "askGraph"
-  | "suggestionsGraph";
+  | "askGraph";
 
-function subgraphForKind(kind: TurnQueueKind): AfterDispatchTurnQueueTarget {
+function subgraphForKind(
+  kind: Exclude<TurnQueueKind, "suggestions">,
+): AfterDispatchTurnQueueTarget {
   switch (kind) {
     case "reference":
       return "referenceGraph";
@@ -32,25 +34,31 @@ function subgraphForKind(kind: TurnQueueKind): AfterDispatchTurnQueueTarget {
       return "confirmReviseTurn";
     case "ask":
       return "askGraph";
-    case "suggestions":
-      return "suggestionsGraph";
   }
 }
 
 export function selectAfterDispatchTurnQueue(
   state: AgentStateType,
 ): AfterDispatchTurnQueueTarget {
+  const queue = getTurnQueue(state);
+  if (queue.length === 0) {
+    return "advanceTurnQueue";
+  }
+
   const kind: TurnQueueKind | undefined =
-    getActiveTurnKind(state) ?? getTurnQueue(state)[0];
+    getActiveTurnKind(state) ?? queue[0];
+  if (kind === "suggestions") {
+    return "advanceTurnQueue";
+  }
   return subgraphForKind(kind ?? "profile");
 }
 
 export const paths: AfterDispatchTurnQueueTarget[] = [
+  "advanceTurnQueue",
   "referenceGraph",
   "profileGraph",
   "confirmProductionTurn",
   "confirmReviseTurn",
   "collectRevisionGraph",
   "askGraph",
-  "suggestionsGraph",
 ];

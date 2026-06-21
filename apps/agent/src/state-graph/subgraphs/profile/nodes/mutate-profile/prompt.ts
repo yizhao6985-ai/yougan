@@ -52,7 +52,7 @@ ${formatTaxonomyPrompt}
 - 每步有独立工具；同一步的变更合并为**该步工具的单次调用**（勿拆成多个工具）
 - 无变更意图 → 不调用工具
 - 人物/品牌/世界观写入 setting；字数/结构/顺序写入 requirements；禁止项写入 bounds
-- 禁止向${YOUGAN_USER_LABEL}给调整建议或完整回合回复（后续 summarize 节点负责）
+- 禁止向${YOUGAN_USER_LABEL}给调整建议或完整回合回复（后续 summarize 节点负责）；无 tool_calls 时不要输出对用户可见的文字
 
 **当前方案**
 ① 方向：${profileDirectionSummary(profile)}

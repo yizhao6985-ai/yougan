@@ -30,7 +30,7 @@ Checkpoint：**与 API 共用 Postgres**（`POSTGRES_URI`，默认 `:5432/yougan
 
 **profile**：`mutateProfile` ⇄ `runProfileTools` → `summarizeProfile`。按意图原子工具改方案；末位总结回复。
 
-**suggestions**：`generateSuggestions`。系统队尾常驻；开屏 7 条 / 回合末 4 条，写入 `nextStepSuggestions`。
+**suggestions**：`generateSuggestions`。`commitTurn` 后执行；开屏 9 条 / 回合末 4 条，写入 `nextStepSuggestions`。
 
 **production**（`subgraphs/production/README.md`）：`planProduction` → `dispatchTask` → `execute*` → `acceptTask` → `routeProduction` →（`dispatchTask`、`assemblePreview`、计划为空或验收 3 次失败时直达 `summarizeProduction`）→ `summarizeProduction`。
 
@@ -75,8 +75,8 @@ src/
 
 ```text
 START → planTurnQueue → dispatchTurnQueue → [*Graph] → advanceTurnQueue
-  → commitTurn →（需处理）postCommit → summarizeMessages → END
-（队尾常驻 suggestions；开屏仅跑 suggestions 子图）
+  → commitTurn → suggestionsGraph → summarizeMessages → END
+（开屏 queue 为空，直接 commit 后生成 suggestions）
 ```
 
 | TurnQueueKind | 子图 | 说明 |
@@ -85,7 +85,8 @@ START → planTurnQueue → dispatchTurnQueue → [*Graph] → advanceTurnQueue
 | `profile` | `profileGraph` | 改作品方案 |
 | `production` | `productionGraph` | 制作计划 + 出稿 + 质检 |
 | `ask` | `askGraph` | 答疑 |
-| `suggestions` | `suggestionsGraph` | 下一步建议（系统队尾追加，每轮生成） |
+
+`nextStepSuggestions` 不在队列内，由 `commitTurn` 后的 `suggestionsGraph` 统一生成。
 
 详见 [docs/technical/agent-turn-queue.md](../../docs/technical/agent-turn-queue.md)。
 

@@ -1,7 +1,7 @@
 /**
  * summarize-references：末位 LLM，批量写 intent.summary 并回复感友。
  */
-import { AIMessage, HumanMessage } from "@langchain/core/messages";
+import { AIMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
 import type { RunnableConfig } from "@langchain/core/runnables";
 
 import {
@@ -22,8 +22,14 @@ import {
 } from "#agent/state-io/index.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
+import { composeSystemPrompt } from "#agent/system-prompt.js";
+
 import { buildSummarizeReferencesPrompt } from "./prompt.js";
 import { ReferenceTurnSummarySchema } from "./schema.js";
+
+const SUMMARIZE_REFERENCES_SYSTEM = composeSystemPrompt(
+  "当前任务：归纳参考素材借鉴方向，生成面向感友的自然语言回复（结构化输出中的 reply 字段须符合回复语气）。",
+);
 
 function stripIntentUserContext(intent: {
   summary: string;
@@ -59,6 +65,7 @@ export async function summarizeReferencesNode(
     llm,
     ReferenceTurnSummarySchema,
     [
+      new SystemMessage(SUMMARIZE_REFERENCES_SYSTEM),
       new HumanMessage(
         buildSummarizeReferencesPrompt({
           references: staging,

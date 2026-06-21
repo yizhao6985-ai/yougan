@@ -22,7 +22,7 @@ export async function summarizeRevisionNode(
     ? previewPlainText(preview, 800)
     : "（以配图/音视频为主）";
 
-  const content = `已按改稿清单更新作品。\n\n${excerpt}\n\n---\n完整成稿已同步到右侧「作品」面板。`;
+  const content = `改稿好了，主要变动在上面这段里。\n\n${excerpt}\n\n---\n完整成稿在右侧「作品」面板，可以再通读一遍。`;
 
   return {
     messages: [new AIMessage(content)],

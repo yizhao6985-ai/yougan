@@ -2,8 +2,8 @@ import { type TurnQueueKind } from "@yougan/domain";
 
 import { sortTurnQueue } from "./sort-turn-queue.js";
 
-/** 系统常驻：队尾追加 suggestions（去重后排序） */
-export function withSuggestionsQueue(kinds: TurnQueueKind[]): TurnQueueKind[] {
+/** 队列去重排序；suggestions 在 commitTurn 后由系统节点生成，不入队 */
+export function finalizeTurnQueue(kinds: TurnQueueKind[]): TurnQueueKind[] {
   const base = kinds.filter((kind) => kind !== "suggestions");
-  return sortTurnQueue([...base, "suggestions"]);
+  return sortTurnQueue(base);
 }

@@ -10,7 +10,7 @@ import {
 
 import { sortTurnQueue } from "./helpers/sort-turn-queue.js";
 import { tryResolvePreviewSelectionQueue } from "./helpers/try-resolve-preview-selection-queue.js";
-import { withSuggestionsQueue } from "./helpers/with-suggestions-queue.js";
+import { finalizeTurnQueue } from "./helpers/with-suggestions-queue.js";
 
 import { invokeStructured } from "#agent/llm/invoke/index.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
@@ -34,8 +34,8 @@ import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 import { buildTurnQueuePrompt } from "./prompt.js";
 import { TurnQueueDecisionSchema, type TurnQueueDecision } from "./schema.js";
 
-const DEFAULT_QUEUE: TurnQueueKind[] = withSuggestionsQueue(["profile"]);
-const OPENING_QUEUE: TurnQueueKind[] = withSuggestionsQueue([]);
+const DEFAULT_QUEUE: TurnQueueKind[] = finalizeTurnQueue(["profile"]);
+const OPENING_QUEUE: TurnQueueKind[] = [];
 
 /**
  * 合并模型队列与 reference 子图入队规则：
@@ -53,13 +53,13 @@ function withReferenceQueue(
   );
   const base: TurnQueueKind[] = sorted.length ? sorted : ["profile"];
   if (!hasAttachments || base.includes("reference")) {
-    return withSuggestionsQueue(base);
+    return finalizeTurnQueue(base);
   }
 
   const askOnly = base.length === 1 && base[0] === "ask";
-  if (askOnly) return withSuggestionsQueue(base);
+  if (askOnly) return finalizeTurnQueue(base);
 
-  return withSuggestionsQueue(
+  return finalizeTurnQueue(
     sortTurnQueue(["reference", ...base] as TurnQueueKind[]),
   );
 }

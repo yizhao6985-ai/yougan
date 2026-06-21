@@ -36,6 +36,14 @@ export function buildWorkStateSection(
     ? `已有预览成稿（节选）：${previewPlainText(preview, 200)}`
     : "尚无预览成稿";
 
+  const previewStageNote = previewHasContent(preview)
+    ? `
+
+## 成稿阶段建议对齐（与 turn 路由一致）
+- **扩展向**：给出针对当前成稿的具体改稿说法（用户发送后将进入 collectRevision，如「标题改成…」「第二段语气再软一点」）
+- **引导向**：互斥覆盖「开始改稿」「继续补充改稿意见」「重写一版」三类动作之一；禁止空泛「继续优化」`
+    : "";
+
   const profileBlock = isProfileSetupPhase(profile, profileSetupOptions)
     ? [
         buildProfileStepPromptSection(profile, profileSetupOptions),
@@ -56,5 +64,5 @@ export function buildWorkStateSection(
   return `## 作品状态
 ${profileBlock}
 ${profileReferencesSummary(references)}
-${previewLine}`;
+${previewLine}${previewStageNote}`;
 }

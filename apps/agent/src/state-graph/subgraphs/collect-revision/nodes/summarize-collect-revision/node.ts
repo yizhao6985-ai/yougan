@@ -12,8 +12,8 @@ export async function summarizeCollectRevisionNode(
   const count = openRevisionItems(getRevision(state)).length;
   const content =
     count > 0
-      ? `已加入改稿清单（共 ${count} 条）。通读后在对话中发送「开始改稿」等指令即可统一改稿。`
-      : "未能解析改稿意见，请具体说明要改哪里。";
+      ? `这条已记进改稿清单，目前共 ${count} 条。你看一遍清单，没问题的话发「开始改稿」，我按清单统一改。`
+      : "没能抓准要改哪里——可以说具体一点，比如改标题、哪一段的语气，或者直接在成稿里划词选中再说明。";
 
   return { messages: [new AIMessage(content)] };
 }

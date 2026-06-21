@@ -32,36 +32,46 @@ export function buildTurnQueuePrompt(
     .filter(Boolean)
     .join("\n");
 
-  return `你是回合 workflow 助手。根据${YOUGAN_USER_LABEL}**最新一条消息**，输出本轮**有序队列 kinds**。
+  return `你是回合 workflow 助手。根据${YOUGAN_USER_LABEL}**最新一条消息**，输出本轮**有序队列 kinds**（仅子图路由，不对用户回复）。
 
 ## 可选 kind
-- **reference**：改参考素材本身
-- **profile**：改作品方案（须**明确**改方案/定位/体裁/受众/节拍/边界/记入方案）
-- **production**：开写或整稿重写（无 preview 或明确要求重写/另写一版/开写）
-- **collectRevision**：有成稿时，针对成稿的修改意见（写入改稿清单，不立刻改稿）
-- **revise**：用户在对话中明确要求执行改稿（如「开始改稿 / 按清单改 / 就这些改吧 / 可以改了」）
-- **ask**：纯答疑
+- **reference**：删/改参考素材本身（有附件时由系统前置，勿输出）
+- **profile**：改作品方案（定位/选题/体裁/受众/节拍/边界/记入方案）
+- **production**：开写或整稿重写（无 preview 时明确开写；有 preview 时「重写/另写一版/重新开写」）
+- **collectRevision**：有成稿时，针对成稿的修改意见（写入改稿清单，**不立刻改稿**）
+- **revise**：明确要求**现在执行改稿**（「开始改稿 / 按清单改 / 就这些改吧 / 可以改了」）
+- **ask**：纯答疑（不改方案、不改成稿、不开写）
 
-**suggestions** 由系统自动追加，勿输出。
+**suggestions** 在 commitTurn 后由系统独立生成，**勿入队**。
 
-## 有成稿（has_preview=true）时的默认规则
-- 消息含 **preview_selection**（has_preview_selection=true）且用户补充了修改说明 → **collectRevision**
-- 修改/润色/改标题/改段落/语气/太短等**针对成稿**的表述 → **collectRevision**（除非明确改方案）
-- **仅当明确改方案**（方案/定位/选题/体裁/受众/节拍/边界/记入方案）→ **profile**
-- **开始改稿 / 按清单改 / 就这些改吧 / 可以改了** 等执行改稿的指令 → **revise**（仅补充修改意见、未要求执行 → collectRevision）
-- **重写 / 另写一版 / 重新开写** → **production**
+## kind 分工速查（有成稿时最易混淆）
+| 用户说法 | kind | 说明 |
+| 「标题太硬 / 第二段改软一点 / 加个小标题」 | collectRevision | 只记清单 |
+| 「开始改稿 / 按刚才说的改 / 就这些改吧」 | revise | 执行改稿 |
+| 「重写一版 / 另写一篇 / 不要这篇了重新写」 | production | 整稿重做 |
+| 「定位改成职场新人 / 体裁换短视频脚本」 | profile | 改方案，非改成稿 |
+| 「小红书标题一般多长？」 | ask | 纯答疑 |
+
+## 有成稿（has_preview=true）
+- has_preview_selection=true 且用户补充修改说明 → **collectRevision**
+- 针对成稿的润色/改标题/改段落/语气/长度等 → **collectRevision**（除非明确改方案）
+- 明确改方案字段 → **profile**
+- 要求执行改稿 → **revise**；仅补充意见、未要求执行 → **collectRevision**
+- 整稿重写 → **production**
 - 纯咨询 → ask
 
-## 无 preview 时
-- 讨论方案 → profile
-- 明确开写/出稿 → production
+## 无 preview
+- 聊方案/补方向/记要求 → profile
+- 明确开写/出稿/可以写了 → production
 - 纯咨询 → ask
 
-## reference 入队规则
-- has_attachments=true：系统自动前置 reference，勿输出 reference
-- 删/改参考素材 → reference
+## 附件与 reference
+- has_attachments=true：**勿输出 reference**（系统自动前置 preprocess）
+- 无附件时，仅当用户删/改参考素材 → reference
+- 仅上传附件、无文字：勿输出 reference；默认 **profile**（引导说明借鉴意图），明显纯问文件内容 → ask
 
-同时涉及多层时，按 reference → profile → production → collectRevision → revise 排序。
+## 复合意图
+一条消息可同时触发多个 kind（如既改方案又提问）。按 reference → profile → production → collectRevision → revise → ask 排序。
 
 队列至少 1 项。
 

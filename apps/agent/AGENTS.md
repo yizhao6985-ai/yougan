@@ -24,7 +24,7 @@ src/
         └── suggestions/
 ```
 
-系统收尾节点（`post-commit/`：对话标题；`summarize-messages/`：对话过长滚动摘要）在 `commitTurn` 之后接线；用户向任务走 turn 子图，建议由 `suggestions` 子图常驻生成。
+系统收尾节点（`post-commit/`：对话标题；`summarize-messages/`：对话过长滚动摘要）在 `commitTurn` 之后接线；用户向任务走 turn 子图；`nextStepSuggestions` 在 `commitTurn` 后由 `suggestionsGraph` 生成。
 
 主图接线在 `src/graph.ts`；各子图接线在 `state-graph/subgraphs/<name>/graph.ts`。
 

@@ -32,13 +32,6 @@ import { buildNextStepSuggestionsPrompt } from "./prompt.js";
 import { nextStepSuggestionsResponseSchema } from "./schema.js";
 
 const OPENING_HINT = "";
-const MAX_SUGGESTION_INVOKE_ATTEMPTS = 2;
-
-function buildSuggestionRetryPromptSuffix(count: number): string {
-  return `
-
-【格式补救】上次结构化输出解析失败。请重新输出恰好 ${count} 条 suggestions；每条为独立 { "message": "..." }；message 内禁止使用英文双引号 "，引用短语用「」或《》。`;
-}
 
 export {
   OPENING_NEXT_STEP_SUGGESTIONS_COUNT,
@@ -70,71 +63,53 @@ async function invokeNextStepSuggestions(
     layered,
   );
 
-  const basePrompt = buildNextStepSuggestionsPrompt(state, {
+  const prompt = buildNextStepSuggestionsPrompt(state, {
     count: options.count,
     isOpening: options.isOpening,
     lastUserMessage: options.lastUserMessage,
     lastAssistantReply: options.lastAssistantReply,
   });
 
-  for (
-    let attempt = 0;
-    attempt < MAX_SUGGESTION_INVOKE_ATTEMPTS;
-    attempt += 1
-  ) {
-    const temperature =
-      attempt === 0
-        ? options.temperature
-        : Math.max(0.35, options.temperature - 0.15 * attempt);
-    const llm = createChatModel({ temperature });
-    const prompt =
-      attempt === 0
-        ? basePrompt
-        : basePrompt + buildSuggestionRetryPromptSuffix(options.count);
-
-    try {
-      const parsed = await invokeStructured(
-        llm,
-        nextStepSuggestionsResponseSchema(options.count),
-        [new HumanMessage(prompt)],
-        {
-          name: "next_step_suggestions",
-          timeoutMs: LLM_TIMEOUT_MS.suggestions,
-        },
-        config,
-      );
-      const suggestions = resolveProfileSetupSuggestionRoles(
-        parsed.suggestions.map((s) => newNextStepSuggestion(s.message)),
-        {
-          profile,
-          beforeProfile: state.profile,
-          hasPreview,
-        },
-      );
-      if (suggestions.length === 0) continue;
-
-      const layeredHint = buildProfileSetupSuggestionHint(
-        profileSetupFocus,
+  try {
+    const parsed = await invokeStructured(
+      createChatModel({ temperature: options.temperature }),
+      nextStepSuggestionsResponseSchema(options.count),
+      [new HumanMessage(prompt)],
+      {
+        name: "next_step_suggestions",
+        timeoutMs: LLM_TIMEOUT_MS.suggestions,
+        maxAttempts: 1,
+      },
+      config,
+    );
+    const suggestions = resolveProfileSetupSuggestionRoles(
+      parsed.suggestions.map((s) => newNextStepSuggestion(s.message)),
+      {
         profile,
-        layerCounts,
-        layered,
-      );
+        beforeProfile: state.profile,
+        hasPreview,
+      },
+    );
+    if (suggestions.length === 0) return null;
 
-      return {
-        hint:
-          parsed.hint?.trim() ||
-          layeredHint ||
-          (options.isOpening
-            ? OPENING_HINT
-            : DEFAULT_NEXT_STEP_SUGGESTIONS_HINT),
-        suggestions,
-      };
-    } catch {
-      // 解析失败时降温度重试；全部失败后静默跳过，不阻断主流程
-    }
+    const layeredHint = buildProfileSetupSuggestionHint(
+      profileSetupFocus,
+      profile,
+      layerCounts,
+      layered,
+    );
+
+    return {
+      hint:
+        parsed.hint?.trim() ||
+        layeredHint ||
+        (options.isOpening ? OPENING_HINT : DEFAULT_NEXT_STEP_SUGGESTIONS_HINT),
+      suggestions,
+    };
+  } catch {
+    // 超时 / 解析失败：静默跳过，不阻断主流程
+    return null;
   }
-
-  return null;
 }
 
 async function resolveNextStepSuggestions(
