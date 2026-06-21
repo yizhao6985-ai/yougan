@@ -7,7 +7,7 @@ import { readStoredString, writeStoredString } from "@/lib/storage-value";
 import { cn } from "@/lib/utils";
 
 const DRAWER_OPEN_KEY = "yougan:creative-context-drawer-open";
-const DRAWER_WIDTH = "min(540px, 48vw)";
+const DRAWER_WIDTH = "min(480px, 46vw)";
 
 function readDrawerOpen(): boolean {
   const raw = readStoredString(DRAWER_OPEN_KEY);

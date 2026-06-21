@@ -5,7 +5,10 @@ import {
 } from "@langchain/core/messages";
 import {
   extractAttachmentAssetsFromContent,
+  extractPreviewSelectionsFromContent,
   isHumanAssetContentPart,
+  isHumanPreviewSelectionPart,
+  previewSelectionsSummary,
 } from "@yougan/domain";
 
 import { stripInterruptedMessagesForLlm } from "./interrupted.js";
@@ -25,6 +28,7 @@ function humanContentNeedsSanitize(content: HumanMessage["content"]): boolean {
     if (typeof part === "string") return false;
     if (!part || typeof part !== "object") return true;
     if (isHumanAssetContentPart(part)) return true;
+    if (isHumanPreviewSelectionPart(part)) return true;
     return !("type" in part);
   });
 }
@@ -39,10 +43,19 @@ export function sanitizeHumanMessageForTextChat(
   const attachmentCount = extractAttachmentAssetsFromContent(
     message.content,
   ).length;
+  const previewSelections = extractPreviewSelectionsFromContent(
+    message.content,
+  );
+  const selectionSummary = previewSelectionsSummary(previewSelections);
 
-  if (attachmentCount > 0) {
-    const label = attachmentLabel(attachmentCount);
-    text = text ? `${label}\n${text}` : label;
+  const prefixes = [
+    attachmentCount > 0 ? attachmentLabel(attachmentCount) : "",
+    selectionSummary,
+  ].filter(Boolean);
+
+  if (prefixes.length > 0) {
+    const prefixBlock = prefixes.join("\n");
+    text = text ? `${prefixBlock}\n${text}` : prefixBlock;
   }
 
   return new HumanMessage({

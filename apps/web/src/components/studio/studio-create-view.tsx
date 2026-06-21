@@ -1,9 +1,10 @@
 import { CreativeContextDrawer } from "@/components/studio/creative-context-drawer";
 import { CreativeContextPanelContent } from "@/components/studio/creative-context-panel-content";
+import { ComposerPreviewSelectionsProvider } from "@/components/studio/composer-preview-selections-context";
 import { WorksAside } from "@/components/studio/works-aside";
 import { YouganChat } from "@/components/studio/yougan-chat";
 import { useYouganStreamContext } from "@/components/studio/yougan-stream-provider";
-import { mergeReferencesForDisplay } from "@yougan/domain";
+import { EMPTY_WORK_REVISION, mergeReferencesForDisplay } from "@yougan/domain";
 import { resolveStreamProfile } from "@/lib/profile-setup-display";
 
 export function StudioCreateView() {
@@ -21,6 +22,7 @@ export function StudioCreateView() {
     updateProfileContext,
     deleteProfileContext,
     clearWorkProfileContext,
+    removeRevisionIntentFromWork,
   } = useYouganStreamContext();
 
   const streamValues = stream.values;
@@ -39,10 +41,15 @@ export function StudioCreateView() {
         streamValues?.references,
       );
   const preview =
-    staging?.production?.preview ??
-    streamValues?.production?.preview ??
-    activeWork?.production?.preview ??
+    staging?.preview ??
+    streamValues?.preview ??
+    activeWork?.preview ??
     null;
+  const revision =
+    staging?.revision ??
+    streamValues?.revision ??
+    activeWork?.revision ??
+    EMPTY_WORK_REVISION;
   const previewUnsaved = Boolean(
     staging && streamValues?.turn?.committed !== true,
   );
@@ -53,9 +60,16 @@ export function StudioCreateView() {
       references={references}
       profile={profile}
       preview={preview}
+      revision={revision}
       previewUnsaved={previewUnsaved}
       onDuplicated={selectWork}
       onRestored={applyMaterializedWorkState}
+      onRemoveRevisionIntent={
+        activeWork
+          ? (intentId) => removeRevisionIntentFromWork(activeWork.id, intentId)
+          : undefined
+      }
+      enablePreviewSelection
       onUpdateBound={
         activeWork
           ? (itemId, spec) => updateProfileBound(activeWork.id, itemId, spec)
@@ -100,16 +114,18 @@ export function StudioCreateView() {
   );
 
   return (
-    <div className="grid h-full min-h-0 flex-1 overflow-hidden lg:grid-cols-[280px_minmax(0,1fr)_auto]">
-      <aside className="hidden min-h-0 flex-col border-r border-border/80 bg-card/80 lg:flex">
-        <WorksAside />
-      </aside>
+    <ComposerPreviewSelectionsProvider>
+      <div className="grid h-full min-h-0 flex-1 overflow-hidden lg:grid-cols-[280px_minmax(0,1fr)_auto]">
+        <aside className="hidden min-h-0 flex-col border-r border-border/80 bg-card/80 lg:flex">
+          <WorksAside />
+        </aside>
 
-      <div className="flex min-h-0 min-w-0 flex-col overflow-hidden bg-gradient-to-b from-accent/35 to-background">
-        <YouganChat />
+        <div className="flex min-h-0 min-w-0 flex-col overflow-hidden bg-gradient-to-b from-accent/35 to-background">
+          <YouganChat />
+        </div>
+
+        <CreativeContextDrawer>{panelContent}</CreativeContextDrawer>
       </div>
-
-      <CreativeContextDrawer>{panelContent}</CreativeContextDrawer>
-    </div>
+    </ComposerPreviewSelectionsProvider>
   );
 }

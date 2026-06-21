@@ -17,7 +17,7 @@ import {
 import { invokeStructured } from "#agent/llm/invoke/index.js";
 import { patchAiUsageMetering } from "#agent/llm/invoke/metering.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
-import { getProfile } from "#agent/state-io/index.js";
+import { getPreview, getProfile } from "#agent/state-io/index.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
 import { extractLastMessages } from "./helpers/extract-last-messages.js";
@@ -26,6 +26,13 @@ import { buildNextStepSuggestionsPrompt } from "./prompt.js";
 import { nextStepSuggestionsResponseSchema } from "./schema.js";
 
 const OPENING_HINT = "";
+const MAX_SUGGESTION_INVOKE_ATTEMPTS = 3;
+
+function buildSuggestionRetryPromptSuffix(count: number): string {
+  return `
+
+【格式补救】上次结构化输出解析失败。请重新输出恰好 ${count} 条 suggestions；每条为独立 { "message": "..." }；message 内禁止使用英文双引号 "，引用短语用「」或《》。`;
+}
 
 export {
   OPENING_NEXT_STEP_SUGGESTIONS_COUNT,
@@ -44,7 +51,7 @@ async function invokeNextStepSuggestions(
   config?: RunnableConfig,
 ): Promise<NextStepSuggestions | null> {
   const profile = getProfile(state);
-  const hasPreview = Boolean(state.production?.preview?.blocks?.length);
+  const hasPreview = Boolean(getPreview(state)?.blocks?.length);
   const layered = hasSuggestionLayeredContext(profile, { hasPreview });
   const profileSetupFocus = buildProfileSetupSuggestionFocus({
     before: state.profile,
@@ -56,49 +63,68 @@ async function invokeNextStepSuggestions(
     layered,
   );
 
-  const llm = createChatModel({ temperature: options.temperature });
-  const prompt = buildNextStepSuggestionsPrompt(state, {
+  const basePrompt = buildNextStepSuggestionsPrompt(state, {
     count: options.count,
     isOpening: options.isOpening,
     lastUserMessage: options.lastUserMessage,
     lastAssistantReply: options.lastAssistantReply,
   });
 
-  try {
-    const parsed = await invokeStructured(
-      llm,
-      nextStepSuggestionsResponseSchema(options.count),
-      [new HumanMessage(prompt)],
-      { name: "next_step_suggestions" },
-      config,
-    );
-    const suggestions = resolveProfileSetupSuggestionRoles(
-      parsed.suggestions.map((s) => newNextStepSuggestion(s.message)),
-      {
+  for (
+    let attempt = 0;
+    attempt < MAX_SUGGESTION_INVOKE_ATTEMPTS;
+    attempt += 1
+  ) {
+    const temperature =
+      attempt === 0
+        ? options.temperature
+        : Math.max(0.35, options.temperature - 0.15 * attempt);
+    const llm = createChatModel({ temperature });
+    const prompt =
+      attempt === 0
+        ? basePrompt
+        : basePrompt + buildSuggestionRetryPromptSuffix(options.count);
+
+    try {
+      const parsed = await invokeStructured(
+        llm,
+        nextStepSuggestionsResponseSchema(options.count),
+        [new HumanMessage(prompt)],
+        { name: "next_step_suggestions" },
+        config,
+      );
+      const suggestions = resolveProfileSetupSuggestionRoles(
+        parsed.suggestions.map((s) => newNextStepSuggestion(s.message)),
+        {
+          profile,
+          beforeProfile: state.profile,
+          hasPreview,
+        },
+      );
+      if (suggestions.length === 0) continue;
+
+      const layeredHint = buildProfileSetupSuggestionHint(
+        profileSetupFocus,
         profile,
-        beforeProfile: state.profile,
-        hasPreview,
-      },
-    );
-    if (suggestions.length === 0) return null;
+        layerCounts,
+        layered,
+      );
 
-    const layeredHint = buildProfileSetupSuggestionHint(
-      profileSetupFocus,
-      profile,
-      layerCounts,
-      layered,
-    );
-
-    return {
-      hint:
-        parsed.hint?.trim() ||
-        layeredHint ||
-        (options.isOpening ? OPENING_HINT : DEFAULT_NEXT_STEP_SUGGESTIONS_HINT),
-      suggestions,
-    };
-  } catch {
-    return null;
+      return {
+        hint:
+          parsed.hint?.trim() ||
+          layeredHint ||
+          (options.isOpening
+            ? OPENING_HINT
+            : DEFAULT_NEXT_STEP_SUGGESTIONS_HINT),
+        suggestions,
+      };
+    } catch {
+      // 解析失败时降温度重试；全部失败后静默跳过，不阻断主流程
+    }
   }
+
+  return null;
 }
 
 async function resolveNextStepSuggestions(

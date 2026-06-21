@@ -8,6 +8,7 @@ import {
   type WorkProfile,
   type WorkReference,
   type WorkPreview,
+  type WorkRevision,
 } from "@yougan/domain";
 
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
@@ -17,7 +18,12 @@ import { patchTurn } from "./turn.js";
 
 export function patchPending(
   state: AgentStateType,
-  patch: Partial<Pick<TurnStaging, "profile" | "references" | "production">>,
+  patch: Partial<
+    Pick<
+      TurnStaging,
+      "profile" | "references" | "preview" | "revision" | "production"
+    >
+  >,
 ): Pick<AgentStatePatch, "turn"> {
   const staging = requirePending(state);
   return patchTurn(state, {
@@ -28,6 +34,10 @@ export function patchPending(
         ? mergeProfileState(staging.profile, patch.profile)
         : staging.profile,
       references: patch.references ?? staging.references,
+      preview: patch.preview !== undefined ? patch.preview : staging.preview,
+      revision: patch.revision
+        ? { ...staging.revision, ...patch.revision }
+        : staging.revision,
       production: patch.production
         ? { ...staging.production, ...patch.production }
         : staging.production,
@@ -70,10 +80,24 @@ export function patchPendingPreview(
   state: AgentStateType,
   preview: WorkPreview | null,
 ): Pick<AgentStatePatch, "turn"> {
-  const staging = requirePending(state);
-  return patchPending(state, {
-    production: { ...staging.production, preview },
-  });
+  return patchPending(state, { preview });
+}
+
+export function patchPendingRevision(
+  state: AgentStateType,
+  revision: WorkRevision,
+): Pick<AgentStatePatch, "turn"> {
+  return patchPending(state, { revision });
+}
+
+function mergePreviewField(
+  merged: WorkPreview | null,
+  incoming: WorkPreview | null | undefined,
+): WorkPreview | null {
+  // patchPending* 返回完整 staging 快照时，未改动的 preview 常为 null，
+  // 不应覆盖同 batch 内先前 patch 已写入的 preview。
+  if (incoming != null) return incoming;
+  return merged;
 }
 
 function mergeStagingPatches(stagingPatches: TurnStaging[]): TurnStaging {
@@ -85,6 +109,10 @@ function mergeStagingPatches(stagingPatches: TurnStaging[]): TurnStaging {
         ? mergeProfileState(merged.profile, staging.profile)
         : merged.profile,
       references: staging.references ?? merged.references,
+      preview: mergePreviewField(merged.preview, staging.preview),
+      revision: staging.revision
+        ? { ...merged.revision, ...staging.revision }
+        : merged.revision,
       production: staging.production
         ? { ...merged.production, ...staging.production }
         : merged.production,

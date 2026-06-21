@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, type KeyboardEventHandler } from "react";
 
 import {
   PromptInput,
@@ -10,11 +10,13 @@ import {
 } from "@/components/ai-elements/prompt-input";
 import { ComposerAttachmentDrawer } from "@/components/studio/composer-attachment-drawer";
 import { useComposerAttachmentsContext } from "@/components/studio/composer-attachments-context";
+import { ComposerPreviewSelectionTags } from "@/components/studio/composer-preview-selection-tags";
+import { useComposerPreviewSelectionsContext } from "@/components/studio/composer-preview-selections-context";
 import { ModelTemperatureControl } from "@/components/studio/model-temperature-control";
 import { UploadReferenceButtons } from "@/components/studio/upload-reference-button";
 import { useYouganStreamContext } from "@/components/studio/yougan-stream-provider";
 import { scene } from "@/lib/scene-styles";
-import type { HumanAttachmentAsset } from "@yougan/domain";
+import type { HumanAttachmentAsset, HumanPreviewSelection } from "@yougan/domain";
 import { CHAT_COPY } from "@/lib/site-copy";
 
 type StudioChatComposerProps = {
@@ -23,6 +25,7 @@ type StudioChatComposerProps = {
   onSend: (payload: {
     text: string;
     attachments: HumanAttachmentAsset[];
+    previewSelections: HumanPreviewSelection[];
   }) => void | Promise<void>;
   onStop?: () => void | Promise<void>;
   chatStatus: "ready" | "submitted" | "streaming" | "error";
@@ -38,7 +41,6 @@ export function StudioChatComposer({
   placeholder,
 }: StudioChatComposerProps) {
   const {
-    stream,
     canSend,
     usageExceeded,
     modelTemperatureLevel,
@@ -50,13 +52,22 @@ export function StudioChatComposer({
     hasReady,
     hasUploading,
   } = useComposerAttachmentsContext();
+  const {
+    clear: clearPreviewSelections,
+    toPayload: previewSelectionsPayload,
+    hasSelections,
+    items: previewSelectionItems,
+    remove: removePreviewSelection,
+  } = useComposerPreviewSelectionsContext();
 
   const handleSubmit = useCallback(
     async (message: { text: string }) => {
       const attachments = readyAttachments();
+      const previewSelections = previewSelectionsPayload();
       const trimmed = message.text.trim();
       if (
-        (!trimmed && attachments.length === 0) ||
+        (!trimmed && attachments.length === 0 && previewSelections.length === 0) ||
+        (hasSelections && !trimmed) ||
         !canSend ||
         hasUploading
       ) {
@@ -64,13 +75,45 @@ export function StudioChatComposer({
       }
       onInputChange("");
       clear();
-      await onSend({ text: trimmed, attachments });
+      clearPreviewSelections();
+      await onSend({ text: trimmed, attachments, previewSelections });
     },
-    [canSend, clear, hasUploading, onInputChange, onSend, readyAttachments],
+    [
+      canSend,
+      clear,
+      clearPreviewSelections,
+      hasSelections,
+      hasUploading,
+      onInputChange,
+      onSend,
+      previewSelectionsPayload,
+      readyAttachments,
+    ],
   );
 
+  const handleTextareaKeyDown: KeyboardEventHandler<HTMLTextAreaElement> =
+    useCallback(
+      (event) => {
+        if (
+          event.key === "Backspace" &&
+          event.currentTarget.value === "" &&
+          previewSelectionItems.length > 0
+        ) {
+          event.preventDefault();
+          const lastItem = previewSelectionItems.at(-1);
+          if (lastItem) {
+            removePreviewSelection(lastItem.id);
+          }
+        }
+      },
+      [previewSelectionItems, removePreviewSelection],
+    );
+
   const canSubmit =
-    (Boolean(input.trim()) || hasReady) && canSend && !hasUploading;
+    ((Boolean(input.trim()) || hasReady) &&
+      (!hasSelections || Boolean(input.trim()))) &&
+    canSend &&
+    !hasUploading;
 
   return (
     <PromptInput
@@ -79,15 +122,34 @@ export function StudioChatComposer({
     >
       <ComposerAttachmentDrawer />
       <PromptInputBody>
-        <PromptInputTextarea
-          placeholder={
-            usageExceeded
-              ? CHAT_COPY.quotaExceededPlaceholder
-              : (placeholder ?? CHAT_COPY.placeholderDefault)
-          }
-          value={input}
-          onChange={(event) => onInputChange(event.target.value)}
-        />
+        <div
+          className="flex w-full flex-1 flex-wrap items-start gap-1 px-3 py-3 min-h-16"
+          onClick={(event) => {
+            if ((event.target as HTMLElement).closest("button")) {
+              return;
+            }
+            const textarea = event.currentTarget.querySelector(
+              "[data-yougan-composer-textarea]",
+            ) as HTMLTextAreaElement | null;
+            textarea?.focus();
+          }}
+        >
+          <ComposerPreviewSelectionTags inline />
+          <PromptInputTextarea
+            data-yougan-composer-textarea
+            className="field-sizing-content max-h-48 min-h-5 min-w-[8rem] flex-1 px-0 py-0 text-sm leading-5"
+            placeholder={
+              usageExceeded
+                ? CHAT_COPY.quotaExceededPlaceholder
+                : hasSelections
+                  ? CHAT_COPY.previewSelection.composerPlaceholder
+                  : (placeholder ?? CHAT_COPY.placeholderDefault)
+            }
+            value={input}
+            onChange={(event) => onInputChange(event.target.value)}
+            onKeyDown={handleTextareaKeyDown}
+          />
+        </div>
       </PromptInputBody>
       <PromptInputFooter>
         <PromptInputTools className="flex-wrap gap-2">

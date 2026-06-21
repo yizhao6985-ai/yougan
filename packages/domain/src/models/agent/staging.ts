@@ -1,6 +1,8 @@
 import type { WorkProduction } from "../work/production.js";
+import type { WorkPreview } from "../work/preview.js";
 import type { WorkProfile } from "../work/profile.js";
 import type { WorkReference } from "../work/reference.js";
+import type { WorkRevision } from "../work/revision.js";
 
 /**
  * 单轮事务工作区。
@@ -9,5 +11,7 @@ import type { WorkReference } from "../work/reference.js";
 export interface TurnStaging {
   profile: WorkProfile;
   references: WorkReference[];
+  preview: WorkPreview | null;
+  revision: WorkRevision;
   production: WorkProduction;
 }

@@ -7,6 +7,7 @@ import {
   EMPTY_WORK_PROFILE,
   EMPTY_WORK_PRODUCTION,
   EMPTY_WORK_REFERENCES,
+  EMPTY_WORK_REVISION,
   mergeTurnRuntime,
   type TurnQueueKind,
   type TurnRuntime,
@@ -24,6 +25,8 @@ export function requirePending(state: AgentStateType): TurnStaging {
   return {
     profile: structuredClone(state.profile ?? EMPTY_WORK_PROFILE),
     references: structuredClone(state.references ?? [...EMPTY_WORK_REFERENCES]),
+    preview: structuredClone(state.preview ?? null),
+    revision: structuredClone(state.revision ?? EMPTY_WORK_REVISION),
     production: structuredClone(state.production ?? EMPTY_WORK_PRODUCTION),
   };
 }
@@ -37,6 +40,8 @@ export function initPendingTurn(
   return {
     profile: structuredClone(state.profile ?? EMPTY_WORK_PROFILE),
     references: structuredClone(state.references ?? [...EMPTY_WORK_REFERENCES]),
+    preview: structuredClone(state.preview ?? null),
+    revision: structuredClone(state.revision ?? EMPTY_WORK_REVISION),
     production: structuredClone(state.production ?? EMPTY_WORK_PRODUCTION),
   };
 }
@@ -44,12 +49,19 @@ export function initPendingTurn(
 /** turn.staging → state 顶层作品字段 */
 export function commitPending(
   state: AgentStateType,
-): Partial<Pick<AgentStateType, "profile" | "references" | "production">> {
+): Partial<
+  Pick<
+    AgentStateType,
+    "profile" | "references" | "preview" | "revision" | "production"
+  >
+> {
   const staging = getTurn(state).staging;
   if (!staging) return {};
   return {
     profile: staging.profile,
     references: staging.references,
+    preview: staging.preview,
+    revision: staging.revision,
     production: committedProduction(staging.production),
   };
 }

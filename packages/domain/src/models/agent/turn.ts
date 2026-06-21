@@ -1,4 +1,7 @@
-import type { ProductionConfirmDecision } from "./interrupts.js";
+import type {
+  ProductionConfirmDecision,
+  ReviseConfirmDecision,
+} from "./interrupts.js";
 import type { TurnStaging } from "./staging.js";
 import { mergeProfileState } from "../../utils/profile-merge.js";
 import { mergeReferencesState } from "../../utils/reference-merge.js";
@@ -12,6 +15,8 @@ export const TURN_QUEUE_PLANNER_KINDS = [
   "reference",
   "profile",
   "production",
+  "collectRevision",
+  "revise",
   "ask",
 ] as const;
 
@@ -32,6 +37,8 @@ export const TURN_QUEUE_ORDER: readonly TurnQueueKind[] = [
   "reference",
   "profile",
   "production",
+  "collectRevision",
+  "revise",
   "ask",
   "suggestions",
 ];
@@ -50,6 +57,8 @@ export interface TurnRuntime {
   interruptedMessageIds: string[];
   /** confirmProductionTurn interrupt 恢复后写入；decline 时跳过 production 子图 */
   productionConfirm: ProductionConfirmDecision | null;
+  /** confirmReviseTurn interrupt 恢复后写入；decline 时跳过 revise 子图 */
+  reviseConfirm: ReviseConfirmDecision | null;
 }
 
 export const EMPTY_TURN_RUNTIME: TurnRuntime = {
@@ -61,6 +70,7 @@ export const EMPTY_TURN_RUNTIME: TurnRuntime = {
   cancelled: false,
   interruptedMessageIds: [],
   productionConfirm: null,
+  reviseConfirm: null,
 };
 
 function mergeTurnStaging(
@@ -82,6 +92,8 @@ function mergeTurnStaging(
     production: next.production
       ? { ...prev.production, ...next.production }
       : prev.production,
+    preview: next.preview !== undefined ? next.preview : prev.preview,
+    revision: next.revision ? { ...prev.revision, ...next.revision } : prev.revision,
   };
 }
 

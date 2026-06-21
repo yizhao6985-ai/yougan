@@ -1,15 +1,18 @@
-import { DEFAULT_CONVERSATION_TITLE, type WorkVersionSnapshot } from "@yougan/domain";
+import { DEFAULT_CONVERSATION_TITLE, type WorkVersionSnapshot, EMPTY_WORK_REVISION } from "@yougan/domain";
 
 import { prisma } from "../db.js";
 import type { WorkVersionDTO } from "../schemas.js";
 import {
   emptySnapshot,
   hasValidPreview,
+  materializeAgentWorkColumns,
   materializeWorkColumns,
   parseProduction,
   parseProfileJson,
+  parseRevisionJson,
   parseSnapshot,
   previewVersionSummary,
+  resolvePreviewFromWork,
   resolveProfileFromWork,
   resolveReferencesFromWork,
   shouldAppendPreviewVersion,
@@ -22,12 +25,17 @@ import { materializeAgentRunValues } from "./materialize-production-draft-images
 function snapshotFromWorkColumns(work: {
   profile: unknown;
   references?: unknown;
+  preview?: unknown;
   production: unknown;
 }): WorkVersionSnapshot {
   return {
     profile: resolveProfileFromWork({ profile: work.profile }),
     references: resolveReferencesFromWork({
       references: work.references,
+    }),
+    preview: resolvePreviewFromWork({
+      preview: work.preview,
+      production: work.production,
     }),
     production: parseProduction(work.production),
   };
@@ -55,6 +63,7 @@ export async function appendWorkVersion(input: {
   conversationId?: string;
   summary: string;
   snapshot: WorkVersionSnapshot;
+  revision?: ReturnType<typeof parseRevisionJson>;
 }) {
   const version = await prisma.$transaction(async (tx) => {
     const parentVersionId = (
@@ -80,6 +89,9 @@ export async function appendWorkVersion(input: {
       where: { id: input.workId },
       data: {
         ...columns,
+        ...(input.revision !== undefined
+          ? { revision: input.revision as object }
+          : {}),
         headVersionId: created.id,
       },
     });
@@ -98,13 +110,29 @@ export async function applyAgentRunToWork(input: {
   const previous = (await getWorkCurrentSnapshot(input.workId)) ?? emptySnapshot();
   const values = await materializeAgentRunValues(input.values);
   const next = snapshotFromAgentValues(values);
+  const revision = parseRevisionJson(values.revision);
 
-  if (snapshotsEqual(previous, next)) {
+  const existingWork = await prisma.work.findUnique({
+    where: { id: input.workId },
+    select: { revision: true },
+  });
+  const previousRevision = parseRevisionJson(existingWork?.revision);
+  const snapshotEqual = snapshotsEqual(previous, next);
+  const revisionEqual =
+    JSON.stringify(revision) === JSON.stringify(previousRevision);
+
+  if (snapshotEqual && revisionEqual) {
     return null;
   }
 
   if (!shouldAppendPreviewVersion(previous, next)) {
-    await updateWorkMaterializedState(input.workId, next);
+    await prisma.work.update({
+      where: { id: input.workId },
+      data: {
+        ...materializeWorkColumns(next),
+        revision: revision as object,
+      },
+    });
     return null;
   }
 
@@ -113,6 +141,7 @@ export async function applyAgentRunToWork(input: {
     conversationId: input.conversationId,
     summary: previewVersionSummary(next),
     snapshot: next,
+    revision,
   });
 }
 
@@ -159,6 +188,7 @@ export async function restoreWorkToVersion(
   await syncMaterializedStateToAgentThreads(workId, {
     profile: columns.profile,
     references: columns.references,
+    preview: columns.preview,
     production: columns.production,
   });
 
@@ -222,6 +252,8 @@ export async function duplicateWorkFromVersion(
         sourceVersionId,
         profile: columns.profile as object,
         references: columns.references as object,
+        preview: columns.preview as object,
+        revision: EMPTY_WORK_REVISION as object,
         production: columns.production as object,
       },
     });

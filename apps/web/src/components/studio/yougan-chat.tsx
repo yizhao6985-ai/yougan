@@ -26,6 +26,7 @@ import { useYouganStreamContext } from "@/components/studio/yougan-stream-provid
 import { useWorkItemNameDialog } from "@/hooks/use-work-item-name-dialog";
 import { WorksCreateMenu } from "@/components/studio/works-create-menu";
 import { HumanMessageAttachments } from "@/components/studio/human-message-attachments";
+import { HumanMessagePreviewSelections } from "@/components/studio/human-message-preview-selections";
 import { buildRenderItems, mergeChatMessages } from "@/lib/message-utils";
 import { scene } from "@/lib/scene-styles";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,7 @@ import {
   resolveStreamProfile,
 } from "@/lib/profile-setup-display";
 import { ProductionConfirmPrompt } from "@/components/studio/production-confirm-prompt";
+import { ReviseConfirmPrompt } from "@/components/studio/revise-confirm-prompt";
 import type { TurnQueueKind, YouganValues } from "@/lib/types";
 
 export function YouganChat() {
@@ -46,7 +48,9 @@ export function YouganChat() {
     cancelActiveTurn,
     canCancelActiveTurn,
     resumeProductionConfirm,
+    resumeReviseConfirm,
     productionConfirmInterrupt,
+    reviseConfirmInterrupt,
     isResumingInterrupt,
     canSend,
     isBootstrappingOpening,
@@ -124,6 +128,7 @@ export function YouganChat() {
   const showShimmer =
     stream.isLoading &&
     !productionConfirmInterrupt &&
+    !reviseConfirmInterrupt &&
     !hasStreamingAi &&
     !hasStreamingTool &&
     items.length > 0 &&
@@ -133,18 +138,22 @@ export function YouganChat() {
     async ({
       text,
       attachments,
+      previewSelections,
     }: {
       text: string;
       attachments: Parameters<typeof sendMessage>[1];
+      previewSelections: Parameters<typeof sendMessage>[2];
     }) => {
       if (!canSend) return;
-      await sendMessage(text, attachments);
+      await sendMessage(text, attachments, previewSelections);
     },
     [canSend, sendMessage],
   );
 
   const isRunBusy =
-    stream.isLoading || productionConfirmInterrupt != null;
+    stream.isLoading ||
+    productionConfirmInterrupt != null ||
+    reviseConfirmInterrupt != null;
   const chatStatus = !isRunBusy
     ? "ready"
     : canCancelActiveTurn
@@ -178,6 +187,9 @@ export function YouganChat() {
     if (productionConfirmInterrupt) {
       return CHAT_COPY.productionConfirm.statusHint;
     }
+    if (reviseConfirmInterrupt) {
+      return CHAT_COPY.reviseConfirm.statusHint;
+    }
     if (stream.isLoading) {
       if (runProgress?.label) {
         return runProgress.detail?.trim()
@@ -190,6 +202,10 @@ export function YouganChat() {
           return CHAT_COPY.status.referenceProcessing;
         case "production":
           return CHAT_COPY.status.productionExecuting;
+        case "revise":
+          return CHAT_COPY.status.productionExecuting;
+        case "collectRevision":
+          return CHAT_COPY.replying;
         case "ask":
           return CHAT_COPY.status.askExploring;
         case "profile":
@@ -203,6 +219,8 @@ export function YouganChat() {
         return CHAT_COPY.status.referenceProcessing;
       case "production":
         return CHAT_COPY.status.productionExecuting;
+      case "revise":
+        return CHAT_COPY.status.productionExecuting;
       case "ask":
         return CHAT_COPY.status.askExploring;
       case "profile":
@@ -211,9 +229,10 @@ export function YouganChat() {
     }
   })();
 
-  const conversationRunProgress = productionConfirmInterrupt
-    ? null
-    : runProgress?.label
+  const conversationRunProgress =
+    productionConfirmInterrupt || reviseConfirmInterrupt
+      ? null
+      : runProgress?.label
       ? {
           label: runProgress.label,
           detail: runProgress.detail?.trim() || null,
@@ -280,11 +299,17 @@ export function YouganChat() {
               {items.map((item, index) => {
                 if (item.kind === "human") {
                   const hasAttachments = item.attachments.length > 0;
+                  const hasSelections = item.previewSelections.length > 0;
                   const hasText = Boolean(item.content);
                   return (
                     <Message key={item.id} from="user">
                       <MessageContent className="bg-card text-foreground ring-1 ring-border/80">
                         <div className="flex flex-col gap-2">
+                          {hasSelections ? (
+                            <HumanMessagePreviewSelections
+                              items={item.previewSelections}
+                            />
+                          ) : null}
                           {hasAttachments ? (
                             <HumanMessageAttachments items={item.attachments} />
                           ) : null}
@@ -381,6 +406,15 @@ export function YouganChat() {
                   disabled={isResumingInterrupt}
                   onConfirm={() => void resumeProductionConfirm("confirm")}
                   onDecline={() => void resumeProductionConfirm("decline")}
+                />
+              ) : null}
+
+              {reviseConfirmInterrupt ? (
+                <ReviseConfirmPrompt
+                  interrupt={reviseConfirmInterrupt}
+                  disabled={isResumingInterrupt}
+                  onConfirm={() => void resumeReviseConfirm("confirm")}
+                  onDecline={() => void resumeReviseConfirm("decline")}
                 />
               ) : null}
 

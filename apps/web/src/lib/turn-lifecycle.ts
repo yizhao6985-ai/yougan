@@ -80,11 +80,20 @@ export function isProductionTurnActive(
   return turn.queue[0] === "production";
 }
 
-/** production 回合不得走启发式 repair（由 thread-run-coordination 在 bootstrap 阶段保护） */
+/** revise 改稿环节进行中（含改稿前确认 interrupt）时禁止前端取消 */
+export function isReviseTurnActive(
+  values: YouganValues | null | undefined,
+): boolean {
+  const turn = resolveTurnRuntime(values);
+  if (turn.activeKind === "revise") return true;
+  return turn.queue[0] === "revise";
+}
+
+/** 长耗时制作/改稿回合不得走启发式 repair */
 export function isProtectedFromStaleTurnRepair(
   values: YouganValues | null | undefined,
 ): boolean {
-  return isProductionTurnActive(values);
+  return isProductionTurnActive(values) || isReviseTurnActive(values);
 }
 
 /** checkpoint 是否表示回合仍在执行（非 committed / cancelled） */

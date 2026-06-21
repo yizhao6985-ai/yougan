@@ -12,3 +12,16 @@ export type ProductionConfirmInterruptValue = {
 };
 
 export type ProductionConfirmDecision = "confirm" | "decline";
+
+export const REVISE_CONFIRM_INTERRUPT_KIND = "revise_confirm" as const;
+
+export type ReviseConfirmInterruptKind = typeof REVISE_CONFIRM_INTERRUPT_KIND;
+
+export type ReviseConfirmInterruptValue = {
+  kind: ReviseConfirmInterruptKind;
+  title: string;
+  message: string;
+  itemCount: number;
+};
+
+export type ReviseConfirmDecision = "confirm" | "decline";

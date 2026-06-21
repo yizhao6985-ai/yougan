@@ -172,7 +172,55 @@ export const HOME_FEATURE_TEASERS = STUDIO_CAPABILITIES.map((capability) => ({
   href: `/features#${capability.anchor}`,
 }));
 
-/** 首页 · 创作核心能力（含素材解析） */
+/** 首页 · 媒介标签 */
+export const HOME_MEDIA_MODALITIES = [
+  "文字",
+  "图片",
+  "音频",
+  "视频",
+] as const;
+
+/** 首页 · 核心功能（按能力价值，非工作流步骤） */
+export const HOME_CORE_FEATURES = [
+  {
+    icon: ListTreeIcon,
+    title: "制作方案",
+    body: "维护主题、体裁、表达与结构；方向有偏差随时改，不必整篇重来。",
+    href: "/features#profile",
+  },
+  {
+    icon: ScanSearchIcon,
+    title: "参考素材",
+    body: "上传文本、图片、音视频等参考，自动分析内容与可借鉴要点。",
+    href: "/features#reference",
+  },
+  {
+    icon: WandSparklesIcon,
+    title: "AI 团队制作",
+    body: "制定制作计划并按步骤执行，覆盖写作、设计、脚本与视听任务。",
+    href: "/features#production",
+  },
+  {
+    icon: ImageIcon,
+    title: "文案配图",
+    body: "图文笔记等体裁可按方案自动出图，文案与配图混排展示。",
+    href: "/features#production",
+  },
+  {
+    icon: HistoryIcon,
+    title: "版本与分叉",
+    body: "每次成稿自动记版，可回溯对比；想换方向可从历史版本分叉探索。",
+    href: "/features#versions",
+  },
+  {
+    icon: BookOpenIcon,
+    title: "创作答疑",
+    body: "优化方向、创作技巧与背景知识，制作过程中随时提问。",
+    href: "/features#ask",
+  },
+] as const;
+
+/** 首页 · 创作核心能力（含素材解析） — 能力页工作流区块使用 */
 export const HOME_CREATION_WORKFLOW = [
   {
     icon: ListTreeIcon,

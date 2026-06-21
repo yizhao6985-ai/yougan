@@ -22,10 +22,11 @@ import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 import { acceptAttemptsExhausted, MAX_ACCEPT_ATTEMPTS } from "../../helpers/pipeline.js";
 import { productionAcceptProgress } from "../../helpers/progress-labels.js";
 import {
-  currentActiveTask,
   defaultTaskGuidance,
   isDesignTask,
+  resolveAcceptTaskId,
   taskAwaitingAccept,
+  taskNeedsRenderRetryAccept,
 } from "../../helpers/task-plan.js";
 import {
   isValidDesignPromptDeliverable,
@@ -36,25 +37,6 @@ import {
   buildAcceptTaskSystemPrompt,
 } from "./prompt.js";
 
-/** 待验收任务：有 deliverable 或当前 in_progress（执行后无论是否产出都应验收） */
-function resolveAcceptTarget(state: AgentStateType): {
-  taskId: string;
-} | null {
-  const plan = getProduction(state);
-  const withDeliverable = plan.pending_tasks.find(taskAwaitingAccept);
-  if (withDeliverable) return { taskId: withDeliverable.id };
-
-  const active = currentActiveTask(plan);
-  if (active) return { taskId: active.id };
-
-  return null;
-}
-
-const AcceptResultSchema = z.object({
-  passed: z.boolean().describe("是否通过方向性验收"),
-  feedback: z.string().describe("未通过时的具体修改建议；通过时可简短肯定"),
-});
-
 /** 验收次数已满但状态未标 failed 时兜底，避免 dispatch ↔ route 死循环 */
 function reconcileExhaustedInProgressTask(
   state: AgentStateType,
@@ -64,7 +46,8 @@ function reconcileExhaustedInProgressTask(
     (t) =>
       t.status === "in_progress" &&
       acceptAttemptsExhausted(t) &&
-      !taskAwaitingAccept(t),
+      !taskAwaitingAccept(t) &&
+      !taskNeedsRenderRetryAccept(t),
   );
   if (!stuck) return null;
 
@@ -85,6 +68,11 @@ function reconcileExhaustedInProgressTask(
   });
 }
 
+const AcceptResultSchema = z.object({
+  passed: z.boolean().describe("是否通过方向性验收"),
+  feedback: z.string().describe("未通过时的具体修改建议；通过时可简短肯定"),
+});
+
 export async function acceptTaskNode(
   state: AgentStateType,
   config?: RunnableConfig,
@@ -92,13 +80,13 @@ export async function acceptTaskNode(
   const reconciled = reconcileExhaustedInProgressTask(state);
   if (reconciled) return reconciled;
 
-  const target = resolveAcceptTarget(state);
-  if (!target) {
+  const plan = getProduction(state);
+  const taskId = resolveAcceptTaskId(plan);
+  if (!taskId) {
     return {};
   }
 
-  const plan = getProduction(state);
-  const task = plan.pending_tasks.find((t) => t.id === target.taskId);
+  const task = plan.pending_tasks.find((t) => t.id === taskId);
   const deliverable = task?.deliverable;
   const profile = getProfile(state);
   const references = getReferences(state);
@@ -121,8 +109,10 @@ export async function acceptTaskNode(
 
   let passed = true;
   let feedback = "";
+  // 结构层：交付物字段非空即可进入 LLM 验收；内容质量由验收员判断
+  const acceptanceReviewed = isValidTaskDeliverable(deliverable, task);
 
-  if (!isValidTaskDeliverable(deliverable, task)) {
+  if (!acceptanceReviewed) {
     passed = false;
     if (
       isDesignTask(task) &&
@@ -207,12 +197,7 @@ export async function acceptTaskNode(
     };
   }
 
-  const attemptCount = (task.accept_retry_count ?? 0) + 1;
-
-  const renderRetryOnly =
-    isDesignTask(task) &&
-    isValidDesignPromptDeliverable(deliverable) &&
-    !deliverable?.images?.[0]?.url?.trim();
+  const renderRetryOnly = taskNeedsRenderRetryAccept(task);
 
   if (renderRetryOnly) {
     return {
@@ -238,7 +223,12 @@ export async function acceptTaskNode(
     };
   }
 
-  if (attemptCount >= MAX_ACCEPT_ATTEMPTS) {
+  // 仅 LLM 方向性验收未通过时计数；缺交付物 / 仅重试出图不计入
+  const attemptCount = acceptanceReviewed
+    ? (task.accept_retry_count ?? 0) + 1
+    : (task.accept_retry_count ?? 0);
+
+  if (acceptanceReviewed && attemptCount >= MAX_ACCEPT_ATTEMPTS) {
     return {
       ...patchPendingProductionFields(state, {
         ...plan,

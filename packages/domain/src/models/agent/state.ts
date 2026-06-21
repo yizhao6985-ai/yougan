@@ -1,6 +1,8 @@
 import type { WorkProfile } from "../work/profile.js";
 import type { WorkProduction } from "../work/production.js";
+import type { WorkPreview } from "../work/preview.js";
 import type { WorkReference } from "../work/reference.js";
+import type { WorkRevision } from "../work/revision.js";
 import type { NextStepSuggestions } from "./suggestions.js";
 import type { RunProgress } from "./run-progress.js";
 import type { AiUsageSnapshot } from "./ai-usage.js";
@@ -18,7 +20,11 @@ export interface YouganAgentState {
   profile: WorkProfile;
   /** 已提交参考素材 */
   references: WorkReference[];
-  /** 已提交制作环节（计划 + 预览） */
+  /** 已提交作品预览（成稿） */
+  preview: WorkPreview | null;
+  /** 改稿意见清单 */
+  revision: WorkRevision;
+  /** 已提交制作计划（不含 preview） */
   production: WorkProduction;
   /** 回合末或开屏生成的下一步建议（不入库） */
   nextStepSuggestions: NextStepSuggestions | null;
@@ -42,6 +48,8 @@ export type YouganStreamValues = Partial<
     | "conversationTitle"
     | "profile"
     | "references"
+    | "preview"
+    | "revision"
     | "production"
     | "nextStepSuggestions"
     | "turn"

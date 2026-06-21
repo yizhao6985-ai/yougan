@@ -1,29 +1,53 @@
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import {
   CreativeContextEmpty,
   CreativeContextSection,
 } from "@/components/studio/creative-context/shared";
 import { PublishPlatformActions } from "@/components/studio/publish-platform-actions";
+import { RevisionListControls } from "@/components/studio/revision-list-dialog";
 import { PreviewBlockList } from "@/components/preview-block-list";
+import { groupRevisionItemsByBlock, scrollToPreviewBlock } from "@/lib/revision-display";
 import { previewHasContent } from "@yougan/domain";
 import { downloadPreviewAsZip } from "@/lib/download-preview-zip";
 import { PREVIEW_PANEL } from "@/lib/site-copy";
-import type { WorkPreview } from "@/lib/types";
+import type { WorkPreview, WorkRevision } from "@/lib/types";
 
 export function ContentPreview({
   workId,
   preview,
+  revision,
   unsaved = false,
   compact = false,
+  enablePreviewSelection = false,
+  onRemoveRevisionIntent,
 }: {
   workId?: string;
   preview?: WorkPreview | null;
+  revision?: WorkRevision | null;
   unsaved?: boolean;
   compact?: boolean;
+  enablePreviewSelection?: boolean;
+  onRemoveRevisionIntent?: (intentId: string) => void;
 }) {
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [expandedBlockId, setExpandedBlockId] = useState<string | null>(null);
+
+  const { items: revisionItems, unanchored } = useMemo(
+    () => groupRevisionItemsByBlock(revision),
+    [revision],
+  );
+  const anchoredItems = useMemo(
+    () =>
+      revisionItems.filter((item) => Boolean(item.anchor?.blockId?.trim())),
+    [revisionItems],
+  );
+
+  const handleLocateBlock = useCallback((blockId: string) => {
+    setExpandedBlockId(blockId);
+    scrollToPreviewBlock(blockId);
+  }, []);
 
   const handleDownload = () => {
     if (!preview || downloading) return;
@@ -33,12 +57,25 @@ export function ContentPreview({
       .catch(() => setDownloadError(PREVIEW_PANEL.downloadFailed))
       .finally(() => setDownloading(false));
   };
+
+  const revisionAction =
+    revisionItems.length > 0 ? (
+      <RevisionListControls
+        count={revisionItems.length}
+        anchoredItems={anchoredItems}
+        unanchored={unanchored}
+        onRemoveIntent={onRemoveRevisionIntent}
+        onLocateBlock={handleLocateBlock}
+      />
+    ) : null;
+
   return (
     <CreativeContextSection
       title={PREVIEW_PANEL.title}
       hint={
         unsaved ? `${PREVIEW_PANEL.hint} ${PREVIEW_PANEL.unsavedBadge}` : PREVIEW_PANEL.hint
       }
+      action={revisionAction}
       compact={compact}
     >
       {!preview || !previewHasContent(preview) ? (
@@ -57,6 +94,11 @@ export function ContentPreview({
               compact={compact}
               galleryKey={workId}
               showImagePrompts
+              enablePreviewSelection={enablePreviewSelection}
+              revision={revision}
+              onRemoveRevisionIntent={onRemoveRevisionIntent}
+              expandedBlockId={expandedBlockId}
+              onExpandedBlockIdChange={setExpandedBlockId}
             />
 
             {preview.hashtags?.length ? (

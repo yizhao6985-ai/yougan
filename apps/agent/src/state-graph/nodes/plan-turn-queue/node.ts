@@ -9,6 +9,7 @@ import {
 } from "#agent/llm/invoke/metering.js";
 
 import { sortTurnQueue } from "./helpers/sort-turn-queue.js";
+import { tryResolvePreviewSelectionQueue } from "./helpers/try-resolve-preview-selection-queue.js";
 import { withSuggestionsQueue } from "./helpers/with-suggestions-queue.js";
 
 import { invokeStructured } from "#agent/llm/invoke/index.js";
@@ -18,6 +19,10 @@ import {
   getLatestHumanMessageAttachments,
   getLatestHumanMessageText,
 } from "#agent/messages/human.js";
+import {
+  buildRunProgress,
+  withRunProgressHeartbeat,
+} from "#agent/state-io/run-progress.js";
 import {
   initPendingTurn,
   mergeTurnPatch,
@@ -70,6 +75,15 @@ async function resolveTurnQueue(
   const userMessage = getLatestHumanMessageText(state.messages);
   const hasAttachments =
     getLatestHumanMessageAttachments(state.messages).length > 0;
+
+  const previewSelectionQueue = tryResolvePreviewSelectionQueue(
+    state,
+    userMessage,
+  );
+  if (previewSelectionQueue) {
+    return withReferenceQueue(previewSelectionQueue, hasAttachments);
+  }
+
   if (!userMessage && !hasAttachments) {
     return DEFAULT_QUEUE;
   }
@@ -78,12 +92,17 @@ async function resolveTurnQueue(
   const prompt = buildTurnQueuePrompt(state, userMessage);
 
   try {
-    const parsed = (await invokeStructured(
-      llm,
-      TurnQueueDecisionSchema,
-      [new HumanMessage(prompt)],
-      { name: "turn_queue_decision" },
+    const parsed = (await withRunProgressHeartbeat(
+      buildRunProgress("turn_planning", "正在理解你的意图…"),
       config,
+      async () =>
+        invokeStructured(
+          llm,
+          TurnQueueDecisionSchema,
+          [new HumanMessage(prompt)],
+          { name: "turn_queue_decision" },
+          config,
+        ) as Promise<TurnQueueDecision>,
     )) as TurnQueueDecision;
     const queue = sortTurnQueue(parsed.kinds);
     return withReferenceQueue(

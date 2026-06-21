@@ -28,7 +28,15 @@
           },
           "email": {
             "type": "string",
+            "nullable": true,
             "format": "email"
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "hasPassword": {
+            "type": "boolean"
           },
           "name": {
             "type": "string",
@@ -55,6 +63,8 @@
         "required": [
           "id",
           "email",
+          "phone",
+          "hasPassword",
           "name",
           "bio",
           "avatarUrl",
@@ -533,6 +543,99 @@
           "blocks"
         ]
       },
+      "RevisionAnchor": {
+        "type": "object",
+        "nullable": true,
+        "properties": {
+          "blockId": {
+            "type": "string"
+          },
+          "quote": {
+            "type": "string"
+          },
+          "startOffset": {
+            "type": "number",
+            "nullable": true
+          },
+          "endOffset": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": [
+          "blockId",
+          "quote"
+        ]
+      },
+      "RevisionIntent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "anchor": {
+            "$ref": "#/components/schemas/RevisionAnchor"
+          },
+          "instruction": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "selection",
+              "chat",
+              "manual"
+            ]
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "withdrawn"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "instruction",
+          "source",
+          "created_at"
+        ]
+      },
+      "WorkRevision": {
+        "type": "object",
+        "properties": {
+          "baselineVersionId": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "collecting",
+              "ready",
+              "applying"
+            ]
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RevisionIntent"
+            }
+          },
+          "updatedAt": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "status",
+          "items"
+        ]
+      },
       "WorkProduction": {
         "type": "object",
         "properties": {
@@ -644,14 +747,10 @@
           "summary": {
             "type": "string",
             "nullable": true
-          },
-          "preview": {
-            "$ref": "#/components/schemas/WorkPreview"
           }
         },
         "required": [
-          "pending_tasks",
-          "preview"
+          "pending_tasks"
         ]
       },
       "Work": {
@@ -672,6 +771,12 @@
           },
           "references": {
             "$ref": "#/components/schemas/WorkReferences"
+          },
+          "preview": {
+            "$ref": "#/components/schemas/WorkPreview"
+          },
+          "revision": {
+            "$ref": "#/components/schemas/WorkRevision"
           },
           "production": {
             "$ref": "#/components/schemas/WorkProduction"
@@ -701,6 +806,8 @@
           "groupId",
           "profile",
           "references",
+          "preview",
+          "revision",
           "production",
           "headVersionId",
           "sourceWorkId",
@@ -721,6 +828,12 @@
           },
           "references": {
             "$ref": "#/components/schemas/WorkReferences"
+          },
+          "preview": {
+            "$ref": "#/components/schemas/WorkPreview"
+          },
+          "revision": {
+            "$ref": "#/components/schemas/WorkRevision"
           },
           "production": {
             "$ref": "#/components/schemas/WorkProduction"
@@ -749,6 +862,12 @@
           "references": {
             "$ref": "#/components/schemas/WorkReferences"
           },
+          "preview": {
+            "$ref": "#/components/schemas/WorkPreview"
+          },
+          "revision": {
+            "$ref": "#/components/schemas/WorkRevision"
+          },
           "production": {
             "$ref": "#/components/schemas/WorkProduction"
           },
@@ -767,6 +886,8 @@
           "workId",
           "profile",
           "references",
+          "preview",
+          "revision",
           "production"
         ]
       },
@@ -779,6 +900,9 @@
           "references": {
             "$ref": "#/components/schemas/WorkReferences"
           },
+          "preview": {
+            "$ref": "#/components/schemas/WorkPreview"
+          },
           "production": {
             "$ref": "#/components/schemas/WorkProduction"
           }
@@ -786,6 +910,7 @@
         "required": [
           "profile",
           "references",
+          "preview",
           "production"
         ]
       },
@@ -1041,9 +1166,9 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "email": {
+                  "login": {
                     "type": "string",
-                    "format": "email"
+                    "minLength": 1
                   },
                   "password": {
                     "type": "string",
@@ -1054,7 +1179,7 @@
                   }
                 },
                 "required": [
-                  "email",
+                  "login",
                   "password"
                 ]
               }
@@ -1073,7 +1198,7 @@
             }
           },
           "409": {
-            "description": "Email exists",
+            "description": "Account exists",
             "content": {
               "application/json": {
                 "schema": {
@@ -1096,16 +1221,16 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "email": {
+                  "login": {
                     "type": "string",
-                    "format": "email"
+                    "minLength": 1
                   },
                   "password": {
                     "type": "string"
                   }
                 },
                 "required": [
-                  "email",
+                  "login",
                   "password"
                 ]
               }
@@ -1115,6 +1240,104 @@
         "responses": {
           "200": {
             "description": "Logged in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthToken"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/sms/send": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "phone": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "phone"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "SMS code sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "cooldownSeconds": {
+                      "type": "number"
+                    },
+                    "devCode": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "cooldownSeconds"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/sms/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "phone": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "code": {
+                    "type": "string",
+                    "minLength": 6,
+                    "maxLength": 6
+                  }
+                },
+                "required": [
+                  "phone",
+                  "code"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Logged in with SMS",
             "content": {
               "application/json": {
                 "schema": {

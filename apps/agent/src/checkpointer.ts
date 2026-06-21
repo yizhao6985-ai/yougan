@@ -1,5 +1,5 @@
 /**
- * LangGraph Postgres checkpoint（会话 thread 持久化，独立于 API 业务库）。
+ * LangGraph Postgres checkpoint（会话 thread 持久化，与 API 共用实例、独立 database）。
  */
 import { PostgresSaver } from "@langchain/langgraph-checkpoint-postgres";
 

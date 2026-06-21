@@ -84,14 +84,13 @@
 
 ```text
 浏览器 (Web :3000) → API 中间层 (:4000，鉴权/作品/发布/订阅/上传/LangGraph 代理)
-   ├─ Postgres（业务数据 :5432）
+   ├─ Postgres（:5432 — yougan_api 业务库 + yougan_agent checkpoint）
    ├─ Redis（可选缓存 :6379）
    └─ Agent (:2024，LangGraph：回合队列 → reference/profile/production/ask 子图)
-         └─ Postgres（会话 checkpoint :5433）
 ```
 
 - **LLM**：阿里百炼 DashScope（OpenAI 兼容）+ MiniMax；主对话 `qwen3.7-max`、多模态 `MiniMax-M3`、文生图 `image-01`。
-- **架构特点**：业务库与 AI 状态库分离；OpenAPI 驱动前后端契约，便于后续 API 开放与白标扩展；存储支持本地或阿里云 OSS。
+- **架构特点**：业务库与 AI checkpoint 同 Postgres 实例、分库；OpenAPI 驱动前后端契约，便于后续 API 开放与白标扩展；存储支持本地或阿里云 OSS。
 
 ## 9. 产品成熟度（诚实披露）【已核验】
 

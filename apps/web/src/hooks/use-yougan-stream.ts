@@ -21,6 +21,7 @@ import {
   isActiveLangGraphRunStatus,
   isLangGraphThreadMissingError,
   isProductionTurnActive,
+  isReviseTurnActive,
   isTurnInFlight,
   TURN_EPHEMERAL_RESET,
 } from "@/lib/turn-lifecycle";
@@ -37,6 +38,8 @@ import {
   isDefaultConversationTitle,
   type ProductionConfirmDecision,
   type ProductionConfirmInterruptValue,
+  type ReviseConfirmDecision,
+  type ReviseConfirmInterruptValue,
 } from "@yougan/domain";
 import {
   aiUsageFromThreadState,
@@ -48,9 +51,13 @@ import {
   pickRunProgress,
 } from "@/lib/run-progress";
 import {
-  hasProductionConfirmInterrupt,
   resolveProductionConfirmInterrupt,
 } from "@/lib/production-confirm-interrupt";
+import {
+  isSameReviseConfirmInterrupt,
+  resolveReviseConfirmInterrupt,
+} from "@/lib/revise-confirm-interrupt";
+import { hasTurnConfirmInterrupt } from "@/lib/turn-confirm-interrupt";
 import {
   buildReadSyncPatchFromThreadHead,
   fetchThreadHead,
@@ -118,10 +125,10 @@ const SUBMIT_OPTIONS = {
 };
 
 /**
- * production 确认 interrupt 的 resume 专用选项。
+ * HITL interrupt 的 resume 专用选项。
  * 不加 multitaskStrategy: "interrupt"——resume 是对 checkpoint 上 HITL 的恢复，interrupt 策略会冲突。
  */
-const RESUME_PRODUCTION_CONFIRM_OPTIONS = {
+const RESUME_TURN_CONFIRM_OPTIONS = {
   streamMode: [...LANGGRAPH_STREAM_MODE],
   onDisconnect: "continue" as const,
   streamResumable: true as const,
@@ -155,6 +162,8 @@ function buildStreamSubmitInput(
     conversationTitle: conversation.title,
     profile: work.profile,
     references: work.references,
+    preview: work.preview,
+    revision: work.revision,
     production: work.production,
     modelTemperature,
   };
@@ -267,6 +276,10 @@ export function useYouganStream({
     persistedProductionConfirmInterrupt,
     setPersistedProductionConfirmInterrupt,
   ] = useState<ProductionConfirmInterruptValue | null>(null);
+  const [
+    persistedReviseConfirmInterrupt,
+    setPersistedReviseConfirmInterrupt,
+  ] = useState<ReviseConfirmInterruptValue | null>(null);
   /**
    * resolveThreadRunPhase 已完成（bootstrap effect 跑完）。
    * false 时若 checkpoint 仍 in-flight，hasActiveRun 为 true，禁止发送——避免脏态误操作。
@@ -296,6 +309,15 @@ export function useYouganStream({
       if (!interrupt) return;
       setPersistedProductionConfirmInterrupt((prev) =>
         isSameProductionConfirmInterrupt(prev, interrupt) ? prev : interrupt,
+      );
+    },
+  );
+
+  const applyPersistedReviseConfirmInterrupt = useMemoizedFn(
+    (interrupt: ReviseConfirmInterruptValue | null | undefined) => {
+      if (!interrupt) return;
+      setPersistedReviseConfirmInterrupt((prev) =>
+        isSameReviseConfirmInterrupt(prev, interrupt) ? prev : interrupt,
       );
     },
   );
@@ -638,6 +660,7 @@ export function useYouganStream({
       } else if (phase.kind === "interrupted") {
         clearActiveLangGraphRunId(threadId);
         applyPersistedProductionConfirmInterrupt(phase.productionConfirm);
+        applyPersistedReviseConfirmInterrupt(phase.reviseConfirm);
       } else {
         try {
           const { state, values: headValues } = await fetchThreadHead(
@@ -674,6 +697,7 @@ export function useYouganStream({
   }, [
     applyIdleHeadOutcome,
     applyPersistedProductionConfirmInterrupt,
+    applyPersistedReviseConfirmInterrupt,
     conversationId,
     isCancelling,
     isJoiningRun,
@@ -696,6 +720,7 @@ export function useYouganStream({
     idleReconcileKeyRef.current = null;
     wasStreamEndedBusyRef.current = false;
     setPersistedProductionConfirmInterrupt(null);
+    setPersistedReviseConfirmInterrupt(null);
     setRunDiscoverySettled(!threadId);
   }, [finishRepairingStaleTurn, threadId]);
 
@@ -721,9 +746,10 @@ export function useYouganStream({
       return;
     }
     if (
-      hasProductionConfirmInterrupt(
+      hasTurnConfirmInterrupt(
         stream.interrupt,
         persistedProductionConfirmInterrupt,
+        persistedReviseConfirmInterrupt,
       )
     ) {
       return;
@@ -742,6 +768,7 @@ export function useYouganStream({
     if (phase.kind === "interrupted") {
       clearActiveLangGraphRunId(threadId);
       applyPersistedProductionConfirmInterrupt(phase.productionConfirm);
+      applyPersistedReviseConfirmInterrupt(phase.reviseConfirm);
       idleReconcileKeyRef.current = reconcileKey;
       return;
     }
@@ -782,9 +809,10 @@ export function useYouganStream({
       return;
     }
     if (
-      hasProductionConfirmInterrupt(
+      hasTurnConfirmInterrupt(
         stream.interrupt,
         persistedProductionConfirmInterrupt,
+        persistedReviseConfirmInterrupt,
       )
     ) {
       return;
@@ -799,6 +827,7 @@ export function useYouganStream({
     isResumingInterrupt,
     mergedStreamValues,
     persistedProductionConfirmInterrupt,
+    persistedReviseConfirmInterrupt,
     reconcileAbnormalThreadOnce,
     runDiscoverySettled,
     stream.interrupt,
@@ -828,9 +857,10 @@ export function useYouganStream({
     isRepairingStaleTurn ||
     isResumingInterrupt ||
     hasStoredActiveRun ||
-    hasProductionConfirmInterrupt(
+    hasTurnConfirmInterrupt(
       stream.interrupt,
       persistedProductionConfirmInterrupt,
+      persistedReviseConfirmInterrupt,
     ) ||
     (!runDiscoverySettled && isTurnInFlight(mergedStreamValues));
 
@@ -882,11 +912,18 @@ export function useYouganStream({
   const canCancelActiveTurn = useMemo(
     () =>
       !isProductionTurnActive(mergedStreamValues) &&
-      !hasProductionConfirmInterrupt(
+      !isReviseTurnActive(mergedStreamValues) &&
+      !hasTurnConfirmInterrupt(
         stream.interrupt,
         persistedProductionConfirmInterrupt,
+        persistedReviseConfirmInterrupt,
       ),
-    [mergedStreamValues, persistedProductionConfirmInterrupt, stream.interrupt],
+    [
+      mergedStreamValues,
+      persistedProductionConfirmInterrupt,
+      persistedReviseConfirmInterrupt,
+      stream.interrupt,
+    ],
   );
 
   /**
@@ -987,14 +1024,31 @@ export function useYouganStream({
     async (
       text: string,
       attachments: Parameters<typeof buildSubmitHumanMessage>[1] = [],
+      previewSelections: Parameters<typeof buildSubmitHumanMessage>[2] = [],
     ) => {
-      const message = buildSubmitHumanMessage(text, attachments);
+      const message = buildSubmitHumanMessage(
+        text,
+        attachments,
+        previewSelections,
+      );
       const content = message.content;
       const hasText =
         typeof content === "string"
           ? Boolean(content.trim())
-          : content.length > 0;
-      if (!hasText || !work || !conversation) return;
+          : content.some(
+              (part) =>
+                typeof part === "object" &&
+                part != null &&
+                "type" in part &&
+                part.type === "text" &&
+                typeof part.text === "string" &&
+                part.text.trim().length > 0,
+            );
+      const hasPayload =
+        hasText ||
+        attachments.length > 0 ||
+        previewSelections.length > 0;
+      if (!hasPayload || !work || !conversation) return;
 
       /** 首条消息时用内容生成对话标题，optimistic 写 React Query cache */
       if (
@@ -1034,7 +1088,24 @@ export function useYouganStream({
       setPersistedProductionConfirmInterrupt(null);
       try {
         await stream.submit(null, {
-          ...RESUME_PRODUCTION_CONFIRM_OPTIONS,
+          ...RESUME_TURN_CONFIRM_OPTIONS,
+          command: { resume: decision },
+        });
+      } finally {
+        finishResumingInterrupt();
+      }
+    },
+  );
+
+  const resumeReviseConfirm = useMemoizedFn(
+    async (decision: ReviseConfirmDecision) => {
+      if (isResumingInterrupt) return;
+      startResumingInterrupt();
+      setLiveRunProgress(null);
+      setPersistedReviseConfirmInterrupt(null);
+      try {
+        await stream.submit(null, {
+          ...RESUME_TURN_CONFIRM_OPTIONS,
           command: { resume: decision },
         });
       } finally {
@@ -1052,6 +1123,8 @@ export function useYouganStream({
       const patch: Partial<YouganValues> = {
         profile: restoredWork.profile,
         references: restoredWork.references,
+        preview: restoredWork.preview,
+        revision: restoredWork.revision,
         production: restoredWork.production,
         ...TURN_EPHEMERAL_RESET,
       };
@@ -1067,6 +1140,7 @@ export function useYouganStream({
       setPostCancelValues(patch);
       setLiveRunProgress(null);
       setPersistedProductionConfirmInterrupt(null);
+      setPersistedReviseConfirmInterrupt(null);
     },
   );
 
@@ -1095,23 +1169,33 @@ export function useYouganStream({
     [persistedProductionConfirmInterrupt, stream.interrupt],
   );
 
-  const isAwaitingProductionConfirm = productionConfirmInterrupt != null;
+  const reviseConfirmInterrupt = useMemo(
+    () =>
+      resolveReviseConfirmInterrupt(
+        stream.interrupt,
+        persistedReviseConfirmInterrupt,
+      ),
+    [persistedReviseConfirmInterrupt, stream.interrupt],
+  );
+
+  const isAwaitingTurnConfirm =
+    productionConfirmInterrupt != null || reviseConfirmInterrupt != null;
 
   /** HITL 出现时清 runProgress，避免「正在生成…」与确认框同时显示 */
   useEffect(() => {
-    if (isAwaitingProductionConfirm) {
+    if (isAwaitingTurnConfirm) {
       setLiveRunProgress(null);
     }
-  }, [isAwaitingProductionConfirm]);
+  }, [isAwaitingTurnConfirm]);
 
   /**
    * HITL 等待时 run 已是 interrupted 而非 running。
    * 清 sessionStorage 防止刷新后 SDK reconnectOnMount 误 join 已结束的 run。
    */
   useEffect(() => {
-    if (!threadId || !isAwaitingProductionConfirm || stream.isLoading) return;
+    if (!threadId || !isAwaitingTurnConfirm || stream.isLoading) return;
     clearActiveLangGraphRunId(threadId);
-  }, [isAwaitingProductionConfirm, stream.isLoading, threadId]);
+  }, [isAwaitingTurnConfirm, stream.isLoading, threadId]);
 
   // --- 派生 UI 状态与对外返回值 ---
 
@@ -1126,7 +1210,7 @@ export function useYouganStream({
     !usageExceeded &&
     !hasActiveRun &&
     !isCancelling &&
-    !isAwaitingProductionConfirm &&
+    !isAwaitingTurnConfirm &&
     !isResumingInterrupt;
 
   /** checkpoint 里是否已有 opening 下一步建议（有则不再 bootstrap） */
@@ -1170,13 +1254,13 @@ export function useYouganStream({
    * HITL 等待时不显示进度。
    */
   const runProgress = useMemo(() => {
-    if (isAwaitingProductionConfirm) return null;
+    if (isAwaitingTurnConfirm) return null;
     return pickRunProgress(
       liveRunProgress,
       (streamWithPostCancel.values as YouganValues | undefined)?.runProgress,
     );
   }, [
-    isAwaitingProductionConfirm,
+    isAwaitingTurnConfirm,
     liveRunProgress,
     streamWithPostCancel.values,
   ]);
@@ -1191,9 +1275,11 @@ export function useYouganStream({
     cancelActiveTurn,
     canCancelActiveTurn,
     resumeProductionConfirm,
+    resumeReviseConfirm,
     applyMaterializedWorkState,
     syncMaterializedProfileToStream,
     productionConfirmInterrupt,
+    reviseConfirmInterrupt,
     isResumingInterrupt,
     isCancelling,
     canSend,

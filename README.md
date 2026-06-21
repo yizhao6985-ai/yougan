@@ -33,10 +33,9 @@ yougan/
 浏览器 (apps/web :3000)
   ↓ REST / OpenAPI
 中间层 (apps/api :4000) — JWT、作品元数据、上传、LangGraph 代理
-  ├─→ Postgres API (:5432) — 用户、作品、发布、订阅（Prisma）
+  ├─→ Postgres (:5432) — yougan_api 业务库 + yougan_agent checkpoint
   ├─→ Redis (:6379) — 可选缓存（未配置则直连 DB）
   └─→ Agent (apps/agent :2024) — yougan graph（planTurnQueue → 对话子图）
-        └─→ Postgres Agent (:5433) — LangGraph checkpoint / 会话状态
 ```
 
 前端对话流经 API 的 `/langgraph` 代理转发到 Agent，请求需携带 JWT 与 `X-Work-Id`，由中间层注入作品上下文。
@@ -45,7 +44,7 @@ yougan/
 
 - **Node.js** ≥ 20
 - **pnpm** ≥ 9（推荐与 `packageManager` 字段一致：`pnpm@10.30.3`）
-- **Docker**（本地 Postgres × 2 + Redis）
+- **Docker**（本地 Postgres + Redis）
 
 ## 快速开始
 
@@ -73,11 +72,11 @@ pnpm install
 docker compose up -d
 ```
 
-| 服务             | 端口 | 用途                               |
-| ---------------- | ---- | ---------------------------------- |
-| `postgres-api`   | 5432 | API 业务库 `yougan_api`            |
-| `postgres-agent` | 5433 | Agent checkpoint 库 `yougan_agent` |
-| `redis`          | 6379 | API 可选缓存                       |
+| 服务            | 端口 | 用途                                                            |
+| --------------- | ---- | --------------------------------------------------------------- |
+| `postgres-api`  | 5432 | `yougan_api` 业务库 + `yougan_agent` LangGraph checkpoint       |
+| `postgres-init` | —    | 启动后 idempotent 创建 `yougan_agent`（一次性容器，跑完即退出） |
+| `redis`         | 6379 | API 可选缓存                                                    |
 
 ### 2. 环境变量
 
@@ -143,12 +142,12 @@ pnpm generate:api       # 生成 apps/web/src/services/generated/schema.d.ts
 
 一件 **作品（Work）** 对应一段持续对话与一个 LangGraph `threadId`。Agent 每条用户消息经 **回合队列** 自动 workflow，路由到 reference / profile / production / ask 对话子图（详见 [docs/technical/agent-turn-queue.md](./docs/technical/agent-turn-queue.md)）。
 
-| 阶段 | 行为 |
-| ---- | ---- |
-| 定方案 | 整理主题、体裁、表达与结构，不直接出稿 |
-| 备参考 | 分析新附件或维护参考素材 |
-| 制作 | 制定制作计划，AI 团队按任务产出作品预览 |
-| 提问 | 自由答疑与创作咨询 |
+| 阶段   | 行为                                    |
+| ------ | --------------------------------------- |
+| 定方案 | 整理主题、体裁、表达与结构，不直接出稿  |
+| 备参考 | 分析新附件或维护参考素材                |
+| 制作   | 制定制作计划，AI 团队按任务产出作品预览 |
+| 提问   | 自由答疑与创作咨询                      |
 
 作品 JSON 字段存于 API 库；对话 checkpoint 存于 Agent 库。
 
@@ -169,17 +168,18 @@ pnpm generate:api       # 生成 apps/web/src/services/generated/schema.d.ts
 | 前端     | Vite、React 19、React Router、TanStack Query、Jotai、Tailwind v4、LangGraph SDK `useStream` |
 | 中间层   | Express 5、Prisma、JWT、Zod + OpenAPI、http-proxy-middleware、ioredis                       |
 | Agent    | LangGraph JS、百炼 DashScope（qwen3.7-max 对话、deepseek-v4-pro 结构化、Qwen-Image 文生图） |
-| 存储     | PostgreSQL × 2、Redis（可选）、本地目录 / 阿里云 OSS                                       |
+| 存储     | PostgreSQL（双库）、Redis（可选）、本地目录 / 阿里云 OSS                                    |
 
 ## 故障排查
 
-| 现象                 | 可能原因                                         |
-| -------------------- | ------------------------------------------------ |
-| `pnpm install` 超时  | 使用 npmmirror 或检查代理                        |
-| API 启动报数据库错误 | `docker compose up -d` 后执行 `pnpm db:push`     |
-| Studio 对话无响应    | 确认 `dev:agent` 已启动且 `DASHSCOPE_API_KEY` 有效 |
-| `/docs` 503          | 在 `apps/api` 执行 `pnpm openapi:generate`       |
-| LangGraph 401        | 前端未登录或 JWT 过期；代理路径应为 `/langgraph` |
+| 现象                      | 可能原因                                                                                           |
+| ------------------------- | -------------------------------------------------------------------------------------------------- |
+| `pnpm install` 超时       | 使用 npmmirror 或检查代理                                                                          |
+| API 启动报数据库错误      | `docker compose up -d` 后执行 `pnpm db:push`                                                       |
+| Agent checkpoint 连接失败 | 确认 `POSTGRES_URI` 为 `:5432/yougan_agent`；执行 `docker compose up -d` 让 `postgres-init` 创建库 |
+| Studio 对话无响应         | 确认 `dev:agent` 已启动且 `DASHSCOPE_API_KEY` 有效                                                 |
+| `/docs` 503               | 在 `apps/api` 执行 `pnpm openapi:generate`                                                         |
+| LangGraph 401             | 前端未登录或 JWT 过期；代理路径应为 `/langgraph`                                                   |
 
 ## 许可证
 

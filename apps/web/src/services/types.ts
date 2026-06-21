@@ -1,8 +1,10 @@
 import type { components } from "@/services/generated/schema";
 import type {
+  WorkPreview,
   WorkProduction,
   WorkProfile,
   WorkReference,
+  WorkRevision,
 } from "@yougan/domain";
 
 export type { AuthUser } from "@/services/auth";
@@ -17,10 +19,12 @@ export type WorkWire = components["schemas"]["Work"];
  */
 export type Work = Omit<
   WorkWire,
-  "profile" | "references" | "production"
+  "profile" | "references" | "preview" | "revision" | "production"
 > & {
   profile: WorkProfile;
   references: WorkReference[];
+  preview: WorkPreview | null;
+  revision: WorkRevision;
   production: WorkProduction;
 };
 

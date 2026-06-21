@@ -15,11 +15,11 @@
 export const BRAND = {
   full: "有感 · Yougan",
   en: "Yougan",
-  taglineLanding: "AI 创作助手",
+  taglineLanding: "AI 多媒体创作助手",
   taglineApp: "方案 · 制作 · 提问",
   metaDescription:
-    "有感 Yougan — AI 创作助手。先定制作方案，再由 AI 团队按计划制作文字、画面、音视频等作品，全程可确认、可修改、可回溯。",
-  documentTitle: "有感 · Yougan — AI 创作助手",
+    "有感 Yougan — AI 多媒体创作助手。支持文字、图片、音频、视频与混排作品；维护制作方案、解析参考素材、AI 团队按计划出稿，可版本回溯与一键发布。",
+  documentTitle: "有感 · Yougan — AI 多媒体创作助手",
 } as const;
 
 export const THEME = {
@@ -121,25 +121,32 @@ export const ABOUT_PAGE = {
 export const HOME = {
   eyebrow: BRAND.en,
   title: "有感",
-  titleSuffix: "AI 创作助手",
+  titleSuffix: "文字 · 画面 · 脚本 · 视听",
   subtitle:
-    "从灵感到发布，有感帮你把创作走得稳、改得动、发得出。文章、插画、脚本与音视频都能做，过程透明，方向随时能调。",
+    "维护制作方案、解析参考素材、AI 团队按计划出稿——文章、插画、脚本与音视频都能做，还能版本回溯与一键发布。",
   ctaStudio: "开始创作",
   ctaFeatures: "了解产品能力",
-  formsLabel: "支持的创作形态",
+  modalitiesLabel: "支持媒介",
+  formsLabel: "创作形态",
+  formsEyebrow: "创作形态",
+  formsTitle: "一件作品，多种形态",
+  formsSubtitle:
+    "文字、图片、音频、视频可单独出稿，也可混排在同一作品里。",
   featuresBridge:
-    "有感包含创作、平台与助手三个部分——先把作品做出来，再发布分享；拿不准的地方，有感助手在页头等你。",
-  creationEyebrow: "创作",
-  creationTitle: "从想法到成稿，步步可控",
-  creationSubtitle:
-    "定方案、解析参考素材、执行制作、随时提问——成稿之后还能回溯版本、分叉探索新方向。",
-  creationLifecycleLabel: "作品迭代",
-  creationLifecycleHint: "不怕改错方向，也不怕走死胡同。",
+    "创作能力、发布平台与产品助手——从出稿到被看见，有感一站覆盖。",
+  featuresEyebrow: "核心功能",
+  featuresTitle: "有感能帮你做什么",
+  featuresSubtitle:
+    "每项能力独立可用；完整使用流程与各环节说明见产品能力页。",
   platformEyebrow: "平台",
   platformTitle: "作品值得被看见",
   platformSubtitle:
     "「发现灵感」是有感的内容平台——发布、浏览与积累作品集，让创作走出工作台。",
   platformCta: "去发现灵感",
+  assistantEyebrow: "助手",
+  assistantTitle: "有疑问，随时问有感助手",
+  assistantSubtitle:
+    "页头一键打开，帮你弄清功能与用法，不用翻文档也能快速上手。",
   capabilitiesLink: "查看完整产品能力 →",
 } as const;
 
@@ -418,6 +425,28 @@ export const CHAT_COPY = {
     decline: "取消",
     declineTooltip: "暂不制作，跳过本环节并继续后续步骤",
     statusHint: "等待确认是否开始创作",
+  },
+  reviseConfirm: {
+    confirm: "开始改稿",
+    decline: "取消",
+    statusHint: "等待确认是否按清单改稿",
+  },
+  previewSelection: {
+    addToChat: "引用这段",
+    tagPrefix: "「",
+    removeTag: "移除引用",
+    composerPlaceholder: "说明要如何修改引用的内容…",
+  },
+  revisionPanel: {
+    trigger: (count: number) => `改稿 · ${count}`,
+    dialogTitle: "改稿清单",
+    dialogHint:
+      "确认清单后，在对话中发送「开始改稿」「就按清单改吧」等指令即可执行。",
+    blockMarker: (count: number) => `改稿 · ${count}`,
+    locate: "定位",
+    remove: "移除",
+    unanchoredSection: "未锚定正文",
+    openList: "查看改稿清单",
   },
   composerSubmit: {
     send: "发送",

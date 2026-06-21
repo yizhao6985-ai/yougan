@@ -22,8 +22,8 @@ function formatPreviewExcerpt(preview: WorkPreview): string {
  */
 export function buildProductionSummaryMessage(
   production: WorkProduction,
+  preview: WorkPreview | null,
 ): string {
-  const preview = production.preview;
   if (preview?.blocks?.length) {
     return formatPreviewExcerpt(preview);
   }

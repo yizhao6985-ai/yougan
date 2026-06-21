@@ -23,8 +23,7 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": {
-                        /** Format: email */
-                        email: string;
+                        login: string;
                         password: string;
                         name?: string;
                     };
@@ -40,7 +39,7 @@ export interface paths {
                         "application/json": components["schemas"]["AuthToken"];
                     };
                 };
-                /** @description Email exists */
+                /** @description Account exists */
                 409: {
                     headers: {
                         [name: string]: unknown;
@@ -76,14 +75,101 @@ export interface paths {
             requestBody?: {
                 content: {
                     "application/json": {
-                        /** Format: email */
-                        email: string;
+                        login: string;
                         password: string;
                     };
                 };
             };
             responses: {
                 /** @description Logged in */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AuthToken"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/sms/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        phone: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description SMS code sent */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** @enum {boolean} */
+                            ok: true;
+                            cooldownSeconds: number;
+                            devCode?: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/sms/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        phone: string;
+                        code: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Logged in with SMS */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -1081,7 +1167,9 @@ export interface components {
         User: {
             id: string;
             /** Format: email */
-            email: string;
+            email: string | null;
+            phone: string | null;
+            hasPassword: boolean;
             name: string | null;
             bio: string | null;
             /** Format: uri */
@@ -1208,6 +1296,29 @@ export interface components {
             notes?: string | null;
             blocks: components["schemas"]["PreviewBlock"][];
         } | null;
+        RevisionAnchor: {
+            blockId: string;
+            quote: string;
+            startOffset?: number | null;
+            endOffset?: number | null;
+        } | null;
+        RevisionIntent: {
+            id: string;
+            anchor?: components["schemas"]["RevisionAnchor"];
+            instruction: string;
+            /** @enum {string} */
+            source: "selection" | "chat" | "manual";
+            created_at: string;
+            /** @enum {string} */
+            status?: "open" | "withdrawn";
+        };
+        WorkRevision: {
+            baselineVersionId?: string | null;
+            /** @enum {string} */
+            status: "collecting" | "ready" | "applying";
+            items: components["schemas"]["RevisionIntent"][];
+            updatedAt?: string | null;
+        };
         WorkProduction: {
             pending_tasks: {
                 id: string;
@@ -1236,7 +1347,6 @@ export interface components {
                 failure_message?: string | null;
             }[];
             summary?: string | null;
-            preview: components["schemas"]["WorkPreview"];
         };
         Work: {
             id: string;
@@ -1244,6 +1354,8 @@ export interface components {
             groupId: string | null;
             profile: components["schemas"]["WorkProfile"];
             references: components["schemas"]["WorkReferences"];
+            preview: components["schemas"]["WorkPreview"];
+            revision: components["schemas"]["WorkRevision"];
             production: components["schemas"]["WorkProduction"];
             headVersionId: string | null;
             sourceWorkId: string | null;
@@ -1255,6 +1367,8 @@ export interface components {
             groupId?: string | null;
             profile?: components["schemas"]["WorkProfile"];
             references?: components["schemas"]["WorkReferences"];
+            preview?: components["schemas"]["WorkPreview"];
+            revision?: components["schemas"]["WorkRevision"];
             production?: components["schemas"]["WorkProduction"];
             title?: string;
         };
@@ -1264,6 +1378,8 @@ export interface components {
             headVersionId?: string | null;
             profile: components["schemas"]["WorkProfile"];
             references: components["schemas"]["WorkReferences"];
+            preview: components["schemas"]["WorkPreview"];
+            revision: components["schemas"]["WorkRevision"];
             production: components["schemas"]["WorkProduction"];
             threadId?: string | null;
             workTitle?: string;
@@ -1272,6 +1388,7 @@ export interface components {
         WorkVersionSnapshot: {
             profile: components["schemas"]["WorkProfile"];
             references: components["schemas"]["WorkReferences"];
+            preview: components["schemas"]["WorkPreview"];
             production: components["schemas"]["WorkProduction"];
         };
         WorkVersion: {

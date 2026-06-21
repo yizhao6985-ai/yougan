@@ -13,6 +13,8 @@ export type AfterDispatchTurnQueueTarget =
   | "referenceGraph"
   | "profileGraph"
   | "confirmProductionTurn"
+  | "confirmReviseTurn"
+  | "collectRevisionGraph"
   | "askGraph"
   | "suggestionsGraph";
 
@@ -24,6 +26,10 @@ function subgraphForKind(kind: TurnQueueKind): AfterDispatchTurnQueueTarget {
       return "profileGraph";
     case "production":
       return "confirmProductionTurn";
+    case "collectRevision":
+      return "collectRevisionGraph";
+    case "revise":
+      return "confirmReviseTurn";
     case "ask":
       return "askGraph";
     case "suggestions":
@@ -43,6 +49,8 @@ export const paths: AfterDispatchTurnQueueTarget[] = [
   "referenceGraph",
   "profileGraph",
   "confirmProductionTurn",
+  "confirmReviseTurn",
+  "collectRevisionGraph",
   "askGraph",
   "suggestionsGraph",
 ];

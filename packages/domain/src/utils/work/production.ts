@@ -14,7 +14,13 @@ export function getUserRequirements(
   return production.summary ?? null;
 }
 
-/** 解析 production JSON（含 preview） */
+function extractLegacyPreview(raw: unknown): unknown {
+  if (!raw || typeof raw !== "object") return undefined;
+  const value = raw as { preview?: unknown };
+  return value.preview;
+}
+
+/** 解析 production JSON（不含 preview） */
 export function parseProductionJson(raw: unknown): WorkProduction {
   if (!raw || typeof raw !== "object") {
     return { ...EMPTY_WORK_PRODUCTION };
@@ -23,11 +29,22 @@ export function parseProductionJson(raw: unknown): WorkProduction {
   return committedProduction({
     pending_tasks: value.pending_tasks ?? [],
     summary: value.summary ?? null,
-    preview:
-      value.preview !== undefined
-        ? parseWorkPreview(value.preview)
-        : null,
   });
+}
+
+/** 从 Work 字段解析 preview（顶层优先，兼容 production.preview） */
+export function resolvePreviewFromWork(input: {
+  preview?: unknown | null;
+  production?: unknown;
+}): ReturnType<typeof parseWorkPreview> {
+  if (input.preview !== undefined && input.preview !== null) {
+    return parseWorkPreview(input.preview);
+  }
+  const legacy = extractLegacyPreview(input.production);
+  if (legacy !== undefined) {
+    return legacy === null ? null : parseWorkPreview(legacy);
+  }
+  return null;
 }
 
 /** 从旧列 productionPlan + preview 或版本快照合并解析 */
@@ -44,13 +61,5 @@ export function parseProductionFromLegacyFields(input: {
     return parseProductionJson(input.production);
   }
 
-  const fromPlan = parseProductionJson(input.productionPlan);
-  if (input.preview !== undefined) {
-    return {
-      ...fromPlan,
-      preview: input.preview === null ? null : parseWorkPreview(input.preview),
-    };
-  }
-  return fromPlan;
+  return parseProductionJson(input.productionPlan);
 }
-

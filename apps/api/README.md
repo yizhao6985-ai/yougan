@@ -149,7 +149,7 @@ v0 阶段直接用 schema 同步，不维护 SQL 迁移：
 pnpm db:push
 ```
 
-两个 Postgres 实例由根目录 `docker-compose.yml` 提供；本服务仅使用 `:5432` 的 `yougan_api` 库。Agent checkpoint 使用 `:5433`，不在此 Prisma schema 中。
+根目录 `docker-compose.yml` 提供单个 Postgres 实例（`:5432`）；本服务使用 `yougan_api` 库，Agent checkpoint 使用同实例下的 `yougan_agent` 库，不在此 Prisma schema 中。
 
 ## 技术栈
 

@@ -39,9 +39,24 @@ export type HumanAssetContentPart = {
   original_name?: string | null;
 };
 
+/** human message 中的成稿划词引用（composer tag → collectRevision 等子图） */
+export const HUMAN_PREVIEW_SELECTION_PART_TYPE = "preview_selection" as const;
+
+export type HumanPreviewSelectionPart = {
+  type: typeof HUMAN_PREVIEW_SELECTION_PART_TYPE;
+  blockId: string;
+  quote: string;
+};
+
+export type HumanPreviewSelection = {
+  blockId: string;
+  quote: string;
+};
+
 export type HumanMessageContentPart =
   | HumanTextContentPart
-  | HumanAssetContentPart;
+  | HumanAssetContentPart
+  | HumanPreviewSelectionPart;
 
 /** 已上传、可写入 human message 的附件（composer / agent 共用） */
 export type HumanAttachmentAsset = {

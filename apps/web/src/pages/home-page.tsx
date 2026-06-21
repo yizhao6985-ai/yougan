@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 
 import { HomeAssistantSpotlight } from "@/components/marketing/home-assistant-spotlight";
+import { HomeCreationShowcase } from "@/components/marketing/home-creation-showcase";
 import { HomeFeatureChapter } from "@/components/marketing/home-feature-chapter";
 import { HomePlatformSpotlight } from "@/components/marketing/home-platform-spotlight";
 import { HomeStudioPreview } from "@/components/marketing/home-studio-preview";
@@ -8,12 +9,11 @@ import { MarketingFeatureCard } from "@/components/marketing/marketing-feature-c
 import { MarketingPageShell } from "@/components/marketing/marketing-page-layout";
 import { SiteHeader } from "@/components/site-header";
 import {
-  HOME_CREATION_LIFECYCLE,
-  HOME_CREATION_WORKFLOW,
-  PRODUCTION_FORMS,
+  HOME_CORE_FEATURES,
+  HOME_MEDIA_MODALITIES,
 } from "@/lib/product-capabilities";
 import { scene } from "@/lib/scene-styles";
-import { HELP_ASSISTANT, HOME } from "@/lib/site-copy";
+import { HOME } from "@/lib/site-copy";
 import { cn } from "@/lib/utils";
 
 function HomeHeroBackground() {
@@ -70,12 +70,18 @@ export function HomePage() {
 
             <div className="mt-12">
               <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
-                {HOME.formsLabel}
+                {HOME.modalitiesLabel}
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
-                {PRODUCTION_FORMS.slice(0, 6).map((form) => (
-                  <span key={form} className={scene.pill}>
-                    {form}
+                {HOME_MEDIA_MODALITIES.map((modality) => (
+                  <span
+                    key={modality}
+                    className={cn(
+                      scene.pill,
+                      "bg-primary/10 font-medium text-primary ring-primary/20",
+                    )}
+                  >
+                    {modality}
                   </span>
                 ))}
               </div>
@@ -101,12 +107,20 @@ export function HomePage() {
             />
 
             <HomeFeatureChapter
-              eyebrow={HOME.creationEyebrow}
-              title={HOME.creationTitle}
-              hint={HOME.creationSubtitle}
+              eyebrow={HOME.formsEyebrow}
+              title={HOME.formsTitle}
+              hint={HOME.formsSubtitle}
             >
-              <div className={cn(scene.contentGrid2, "lg:grid-cols-4")}>
-                {HOME_CREATION_WORKFLOW.map((item) => (
+              <HomeCreationShowcase />
+            </HomeFeatureChapter>
+
+            <HomeFeatureChapter
+              eyebrow={HOME.featuresEyebrow}
+              title={HOME.featuresTitle}
+              hint={HOME.featuresSubtitle}
+            >
+              <div className={cn(scene.contentGrid2, "lg:grid-cols-3")}>
+                {HOME_CORE_FEATURES.map((item) => (
                   <MarketingFeatureCard
                     key={item.title}
                     icon={item.icon}
@@ -115,32 +129,6 @@ export function HomePage() {
                     href={item.href}
                   />
                 ))}
-              </div>
-
-              <div className="mt-8 rounded-2xl bg-accent/20 p-6 ring-1 ring-primary/10 sm:p-8">
-                <div className="flex flex-wrap items-end justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">
-                      {HOME.creationLifecycleLabel}
-                    </p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {HOME.creationLifecycleHint}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-6 grid gap-6 sm:grid-cols-2 sm:items-stretch">
-                  {HOME_CREATION_LIFECYCLE.map((item) => (
-                    <MarketingFeatureCard
-                      key={item.title}
-                      icon={item.icon}
-                      title={item.title}
-                      body={item.body}
-                      href={item.href}
-                      className="h-full bg-card"
-                    />
-                  ))}
-                </div>
               </div>
             </HomeFeatureChapter>
 
@@ -153,9 +141,9 @@ export function HomePage() {
             </HomeFeatureChapter>
 
             <HomeFeatureChapter
-              eyebrow={HELP_ASSISTANT.eyebrow}
-              title={HELP_ASSISTANT.title}
-              hint={HELP_ASSISTANT.subtitle}
+              eyebrow={HOME.assistantEyebrow}
+              title={HOME.assistantTitle}
+              hint={HOME.assistantSubtitle}
             >
               <HomeAssistantSpotlight />
             </HomeFeatureChapter>

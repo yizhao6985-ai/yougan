@@ -43,8 +43,8 @@ export type PreviewBlock =
   | VideoPreviewBlock;
 
 /**
- * 作品预览（制作子图交付物）。
- * 嵌套于 Work.production.preview；产出后可生成 WorkVersion（kind=preview）。
+ * 作品预览（Work 顶层字段 preview）。
+ * 产出后可生成 WorkVersion（kind=preview）。
  */
 export interface WorkPreview {
   title?: string | null;

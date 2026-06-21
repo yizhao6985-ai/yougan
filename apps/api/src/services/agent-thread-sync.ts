@@ -1,8 +1,10 @@
 import { Client } from "@langchain/langgraph-sdk";
 import type {
+  WorkPreview,
   WorkProduction,
   WorkProfile,
   WorkReference,
+  WorkRevision,
 } from "@yougan/domain";
 
 import { env } from "../env.js";
@@ -11,6 +13,8 @@ import {
   parseProduction,
   parseProfileJson,
   parseReferencesJson,
+  parseRevisionJson,
+  parseWorkPreview,
 } from "./versions.js";
 
 let client: Client | null = null;
@@ -23,6 +27,8 @@ function getLangGraphClient() {
 export type MaterializedAgentFields = {
   profile?: WorkProfile;
   references?: WorkReference[];
+  preview?: WorkPreview | null;
+  revision?: WorkRevision;
   production?: WorkProduction;
 };
 
@@ -32,6 +38,8 @@ function buildThreadValuesPatch(
   const values: Record<string, unknown> = {};
   if (fields.profile !== undefined) values.profile = fields.profile;
   if (fields.references !== undefined) values.references = fields.references;
+  if (fields.preview !== undefined) values.preview = fields.preview;
+  if (fields.revision !== undefined) values.revision = fields.revision;
   if (fields.production !== undefined) values.production = fields.production;
   return values;
 }
@@ -83,6 +91,8 @@ export async function syncMaterializedStateToAgentThreads(
 export function materializedFieldsFromWorkUpdate(data: {
   profile?: unknown;
   references?: unknown;
+  preview?: unknown | null;
+  revision?: unknown;
   production?: unknown;
 }): MaterializedAgentFields {
   const fields: MaterializedAgentFields = {};
@@ -91,6 +101,13 @@ export function materializedFieldsFromWorkUpdate(data: {
   }
   if (data.references !== undefined) {
     fields.references = parseReferencesJson(data.references);
+  }
+  if (data.preview !== undefined) {
+    fields.preview =
+      data.preview === null ? null : parseWorkPreview(data.preview);
+  }
+  if (data.revision !== undefined) {
+    fields.revision = parseRevisionJson(data.revision);
   }
   if (data.production !== undefined) {
     fields.production = parseProduction(data.production);

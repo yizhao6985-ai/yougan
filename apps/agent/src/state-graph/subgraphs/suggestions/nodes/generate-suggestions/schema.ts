@@ -15,7 +15,7 @@ export const NextStepSuggestionItemSchema = z.object({
   message: z
     .string()
     .describe(
-      `用户点击后原样发送的完整口语化中文，${NEXT_STEP_SUGGESTION_MESSAGE_MIN_LENGTH}–${NEXT_STEP_SUGGESTION_MESSAGE_MAX_LENGTH} 字，各条长短须有参差`,
+      `用户点击后原样发送的完整口语化中文，${NEXT_STEP_SUGGESTION_MESSAGE_MIN_LENGTH}–${NEXT_STEP_SUGGESTION_MESSAGE_MAX_LENGTH} 字，各条长短须有参差；禁止含英文双引号 "，引用用「」`,
     ),
 });
 

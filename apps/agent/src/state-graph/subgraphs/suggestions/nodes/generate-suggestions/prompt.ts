@@ -6,7 +6,7 @@ import {
   hasSuggestionLayeredContext,
 } from "@yougan/domain";
 
-import { getProfile } from "#agent/state-io/index.js";
+import { getPreview, getProfile } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 
 import { buildConstraintsSection } from "./helpers/prompt/constraints.js";
@@ -24,7 +24,7 @@ export function buildNextStepSuggestionsPrompt(
   input: Omit<NextStepSuggestionsPromptInput, "layered">,
 ): string {
   const profile = getProfile(state);
-  const hasPreview = Boolean(state.production?.preview?.blocks?.length);
+  const hasPreview = Boolean(getPreview(state)?.blocks?.length);
   const layered = hasSuggestionLayeredContext(profile, { hasPreview });
   const profileSetupFocus = buildProfileSetupSuggestionFocus({
     before: state.profile,

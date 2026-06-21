@@ -364,7 +364,7 @@ export async function previewPublicationSummaryForWork(
   const work = await getWork(userId, workId);
   if (!work) return null;
 
-  const preview = work.production.preview as WorkPreview | null;
+  const preview = work.preview as WorkPreview | null;
   if (!previewHasContent(preview)) {
     throw new Error("WORK_OUTPUT_EMPTY");
   }
@@ -390,7 +390,7 @@ export async function createPublicationFromWork(
   const work = await getWork(userId, input.workId);
   if (!work) return null;
 
-  const preview = work.production.preview as WorkPreview | null;
+  const preview = work.preview as WorkPreview | null;
   if (!previewHasContent(preview)) {
     throw new Error("WORK_OUTPUT_EMPTY");
   }

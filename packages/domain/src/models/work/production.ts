@@ -1,5 +1,4 @@
 import type { ProductionDraftImage } from "./production-draft.js";
-import type { WorkPreview } from "./preview.js";
 
 // —— 部门 ——
 
@@ -72,7 +71,7 @@ export interface ProductionTask {
   deliverable?: ProductionTaskDeliverable | null;
   /** 最近一次验收未通过时的修改建议；通过或重试产出时清空 */
   feedback?: string | null;
-  /** 验收重试次数 */
+  /** LLM 方向性验收未通过次数（不含缺交付物、占位产出、仅重试出图） */
   accept_retry_count?: number;
   /** 终局失败说明 */
   failure_message?: string | null;
@@ -86,15 +85,13 @@ export interface ProductionTask {
  */
 export interface WorkProduction {
   pending_tasks: ProductionTask[];
-  /** 用户对本轮制作的要求（开写/改稿意图）；进 plan 前写入，plan 环节不覆盖 */
+  /** 用户对本轮制作的要求（开写/重写意图）；进 plan 前写入，plan 环节不覆盖 */
   summary?: string | null;
-  preview: WorkPreview | null;
 }
 
 export const EMPTY_WORK_PRODUCTION: WorkProduction = {
   pending_tasks: [],
   summary: null,
-  preview: null,
 };
 
 // —— 落库归一化 ——
@@ -122,6 +119,5 @@ export function committedProduction(
       committedProductionTask,
     ),
     summary: production.summary ?? null,
-    preview: production.preview ?? null,
   };
 }

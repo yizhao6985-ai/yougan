@@ -5,7 +5,10 @@ import type { AgentStateType } from "#agent/state.js";
 import { resolveProductionAudioAsset } from "./resolve-production-audio-asset.js";
 
 import { acceptAttemptsExhausted } from "./pipeline.js";
-import { isValidDesignPromptDeliverable } from "../nodes/accept-task/helpers/deliverable.js";
+import {
+  isValidDesignPromptDeliverable,
+  isValidTaskDeliverable,
+} from "../nodes/accept-task/helpers/deliverable.js";
 
 export function isAudioTask(task: ProductionTask): boolean {
   return task.department === "audio";
@@ -28,7 +31,11 @@ export function designTaskHasRenderedImage(task: ProductionTask): boolean {
 }
 
 export function taskNeedsRender(task: ProductionTask): boolean {
-  if (!isDesignTask(task) || taskHasTerminalFailure(task) || isTaskReady(task)) {
+  if (
+    !isDesignTask(task) ||
+    taskHasTerminalFailure(task) ||
+    isTaskReady(task)
+  ) {
     return false;
   }
   if (!isValidDesignPromptDeliverable(task.deliverable)) return false;
@@ -41,21 +48,23 @@ export function isTaskReady(task: ProductionTask): boolean {
 
 export function taskAwaitingAccept(task: ProductionTask): boolean {
   if (task.status !== "in_progress") return false;
-  if (isDesignTask(task)) {
-    if (!task.deliverable?.body?.trim()) return false;
-    return designTaskHasRenderedImage(task);
-  }
-  if (isAudioTask(task) && audioDeliverableHasTranscript(task)) {
-    return Boolean(task.deliverable?.body?.trim());
-  }
-  if (!task.deliverable?.body?.trim()) return false;
-  return true;
+  return isValidTaskDeliverable(task.deliverable, task);
 }
 
-function audioDeliverableHasTranscript(task: ProductionTask): boolean {
-  const url = task.deliverable?.body?.trim() ?? "";
-  if (!url) return false;
-  return Boolean(task.deliverable?.notes?.trim());
+/** 设计任务：prompt 已就绪但出图未完成/失败，accept 节点仅触发 render 重试 */
+export function taskNeedsRenderRetryAccept(task: ProductionTask): boolean {
+  if (task.status !== "in_progress" || !isDesignTask(task)) return false;
+  if (!isValidDesignPromptDeliverable(task.deliverable)) return false;
+  return !designTaskHasRenderedImage(task);
+}
+
+/** acceptTask 应处理的 taskId；与 execute → accept 固定边对齐，避免空跑 in_progress 任务 */
+export function resolveAcceptTaskId(production: WorkProduction): string | null {
+  const awaiting = production.pending_tasks.find(taskAwaitingAccept);
+  if (awaiting) return awaiting.id;
+
+  const renderRetry = production.pending_tasks.find(taskNeedsRenderRetryAccept);
+  return renderRetry?.id ?? null;
 }
 
 export function taskHasTerminalFailure(task: ProductionTask): boolean {
@@ -119,9 +128,7 @@ export function resolveDispatchTaskId(
  * dispatchTask 无任务可派且计划未收尾时，管线已卡住（典型：dispatch ↔ route 空转）。
  * 由 afterRouteProduction 转入 summarizeProduction 结束子图。
  */
-export function productionPipelineStuck(
-  production: WorkProduction,
-): boolean {
+export function productionPipelineStuck(production: WorkProduction): boolean {
   if (
     productionPlanIsEmpty(production) ||
     allTasksReady(production) ||
@@ -152,7 +159,11 @@ export function audioTaskNeedsIngestProduce(
   state: AgentStateType,
   task: ProductionTask,
 ): boolean {
-  return isAudioTask(task) && audioTaskNeedsIngest(state, task) && taskNeedsProduce(task);
+  return (
+    isAudioTask(task) &&
+    audioTaskNeedsIngest(state, task) &&
+    taskNeedsProduce(task)
+  );
 }
 
 /** 将指定任务标为 in_progress，其余未 ready 的 in_progress 退回 pending */

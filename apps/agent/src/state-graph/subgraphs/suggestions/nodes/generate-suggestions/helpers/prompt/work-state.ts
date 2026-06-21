@@ -11,7 +11,7 @@ import {
   profileSummary,
   profileReferencesSummary,
 } from "#agent/prompts/profile-summary.js";
-import { getProfile } from "#agent/state-io/index.js";
+import { getProfile, getPreview } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 
 export function buildWorkStateSection(
@@ -22,7 +22,7 @@ export function buildWorkStateSection(
   const references = state.references?.length
     ? state.references
     : [...EMPTY_WORK_REFERENCES];
-  const preview = state.production?.preview;
+  const preview = getPreview(state);
 
   const previewLine = preview?.blocks?.length
     ? `已有预览成稿（节选）：${previewPlainText(preview, 200)}`

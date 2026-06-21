@@ -2,7 +2,9 @@
 import { HumanMessage, type BaseMessage } from "@langchain/core/messages";
 import {
   extractAttachmentAssetsFromContent,
+  extractPreviewSelectionsFromContent,
   type HumanAttachmentAsset,
+  type HumanPreviewSelection,
 } from "@yougan/domain";
 import { messageContentToText } from "./message-content.js";
 
@@ -33,4 +35,13 @@ export function getLatestHumanMessageAttachments(
   const content = getHumanMessageContents(messages).at(-1);
   if (content === undefined) return [];
   return extractAttachmentAssetsFromContent(content);
+}
+
+/** 最近一条 human 消息中的成稿划词引用。 */
+export function getLatestHumanMessagePreviewSelections(
+  messages: BaseMessage[] | undefined,
+): HumanPreviewSelection[] {
+  const content = getHumanMessageContents(messages).at(-1);
+  if (content === undefined) return [];
+  return extractPreviewSelectionsFromContent(content);
 }

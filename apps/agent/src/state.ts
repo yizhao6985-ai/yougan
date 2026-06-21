@@ -14,6 +14,7 @@ import {
   EMPTY_WORK_PROFILE,
   EMPTY_WORK_PRODUCTION,
   EMPTY_WORK_REFERENCES,
+  EMPTY_WORK_REVISION,
   EMPTY_TURN_RUNTIME,
   mergeProfileState,
   mergeReferencesState,
@@ -22,9 +23,11 @@ import {
   type RunProgress,
   type NextStepSuggestions,
   type TurnRuntime,
+  type WorkPreview,
   type WorkProduction,
   type WorkProfile,
   type WorkReference,
+  type WorkRevision,
 } from "@yougan/domain";
 
 import { env } from "./env.js";
@@ -66,7 +69,21 @@ export const AgentState = Annotation.Root({
     },
     default: () => [...EMPTY_WORK_REFERENCES],
   }),
-  /** state 顶层：制作环节（计划 + 预览） */
+  /** state 顶层：已提交作品预览 */
+  preview: Annotation<WorkPreview | null>({
+    reducer: (
+      prev: WorkPreview | null,
+      next: WorkPreview | null | undefined,
+    ) => (next === undefined ? (prev ?? null) : next),
+    default: () => null,
+  }),
+  /** state 顶层：改稿意见清单 */
+  revision: Annotation<WorkRevision>({
+    reducer: (prev: WorkRevision, next: WorkRevision | undefined) =>
+      next ?? prev ?? EMPTY_WORK_REVISION,
+    default: () => ({ ...EMPTY_WORK_REVISION }),
+  }),
+  /** state 顶层：制作计划（不含 preview） */
   production: Annotation<WorkProduction>({
     reducer: (prev: WorkProduction, next: WorkProduction | undefined) =>
       next ?? EMPTY_WORK_PRODUCTION,

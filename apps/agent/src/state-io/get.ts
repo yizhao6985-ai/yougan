@@ -7,9 +7,11 @@ import {
   EMPTY_WORK_PRODUCTION,
   EMPTY_WORK_PROFILE,
   EMPTY_WORK_REFERENCES,
+  EMPTY_WORK_REVISION,
   type WorkPreview,
   type WorkProduction,
   type WorkReference,
+  type WorkRevision,
   type TurnQueueKind,
   type WorkProfile,
 } from "@yougan/domain";
@@ -20,6 +22,18 @@ function resolveProduction(state: AgentStateType): WorkProduction {
   const stagingProd = getTurn(state).staging?.production;
   if (stagingProd) return stagingProd;
   return state.production ?? EMPTY_WORK_PRODUCTION;
+}
+
+function resolvePreview(state: AgentStateType): WorkPreview | null {
+  const stagingPreview = getTurn(state).staging?.preview;
+  if (stagingPreview !== undefined) return stagingPreview;
+  return state.preview ?? null;
+}
+
+function resolveRevision(state: AgentStateType): WorkRevision {
+  const stagingRevision = getTurn(state).staging?.revision;
+  if (stagingRevision) return stagingRevision;
+  return state.revision ?? EMPTY_WORK_REVISION;
 }
 
 export function getProfile(state: AgentStateType): WorkProfile {
@@ -33,13 +47,19 @@ export function getReferences(state: AgentStateType): WorkReference[] {
   return refs?.length ? refs : [...EMPTY_WORK_REFERENCES];
 }
 
-/** 当前制作状态（staging 优先） */
+/** 当前制作计划（staging 优先） */
 export function getProduction(state: AgentStateType): WorkProduction {
   return resolveProduction(state);
 }
 
+/** 当前作品预览（staging 优先） */
 export function getPreview(state: AgentStateType): WorkPreview | null {
-  return getProduction(state).preview ?? null;
+  return resolvePreview(state);
+}
+
+/** 当前改稿清单（staging 优先） */
+export function getRevision(state: AgentStateType): WorkRevision {
+  return resolveRevision(state);
 }
 
 export function getTurnQueue(state: AgentStateType): TurnQueueKind[] {

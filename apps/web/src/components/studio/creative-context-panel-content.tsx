@@ -10,7 +10,13 @@ import {
   type CreativeContextTabId,
 } from "@/lib/site-copy";
 import { readStoredString, writeStoredString } from "@/lib/storage-value";
-import type { Work, WorkPreview, WorkProfile, WorkReference } from "@/lib/types";
+import type {
+  Work,
+  WorkPreview,
+  WorkProfile,
+  WorkReference,
+  WorkRevision,
+} from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const TAB_ORDER: CreativeContextTabId[] = [
@@ -36,7 +42,10 @@ type CreativeContextPanelContentProps = {
   /** 创作轮廓（含 references） */
   profile?: WorkProfile;
   preview?: WorkPreview | null;
+  revision?: WorkRevision | null;
   previewUnsaved?: boolean;
+  onRemoveRevisionIntent?: (intentId: string) => void;
+  enablePreviewSelection?: boolean;
   onDuplicated?: (workId: string) => void;
   onRestored?: (work: Work) => void | Promise<void>;
   onUpdateBound?: (itemId: string, spec: string) => void;
@@ -55,7 +64,10 @@ export function CreativeContextPanelContent({
   references,
   profile,
   preview,
+  revision,
   previewUnsaved,
+  onRemoveRevisionIntent,
+  enablePreviewSelection = false,
   onDuplicated,
   onRestored,
   onUpdateBound,
@@ -137,8 +149,11 @@ export function CreativeContextPanelContent({
             <ContentPreview
               workId={activeWork?.id}
               preview={preview}
+              revision={revision}
               unsaved={previewUnsaved}
               compact
+              enablePreviewSelection={enablePreviewSelection}
+              onRemoveRevisionIntent={onRemoveRevisionIntent}
             />
           </div>
         ) : null}

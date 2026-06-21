@@ -28,7 +28,11 @@ import {
   updateContextItem,
   updateSequenceItem,
 } from "@yougan/domain";
-import type { YouganValues, Work, WorkProfile } from "@/lib/types";
+import type { YouganValues, Work, WorkProfile, WorkRevision } from "@/lib/types";
+import {
+  buildRevisionWithNewIntent,
+  buildRevisionWithoutIntent,
+} from "@/components/studio/revision-panel";
 import { useAuthToken } from "@/store/auth";
 import { activeWorkIdAtom } from "@/store/studio";
 
@@ -116,6 +120,8 @@ export function useWorksStore() {
       const patch: Partial<Work> = {};
       if (values.profile !== undefined) patch.profile = values.profile;
       if (values.references !== undefined) patch.references = values.references;
+      if (values.preview !== undefined) patch.preview = values.preview;
+      if (values.revision !== undefined) patch.revision = values.revision;
       if (values.production !== undefined) patch.production = values.production;
       if (!Object.keys(patch).length) return;
 
@@ -239,6 +245,53 @@ export function useWorksStore() {
     },
   );
 
+  const patchRevision = useMemoizedFn(
+    (workId: string, revision: WorkRevision) => {
+      patchWorksCache(queryClient, (works) =>
+        works.map((work) =>
+          work.id === workId ? { ...work, revision } : work,
+        ),
+      );
+      void updateWorkMutation
+        .mutateAsync({
+          workId,
+          patch: { revision },
+        })
+        .catch(() => {
+          void queryClient.invalidateQueries({ queryKey: queryKeys.works.list });
+        });
+    },
+  );
+
+  const appendRevisionIntentToWork = useMemoizedFn(
+    (
+      workId: string,
+      input: Parameters<typeof buildRevisionWithNewIntent>[1],
+    ) => {
+      const current = queryClient
+        .getQueryData<Work[]>(queryKeys.works.list)
+        ?.find((work) => work.id === workId);
+      if (!current) return;
+      patchRevision(
+        workId,
+        buildRevisionWithNewIntent(current.revision, input),
+      );
+    },
+  );
+
+  const removeRevisionIntentFromWork = useMemoizedFn(
+    (workId: string, intentId: string) => {
+      const current = queryClient
+        .getQueryData<Work[]>(queryKeys.works.list)
+        ?.find((work) => work.id === workId);
+      if (!current) return;
+      patchRevision(
+        workId,
+        buildRevisionWithoutIntent(current.revision, intentId),
+      );
+    },
+  );
+
   return {
     works,
     groups,
@@ -264,6 +317,9 @@ export function useWorksStore() {
     clearWorkProfileContext,
     renameWork,
     moveWorkToGroup,
+    patchRevision,
+    appendRevisionIntentToWork,
+    removeRevisionIntentFromWork,
   };
 }
 

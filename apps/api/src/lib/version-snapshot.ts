@@ -3,10 +3,13 @@ import {
   EMPTY_WORK_PROFILE,
   EMPTY_WORK_REFERENCES,
   parseProductionFromLegacyFields,
+  parseProductionJson,
   parseProfileJson,
   parseReferencesJson,
+  parseRevisionJson,
   parseWorkPreview,
   previewPlainText,
+  resolvePreviewFromWork,
   resolveReferencesFromWork,
   type WorkVersionSnapshot,
 } from "@yougan/domain";
@@ -15,8 +18,16 @@ export function emptySnapshot(): WorkVersionSnapshot {
   return {
     profile: { ...EMPTY_WORK_PROFILE },
     references: [...EMPTY_WORK_REFERENCES],
+    preview: null,
     production: { ...EMPTY_WORK_PRODUCTION },
   };
+}
+
+function resolveSnapshotPreview(raw: Record<string, unknown>) {
+  return resolvePreviewFromWork({
+    preview: raw.preview,
+    production: raw.production,
+  });
 }
 
 export function parseSnapshot(raw: unknown): WorkVersionSnapshot {
@@ -25,7 +36,6 @@ export function parseSnapshot(raw: unknown): WorkVersionSnapshot {
   const production = parseProductionFromLegacyFields({
     production: value.production,
     productionPlan: value.productionPlan,
-    preview: value.preview,
   });
   return {
     profile: parseProfileJson(value.profile),
@@ -33,6 +43,7 @@ export function parseSnapshot(raw: unknown): WorkVersionSnapshot {
       value.references !== undefined
         ? parseReferencesJson(value.references)
         : [],
+    preview: resolveSnapshotPreview(value),
     production,
   };
 }
@@ -40,17 +51,30 @@ export function parseSnapshot(raw: unknown): WorkVersionSnapshot {
 export function snapshotFromAgentValues(
   values: Record<string, unknown>,
 ): WorkVersionSnapshot {
-  const production = parseProductionFromLegacyFields({
-    production: values.production,
-    productionPlan: values.productionPlan,
-    preview: values.preview,
-  });
+  const production = parseProductionJson(values.production);
+  const preview =
+    values.preview !== undefined
+      ? parseWorkPreview(values.preview)
+      : resolvePreviewFromWork({
+          preview: undefined,
+          production: values.production,
+        });
   return {
     profile: parseProfileJson(values.profile),
     references: resolveReferencesFromWork({
       references: values.references,
     }),
+    preview,
     production,
+  };
+}
+
+/** Agent run 物化列（含 revision，不进版本快照比较） */
+export function materializeAgentWorkColumns(values: Record<string, unknown>) {
+  const snapshot = snapshotFromAgentValues(values);
+  return {
+    ...materializeWorkColumns(snapshot),
+    revision: parseRevisionJson(values.revision),
   };
 }
 
@@ -66,17 +90,16 @@ export function snapshotsEqual(
 }
 
 export function hasValidPreview(snapshot: WorkVersionSnapshot): boolean {
-  return parseWorkPreview(snapshot.production.preview) !== null;
+  return parseWorkPreview(snapshot.preview) !== null;
 }
 
-/** 仅当作品预览发生变化且新快照有效时，才追加版本节点 */
+/** 仅当作品 preview 发生变化且新快照有效时，才追加版本节点 */
 export function shouldAppendPreviewVersion(
   previous: WorkVersionSnapshot,
   next: WorkVersionSnapshot,
 ): boolean {
   return (
-    stableJson(previous.production.preview) !==
-      stableJson(next.production.preview) &&
+    stableJson(previous.preview) !== stableJson(next.preview) &&
     hasValidPreview(next)
   );
 }
@@ -85,12 +108,13 @@ export function materializeWorkColumns(snapshot: WorkVersionSnapshot) {
   return {
     profile: snapshot.profile,
     references: snapshot.references,
+    preview: snapshot.preview,
     production: snapshot.production,
   };
 }
 
 export function previewVersionSummary(next: WorkVersionSnapshot): string {
-  const preview = next.production.preview;
+  const preview = next.preview;
   return (
     preview?.title?.trim() ||
     previewPlainText(preview, 80) ||

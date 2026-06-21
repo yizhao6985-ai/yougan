@@ -15,21 +15,23 @@ services:
       timeout: 5s
       retries: 5
 
-  postgres-agent:
+  # yougan_api 由 POSTGRES_DB 在首次初始化时创建；yougan_agent 在此 idempotent 补建（Agent checkpointer.setup 自建表）
+  postgres-init:
     image: postgres:16-alpine
+    depends_on:
+      postgres-api:
+        condition: service_healthy
     environment:
-      POSTGRES_USER: yougan
-      POSTGRES_PASSWORD: yougan
-      POSTGRES_DB: yougan_agent
-    ports:
-      - "5433:5432"
-    volumes:
-      - yougan_pg_agent:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U yougan -d yougan_agent"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      PGHOST: postgres-api
+      PGUSER: yougan
+      PGPASSWORD: yougan
+      PGDATABASE: yougan_api
+    restart: "no"
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        psql -tc "SELECT 1 FROM pg_database WHERE datname = 'yougan_agent'" | grep -q 1 \
+          || psql -c "CREATE DATABASE yougan_agent;"
 
   redis:
     image: redis:7-alpine
@@ -70,5 +72,4 @@ services:
 
 volumes:
   yougan_pg_api:
-  yougan_pg_agent:
   yougan_redis:

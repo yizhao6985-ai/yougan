@@ -2,7 +2,7 @@
 import { AIMessage } from "@langchain/core/messages";
 import type { RunnableConfig } from "@langchain/core/runnables";
 
-import { getProduction } from "#agent/state-io/index.js";
+import { getPreview, getProduction } from "#agent/state-io/index.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 import {
   emitRunProgress,
@@ -19,7 +19,10 @@ export async function summarizeProductionNode(
   const progress = productionSummarizeProgress();
   emitRunProgress(progress, config);
 
-  const content = buildProductionSummaryMessage(getProduction(state));
+  const content = buildProductionSummaryMessage(
+    getProduction(state),
+    getPreview(state),
+  );
   return {
     messages: [new AIMessage(content)],
     ...patchRunProgress(progress),

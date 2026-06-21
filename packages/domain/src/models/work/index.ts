@@ -5,5 +5,6 @@ export * from "./profile.js";
 export * from "./production.js";
 export * from "./production-draft.js";
 export * from "./preview.js";
+export * from "./revision.js";
 export * from "./publication-summary.js";
 export * from "./version.js";

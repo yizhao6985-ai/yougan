@@ -1,11 +1,18 @@
 import type { Client, ThreadState } from "@langchain/langgraph-sdk";
-import type { ProductionConfirmInterruptValue } from "@yougan/domain";
+import type {
+  ProductionConfirmInterruptValue,
+  ReviseConfirmInterruptValue,
+} from "@yougan/domain";
 
 import type { YouganValues } from "@/lib/types";
 import {
   getProductionConfirmInterruptFromThread,
   getProductionConfirmInterruptFromThreadState,
 } from "@/lib/production-confirm-interrupt";
+import {
+  getReviseConfirmInterruptFromThread,
+  getReviseConfirmInterruptFromThreadState,
+} from "@/lib/revise-confirm-interrupt";
 import {
   findResumableLangGraphRunId,
   isActiveLangGraphRunStatus,
@@ -19,6 +26,7 @@ export type ThreadRunPhase =
       kind: "interrupted";
       runId: string;
       productionConfirm: ProductionConfirmInterruptValue | null;
+      reviseConfirm: ReviseConfirmInterruptValue | null;
     }
   | { kind: "idle" };
 
@@ -32,19 +40,34 @@ export function isSameProductionConfirmInterrupt(
   );
 }
 
+async function fetchThreadInterruptState(client: Client, threadId: string) {
+  const state = await client.threads.getState(threadId, undefined, {
+    subgraphs: true,
+  });
+  const thread = await client.threads.get(threadId);
+  return { state, thread };
+}
+
 /** 从 thread head 读取 production 确认 interrupt（bootstrap 专用，单次拉取） */
 export async function fetchProductionConfirmInterrupt(
   client: Client,
   threadId: string,
 ): Promise<ProductionConfirmInterruptValue | null> {
-  const state = await client.threads.getState(threadId, undefined, {
-    subgraphs: true,
-  });
+  const { state, thread } = await fetchThreadInterruptState(client, threadId);
   const fromState = getProductionConfirmInterruptFromThreadState(state);
   if (fromState) return fromState;
-
-  const thread = await client.threads.get(threadId);
   return getProductionConfirmInterruptFromThread(thread);
+}
+
+/** 从 thread head 读取改稿确认 interrupt（bootstrap 专用，单次拉取） */
+export async function fetchReviseConfirmInterrupt(
+  client: Client,
+  threadId: string,
+): Promise<ReviseConfirmInterruptValue | null> {
+  const { state, thread } = await fetchThreadInterruptState(client, threadId);
+  const fromState = getReviseConfirmInterruptFromThreadState(state);
+  if (fromState) return fromState;
+  return getReviseConfirmInterruptFromThread(thread);
 }
 
 export async function fetchThreadHead(
@@ -68,11 +91,14 @@ export async function resolveThreadRunPhase(
 
   const run = await client.runs.get(threadId, runId);
   if (run.status === "interrupted") {
-    const productionConfirm = await fetchProductionConfirmInterrupt(
-      client,
-      threadId,
-    );
-    return { kind: "interrupted", runId, productionConfirm };
+    const { state, thread } = await fetchThreadInterruptState(client, threadId);
+    const productionConfirm =
+      getProductionConfirmInterruptFromThreadState(state) ??
+      getProductionConfirmInterruptFromThread(thread);
+    const reviseConfirm =
+      getReviseConfirmInterruptFromThreadState(state) ??
+      getReviseConfirmInterruptFromThread(thread);
+    return { kind: "interrupted", runId, productionConfirm, reviseConfirm };
   }
   if (isActiveLangGraphRunStatus(run.status)) {
     return { kind: "running", runId };

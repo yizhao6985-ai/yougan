@@ -3,8 +3,10 @@ import type { Message } from "@langchain/langgraph-sdk";
 import {
   buildHumanMessageContent,
   extractAttachmentAssetsFromContent,
+  extractPreviewSelectionsFromContent,
   isDefaultAttachmentPromptText,
   type HumanAttachmentAsset,
+  type HumanPreviewSelection,
 } from "@yougan/domain";
 import { messageContentToText as coreMessageContentToText } from "@/lib/message-content";
 
@@ -24,23 +26,30 @@ type MessageWithBlocks = Message & {
 export function parseHumanMessageForDisplay(content: MessageContent): {
   text: string;
   attachments: HumanAttachmentAsset[];
+  previewSelections: HumanPreviewSelection[];
 } {
   const attachments = extractAttachmentAssetsFromContent(content);
+  const previewSelections = extractPreviewSelectionsFromContent(content);
   let text = messageContentToText(content).trim();
   if (isDefaultAttachmentPromptText(text, attachments.length)) {
     text = "";
   }
-  return { text, attachments };
+  return { text, attachments, previewSelections };
 }
 
 /** 提交给 LangGraph 的 human 消息；domain asset part 无 type，与 SDK MessageContent 约定兼容。 */
 export function buildSubmitHumanMessage(
   text: string,
   attachments: HumanAttachmentAsset[] = [],
+  previewSelections: HumanPreviewSelection[] = [],
 ): Message {
   return {
     type: "human",
-    content: buildHumanMessageContent(text, attachments) as MessageContent,
+    content: buildHumanMessageContent(
+      text,
+      attachments,
+      previewSelections,
+    ) as MessageContent,
   };
 }
 
@@ -157,6 +166,7 @@ export type RenderItem =
       kind: "human";
       content: string;
       attachments: HumanAttachmentAsset[];
+      previewSelections: HumanPreviewSelection[];
     }
   | {
       id: string;
@@ -343,13 +353,15 @@ export function buildRenderItems(
     const message = messages[index];
 
     if (message.type === "human") {
-      const { text, attachments } = parseHumanMessageForDisplay(message.content);
-      if (text || attachments.length > 0) {
+      const { text, attachments, previewSelections } =
+        parseHumanMessageForDisplay(message.content);
+      if (text || attachments.length > 0 || previewSelections.length > 0) {
         items.push({
           id: message.id ?? `human-${index}`,
           kind: "human",
           content: text,
           attachments,
+          previewSelections,
         });
       }
       continue;

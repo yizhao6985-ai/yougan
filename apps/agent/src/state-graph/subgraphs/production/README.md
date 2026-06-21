@@ -39,7 +39,7 @@ dispatch 在「已有 prompt、待出图」时仍路由到 executeDesign（no-op
 | `renderDesignImage` | plain | design 任务：MiniMax image-01 出图，写入临时 URL（`transient`）；stream 结束后由 API sync 物化 |
 | `acceptTask` | llm-work | 方向性验收；失败重试或标 `failed` |
 | `routeProduction`                  | plain    | 流转锚点（无状态变更）                                |
-| `assemblePreview`                  | llm-work | 整合片段 → `preview`，清空 `pending_tasks`            |
+| `assemblePreview`                  | llm-work | 写入 `preview` 后清空 `pending_tasks`（preview 未就绪则保留任务队列） |
 | `summarizeProduction`              | plain    | 对话末位摘要（成稿 / 失败 / 空计划）                  |
 
 ## LLM 调用约定
@@ -68,4 +68,6 @@ dispatch 在「已有 prompt、待出图」时仍路由到 executeDesign（no-op
 
 `pending` → `in_progress` → `ready`；验收连续失败达上限 → `failed`（带 `failure_message`）。
 
-`accept_retry_count` 在每次验收失败时递增；通过验收时清零。
+`accept_retry_count` 与 LangSmith 中 `production_accept_task` 调用一一对应：仅 LLM 方向性验收未通过时递增；缺交付物、仅重试出图不计数；通过验收时清零。
+
+`taskAwaitingAccept` 与 `isValidTaskDeliverable` 对齐（结构层非空即可）；内容质量由 accept 节点 LLM 验收。

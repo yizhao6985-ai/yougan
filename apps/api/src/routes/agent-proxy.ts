@@ -195,6 +195,8 @@ export async function injectWorkContext(
               conversationTitle: context.conversationTitle,
               profile: context.profile,
               references: context.references,
+              preview: context.preview,
+              revision: context.revision,
               production: context.production,
               aiUsage: usage.aiUsage,
             },

@@ -138,14 +138,13 @@
 浏览器 (apps/web :3000，Vite + React 19)
   ↓ REST / OpenAPI（携 JWT + X-Work-Id）
 中间层 (apps/api :4000，Express 5 + Prisma) — 鉴权、作品、发布、订阅、上传、LangGraph 代理
-  ├─→ Postgres API (:5432) — 用户/作品/发布/订阅
+  ├─→ Postgres (:5432) — yougan_api 业务库 + yougan_agent checkpoint
   ├─→ Redis (:6379) — 可选缓存
   └─→ Agent (apps/agent :2024，LangGraph JS) — 回合队列 → reference/profile/production/ask 子图
-        └─→ Postgres Agent (:5433) — LangGraph checkpoint
 ```
 
 - Monorepo：pnpm workspace + Turborepo。
-- 业务库与 AI 状态库分离；OpenAPI 驱动前后端契约（便于后续 API 开放 / 白标）。
+- 业务库与 AI checkpoint 同 Postgres 实例、分库；OpenAPI 驱动前后端契约（便于后续 API 开放 / 白标）。
 - 存储：本地目录或阿里云 OSS（`STORAGE_DRIVER`）。
 
 ---

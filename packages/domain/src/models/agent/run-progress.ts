@@ -12,6 +12,10 @@ export type RunProgressPhase =
   | "production_accept"
   | "production_assemble"
   | "production_summarize"
+  | "revise_plan"
+  | "revise_apply"
+  | "revise_summarize"
+  | "collect_revision"
   | "ask"
   | "suggestions"
   | "messages_summary";

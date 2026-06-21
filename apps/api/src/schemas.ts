@@ -191,14 +191,43 @@ export const WorkProductionSchema = z
       }),
     ),
     summary: z.string().nullable().optional(),
-    preview: WorkPreviewSchema.nullable(),
   })
   .openapi("WorkProduction");
+
+export const RevisionAnchorSchema = z
+  .object({
+    blockId: z.string(),
+    quote: z.string(),
+    startOffset: z.number().nullable().optional(),
+    endOffset: z.number().nullable().optional(),
+  })
+  .openapi("RevisionAnchor");
+
+export const RevisionIntentSchema = z
+  .object({
+    id: z.string(),
+    anchor: RevisionAnchorSchema.nullable().optional(),
+    instruction: z.string(),
+    source: z.enum(["selection", "chat", "manual"]),
+    created_at: z.string(),
+    status: z.enum(["open", "withdrawn"]).optional(),
+  })
+  .openapi("RevisionIntent");
+
+export const WorkRevisionSchema = z
+  .object({
+    baselineVersionId: z.string().nullable().optional(),
+    status: z.enum(["collecting", "ready", "applying"]),
+    items: z.array(RevisionIntentSchema),
+    updatedAt: z.string().nullable().optional(),
+  })
+  .openapi("WorkRevision");
 
 export const WorkVersionSnapshotSchema = z
   .object({
     profile: WorkProfileSchema,
     references: WorkReferencesSchema,
+    preview: WorkPreviewSchema.nullable(),
     production: WorkProductionSchema,
   })
   .openapi("WorkVersionSnapshot");
@@ -231,6 +260,8 @@ export const WorkSchema = z
     groupId: z.string().nullable(),
     profile: WorkProfileSchema,
     references: WorkReferencesSchema,
+    preview: WorkPreviewSchema.nullable(),
+    revision: WorkRevisionSchema,
     production: WorkProductionSchema,
     headVersionId: z.string().nullable(),
     sourceWorkId: z.string().nullable(),
@@ -285,6 +316,8 @@ export const SyncWorkStateSchema = z
     groupId: z.string().nullable().optional(),
     profile: WorkProfileSchema.optional(),
     references: WorkReferencesSchema.optional(),
+    preview: WorkPreviewSchema.nullable().optional(),
+    revision: WorkRevisionSchema.optional(),
     production: WorkProductionSchema.optional(),
     title: z.string().optional(),
   })
@@ -304,6 +337,8 @@ export const AgentContextSchema = z
     headVersionId: z.string().nullable().optional(),
     profile: WorkProfileSchema,
     references: WorkReferencesSchema,
+    preview: WorkPreviewSchema.nullable(),
+    revision: WorkRevisionSchema,
     production: WorkProductionSchema,
     threadId: z.string().nullable().optional(),
     workTitle: z.string().optional(),

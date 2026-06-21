@@ -4,6 +4,7 @@ import {
   EMPTY_WORK_PROFILE,
   EMPTY_WORK_PRODUCTION,
   EMPTY_WORK_REFERENCES,
+  EMPTY_WORK_REVISION,
   normalizeWorkDto,
   resolveProfileFromWork,
   resolveReferencesFromWork,
@@ -20,7 +21,9 @@ import {
 import {
   materializeWorkColumns,
   parseProduction,
+  parsePreview,
   parseProfileJson,
+  parseRevisionJson,
 } from "./versions.js";
 import {
   hasMaterializedAgentFields,
@@ -29,6 +32,7 @@ import {
 } from "./agent-thread-sync.js";
 
 function toWorkDTO(work: Work): WorkDTO {
+  const withColumns = work as Work & { preview?: unknown; revision?: unknown };
   return normalizeWorkDto({
     id: work.id,
     title: work.title,
@@ -37,6 +41,8 @@ function toWorkDTO(work: Work): WorkDTO {
     references: resolveReferencesFromWork({
       references: (work as Work & { references?: unknown }).references,
     }),
+    preview: withColumns.preview,
+    revision: withColumns.revision,
     production: parseProduction(work.production),
     headVersionId: work.headVersionId,
     sourceWorkId: work.sourceWorkId,
@@ -74,6 +80,8 @@ export async function createWork(
         title: title?.trim() || "未命名作品",
         profile: EMPTY_WORK_PROFILE as unknown as Prisma.InputJsonValue,
         references: EMPTY_WORK_REFERENCES as unknown as Prisma.InputJsonValue,
+        preview: Prisma.JsonNull,
+        revision: EMPTY_WORK_REVISION as unknown as Prisma.InputJsonValue,
         production: EMPTY_WORK_PRODUCTION as unknown as Prisma.InputJsonValue,
       },
     });
@@ -122,6 +130,8 @@ export async function updateWork(
     groupId: string | null;
     profile: unknown;
     references: unknown;
+    preview: unknown | null;
+    revision: unknown;
     production: unknown;
   }>,
   options?: { conversationId?: string },
@@ -159,6 +169,17 @@ export async function updateWork(
       data.production,
     ) as unknown as Prisma.InputJsonValue;
   }
+  if (data.preview !== undefined) {
+    updateData.preview =
+      data.preview === null
+        ? Prisma.JsonNull
+        : (parsePreview(data.preview) as unknown as Prisma.InputJsonValue);
+  }
+  if (data.revision !== undefined) {
+    updateData.revision = parseRevisionJson(
+      data.revision,
+    ) as unknown as Prisma.InputJsonValue;
+  }
 
   const work = await prisma.work.update({
     where: { id: workId },
@@ -174,6 +195,8 @@ export async function updateWork(
       syncFields.references = dto.references;
     if (agentFields.production !== undefined)
       syncFields.production = dto.production;
+    if (agentFields.preview !== undefined) syncFields.preview = dto.preview;
+    if (agentFields.revision !== undefined) syncFields.revision = dto.revision;
     await syncMaterializedStateToAgentThreads(workId, syncFields, {
       conversationId: options?.conversationId,
     });
@@ -222,6 +245,8 @@ export async function getAgentContext(
     headVersionId: work.headVersionId,
     profile: dto.profile,
     references: dto.references,
+    preview: dto.preview,
+    revision: dto.revision,
     production: dto.production,
     threadId,
     workTitle: work.title,

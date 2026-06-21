@@ -172,19 +172,10 @@ async function materializePreviewBlocks(
   );
 }
 
-/** 将 production 内外部临时配图物化到自有 storage（写库前调用）。 */
+/** 将 production 任务 deliverable 与顶层 preview 的临时配图物化到自有 storage。 */
 export async function materializeWorkProductionImages(
   production: WorkProduction,
 ): Promise<WorkProduction> {
-  const preview = production.preview
-    ? {
-        ...production.preview,
-        blocks:
-          (await materializePreviewBlocks(production.preview.blocks)) ??
-          production.preview.blocks,
-      }
-    : production.preview;
-
   const pending_tasks = await Promise.all(
     (production.pending_tasks ?? []).map(async (task) => {
       if (!task.deliverable?.images?.length) return task;
@@ -201,28 +192,38 @@ export async function materializeWorkProductionImages(
 
   return {
     ...production,
-    preview,
     pending_tasks,
   };
 }
 
-/** Agent run 落库前：物化 values.production 中的临时配图。 */
+export async function materializeWorkPreviewImages(
+  preview: import("@yougan/domain").WorkPreview | null,
+): Promise<import("@yougan/domain").WorkPreview | null> {
+  if (!preview?.blocks?.length) return preview;
+  const blocks =
+    (await materializePreviewBlocks(preview.blocks)) ?? preview.blocks;
+  return { ...preview, blocks };
+}
+
+/** Agent run 落库前：物化 values 中的临时配图。 */
 export async function materializeAgentRunValues(
   values: Record<string, unknown>,
 ): Promise<Record<string, unknown>> {
-  const production = values.production;
-  if (!production || typeof production !== "object") {
-    return values;
+  const next = { ...values };
+
+  if (values.production && typeof values.production === "object") {
+    next.production = await materializeWorkProductionImages(
+      values.production as WorkProduction,
+    );
   }
 
-  const materialized = await materializeWorkProductionImages(
-    production as WorkProduction,
-  );
+  if (values.preview && typeof values.preview === "object") {
+    next.preview = await materializeWorkPreviewImages(
+      values.preview as import("@yougan/domain").WorkPreview,
+    );
+  }
 
-  return {
-    ...values,
-    production: materialized,
-  };
+  return next;
 }
 
 export function parsePublicationBlocks(raw: unknown): PreviewBlock[] {

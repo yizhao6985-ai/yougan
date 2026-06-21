@@ -6,6 +6,7 @@ export {
   getProduction,
   getProfile,
   getReferences,
+  getRevision,
   getTurnQueue,
 } from "./get.js";
 export {
@@ -26,6 +27,7 @@ export {
   patchPendingProductionFields,
   patchPendingProfile,
   patchPendingReferences,
+  patchPendingRevision,
 } from "./patch-pending.js";
 export { getTurn, patchTurn } from "./turn.js";
 import { getCurrentTaskInput } from "@langchain/langgraph";

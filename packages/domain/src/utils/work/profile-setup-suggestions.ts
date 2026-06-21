@@ -223,7 +223,10 @@ function buildSlotAnchorNote(
     const prior = summarizePriorSteps(profile, slot.step);
     if (prior === "（无）") return "";
 
-    const focusHint = getStepConsolidateFocusHint(profile, slot.step);
+    const focusHint =
+      slot.step !== "ready"
+        ? getStepConsolidateFocusHint(profile, slot.step)
+        : null;
     const focusNote = focusHint ? `；${focusHint}` : "";
     return ` — 紧扣前述：${prior}${focusNote}`;
   }

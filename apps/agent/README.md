@@ -10,7 +10,7 @@ Node.js LangGraph 服务：**回合队列** workflow + 四条对话子图（refe
 |----------|------|------|
 | `yougan` | `src/graph.ts:graph` | 主创作流 |
 
-Checkpoint：**Agent 专用 Postgres**（`POSTGRES_URI`，默认 `:5433`）。
+Checkpoint：**与 API 共用 Postgres**（`POSTGRES_URI`，默认 `:5432/yougan_agent`）。
 
 ## 两层三分架构
 

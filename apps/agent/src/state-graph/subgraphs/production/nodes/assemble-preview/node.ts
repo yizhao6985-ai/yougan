@@ -12,13 +12,14 @@ import {
 import {
   blocksFromProductionTasks,
   getDirectionSummary,
+  previewHasContent,
   type WorkPreview,
 } from "@yougan/domain";
 import {
   getModelTemperature,
   getProduction,
   getProfile,
-  patchPendingProductionFields,
+  patchPending,
 } from "#agent/state-io/index.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
@@ -79,7 +80,11 @@ export async function assemblePreviewNode(
         [
           new SystemMessage(buildConsolidateSystemPrompt({ profile })),
           new HumanMessage(
-            buildConsolidateHumanPrompt({ profile, plan: production, deliverables }),
+            buildConsolidateHumanPrompt({
+              profile,
+              plan: production,
+              deliverables,
+            }),
           ),
         ],
         { name: "assemble_preview" },
@@ -103,11 +108,17 @@ export async function assemblePreviewNode(
     blocks,
   };
 
+  if (!previewHasContent(preview)) {
+    return {};
+  }
+
   return {
-    ...patchPendingProductionFields(state, {
-      ...production,
-      pending_tasks: [],
+    ...patchPending(state, {
       preview,
+      production: {
+        ...production,
+        pending_tasks: [],
+      },
     }),
     ...patchRunProgress(progress),
     ...patchAiUsageMetering(state.aiUsage, config),

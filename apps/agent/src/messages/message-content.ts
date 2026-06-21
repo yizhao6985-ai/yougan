@@ -8,6 +8,7 @@ function contentPartToText(part: unknown): string {
     content?: unknown;
   };
 
+  if (block.type === "preview_selection") return "";
   if (typeof block.text === "string") return block.text;
   if (typeof block.content === "string") return block.content;
   return "";

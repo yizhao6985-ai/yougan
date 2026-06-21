@@ -61,11 +61,11 @@ export function SettingsUserStrip() {
 
         <div className="flex flex-wrap gap-2">
           {!isPaid ? (
-            <Button type="button" size="sm" className="rounded-full" asChild>
+            <Button type="button" size="sm" asChild>
               <Link to="/settings/membership">{MEMBERSHIP.upgradeButton}</Link>
             </Button>
           ) : null}
-          <Button type="button" size="sm" variant="outline" className="rounded-full" asChild>
+          <Button type="button" size="sm" variant="outline" asChild>
             <Link to="/profile">
               <ExternalLinkIcon className="size-4" />
               查看我的主页
