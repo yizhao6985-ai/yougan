@@ -1,6 +1,7 @@
 /** summarizeProduction 对话文案 */
 import {
   previewPlainText,
+  previewHasContent,
   type WorkPreview,
   type WorkProduction,
 } from "@yougan/domain";
@@ -24,7 +25,7 @@ export function buildProductionSummaryMessage(
   production: WorkProduction,
   preview: WorkPreview | null,
 ): string {
-  if (preview?.blocks?.length) {
+  if (previewHasContent(preview)) {
     return formatPreviewExcerpt(preview);
   }
 

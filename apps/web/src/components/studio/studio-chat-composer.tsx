@@ -123,7 +123,7 @@ export function StudioChatComposer({
       <ComposerAttachmentDrawer />
       <PromptInputBody>
         <div
-          className="flex w-full flex-1 flex-wrap items-start gap-1 px-3 py-3 min-h-16"
+          className="flex w-full flex-1 flex-wrap items-start gap-1 px-3 py-3.5 min-h-[4.5rem]"
           onClick={(event) => {
             if ((event.target as HTMLElement).closest("button")) {
               return;
@@ -137,7 +137,7 @@ export function StudioChatComposer({
           <ComposerPreviewSelectionTags inline />
           <PromptInputTextarea
             data-yougan-composer-textarea
-            className="field-sizing-content max-h-48 min-h-5 min-w-[8rem] flex-1 px-0 py-0 text-sm leading-5"
+            className="field-sizing-content max-h-48 min-h-6 min-w-[8rem] flex-1 px-0 py-0 text-sm leading-6"
             placeholder={
               usageExceeded
                 ? CHAT_COPY.quotaExceededPlaceholder

@@ -11,8 +11,6 @@ export type {
   ProfileDirection,
   ProfileStyle,
   ProfileSpecItem,
-  ProfileSequenceItem,
-  SequenceRole,
   ProfileStepId,
   ContentFormMediaParams,
   NextStepSuggestion,

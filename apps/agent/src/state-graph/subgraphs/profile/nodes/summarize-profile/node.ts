@@ -7,7 +7,7 @@ import { streamChat } from "#agent/llm/invoke/index.js";
 import { patchAiUsageMetering } from "#agent/llm/invoke/metering.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
 import { getLatestHumanMessageText } from "#agent/messages/human.js";
-import { getProfile } from "#agent/state-io/index.js";
+import { getPreview, getProduction, getProfile } from "#agent/state-io/index.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
 import { buildSummarizeProfilePrompt } from "./prompt.js";
@@ -45,6 +45,8 @@ export async function summarizeProfileNode(
           after,
           user_message: userMessage,
           changed,
+          preview: getPreview(state),
+          production: getProduction(state),
         }),
       ),
     ],

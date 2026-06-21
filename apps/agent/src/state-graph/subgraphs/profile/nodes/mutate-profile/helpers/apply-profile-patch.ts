@@ -1,26 +1,18 @@
 import {
   appendBound,
-  appendContext,
-  appendSequence,
+  appendRequirement,
+  appendSetting,
   clearBounds,
-  clearContext,
-  clearSequence,
-  newProfileSequenceItem,
+  clearRequirements,
+  clearSetting,
   newProfileSpecItem,
-  normalizeSequenceRole,
   patchDirection,
   patchStyle,
   type ProfileDirection,
   type ProfileStyle,
-  type SequenceRole,
   type WorkProfile,
   EMPTY_WORK_PROFILE,
 } from "@yougan/domain";
-
-export type SequencePatchInput = {
-  spec: string;
-  role?: SequenceRole | string | null;
-};
 
 export type SpecPatchInput = {
   spec: string;
@@ -29,12 +21,12 @@ export type SpecPatchInput = {
 export type ProfilePatch = {
   direction?: Partial<ProfileDirection>;
   style?: Partial<ProfileStyle>;
-  clear_context?: boolean;
-  context_replace?: SpecPatchInput[];
-  context_append?: SpecPatchInput[];
-  clear_sequence?: boolean;
-  sequence_replace?: SequencePatchInput[];
-  sequence_append?: SequencePatchInput[];
+  clear_setting?: boolean;
+  setting_replace?: SpecPatchInput[];
+  setting_append?: SpecPatchInput[];
+  clear_requirements?: boolean;
+  requirements_replace?: SpecPatchInput[];
+  requirements_append?: SpecPatchInput[];
   clear_bounds?: boolean;
   bounds_replace?: SpecPatchInput[];
   bounds_append?: SpecPatchInput[];
@@ -60,6 +52,7 @@ function appendSpecs(
 function replaceSpecs(
   profile: WorkProfile,
   items: SpecPatchInput[],
+  field: "setting" | "requirements" | "bounds",
   prefix: string,
 ): WorkProfile {
   const base = profile ?? EMPTY_WORK_PROFILE;
@@ -71,25 +64,7 @@ function replaceSpecs(
     })
     .filter((item): item is NonNullable<typeof item> => item != null);
 
-  if (prefix === "ctx") {
-    return { ...base, context: next };
-  }
-  return { ...base, bounds: next };
-}
-
-function replaceSequence(
-  profile: WorkProfile,
-  items: SequencePatchInput[],
-): WorkProfile {
-  const base = profile ?? EMPTY_WORK_PROFILE;
-  const next = items
-    .map((item) => {
-      const trimmed = item.spec.trim();
-      if (!trimmed) return null;
-      return newProfileSequenceItem(trimmed, normalizeSequenceRole(item.role));
-    })
-    .filter((item): item is NonNullable<typeof item> => item != null);
-  return { ...base, sequence: next };
+  return { ...base, [field]: next };
 }
 
 function hasStylePatch(style: Partial<ProfileStyle>): boolean {
@@ -99,12 +74,12 @@ function hasStylePatch(style: Partial<ProfileStyle>): boolean {
 function hasProfilePatchInput(patch: ProfilePatch): boolean {
   if (patch.direction && Object.keys(patch.direction).length > 0) return true;
   if (patch.style && hasStylePatch(patch.style)) return true;
-  if (patch.clear_context) return true;
-  if (patch.context_replace?.length) return true;
-  if (patch.context_append?.length) return true;
-  if (patch.clear_sequence) return true;
-  if (patch.sequence_replace?.length) return true;
-  if (patch.sequence_append?.length) return true;
+  if (patch.clear_setting) return true;
+  if (patch.setting_replace?.length) return true;
+  if (patch.setting_append?.length) return true;
+  if (patch.clear_requirements) return true;
+  if (patch.requirements_replace?.length) return true;
+  if (patch.requirements_append?.length) return true;
   if (patch.clear_bounds) return true;
   if (patch.bounds_replace?.length) return true;
   if (patch.bounds_append?.length) return true;
@@ -130,32 +105,30 @@ export function applyProfilePatch(
     changes.push("风格");
   }
 
-  if (patch.clear_context) {
-    next = clearContext(next);
-    changes.push("清空设定");
+  if (patch.clear_setting) {
+    next = clearSetting(next);
+    changes.push("清空背景");
   }
-  if (patch.context_replace?.length) {
-    next = replaceSpecs(next, patch.context_replace, "ctx");
-    changes.push("设定");
-  } else if (patch.context_append?.length) {
-    const before = next.context.length;
-    next = appendSpecs(next, patch.context_append, appendContext);
-    if (next.context.length > before) changes.push("设定");
+  if (patch.setting_replace?.length) {
+    next = replaceSpecs(next, patch.setting_replace, "setting", "set");
+    changes.push("背景");
+  } else if (patch.setting_append?.length) {
+    const before = next.setting.length;
+    next = appendSpecs(next, patch.setting_append, appendSetting);
+    if (next.setting.length > before) changes.push("背景");
   }
 
-  if (patch.clear_sequence) {
-    next = clearSequence(next);
-    changes.push("清空节拍");
+  if (patch.clear_requirements) {
+    next = clearRequirements(next);
+    changes.push("清空需求");
   }
-  if (patch.sequence_replace?.length) {
-    next = replaceSequence(next, patch.sequence_replace);
-    changes.push("节拍");
-  } else if (patch.sequence_append?.length) {
-    const before = next.sequence.length;
-    for (const item of patch.sequence_append) {
-      next = appendSequence(next, item.spec, item.role);
-    }
-    if (next.sequence.length > before) changes.push("节拍");
+  if (patch.requirements_replace?.length) {
+    next = replaceSpecs(next, patch.requirements_replace, "requirements", "req");
+    changes.push("需求");
+  } else if (patch.requirements_append?.length) {
+    const before = next.requirements.length;
+    next = appendSpecs(next, patch.requirements_append, appendRequirement);
+    if (next.requirements.length > before) changes.push("需求");
   }
 
   if (patch.clear_bounds) {
@@ -163,7 +136,7 @@ export function applyProfilePatch(
     changes.push("清空边界");
   }
   if (patch.bounds_replace?.length) {
-    next = replaceSpecs(next, patch.bounds_replace, "bnd");
+    next = replaceSpecs(next, patch.bounds_replace, "bounds", "bnd");
     changes.push("边界");
   } else if (patch.bounds_append?.length) {
     const before = next.bounds.length;

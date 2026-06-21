@@ -12,7 +12,6 @@ import { SiteHeader } from "@/components/site-header";
 import {
   EXTRA_CAPABILITIES,
   HOME_CORE_FEATURES,
-  HOME_MEDIA_MODALITIES,
   STUDIO_PANELS,
 } from "@/lib/product-capabilities";
 import { scene } from "@/lib/scene-styles";
@@ -55,12 +54,20 @@ export function HomePage() {
             <p className={scene.pageEyebrow}>{HOME.eyebrow}</p>
             <h1 className={cn("mt-4 max-w-4xl", scene.pageTitleHero)}>
               {HOME.title}
-              <span className="mt-3 block bg-gradient-to-r from-foreground via-foreground to-primary/80 bg-clip-text text-3xl font-semibold text-transparent sm:text-4xl">
-                {HOME.titleSuffix}
-              </span>
             </h1>
+            <p className="mt-3 text-xl font-medium tracking-tight text-muted-foreground sm:text-2xl">
+              {HOME.tagline}
+            </p>
             <p className={cn("mt-6 max-w-2xl", scene.pageSubtitle)}>
               {HOME.subtitle}
+            </p>
+            <p
+              className={cn(
+                "mt-5 max-w-2xl bg-gradient-to-r from-foreground via-foreground to-primary/80 bg-clip-text",
+                "text-lg font-semibold tracking-tight text-transparent sm:text-xl",
+              )}
+            >
+              {HOME.mediaSpectrum}
             </p>
             <div className="mt-10 flex flex-wrap gap-3">
               <Link to="/studio" className={scene.ctaPrimary}>
@@ -69,25 +76,6 @@ export function HomePage() {
               <Link to="/features" className={scene.ctaSecondary}>
                 {HOME.ctaGuide}
               </Link>
-            </div>
-
-            <div className="mt-12">
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
-                {HOME.modalitiesLabel}
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {HOME_MEDIA_MODALITIES.map((modality) => (
-                  <span
-                    key={modality}
-                    className={cn(
-                      scene.pill,
-                      "bg-primary/10 font-medium text-primary ring-primary/20",
-                    )}
-                  >
-                    {modality}
-                  </span>
-                ))}
-              </div>
             </div>
           </header>
 

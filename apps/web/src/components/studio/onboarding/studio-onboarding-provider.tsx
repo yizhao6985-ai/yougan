@@ -28,6 +28,8 @@ const AUTO_START_DELAY_MS = 500;
 type StudioOnboardingContextValue = {
   isActive: boolean;
   stepIndex: number;
+  currentStepId: StudioOnboardingStep["id"] | null;
+  highlightRevisitEntry: boolean;
   steps: StudioOnboardingStep[];
   startTour: (options?: { skipWelcome?: boolean }) => void;
   dismissTour: () => void;
@@ -141,11 +143,13 @@ export function StudioOnboardingProvider({ children }: { children: ReactNode }) 
     () => ({
       isActive,
       stepIndex,
+      currentStepId: currentStep?.id ?? null,
+      highlightRevisitEntry: currentStep?.id === "works-aside",
       steps: STUDIO_ONBOARDING_STEPS,
       startTour,
       dismissTour,
     }),
-    [dismissTour, isActive, startTour, stepIndex],
+    [currentStep?.id, dismissTour, isActive, startTour, stepIndex],
   );
 
   return (

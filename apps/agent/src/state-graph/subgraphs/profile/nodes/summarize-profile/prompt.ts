@@ -1,13 +1,14 @@
 import {
   profileBoundsSummary,
-  profileContextSummary,
   profileDirectionSummary,
-  profileSequenceSummary,
+  profileRequirementsSummary,
+  profileSettingSummary,
   profileStyleSummary,
 } from "#agent/prompts/profile-summary.js";
 import { YOUGAN_USER_LABEL } from "#agent/system-prompt.js";
-import type { WorkProfile } from "@yougan/domain";
+import type { WorkPreview, WorkProduction, WorkProfile } from "@yougan/domain";
 import {
+  buildProfileSetupProgressOptions,
   buildProfileStepPromptSection,
   getProfileSetupState,
   getProfileStepCopy,
@@ -18,17 +19,24 @@ export function buildSummarizeProfilePrompt(input: {
   after: WorkProfile;
   user_message: string;
   changed: boolean;
+  preview?: WorkPreview | null;
+  production?: WorkProduction | null;
 }): string {
   const beforeSummary =
     input.before.direction.summary.trim() || "（尚无）";
   const afterSummary = input.after.direction.summary.trim() || "（尚无）";
 
-  const setup = getProfileSetupState(input.after);
+  const profileSetupOptions = buildProfileSetupProgressOptions({
+    profile: input.after,
+    preview: input.preview,
+    production: input.production,
+  });
+  const setup = getProfileSetupState(input.after, profileSetupOptions);
   const stepCopy = getProfileStepCopy(input.after, setup.activeStep);
 
   return `归纳本轮作品方案变更并生成面向${YOUGAN_USER_LABEL}的回复。
 
-${buildProfileStepPromptSection(input.after)}
+${buildProfileStepPromptSection(input.after, profileSetupOptions)}
 
 ## 本轮是否有 staging 变更
 ${input.changed ? "有变更" : "无实质变更"}
@@ -44,11 +52,11 @@ ${afterSummary}
 
 ② 风格：${profileStyleSummary(input.after)}
 
-③ 设定：
-${profileContextSummary(input.after)}
+③ 背景：
+${profileSettingSummary(input.after)}
 
-④ 节拍：
-${profileSequenceSummary(input.after)}
+④ 需求：
+${profileRequirementsSummary(input.after)}
 
 ⑤ 边界：
 ${profileBoundsSummary(input.after)}

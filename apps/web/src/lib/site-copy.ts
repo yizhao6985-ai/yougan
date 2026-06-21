@@ -121,9 +121,10 @@ export const ABOUT_PAGE = {
 export const HOME = {
   eyebrow: BRAND.en,
   title: "有感",
-  titleSuffix: "文字 · 画面 · 脚本 · 视听",
+  tagline: BRAND.taglineLanding,
+  mediaSpectrum: "文章 · 插画 · 脚本 · 音视频",
   subtitle:
-    "维护制作方案、解析参考素材、AI 团队按计划出稿——文章、插画、脚本与音视频都能做，还能版本回溯与一键发布。",
+    "维护制作方案、解析参考素材、AI 团队按计划出稿，支持版本回溯与一键发布。",
   ctaStudio: "开始创作",
   ctaGuide: "使用指南",
   modalitiesLabel: "支持媒介",
@@ -445,6 +446,9 @@ export const STUDIO_ONBOARDING = {
   finishGuideLink: "查看完整使用指南",
   finishAssistantHint: "还有疑问？打开页头「有感助手」随时提问。",
   userMenuLabel: "创作台快速引导",
+  revisitEntryHint: "之后可随时点击此处，再次查看快速引导",
+  worksAsideRevisitFootnote:
+    "左下角「快速引导」会常驻在这里，忘记某一步时可以随时重看。",
 } as const;
 
 export const CHAT_COPY = {
@@ -455,8 +459,8 @@ export const CHAT_COPY = {
   status: {
     referenceProcessing: "正在分析参考素材",
     profileExploring: "正在整理制作方案",
-    profileEditing: (sequence: number, bounds: number) =>
-      `制作方案 ${sequence} 节拍 · ${bounds} 条边界，可在右侧修改`,
+    profileEditing: (requirements: number, bounds: number) =>
+      `制作方案 ${requirements} 条需求 · ${bounds} 条边界，可在右侧修改`,
     askExploring: "提问答疑中：优化建议、创作方法、背景知识",
     productionExecuting: "AI 团队正在执行制作",
   },
@@ -575,20 +579,20 @@ export const PROFILE_WIZARD = {
   tierRequired: "必填",
   tierRecommended: "建议",
   tierOptional: "可选",
-  readyBody: "必填项已齐。可说「开始制作」进入制作，或继续补充风格、设定、节拍与边界。",
-  contextLabel: "设定",
-  sequenceLabel: "节拍",
+  readyBody: "必填项已齐。可说「开始制作」进入制作，或继续补充风格、背景、需求与边界。",
+  settingLabel: "背景",
+  requirementsLabel: "需求",
   boundsLabel: "边界",
   clearBounds: "清空边界",
-  clearContext: "清空设定",
-  clearSequence: "清空节拍",
-  contextEmptyTitle: "暂无设定",
-  contextEmptyBody:
-    "可选。例如：「主角是产品经理」「虚构品牌名」「全文约 800 字」",
-  sequenceEmptyTitle: "暂无内容节拍",
-  sequenceEmptyBody:
-    "可选。例如：「先讲痛点 → 配图对比 → 总结推荐」",
-  boundsEmptyTitle: "暂无边界设定",
+  clearSetting: "清空背景",
+  clearRequirements: "清空需求",
+  settingEmptyTitle: "暂无背景信息",
+  settingEmptyBody:
+    "可选。例如：「主角是产品经理」「虚构品牌名」「故事发生在 2030 年上海」",
+  requirementsEmptyTitle: "暂无需求说明",
+  requirementsEmptyBody:
+    "可选。例如：「800 字」「先讲痛点 → 三款对比 → 总结推荐」",
+  boundsEmptyTitle: "暂无边界说明",
   boundsEmptyBody:
     "可选。例如：「配图中不要人脸」「不要真实品牌名」",
 } as const;

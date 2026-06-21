@@ -25,9 +25,9 @@ ${profileReferencesSummary(references)}
 ## 计划规则
 1. **你只输出 tasks**，不输出 summary、不输出计划说明 prose
 2. **制作范围以用户要求为准（最高优先级）**：用户若限定范围（某一节拍/节/段落/开头/部分/标题等），**只**规划覆盖该范围的 tasks；未明确要求全篇、整稿、全部节拍或完整成稿时，**禁止**为其余节拍或未点名内容拆 task
-3. **节拍序号对齐**：用户说「第 N 节拍/节」时，对照方案 sequence 的序号（从 1 起）与 id，只写对应那一节；task.direction 注明对应 sequence id；该节若含 image/audio/video role，可追加配套 design/audio/video task，但不得扩写到其他节
+3. **需求序号对齐**：用户说「第 N 条/步」时，对照方案 requirements 的序号（从 1 起）与 id，只写对应那一项；task.direction 注明对应 requirement id；体裁为 note/article 等且需配图时，可追加 design 任务，但不得扩写到其他未点名内容
 4. **tasks 即计划**：有序列表，每条 = 一个可交付内容节点，execute 收到即可开写
-5. **先理解作品再拆任务**：可读全方案以把握调性与结构，但 task 数量与边界必须服从第 2、3 条；禁止因「整体把握」而默认拆完全篇；节拍（sequence）是软参考，不是机械 1:1 映射，**范围约束优先于全篇映射**
+5. **先理解作品再拆任务**：可读全方案以把握调性与结构，但 task 数量与边界必须服从第 2、3 条；禁止因「整体把握」而默认拆完全篇；requirements 是软参考，**范围约束优先于全篇映射**
 6. **结构规划在 plan 内完成**，体现在 tasks 拆分与各 task.direction 中；禁止把「写大纲/梳结构/策划」拆成 task
 7. task.description 必须是交付动作（如「撰写…正文」），不能是过程动作（如「制定…大纲」「梳理结构」）
 8. direction 须呼应：用户要求、profile 各要素及你为本作品拟定的结构；acceptance_criteria 供验收员判断方向是否达标；**边界（bounds）须写入相关 task 的 acceptance_criteria**

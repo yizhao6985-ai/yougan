@@ -16,12 +16,12 @@ export function StudioCreateView() {
     updateProfileBound,
     deleteProfileBound,
     clearWorkProfileBounds,
-    updateProfileSequence,
-    deleteProfileSequence,
-    clearWorkProfileSequence,
-    updateProfileContext,
-    deleteProfileContext,
-    clearWorkProfileContext,
+    updateProfileRequirement,
+    deleteProfileRequirement,
+    clearWorkProfileRequirements,
+    updateProfileSetting,
+    deleteProfileSetting,
+    clearWorkProfileSetting,
     removeRevisionIntentFromWork,
   } = useYouganStreamContext();
 
@@ -45,6 +45,11 @@ export function StudioCreateView() {
     streamValues?.preview ??
     activeWork?.preview ??
     null;
+  const production =
+    staging?.production ??
+    streamValues?.production ??
+    activeWork?.production ??
+    null;
   const revision =
     staging?.revision ??
     streamValues?.revision ??
@@ -60,6 +65,7 @@ export function StudioCreateView() {
       references={references}
       profile={profile}
       preview={preview}
+      production={production}
       revision={revision}
       previewUnsaved={previewUnsaved}
       onDuplicated={selectWork}
@@ -83,32 +89,34 @@ export function StudioCreateView() {
       onClearBounds={
         activeWork ? () => clearWorkProfileBounds(activeWork.id) : undefined
       }
-      onUpdateSequence={
+      onUpdateRequirement={
         activeWork
           ? (itemId, spec) =>
-              updateProfileSequence(activeWork.id, itemId, spec)
+              updateProfileRequirement(activeWork.id, itemId, spec)
           : undefined
       }
-      onDeleteSequence={
+      onDeleteRequirement={
         activeWork
-          ? (itemId) => deleteProfileSequence(activeWork.id, itemId)
+          ? (itemId) => deleteProfileRequirement(activeWork.id, itemId)
           : undefined
       }
-      onClearSequence={
-        activeWork ? () => clearWorkProfileSequence(activeWork.id) : undefined
-      }
-      onUpdateContext={
+      onClearRequirements={
         activeWork
-          ? (itemId, spec) => updateProfileContext(activeWork.id, itemId, spec)
+          ? () => clearWorkProfileRequirements(activeWork.id)
           : undefined
       }
-      onDeleteContext={
+      onUpdateSetting={
         activeWork
-          ? (itemId) => deleteProfileContext(activeWork.id, itemId)
+          ? (itemId, spec) => updateProfileSetting(activeWork.id, itemId, spec)
           : undefined
       }
-      onClearContext={
-        activeWork ? () => clearWorkProfileContext(activeWork.id) : undefined
+      onDeleteSetting={
+        activeWork
+          ? (itemId) => deleteProfileSetting(activeWork.id, itemId)
+          : undefined
+      }
+      onClearSetting={
+        activeWork ? () => clearWorkProfileSetting(activeWork.id) : undefined
       }
     />
   );

@@ -9,8 +9,8 @@ export const TOOL_LABELS: Record<string, string> = {
   reference_apply_patch: "更新参考素材",
   update_profile_direction: "更新方向",
   update_profile_style: "更新风格",
-  update_profile_context: "更新设定",
-  update_profile_sequence: "更新节拍",
+  update_profile_setting: "更新背景",
+  update_profile_requirements: "更新需求",
   update_profile_bounds: "更新边界",
   add_plan_task: "添加制作任务",
   execute_task: "执行任务",
@@ -78,10 +78,10 @@ export function getToolInputSummary(
       return (
         readString(toolInput.verbal) || readString(toolInput.visual) || ""
       );
-    case "update_profile_context":
-      return summarizePatchList(toolInput.items, "设定") ?? "";
-    case "update_profile_sequence":
-      return summarizePatchList(toolInput.items, "节拍") ?? "";
+    case "update_profile_setting":
+      return summarizePatchList(toolInput.items, "背景") ?? "";
+    case "update_profile_requirements":
+      return summarizePatchList(toolInput.items, "需求") ?? "";
     case "update_profile_bounds":
       return summarizePatchList(toolInput.items, "边界") ?? "";
     case "reference_apply_patch": {

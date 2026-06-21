@@ -8,7 +8,7 @@ import {
   resolveOnboardingTarget,
   type StudioOnboardingStep,
 } from "@/lib/studio-onboarding";
-import { computeOnboardingCardPlacement } from "@/lib/studio-onboarding-placement";
+import { computeOnboardingCardPlacement, clampSpotlightRect } from "@/lib/studio-onboarding-placement";
 import { STUDIO_ONBOARDING } from "@/lib/site-copy";
 import { cn } from "@/lib/utils";
 
@@ -30,12 +30,12 @@ function measureTarget(step: Extract<StudioOnboardingStep, { kind: "spotlight" }
   const rect = element.getBoundingClientRect();
   if (rect.width <= 0 || rect.height <= 0) return null;
 
-  return {
-    top: Math.max(0, rect.top - SPOTLIGHT_PADDING),
-    left: Math.max(0, rect.left - SPOTLIGHT_PADDING),
+  return clampSpotlightRect({
+    top: rect.top - SPOTLIGHT_PADDING,
+    left: rect.left - SPOTLIGHT_PADDING,
     width: rect.width + SPOTLIGHT_PADDING * 2,
     height: rect.height + SPOTLIGHT_PADDING * 2,
-  } satisfies SpotlightRect;
+  });
 }
 
 function spotlightShadow() {
@@ -77,7 +77,37 @@ function OnboardingProgress({
   );
 }
 
-function FinishBulletList({ items }: { items: readonly string[] }) {
+function StepBulletList({
+  items,
+  variant = "numbered",
+}: {
+  items: readonly string[];
+  variant?: "numbered" | "compact";
+}) {
+  if (variant === "compact") {
+    return (
+      <ul className="mt-3 space-y-2">
+        {items.map((item) => {
+          const splitIndex = item.indexOf("：");
+          const title = splitIndex >= 0 ? item.slice(0, splitIndex) : item;
+          const body = splitIndex >= 0 ? item.slice(splitIndex + 1) : "";
+
+          return (
+            <li
+              key={item}
+              className="rounded-lg bg-accent/25 px-3 py-2 ring-1 ring-primary/8"
+            >
+              <p className="text-sm leading-6 text-muted-foreground">
+                <span className="font-medium text-foreground">{title}</span>
+                {body ? `：${body}` : null}
+              </p>
+            </li>
+          );
+        })}
+      </ul>
+    );
+  }
+
   return (
     <ol className="mt-4 space-y-2.5">
       {items.map((item, index) => {
@@ -173,8 +203,17 @@ function StudioOnboardingStepCard({
         {step.body}
       </p>
 
-      {step.kind === "center" && step.bullets?.length ? (
-        <FinishBulletList items={step.bullets} />
+      {step.bullets?.length ? (
+        <StepBulletList
+          items={step.bullets}
+          variant={step.id === "creative-panel" ? "compact" : "numbered"}
+        />
+      ) : null}
+
+      {step.kind === "spotlight" && step.footnote ? (
+        <p className="relative mt-3 rounded-lg bg-primary/8 px-3 py-2.5 text-xs leading-5 text-primary">
+          {step.footnote}
+        </p>
       ) : null}
 
       {step.id === "finish" ? (
@@ -252,12 +291,16 @@ export function StudioOnboardingOverlay({
     const onResize = () => update();
     window.addEventListener("resize", onResize);
     window.addEventListener("scroll", onResize, true);
+    window.visualViewport?.addEventListener("resize", onResize);
+    window.visualViewport?.addEventListener("scroll", onResize);
 
     return () => {
       window.cancelAnimationFrame(raf);
       window.clearTimeout(retryTimer);
       window.removeEventListener("resize", onResize);
       window.removeEventListener("scroll", onResize, true);
+      window.visualViewport?.removeEventListener("resize", onResize);
+      window.visualViewport?.removeEventListener("scroll", onResize);
     };
   }, [step]);
 

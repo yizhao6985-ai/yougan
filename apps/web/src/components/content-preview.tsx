@@ -8,7 +8,7 @@ import { PublishPlatformActions } from "@/components/studio/publish-platform-act
 import { RevisionListControls } from "@/components/studio/revision-list-dialog";
 import { PreviewBlockList } from "@/components/preview-block-list";
 import { groupRevisionItemsByBlock, scrollToPreviewBlock } from "@/lib/revision-display";
-import { previewHasContent } from "@yougan/domain";
+import { previewContentToLegacyBlocks, previewHasContent } from "@yougan/domain";
 import { downloadPreviewAsZip } from "@/lib/download-preview-zip";
 import { PREVIEW_PANEL } from "@/lib/site-copy";
 import type { WorkPreview, WorkRevision } from "@/lib/types";
@@ -33,6 +33,11 @@ export function ContentPreview({
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [expandedBlockId, setExpandedBlockId] = useState<string | null>(null);
+
+  const previewBlocks = useMemo(
+    () => (preview ? previewContentToLegacyBlocks(preview) : []),
+    [preview],
+  );
 
   const { items: revisionItems, unanchored } = useMemo(
     () => groupRevisionItemsByBlock(revision),
@@ -90,7 +95,7 @@ export function ContentPreview({
             ) : null}
 
             <PreviewBlockList
-              blocks={preview.blocks}
+              blocks={previewBlocks}
               compact={compact}
               galleryKey={workId}
               showImagePrompts

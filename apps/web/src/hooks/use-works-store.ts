@@ -19,14 +19,14 @@ import { queryKeys } from "@/hooks/queries/keys";
 import { normalizeWork } from "@/lib/normalize-work";
 import {
   clearBounds,
-  clearContext,
-  clearSequence,
+  clearRequirements,
+  clearSetting,
   deleteBoundItem,
-  deleteContextItem,
-  deleteSequenceItem,
+  deleteRequirementItem,
+  deleteSettingItem,
   updateBoundItem,
-  updateContextItem,
-  updateSequenceItem,
+  updateRequirementItem,
+  updateSettingItem,
 } from "@yougan/domain";
 import type { YouganValues, Work, WorkProfile, WorkRevision } from "@/lib/types";
 import {
@@ -174,60 +174,60 @@ export function useWorksStore() {
     patchProfile(workId, clearBounds(current.profile));
   });
 
-  const updateProfileSequence = useMemoizedFn(
+  const updateProfileRequirement = useMemoizedFn(
     (workId: string, itemId: string, spec: string) => {
       const current = queryClient
         .getQueryData<Work[]>(queryKeys.works.list)
         ?.find((work) => work.id === workId);
       if (!current) return;
-      const next = updateSequenceItem(current.profile, itemId, spec);
+      const next = updateRequirementItem(current.profile, itemId, spec);
       patchProfile(workId, next);
     },
   );
 
-  const deleteProfileSequence = useMemoizedFn((workId: string, itemId: string) => {
+  const deleteProfileRequirement = useMemoizedFn((workId: string, itemId: string) => {
     const current = queryClient
       .getQueryData<Work[]>(queryKeys.works.list)
       ?.find((work) => work.id === workId);
     if (!current) return;
-    const next = deleteSequenceItem(current.profile, itemId);
+    const next = deleteRequirementItem(current.profile, itemId);
     patchProfile(workId, next);
   });
 
-  const clearWorkProfileSequence = useMemoizedFn((workId: string) => {
+  const clearWorkProfileRequirements = useMemoizedFn((workId: string) => {
     const current = queryClient
       .getQueryData<Work[]>(queryKeys.works.list)
       ?.find((work) => work.id === workId);
     if (!current) return;
-    patchProfile(workId, clearSequence(current.profile));
+    patchProfile(workId, clearRequirements(current.profile));
   });
 
-  const updateProfileContext = useMemoizedFn(
+  const updateProfileSetting = useMemoizedFn(
     (workId: string, itemId: string, spec: string) => {
       const current = queryClient
         .getQueryData<Work[]>(queryKeys.works.list)
         ?.find((work) => work.id === workId);
       if (!current) return;
-      const next = updateContextItem(current.profile, itemId, spec);
+      const next = updateSettingItem(current.profile, itemId, spec);
       patchProfile(workId, next);
     },
   );
 
-  const deleteProfileContext = useMemoizedFn((workId: string, itemId: string) => {
+  const deleteProfileSetting = useMemoizedFn((workId: string, itemId: string) => {
     const current = queryClient
       .getQueryData<Work[]>(queryKeys.works.list)
       ?.find((work) => work.id === workId);
     if (!current) return;
-    const next = deleteContextItem(current.profile, itemId);
+    const next = deleteSettingItem(current.profile, itemId);
     patchProfile(workId, next);
   });
 
-  const clearWorkProfileContext = useMemoizedFn((workId: string) => {
+  const clearWorkProfileSetting = useMemoizedFn((workId: string) => {
     const current = queryClient
       .getQueryData<Work[]>(queryKeys.works.list)
       ?.find((work) => work.id === workId);
     if (!current) return;
-    patchProfile(workId, clearContext(current.profile));
+    patchProfile(workId, clearSetting(current.profile));
   });
 
   const renameWork = useMemoizedFn(async (workId: string, title: string) => {
@@ -309,12 +309,12 @@ export function useWorksStore() {
     updateProfileBound,
     deleteProfileBound,
     clearWorkProfileBounds,
-    updateProfileSequence,
-    deleteProfileSequence,
-    clearWorkProfileSequence,
-    updateProfileContext,
-    deleteProfileContext,
-    clearWorkProfileContext,
+    updateProfileSetting,
+    deleteProfileSetting,
+    clearWorkProfileSetting,
+    updateProfileRequirement,
+    deleteProfileRequirement,
+    clearWorkProfileRequirements,
     renameWork,
     moveWorkToGroup,
     patchRevision,

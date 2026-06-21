@@ -6,7 +6,9 @@ import { patchAiUsageMetering } from "#agent/llm/invoke/metering.js";
 import { createProductionChatModel } from "#agent/llm/providers/index.js";
 import {
   openRevisionItems,
-  previewPlainText,
+  migrateBlocksToContent,
+  previewHasContent,
+  getProfileFormat,
   type WorkPreview,
 } from "@yougan/domain";
 import { profileSummary } from "#agent/prompts/profile-summary.js";
@@ -54,7 +56,7 @@ function buildApplyRevisionSystemPrompt(state: AgentStateType): string {
 规则：
 1. 必须落实改稿清单中的每一条意见
 2. 未在清单中要求修改的部分，尽量保持原文（允许为连贯性做最小衔接调整）
-3. 输出完整 blocks 数组；保留原有 block id（可合并/拆分 text block，但 image block 的 url 除非清单要求更换否则保留）
+3. 输出完整 preview.content（体裁成稿）；保留原有 image url（除非清单要求更换）
 4. 不要输出解释 prose，只输出结构化 preview`;
 }
 
@@ -82,33 +84,38 @@ ${buildRevisionItemsBlock(state)}
 ## 当前成稿（JSON）
 ${baselineJson}
 
-请输出更新后的完整 preview（含 blocks）。`;
+请输出更新后的完整 preview（含 content 或 blocks，优先 content）。`;
 }
 
-function toWorkPreview(output: RevisePreviewOutput): WorkPreview {
+function toWorkPreview(
+  output: RevisePreviewOutput,
+  format: ReturnType<typeof getProfileFormat>,
+): WorkPreview {
+  const blocks = output.blocks.map((block) => {
+    if (block.type === "image") {
+      return {
+        id: block.id,
+        type: "image" as const,
+        url: block.url,
+        alt: block.alt ?? null,
+        prompt: block.prompt ?? null,
+        taskId: block.taskId ?? null,
+      };
+    }
+    return {
+      id: block.id,
+      type: "text" as const,
+      markdown: block.markdown,
+      taskId: block.taskId ?? null,
+    };
+  });
+  const content = migrateBlocksToContent(blocks, format);
   return {
     title: output.title ?? null,
     hook: output.hook ?? null,
     hashtags: output.hashtags ?? [],
     notes: output.notes ?? null,
-    blocks: output.blocks.map((block) => {
-      if (block.type === "image") {
-        return {
-          id: block.id,
-          type: "image" as const,
-          url: block.url,
-          alt: block.alt ?? null,
-          prompt: block.prompt ?? null,
-          taskId: block.taskId ?? null,
-        };
-      }
-      return {
-        id: block.id,
-        type: "text" as const,
-        markdown: block.markdown,
-        taskId: block.taskId ?? null,
-      };
-    }),
+    content,
   };
 }
 
@@ -117,7 +124,7 @@ export async function applyRevisionNode(
   config?: RunnableConfig,
 ): Promise<AgentStatePatch> {
   const preview = getPreview(state);
-  if (!preview?.blocks?.length) {
+  if (!previewHasContent(preview)) {
     return {};
   }
 
@@ -146,7 +153,7 @@ export async function applyRevisionNode(
     return { ...patchRunProgress(progress) };
   }
 
-  const nextPreview = toWorkPreview(output);
+  const nextPreview = toWorkPreview(output, getProfileFormat(getProfile(state)));
   return {
     ...patchPendingPreview(state, nextPreview),
     ...patchRunProgress(progress),

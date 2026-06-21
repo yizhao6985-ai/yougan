@@ -1,9 +1,11 @@
 import {
   EMPTY_WORK_REFERENCES,
+  buildProfileSetupProgressOptions,
   buildProfileSetupSuggestionPromptBlock,
   buildProfileStepPromptSection,
   isProfileSetupPhase,
   previewPlainText,
+  previewHasContent,
   type ProfileSetupSuggestionFocus,
 } from "@yougan/domain";
 
@@ -11,7 +13,7 @@ import {
   profileSummary,
   profileReferencesSummary,
 } from "#agent/prompts/profile-summary.js";
-import { getProfile, getPreview } from "#agent/state-io/index.js";
+import { getPreview, getProduction, getProfile } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 
 export function buildWorkStateSection(
@@ -23,14 +25,20 @@ export function buildWorkStateSection(
     ? state.references
     : [...EMPTY_WORK_REFERENCES];
   const preview = getPreview(state);
+  const production = getProduction(state);
+  const profileSetupOptions = buildProfileSetupProgressOptions({
+    profile,
+    preview,
+    production,
+  });
 
-  const previewLine = preview?.blocks?.length
+  const previewLine = previewHasContent(preview)
     ? `已有预览成稿（节选）：${previewPlainText(preview, 200)}`
     : "尚无预览成稿";
 
-  const profileBlock = isProfileSetupPhase(profile)
+  const profileBlock = isProfileSetupPhase(profile, profileSetupOptions)
     ? [
-        buildProfileStepPromptSection(profile),
+        buildProfileStepPromptSection(profile, profileSetupOptions),
         options?.profileSetupFocus
           ? buildProfileSetupSuggestionPromptBlock(
               options.profileSetupFocus,

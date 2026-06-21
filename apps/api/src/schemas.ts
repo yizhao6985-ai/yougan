@@ -73,6 +73,73 @@ const ContentFormMediaParamsSchema = z.object({
     .optional(),
 });
 
+export const ProfileSpecItemSchema = z.object({
+  id: z.string(),
+  spec: z.string(),
+});
+
+export const PreviewImageSchema = z.object({
+  id: z.string(),
+  url: z.string().url(),
+  alt: z.string().nullable().optional(),
+  prompt: z.string().nullable().optional(),
+  transient: z.boolean().optional(),
+  taskId: z.string().nullable().optional(),
+});
+
+export const PreviewContentSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("note"),
+    body: z.string(),
+    images: z.array(PreviewImageSchema),
+  }),
+  z.object({
+    kind: z.literal("article"),
+    body: z.string(),
+    cover: PreviewImageSchema.nullable().optional(),
+    images: z.array(PreviewImageSchema).optional(),
+  }),
+  z.object({
+    kind: z.literal("blog"),
+    body: z.string(),
+    cover: PreviewImageSchema.nullable().optional(),
+    images: z.array(PreviewImageSchema).optional(),
+  }),
+  z.object({
+    kind: z.literal("short_post"),
+    body: z.string(),
+    cover: PreviewImageSchema.nullable().optional(),
+    images: z.array(PreviewImageSchema).optional(),
+  }),
+  z.object({
+    kind: z.literal("novel"),
+    body: z.string(),
+    cover: PreviewImageSchema.nullable().optional(),
+    images: z.array(PreviewImageSchema).optional(),
+  }),
+  z.object({
+    kind: z.literal("video_script"),
+    body: z.string(),
+  }),
+  z.object({
+    kind: z.literal("short_video"),
+    body: z.string(),
+  }),
+  z.object({
+    kind: z.literal("podcast"),
+    body: z.string(),
+  }),
+  z.object({
+    kind: z.literal("music"),
+    body: z.string(),
+  }),
+  z.object({
+    kind: z.literal("illustration"),
+    images: z.array(PreviewImageSchema).min(1),
+    caption: z.string().nullable().optional(),
+  }),
+]).openapi("PreviewContent");
+
 export const WorkProfileSchema = z
   .object({
     direction: z.object({
@@ -86,25 +153,9 @@ export const WorkProfileSchema = z
         visual: z.string().nullable().optional(),
       })
       .optional(),
-    context: z.array(
-      z.object({
-        id: z.string(),
-        spec: z.string(),
-      }),
-    ),
-    sequence: z.array(
-      z.object({
-        id: z.string(),
-        spec: z.string(),
-        role: z.string().nullable().optional(),
-      }),
-    ),
-    bounds: z.array(
-      z.object({
-        id: z.string(),
-        spec: z.string(),
-      }),
-    ),
+    setting: z.array(ProfileSpecItemSchema).optional(),
+    requirements: z.array(ProfileSpecItemSchema).optional(),
+    bounds: z.array(ProfileSpecItemSchema),
   })
   .openapi("WorkProfile");
 
@@ -150,7 +201,9 @@ export const WorkPreviewSchema = z
     hook: z.string().nullable().optional(),
     hashtags: z.array(z.string()).optional(),
     notes: z.string().nullable().optional(),
-    blocks: z.array(PreviewBlockSchema).min(1),
+    content: PreviewContentSchema,
+    /** @deprecated 读库兼容 */
+    blocks: z.array(PreviewBlockSchema).optional(),
   })
   .openapi("WorkPreview");
 

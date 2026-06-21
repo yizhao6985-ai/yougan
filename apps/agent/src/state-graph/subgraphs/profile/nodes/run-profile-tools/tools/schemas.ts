@@ -1,6 +1,5 @@
 import {
   CONTENT_FORMATS,
-  SEQUENCE_ROLES,
 } from "@yougan/domain";
 import { z } from "zod";
 
@@ -13,7 +12,7 @@ const CONTENT_FORMAT_IDS = CONTENT_FORMATS.map((item) => item.id) as [
 
 export const formatTaxonomyPrompt = [
   "内容形式 format（update_profile_direction）：",
-  `${CONTENT_FORMATS.map((item) => `${item.id}=${item.label}`).join("、")}（须用 id；创作模板，媒介由 format 与节拍推断）`,
+  `${CONTENT_FORMATS.map((item) => `${item.id}=${item.label}`).join("、")}（须用 id）`,
 ].join("\n");
 
 const listModeSchema = z
@@ -22,16 +21,7 @@ const listModeSchema = z
   .describe("默认 append；clear 清空该列表");
 
 export const specInputSchema = z.object({
-  spec: z.string().min(1).describe("一条正向或反向说明"),
-});
-
-export const sequenceInputSchema = z.object({
-  spec: z.string().min(1).describe("本节内容意图（正向描述）"),
-  role: z
-    .enum(SEQUENCE_ROLES)
-    .nullable()
-    .optional()
-    .describe("媒介节拍：text / image / audio / video"),
+  spec: z.string().min(1).describe("一条说明"),
 });
 
 export const directionFieldsSchema = z.object({
@@ -57,13 +47,13 @@ export const styleFieldsSchema = z.object({
     .describe("画面方向（画风、氛围、配色）"),
 });
 
-export const contextFieldsSchema = z.object({
+export const settingFieldsSchema = z.object({
   items: z.array(specInputSchema).optional(),
   mode: listModeSchema,
 });
 
-export const sequenceFieldsSchema = z.object({
-  items: z.array(sequenceInputSchema).optional(),
+export const requirementsFieldsSchema = z.object({
+  items: z.array(specInputSchema).optional(),
   mode: listModeSchema,
 });
 
@@ -115,31 +105,24 @@ function buildSpecListPatch(
   return patch;
 }
 
-export function buildContextPatch(
-  input: z.infer<typeof contextFieldsSchema>,
+export function buildSettingPatch(
+  input: z.infer<typeof settingFieldsSchema>,
 ): ProfilePatch {
   return buildSpecListPatch(input, {
-    clear: "clear_context",
-    replace: "context_replace",
-    append: "context_append",
+    clear: "clear_setting",
+    replace: "setting_replace",
+    append: "setting_append",
   });
 }
 
-export function buildSequencePatch(
-  input: z.infer<typeof sequenceFieldsSchema>,
+export function buildRequirementsPatch(
+  input: z.infer<typeof requirementsFieldsSchema>,
 ): ProfilePatch {
-  const patch: ProfilePatch = {};
-  if (input.mode === "clear") {
-    patch.clear_sequence = true;
-    return patch;
-  }
-  if (!input.items?.length) return patch;
-  if (input.mode === "replace") {
-    patch.sequence_replace = input.items;
-  } else {
-    patch.sequence_append = input.items;
-  }
-  return patch;
+  return buildSpecListPatch(input, {
+    clear: "clear_requirements",
+    replace: "requirements_replace",
+    append: "requirements_append",
+  });
 }
 
 export function buildBoundsPatch(

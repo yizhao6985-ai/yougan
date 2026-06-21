@@ -4,6 +4,7 @@ import {
   buildSuggestionSlotRecipe,
   computeSuggestionLayerCounts,
   hasSuggestionLayeredContext,
+  previewHasContent,
 } from "@yougan/domain";
 
 import { getPreview, getProfile } from "#agent/state-io/index.js";
@@ -24,11 +25,12 @@ export function buildNextStepSuggestionsPrompt(
   input: Omit<NextStepSuggestionsPromptInput, "layered">,
 ): string {
   const profile = getProfile(state);
-  const hasPreview = Boolean(getPreview(state)?.blocks?.length);
+  const hasPreview = previewHasContent(getPreview(state));
   const layered = hasSuggestionLayeredContext(profile, { hasPreview });
   const profileSetupFocus = buildProfileSetupSuggestionFocus({
     before: state.profile,
     after: profile,
+    hasPreview,
   });
   const layerCounts = computeSuggestionLayerCounts(
     input.count,

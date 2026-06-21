@@ -288,7 +288,7 @@ export const GUIDE_QUICK_START_STEPS = [
   {
     icon: FilePlusIcon,
     title: "新建作品",
-    body: "进入创作台，点击「新建作品」并输入标题。一件作品对应一段持续对话与独立制作状态。",
+    body: "进入创作台，点击「新建作品」并输入标题。一件作品可有多个对话，方案、参考与作品等内容在所有对话间共享。",
   },
   {
     icon: ListTreeIcon,

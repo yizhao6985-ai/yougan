@@ -7,6 +7,7 @@ import { createChatModel } from "#agent/llm/providers/index.js";
 import {
   appendRevisionIntent,
   previewPlainText,
+  previewContentToLegacyBlocks,
 } from "@yougan/domain";
 import { getLatestHumanMessagePreviewSelections, getLatestHumanMessageText } from "#agent/messages/human.js";
 import { YOUGAN_USER_LABEL } from "#agent/system-prompt.js";
@@ -31,14 +32,15 @@ function findAnchorBlockId(
   const trimmed = quote?.trim();
   if (!trimmed) return null;
   const preview = getPreview(state);
-  if (!preview?.blocks) return null;
-  for (const block of preview.blocks) {
+  const blocks = preview ? previewContentToLegacyBlocks(preview) : [];
+  if (!blocks.length) return null;
+  for (const block of blocks) {
     if (block.type === "text" && block.markdown.includes(trimmed)) {
       return { blockId: block.id, quote: trimmed };
     }
   }
   if (previewText.includes(trimmed)) {
-    const textBlock = preview.blocks.find(
+    const textBlock = blocks.find(
       (block): block is Extract<typeof block, { type: "text" }> =>
         block.type === "text",
     );

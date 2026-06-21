@@ -119,8 +119,8 @@ export function groupProfileSetupSuggestions(
   const order: Array<ProfileStepId | "ready"> = [
     "direction",
     "style",
-    "context",
-    "sequence",
+    "setting",
+    "requirements",
     "bounds",
     "ready",
   ];

@@ -1,4 +1,4 @@
-/** suggestions 子图：生成 nextStepSuggestions（开屏 12 条 / 回合末 4 条） */
+/** suggestions 子图：生成 nextStepSuggestions（开屏 9 条 / 回合末 4 条） */
 import { HumanMessage } from "@langchain/core/messages";
 import type { RunnableConfig } from "@langchain/core/runnables";
 
@@ -11,6 +11,7 @@ import {
   resolveProfileSetupSuggestionRoles,
   TURN_NEXT_STEP_SUGGESTIONS_COUNT,
   DEFAULT_NEXT_STEP_SUGGESTIONS_HINT,
+  previewHasContent,
   type NextStepSuggestions,
 } from "@yougan/domain";
 
@@ -51,11 +52,12 @@ async function invokeNextStepSuggestions(
   config?: RunnableConfig,
 ): Promise<NextStepSuggestions | null> {
   const profile = getProfile(state);
-  const hasPreview = Boolean(getPreview(state)?.blocks?.length);
+  const hasPreview = previewHasContent(getPreview(state));
   const layered = hasSuggestionLayeredContext(profile, { hasPreview });
   const profileSetupFocus = buildProfileSetupSuggestionFocus({
     before: state.profile,
     after: profile,
+    hasPreview,
   });
   const layerCounts = computeSuggestionLayerCounts(
     options.count,

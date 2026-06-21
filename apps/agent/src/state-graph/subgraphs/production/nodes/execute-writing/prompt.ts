@@ -45,8 +45,8 @@ export function buildProduceTaskSystemPrompt(input: {
     { scope: "fragment" },
   );
   const bounds = profile.bounds.map((item) => `- ${item.spec}`).join("\n");
-  const context = profile.context.map((item) => `- ${item.spec}`).join("\n");
-  const sequence = profile.sequence
+  const setting = profile.setting.map((item) => `- ${item.spec}`).join("\n");
+  const requirements = profile.requirements
     .map((item, index) => `- ${index + 1}. ${item.spec}`)
     .join("\n");
 
@@ -63,11 +63,11 @@ ${profileSummary(profile, references)}
 风格：${profile.style?.verbal?.trim() || "未指定"}
 受众：${profile.direction.audience ?? "未指定"}
 
-设定：
-${context || "无"}
+背景：
+${setting || "无"}
 
-内容节拍（软参考）：
-${sequence || "无"}
+需求：
+${requirements || "无"}
 
 边界（须遵守）：
 ${bounds || "无"}

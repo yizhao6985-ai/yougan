@@ -1,5 +1,5 @@
 import { GUIDE_QUICK_START_STEPS, STUDIO_PANELS } from "@/lib/product-capabilities";
-import { CREATIVE_CONTEXT_PANEL, GUIDE_PAGE, STUDIO } from "@/lib/site-copy";
+import { CREATIVE_CONTEXT_PANEL, STUDIO, STUDIO_ONBOARDING } from "@/lib/site-copy";
 
 export const STUDIO_ONBOARDING_VERSION = "2026-06-v1";
 
@@ -8,6 +8,7 @@ export const STUDIO_ONBOARDING_TARGETS = {
   chatArea: "chat-area",
   chatComposer: "chat-composer",
   creativePanel: "creative-panel",
+  onboardingRevisit: "onboarding-revisit",
 } as const;
 
 export type StudioOnboardingTargetId =
@@ -30,6 +31,8 @@ export type StudioOnboardingStep =
       fallbackTarget?: StudioOnboardingTargetId;
       title: string;
       body: string;
+      bullets?: readonly string[];
+      footnote?: string;
       ensureDrawerOpen?: boolean;
       placementPreference?: SpotlightPlacementPreference;
     };
@@ -86,9 +89,18 @@ export function shouldAutoStartStudioOnboarding(userId: string) {
   return false;
 }
 
-const panelTabSummary = STUDIO_PANELS.slice(1)
-  .map((panel) => panel.title)
-  .join(" / ");
+const creativePanelTabIntros = (
+  [
+    ["profile", 1],
+    ["references", 2],
+    ["preview", 3],
+    ["history", 4],
+  ] as const
+).map(([tabKey, panelIndex]) => {
+  const tab = CREATIVE_CONTEXT_PANEL.tabs[tabKey];
+  const panel = STUDIO_PANELS[panelIndex]!;
+  return `${tab}：${panel.body}`;
+});
 
 export const STUDIO_ONBOARDING_STEPS: StudioOnboardingStep[] = [
   {
@@ -103,6 +115,7 @@ export const STUDIO_ONBOARDING_STEPS: StudioOnboardingStep[] = [
     target: STUDIO_ONBOARDING_TARGETS.worksAside,
     title: "作品列表",
     body: GUIDE_QUICK_START_STEPS[0]!.body,
+    footnote: STUDIO_ONBOARDING.worksAsideRevisitFootnote,
     placementPreference: "right",
   },
   {
@@ -119,7 +132,8 @@ export const STUDIO_ONBOARDING_STEPS: StudioOnboardingStep[] = [
     kind: "spotlight",
     target: STUDIO_ONBOARDING_TARGETS.creativePanel,
     title: CREATIVE_CONTEXT_PANEL.title,
-    body: `${GUIDE_PAGE.studioSubtitle} 四个 Tab：${panelTabSummary}。`,
+    body: "对话确认的内容会同步到这里，也可直接编辑。四个 Tab 分工如下：",
+    bullets: creativePanelTabIntros,
     ensureDrawerOpen: true,
     placementPreference: "left",
   },

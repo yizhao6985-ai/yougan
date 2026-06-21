@@ -2,6 +2,7 @@ import {
   CONTENT_FORMATS,
   MEDIA_MODALITIES,
   getProfileSummary,
+  normalizeProfileTextField,
   referenceContentLabel,
   inferModalitiesFromProfile,
   type ContentFormatId,
@@ -75,27 +76,28 @@ export function profileDirectionSummary(profile: WorkProfile): string {
 
 export function profileStyleSummary(profile: WorkProfile): string {
   const style = profile.style ?? {};
+  const verbal = normalizeProfileTextField(style.verbal);
+  const visual = normalizeProfileTextField(style.visual);
   const parts = [
-    style.verbal?.trim() ? `文字风格：${style.verbal.trim()}` : null,
-    style.visual?.trim() ? `画面方向：${style.visual.trim()}` : null,
+    verbal ? `文字风格：${verbal}` : null,
+    visual ? `画面方向：${visual}` : null,
   ].filter(Boolean);
   return parts.length ? parts.join("；") : "尚未确定风格";
 }
 
-export function profileContextSummary(profile: WorkProfile): string {
-  return `设定（含 id，${profile.context.length} 条）：\n${formatSpecList(profile.context)}`;
+export function profileSettingSummary(profile: WorkProfile): string {
+  return `背景（含 id，${profile.setting.length} 条）：\n${formatSpecList(profile.setting)}`;
 }
 
-export function profileSequenceSummary(profile: WorkProfile): string {
-  const { sequence } = profile;
-  if (!sequence.length) {
-    return `内容节拍（含 id，0 节）：\n${PROFILE_LIST_EMPTY}`;
+export function profileRequirementsSummary(profile: WorkProfile): string {
+  const { requirements } = profile;
+  if (!requirements.length) {
+    return `需求（含 id，0 条）：\n${PROFILE_LIST_EMPTY}`;
   }
-  const lines = sequence.map((item, index) => {
-    const role = item.role ? `[${item.role}] ` : "";
-    return `- [${item.id}] ${index + 1}. ${role}${item.spec}`;
+  const lines = requirements.map((item, index) => {
+    return `- [${item.id}] ${index + 1}. ${item.spec}`;
   });
-  return `内容节拍（含 id，${sequence.length} 节，软参考）：\n${lines.join("\n")}`;
+  return `需求（含 id，${requirements.length} 条）：\n${lines.join("\n")}`;
 }
 
 export function profileBoundsSummary(profile: WorkProfile): string {
@@ -118,11 +120,11 @@ export function profileSummary(
   lines.push(`① 方向：${profileDirectionSummary(profile)}`);
   lines.push(`② 风格：${profileStyleSummary(profile)}`);
 
-  if (profile.context.length) {
-    lines.push(`③ 设定：${profile.context.length} 条`);
+  if (profile.setting.length) {
+    lines.push(`③ 背景：${profile.setting.length} 条`);
   }
-  if (profile.sequence.length) {
-    lines.push(`④ 节拍：${profile.sequence.length} 节（软参考）`);
+  if (profile.requirements.length) {
+    lines.push(`④ 需求：${profile.requirements.length} 条`);
   }
   if (profile.bounds.length) {
     lines.push(
@@ -136,8 +138,8 @@ export function profileSummary(
 
   if (
     !summary &&
-    !profile.context.length &&
-    !profile.sequence.length &&
+    !profile.setting.length &&
+    !profile.requirements.length &&
     !profile.bounds.length
   ) {
     return "尚无作品方案";
@@ -151,8 +153,8 @@ export function profileSummaryDetailed(
   references?: WorkReference[],
 ): string {
   const lines = [profileSummary(profile, references)];
-  if (profile.context.length) lines.push(profileContextSummary(profile));
-  if (profile.sequence.length) lines.push(profileSequenceSummary(profile));
+  if (profile.setting.length) lines.push(profileSettingSummary(profile));
+  if (profile.requirements.length) lines.push(profileRequirementsSummary(profile));
   if (profile.bounds.length) lines.push(profileBoundsSummary(profile));
   return lines.join("\n\n");
 }

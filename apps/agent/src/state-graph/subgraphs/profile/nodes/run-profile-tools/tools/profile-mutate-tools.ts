@@ -3,13 +3,13 @@ import { createProfileTool } from "./helpers/run-profile-tool.js";
 import {
   boundsFieldsSchema,
   buildBoundsPatch,
-  buildContextPatch,
   buildDirectionPatch,
-  buildSequencePatch,
+  buildRequirementsPatch,
+  buildSettingPatch,
   buildStylePatch,
-  contextFieldsSchema,
   directionFieldsSchema,
-  sequenceFieldsSchema,
+  requirementsFieldsSchema,
+  settingFieldsSchema,
   styleFieldsSchema,
 } from "./schemas.js";
 
@@ -36,28 +36,28 @@ export const updateProfileStyle = createProfileTool({
   emptyMessage: "未提供可更新的风格字段。",
 });
 
-export const updateProfileContext = createProfileTool({
-  name: "update_profile_context",
+export const updateProfileSetting = createProfileTool({
+  name: "update_profile_setting",
   description:
-    "更新方案「设定」：世界设定、品牌信息、人设等正向离散说明（items + mode）。",
-  schema: contextFieldsSchema,
-  toPatch: (input) => buildContextPatch(input),
-  emptyMessage: "未提供可更新的设定字段。",
+    "更新方案「背景」：品牌事实、故事背景、人设等固定信息（items + mode）。",
+  schema: settingFieldsSchema,
+  toPatch: (input) => buildSettingPatch(input),
+  emptyMessage: "未提供可更新的背景字段。",
 });
 
-export const updateProfileSequence = createProfileTool({
-  name: "update_profile_sequence",
+export const updateProfileRequirements = createProfileTool({
+  name: "update_profile_requirements",
   description:
-    "更新方案「节拍」：有序内容意图，可指定 role（text/image/audio/video）；软参考，不 1:1 对应成稿。",
-  schema: sequenceFieldsSchema,
-  toPatch: (input) => buildSequencePatch(input),
-  emptyMessage: "未提供可更新的节拍字段。",
+    "更新方案「需求」：对成稿的期望，如字数、结构顺序、必含模块（items + mode）。",
+  schema: requirementsFieldsSchema,
+  toPatch: (input) => buildRequirementsPatch(input),
+  emptyMessage: "未提供可更新的需求字段。",
 });
 
 export const updateProfileBounds = createProfileTool({
   name: "update_profile_bounds",
   description:
-    "更新方案「边界」：反向离散说明，如禁止出现的元素、需避免的事项（items + mode）。",
+    "更新方案「边界」：不要出现的内容、需避免的写法（items + mode）。",
   schema: boundsFieldsSchema,
   toPatch: (input) => buildBoundsPatch(input),
   emptyMessage: "未提供可更新的边界字段。",
@@ -66,7 +66,7 @@ export const updateProfileBounds = createProfileTool({
 export const PROFILE_TOOLS = [
   updateProfileDirection,
   updateProfileStyle,
-  updateProfileContext,
-  updateProfileSequence,
+  updateProfileSetting,
+  updateProfileRequirements,
   updateProfileBounds,
 ];

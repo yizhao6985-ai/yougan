@@ -10,8 +10,9 @@ import {
   withRunProgressHeartbeat,
 } from "#agent/state-io/run-progress.js";
 import {
-  blocksFromProductionTasks,
+  contentFromProductionTasks,
   getDirectionSummary,
+  getProfileFormat,
   previewHasContent,
   type WorkPreview,
 } from "@yougan/domain";
@@ -46,13 +47,16 @@ export async function assemblePreviewNode(
 
   const progress = productionAssembleProgress();
   const tasks = production.pending_tasks;
-  const blocks = blocksFromProductionTasks(tasks);
+  const profile = getProfile(state);
+  const content = contentFromProductionTasks(
+    tasks,
+    getProfileFormat(profile),
+  );
 
-  if (!blocks.length) {
+  if (!content) {
     return {};
   }
 
-  const profile = getProfile(state);
   const llm = createProductionChatModel({
     temperature: getModelTemperature(state),
     maxTokens: resolveProductionMaxTokens(profile),
@@ -105,7 +109,7 @@ export async function assemblePreviewNode(
     hook: payload.hook ?? null,
     hashtags: payload.hashtags ?? [],
     notes: payload.notes ?? null,
-    blocks,
+    content,
   };
 
   if (!previewHasContent(preview)) {

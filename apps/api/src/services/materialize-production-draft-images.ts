@@ -1,11 +1,16 @@
 import { nanoid } from "nanoid";
 import type {
-  ImagePreviewBlock,
   PreviewBlock,
-  ProductionDraftImage,
+  PreviewImage,
+  WorkPreview,
   WorkProduction,
+  ProductionDraftImage,
 } from "@yougan/domain";
-import { parsePreviewBlocks } from "@yougan/domain";
+import {
+  parseWorkPreview,
+  previewContentToLegacyBlocks,
+  previewImages,
+} from "@yougan/domain";
 
 import { env } from "../env.js";
 import { uploadFile } from "./storage.js";
@@ -197,12 +202,76 @@ export async function materializeWorkProductionImages(
 }
 
 export async function materializeWorkPreviewImages(
-  preview: import("@yougan/domain").WorkPreview | null,
-): Promise<import("@yougan/domain").WorkPreview | null> {
-  if (!preview?.blocks?.length) return preview;
-  const blocks =
-    (await materializePreviewBlocks(preview.blocks)) ?? preview.blocks;
-  return { ...preview, blocks };
+  preview: WorkPreview | null,
+): Promise<WorkPreview | null> {
+  if (!preview) return preview;
+  const normalized =
+    parseWorkPreview(preview) ??
+    (preview.content ? preview : null);
+  if (!normalized?.content) {
+    const legacyBlocks = previewContentToLegacyBlocks(preview);
+    if (!legacyBlocks.length) return preview;
+    const blocks = (await materializePreviewBlocks(legacyBlocks)) ?? legacyBlocks;
+    return { ...preview, content: undefined, blocks };
+  }
+
+  async function materializeImage(image: PreviewImage): Promise<PreviewImage> {
+    if (!image.url.trim()) return image;
+    const block = await materializePreviewImageBlock({
+      id: image.id,
+      type: "image",
+      url: image.url,
+      alt: image.alt ?? null,
+      prompt: image.prompt ?? null,
+      transient: image.transient,
+      taskId: image.taskId ?? null,
+    });
+    return {
+      ...image,
+      url: block.url,
+      transient: undefined,
+    };
+  }
+
+  const content = normalized.content;
+  if (content.kind === "illustration") {
+    return {
+      ...normalized,
+      content: {
+        ...content,
+        images: await Promise.all(content.images.map(materializeImage)),
+      },
+    };
+  }
+
+  if (content.kind === "note") {
+    return {
+      ...normalized,
+      content: {
+        ...content,
+        images: await Promise.all(content.images.map(materializeImage)),
+      },
+    };
+  }
+
+  if ("body" in content) {
+    const cover = content.cover
+      ? await materializeImage(content.cover)
+      : content.cover;
+    const images = content.images
+      ? await Promise.all(content.images.map(materializeImage))
+      : content.images;
+    return {
+      ...normalized,
+      content: {
+        ...content,
+        cover,
+        images,
+      },
+    };
+  }
+
+  return normalized;
 }
 
 /** Agent run 落库前：物化 values 中的临时配图。 */

@@ -13,9 +13,11 @@ export const scene = {
     "inline-flex h-10 shrink-0 cursor-pointer items-center gap-2 rounded-lg px-3 text-sm font-medium transition-colors duration-200 md:h-11 md:px-3.5 lg:px-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
   composer:
     "pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-background from-35% via-background/85 to-transparent px-4 pb-3 pt-12",
+  /** 创作台对话流与输入框共用列宽：小屏随容器，xl+ 略放宽 */
+  chatColumn: "mx-auto w-full max-w-2xl xl:max-w-3xl",
   conversationPadBottom: "pb-60",
   openingSuggestionsSlot:
-    "w-full max-w-5xl min-h-[17rem] shrink-0 flex flex-col items-center",
+    "w-full max-w-2xl xl:max-w-3xl 2xl:max-w-4xl min-h-[17rem] shrink-0 flex flex-col items-center",
   conversationScrollButton:
     "bottom-44 size-8 rounded-lg border-0 bg-background/80 text-muted-foreground shadow-md shadow-black/10 backdrop-blur-sm hover:bg-muted/65 hover:text-foreground hover:shadow-lg hover:shadow-black/15 dark:bg-background/60 dark:shadow-black/45 dark:hover:shadow-black/55",
   composerFloatingInput:

@@ -13,6 +13,7 @@ import { readStoredString, writeStoredString } from "@/lib/storage-value";
 import type {
   Work,
   WorkPreview,
+  WorkProduction,
   WorkProfile,
   WorkReference,
   WorkRevision,
@@ -42,6 +43,7 @@ type CreativeContextPanelContentProps = {
   /** 创作轮廓（含 references） */
   profile?: WorkProfile;
   preview?: WorkPreview | null;
+  production?: WorkProduction | null;
   revision?: WorkRevision | null;
   previewUnsaved?: boolean;
   onRemoveRevisionIntent?: (intentId: string) => void;
@@ -51,12 +53,12 @@ type CreativeContextPanelContentProps = {
   onUpdateBound?: (itemId: string, spec: string) => void;
   onDeleteBound?: (itemId: string) => void;
   onClearBounds?: () => void;
-  onUpdateSequence?: (itemId: string, spec: string) => void;
-  onDeleteSequence?: (itemId: string) => void;
-  onClearSequence?: () => void;
-  onUpdateContext?: (itemId: string, spec: string) => void;
-  onDeleteContext?: (itemId: string) => void;
-  onClearContext?: () => void;
+  onUpdateRequirement?: (itemId: string, spec: string) => void;
+  onDeleteRequirement?: (itemId: string) => void;
+  onClearRequirements?: () => void;
+  onUpdateSetting?: (itemId: string, spec: string) => void;
+  onDeleteSetting?: (itemId: string) => void;
+  onClearSetting?: () => void;
 };
 
 export function CreativeContextPanelContent({
@@ -64,6 +66,7 @@ export function CreativeContextPanelContent({
   references,
   profile,
   preview,
+  production,
   revision,
   previewUnsaved,
   onRemoveRevisionIntent,
@@ -73,12 +76,12 @@ export function CreativeContextPanelContent({
   onUpdateBound,
   onDeleteBound,
   onClearBounds,
-  onUpdateSequence,
-  onDeleteSequence,
-  onClearSequence,
-  onUpdateContext,
-  onDeleteContext,
-  onClearContext,
+  onUpdateRequirement,
+  onDeleteRequirement,
+  onClearRequirements,
+  onUpdateSetting,
+  onDeleteSetting,
+  onClearSetting,
 }: CreativeContextPanelContentProps) {
   const [activeTab, setActiveTab] = useState<CreativeContextTabId>(readStoredTab);
 
@@ -125,17 +128,19 @@ export function CreativeContextPanelContent({
           >
             <ProfilePanel
               profile={profile}
+              preview={preview}
+              production={production}
               editable={Boolean(activeWork)}
               compact
               onUpdateBound={onUpdateBound}
               onDeleteBound={onDeleteBound}
               onClearBounds={onClearBounds}
-              onUpdateSequence={onUpdateSequence}
-              onDeleteSequence={onDeleteSequence}
-              onClearSequence={onClearSequence}
-              onUpdateContext={onUpdateContext}
-              onDeleteContext={onDeleteContext}
-              onClearContext={onClearContext}
+              onUpdateRequirement={onUpdateRequirement}
+              onDeleteRequirement={onDeleteRequirement}
+              onClearRequirements={onClearRequirements}
+              onUpdateSetting={onUpdateSetting}
+              onDeleteSetting={onDeleteSetting}
+              onClearSetting={onClearSetting}
             />
           </div>
         ) : null}

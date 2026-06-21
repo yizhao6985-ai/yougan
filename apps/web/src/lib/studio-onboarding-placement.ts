@@ -18,6 +18,39 @@ export type CardPlacement = {
 const VIEWPORT_MARGIN = 16;
 const SPOTLIGHT_GAP = 16;
 
+function getViewportSize() {
+  const visualViewport = window.visualViewport;
+  return {
+    width: visualViewport?.width ?? window.innerWidth,
+    height: visualViewport?.height ?? window.innerHeight,
+    offsetTop: visualViewport?.offsetTop ?? 0,
+    offsetLeft: visualViewport?.offsetLeft ?? 0,
+  };
+}
+
+export function clampSpotlightRect(
+  rect: Rect,
+  margin = VIEWPORT_MARGIN,
+): Rect | null {
+  const viewport = getViewportSize();
+  const viewportTop = viewport.offsetTop + margin;
+  const viewportLeft = viewport.offsetLeft + margin;
+  const viewportRight = viewport.offsetLeft + viewport.width - margin;
+  const viewportBottom = viewport.offsetTop + viewport.height - margin;
+
+  const top = Math.max(rect.top, viewportTop);
+  const left = Math.max(rect.left, viewportLeft);
+  const right = Math.min(rect.left + rect.width, viewportRight);
+  const bottom = Math.min(rect.top + rect.height, viewportBottom);
+
+  const width = right - left;
+  const height = bottom - top;
+
+  if (width <= 0 || height <= 0) return null;
+
+  return { top, left, width, height };
+}
+
 function rectsOverlap(a: Rect, b: Rect, gap = 0) {
   return !(
     a.left + a.width + gap <= b.left ||
@@ -32,18 +65,17 @@ function clampPlacement(
   cardWidth: number,
   cardHeight: number,
 ) {
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
+  const viewport = getViewportSize();
+  const minTop = viewport.offsetTop + VIEWPORT_MARGIN;
+  const minLeft = viewport.offsetLeft + VIEWPORT_MARGIN;
+  const maxTop =
+    viewport.offsetTop + viewport.height - cardHeight - VIEWPORT_MARGIN;
+  const maxLeft =
+    viewport.offsetLeft + viewport.width - cardWidth - VIEWPORT_MARGIN;
 
   return {
-    top: Math.min(
-      Math.max(VIEWPORT_MARGIN, placement.top),
-      viewportHeight - cardHeight - VIEWPORT_MARGIN,
-    ),
-    left: Math.min(
-      Math.max(VIEWPORT_MARGIN, placement.left),
-      viewportWidth - cardWidth - VIEWPORT_MARGIN,
-    ),
+    top: Math.min(Math.max(minTop, placement.top), maxTop),
+    left: Math.min(Math.max(minLeft, placement.left), maxLeft),
   };
 }
 
@@ -52,14 +84,17 @@ function fitsViewport(
   cardWidth: number,
   cardHeight: number,
 ) {
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
+  const viewport = getViewportSize();
+  const minTop = viewport.offsetTop + VIEWPORT_MARGIN;
+  const minLeft = viewport.offsetLeft + VIEWPORT_MARGIN;
+  const maxTop = viewport.offsetTop + viewport.height - VIEWPORT_MARGIN;
+  const maxLeft = viewport.offsetLeft + viewport.width - VIEWPORT_MARGIN;
 
   return (
-    placement.top >= VIEWPORT_MARGIN &&
-    placement.left >= VIEWPORT_MARGIN &&
-    placement.top + cardHeight <= viewportHeight - VIEWPORT_MARGIN &&
-    placement.left + cardWidth <= viewportWidth - VIEWPORT_MARGIN
+    placement.top >= minTop &&
+    placement.left >= minLeft &&
+    placement.top + cardHeight <= maxTop &&
+    placement.left + cardWidth <= maxLeft
   );
 }
 
@@ -143,26 +178,27 @@ function farthestCornerPlacement(
   cardWidth: number,
   cardHeight: number,
 ): CardPlacement {
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
+  const viewport = getViewportSize();
+  const minTop = viewport.offsetTop + VIEWPORT_MARGIN;
+  const minLeft = viewport.offsetLeft + VIEWPORT_MARGIN;
   const spotlightCenter = {
     x: spotlight.left + spotlight.width / 2,
     y: spotlight.top + spotlight.height / 2,
   };
 
   const corners: CardPlacement[] = [
-    { top: VIEWPORT_MARGIN, left: VIEWPORT_MARGIN },
+    { top: minTop, left: minLeft },
     {
-      top: VIEWPORT_MARGIN,
-      left: viewportWidth - cardWidth - VIEWPORT_MARGIN,
+      top: minTop,
+      left: viewport.offsetLeft + viewport.width - cardWidth - VIEWPORT_MARGIN,
     },
     {
-      top: viewportHeight - cardHeight - VIEWPORT_MARGIN,
-      left: VIEWPORT_MARGIN,
+      top: viewport.offsetTop + viewport.height - cardHeight - VIEWPORT_MARGIN,
+      left: minLeft,
     },
     {
-      top: viewportHeight - cardHeight - VIEWPORT_MARGIN,
-      left: viewportWidth - cardWidth - VIEWPORT_MARGIN,
+      top: viewport.offsetTop + viewport.height - cardHeight - VIEWPORT_MARGIN,
+      left: viewport.offsetLeft + viewport.width - cardWidth - VIEWPORT_MARGIN,
     },
   ];
 

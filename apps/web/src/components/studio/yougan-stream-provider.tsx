@@ -129,26 +129,26 @@ function ConversationStreamKeyed({
       updateProfileBound: withProfileSync(worksStore.updateProfileBound),
       deleteProfileBound: withProfileSync(worksStore.deleteProfileBound),
       clearWorkProfileBounds: withProfileSync(worksStore.clearWorkProfileBounds),
-      updateProfileSequence: withProfileSync(worksStore.updateProfileSequence),
-      deleteProfileSequence: withProfileSync(worksStore.deleteProfileSequence),
-      clearWorkProfileSequence: withProfileSync(
-        worksStore.clearWorkProfileSequence,
+      updateProfileRequirement: withProfileSync(worksStore.updateProfileRequirement),
+      deleteProfileRequirement: withProfileSync(worksStore.deleteProfileRequirement),
+      clearWorkProfileRequirements: withProfileSync(
+        worksStore.clearWorkProfileRequirements,
       ),
-      updateProfileContext: withProfileSync(worksStore.updateProfileContext),
-      deleteProfileContext: withProfileSync(worksStore.deleteProfileContext),
-      clearWorkProfileContext: withProfileSync(worksStore.clearWorkProfileContext),
+      updateProfileSetting: withProfileSync(worksStore.updateProfileSetting),
+      deleteProfileSetting: withProfileSync(worksStore.deleteProfileSetting),
+      clearWorkProfileSetting: withProfileSync(worksStore.clearWorkProfileSetting),
     };
   }, [
     syncProfileAfterPatch,
     worksStore.clearWorkProfileBounds,
-    worksStore.clearWorkProfileContext,
-    worksStore.clearWorkProfileSequence,
+    worksStore.clearWorkProfileSetting,
+    worksStore.clearWorkProfileRequirements,
     worksStore.deleteProfileBound,
-    worksStore.deleteProfileContext,
-    worksStore.deleteProfileSequence,
+    worksStore.deleteProfileSetting,
+    worksStore.deleteProfileRequirement,
     worksStore.updateProfileBound,
-    worksStore.updateProfileContext,
-    worksStore.updateProfileSequence,
+    worksStore.updateProfileSetting,
+    worksStore.updateProfileRequirement,
   ]);
 
   const value: StudioContextValue = {

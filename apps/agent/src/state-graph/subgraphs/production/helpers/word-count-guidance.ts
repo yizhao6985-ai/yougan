@@ -1,4 +1,4 @@
-/** 方案中的正文字数约束（从 context/bounds 自然语言推断；无结构化字数时返回 null） */
+/** 方案中的正文字数约束（从 setting/requirements/bounds 自然语言推断；无结构化字数时返回 null） */
 import type { WorkProfile } from "@yougan/domain";
 import { parseProfileJson } from "@yougan/domain";
 
@@ -16,11 +16,11 @@ export function buildWordCountRequirement(
   profile: WorkProfile,
 ): string | null {
   const normalized = parseProfileJson(profile);
-  for (const item of [...normalized.context, ...normalized.bounds]) {
-    const hint = extractWordCountHint(item.spec);
-    if (hint) return hint;
-  }
-  for (const item of normalized.sequence) {
+  for (const item of [
+    ...normalized.setting,
+    ...normalized.requirements,
+    ...normalized.bounds,
+  ]) {
     const hint = extractWordCountHint(item.spec);
     if (hint) return hint;
   }

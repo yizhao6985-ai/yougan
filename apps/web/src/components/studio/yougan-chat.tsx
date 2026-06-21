@@ -197,6 +197,18 @@ export function YouganChat() {
   }
 
   const profile = resolveStreamProfile(activeWork?.profile, stream.values);
+  const staging = streamValues?.turn?.staging;
+  const preview =
+    staging?.preview ??
+    streamValues?.preview ??
+    activeWork?.preview ??
+    null;
+  const production =
+    staging?.production ??
+    streamValues?.production ??
+    activeWork?.production ??
+    null;
+  const profileSetupOptions = { preview, production };
 
   const statusHint = (() => {
     if (productionConfirmInterrupt) {
@@ -240,7 +252,7 @@ export function YouganChat() {
         return CHAT_COPY.status.askExploring;
       case "profile":
       default:
-        return profileSetupStatusHint(profile);
+        return profileSetupStatusHint(profile, profileSetupOptions);
     }
   })();
 
@@ -259,6 +271,7 @@ export function YouganChat() {
   const composerPlaceholder = profileSetupPlaceholder(
     profile,
     activeKind === "profile" || activeKind == null ? "profile" : activeKind,
+    profileSetupOptions,
   );
 
   return (
@@ -279,7 +292,7 @@ export function YouganChat() {
             )}
           >
             <div className="flex flex-1 flex-col items-center justify-center">
-              <div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-5">
+              <div className={cn(scene.chatColumn, "flex flex-col items-center gap-5")}>
                 <p className="shrink-0 text-center text-lg font-medium text-foreground">
                   {CHAT_COPY.emptyTitle}
                 </p>
@@ -307,7 +320,8 @@ export function YouganChat() {
           <Conversation className="h-full min-h-0">
             <ConversationContent
               className={cn(
-                "mx-auto w-full max-w-3xl gap-6 px-4 py-4",
+                scene.chatColumn,
+                "gap-6 px-4 py-4",
                 scene.conversationPadBottom,
               )}
             >
@@ -455,7 +469,7 @@ export function YouganChat() {
         )}
 
         <div className={scene.composer} data-onboarding="chat-composer">
-          <div className="pointer-events-auto mx-auto w-full max-w-3xl">
+          <div className={cn(scene.chatColumn, "pointer-events-auto")}>
             <ComposerAttachmentsProvider>
               <StudioChatComposer
                 input={input}

@@ -4,7 +4,8 @@ import { CheckIcon, PencilIcon, Trash2Icon } from "lucide-react";
 import {
   EMPTY_WORK_PROFILE,
   getProfileStepCopy,
-  mediaModalityLabel,
+  getStyleFieldsForProfile,
+  normalizeProfileTextField,
   parseProfileJson,
   type ProfileSetupStep,
 } from "@yougan/domain";
@@ -19,7 +20,7 @@ import { cn } from "@/lib/utils";
 import { PROFILE_WIZARD } from "@/lib/site-copy";
 import { buildProfileSetupView } from "@/lib/profile-setup-display";
 import { formatLabel } from "@yougan/domain";
-import type { WorkProfile } from "@/lib/types";
+import type { WorkPreview, WorkProduction, WorkProfile } from "@/lib/types";
 
 function GuidedEmpty({
   title,
@@ -220,14 +221,19 @@ function DirectionDisplay({ profile }: { profile: WorkProfile }) {
   return rows.length ? <SpecRows rows={rows} /> : null;
 }
 
+const STYLE_FIELD_LABELS = {
+  verbal: "文字",
+  visual: "画面",
+} as const;
+
 function StyleDisplay({ profile }: { profile: WorkProfile }) {
   const style = profile.style ?? {};
   const rows: Array<{ label: string; value: string }> = [];
-  if (style.verbal?.trim()) {
-    rows.push({ label: "文字", value: style.verbal.trim() });
-  }
-  if (style.visual?.trim()) {
-    rows.push({ label: "画面", value: style.visual.trim() });
+  for (const field of getStyleFieldsForProfile(profile)) {
+    const value = normalizeProfileTextField(style[field]);
+    if (value) {
+      rows.push({ label: STYLE_FIELD_LABELS[field], value });
+    }
   }
   return rows.length ? <SpecRows rows={rows} /> : null;
 }
@@ -239,13 +245,13 @@ function ProfileStepList({
   editable,
   onUpdateBound,
   onDeleteBound,
-  onUpdateContext,
-  onDeleteContext,
-  onUpdateSequence,
-  onDeleteSequence,
+  onUpdateSetting,
+  onDeleteSetting,
+  onUpdateRequirement,
+  onDeleteRequirement,
   onClearBounds,
-  onClearContext,
-  onClearSequence,
+  onClearSetting,
+  onClearRequirements,
   onSkipStep,
 }: {
   steps: ReturnType<typeof buildProfileSetupView>["state"]["steps"];
@@ -254,13 +260,13 @@ function ProfileStepList({
   editable: boolean;
   onUpdateBound?: (id: string, spec: string) => void;
   onDeleteBound?: (id: string) => void;
-  onUpdateContext?: (id: string, spec: string) => void;
-  onDeleteContext?: (id: string) => void;
-  onUpdateSequence?: (id: string, spec: string) => void;
-  onDeleteSequence?: (id: string) => void;
+  onUpdateSetting?: (id: string, spec: string) => void;
+  onDeleteSetting?: (id: string) => void;
+  onUpdateRequirement?: (id: string, spec: string) => void;
+  onDeleteRequirement?: (id: string) => void;
   onClearBounds?: () => void;
-  onClearContext?: () => void;
-  onClearSequence?: () => void;
+  onClearSetting?: () => void;
+  onClearRequirements?: () => void;
   onSkipStep?: (stepId: ProfileSetupStep) => void;
 }) {
   return (
@@ -273,8 +279,8 @@ function ProfileStepList({
         const canSkip =
           isActive &&
           (step.id === "style" ||
-            step.id === "context" ||
-            step.id === "sequence" ||
+            step.id === "setting" ||
+            step.id === "requirements" ||
             step.id === "bounds") &&
           !step.filled;
 
@@ -355,13 +361,13 @@ function ProfileStepList({
                     editable={editable}
                     onUpdateBound={onUpdateBound}
                     onDeleteBound={onDeleteBound}
-                    onUpdateContext={onUpdateContext}
-                    onDeleteContext={onDeleteContext}
-                    onUpdateSequence={onUpdateSequence}
-                    onDeleteSequence={onDeleteSequence}
+                    onUpdateSetting={onUpdateSetting}
+                    onDeleteSetting={onDeleteSetting}
+                    onUpdateRequirement={onUpdateRequirement}
+                    onDeleteRequirement={onDeleteRequirement}
                     onClearBounds={onClearBounds}
-                    onClearContext={onClearContext}
-                    onClearSequence={onClearSequence}
+                    onClearSetting={onClearSetting}
+                    onClearRequirements={onClearRequirements}
                   />
                 )}
 
@@ -389,26 +395,26 @@ function StepContent({
   editable,
   onUpdateBound,
   onDeleteBound,
-  onUpdateContext,
-  onDeleteContext,
-  onUpdateSequence,
-  onDeleteSequence,
+  onUpdateSetting,
+  onDeleteSetting,
+  onUpdateRequirement,
+  onDeleteRequirement,
   onClearBounds,
-  onClearContext,
-  onClearSequence,
+  onClearSetting,
+  onClearRequirements,
 }: {
   step: ProfileSetupStep;
   profile: WorkProfile;
   editable: boolean;
   onUpdateBound?: (id: string, spec: string) => void;
   onDeleteBound?: (id: string) => void;
-  onUpdateContext?: (id: string, spec: string) => void;
-  onDeleteContext?: (id: string) => void;
-  onUpdateSequence?: (id: string, spec: string) => void;
-  onDeleteSequence?: (id: string) => void;
+  onUpdateSetting?: (id: string, spec: string) => void;
+  onDeleteSetting?: (id: string) => void;
+  onUpdateRequirement?: (id: string, spec: string) => void;
+  onDeleteRequirement?: (id: string) => void;
   onClearBounds?: () => void;
-  onClearContext?: () => void;
-  onClearSequence?: () => void;
+  onClearSetting?: () => void;
+  onClearRequirements?: () => void;
 }) {
   const copy = getProfileStepCopy(profile, step);
 
@@ -440,57 +446,53 @@ function StepContent({
     }
 
     case "style": {
-      const hasStyle =
-        Boolean(profile.style?.verbal?.trim()) ||
-        Boolean(profile.style?.visual?.trim());
+      const hasStyle = getStyleFieldsForProfile(profile).some((field) =>
+        normalizeProfileTextField(profile.style?.[field]),
+      );
       return hasStyle ? <StyleDisplay profile={profile} /> : empty;
     }
 
-    case "context":
-      return profile.context.length > 0 ? (
+    case "setting":
+      return profile.setting.length > 0 ? (
         <SpecList
-          items={profile.context}
+          items={profile.setting}
           editable={editable}
-          onUpdate={onUpdateContext}
-          onDelete={onDeleteContext}
-          onClear={onClearContext}
-          clearLabel={PROFILE_WIZARD.clearContext}
-          editLabel="修改设定"
-          deleteLabel="删除设定"
+          onUpdate={onUpdateSetting}
+          onDelete={onDeleteSetting}
+          onClear={onClearSetting}
+          clearLabel={PROFILE_WIZARD.clearSetting}
+          editLabel="修改背景"
+          deleteLabel="删除背景"
         />
       ) : (
         empty
       );
 
-    case "sequence":
-      return profile.sequence.length > 0 ? (
+    case "requirements":
+      return profile.requirements.length > 0 ? (
         <div className="space-y-2">
-          {editable && onClearSequence ? (
+          {editable && onClearRequirements ? (
             <div className="flex justify-end">
               <button
                 type="button"
                 className="text-xs text-muted-foreground transition hover:text-red-600"
-                onClick={onClearSequence}
+                onClick={onClearRequirements}
               >
-                {PROFILE_WIZARD.clearSequence}
+                {PROFILE_WIZARD.clearRequirements}
               </button>
             </div>
           ) : null}
           <CreativeContextList>
-            {profile.sequence.map((item, index) => (
+            {profile.requirements.map((item, index) => (
               <EditableSpecItem
                 key={item.id}
                 spec={item.spec}
-                heading={
-                  item.role
-                    ? `${index + 1}. ${mediaModalityLabel(item.role) ?? item.role}`
-                    : `${index + 1}.`
-                }
+                heading={`${index + 1}.`}
                 editable={editable}
-                editLabel="修改节拍"
-                deleteLabel="删除节拍"
-                onEdit={(next) => onUpdateSequence?.(item.id, next)}
-                onDelete={() => onDeleteSequence?.(item.id)}
+                editLabel="修改需求"
+                deleteLabel="删除需求"
+                onEdit={(next) => onUpdateRequirement?.(item.id, next)}
+                onDelete={() => onDeleteRequirement?.(item.id)}
               />
             ))}
           </CreativeContextList>
@@ -524,30 +526,34 @@ const EMPTY_PROFILE = EMPTY_WORK_PROFILE;
 
 export function ProfilePanel({
   profile,
+  preview,
+  production,
   editable = false,
   compact = false,
   onUpdateBound,
   onDeleteBound,
-  onUpdateContext,
-  onDeleteContext,
-  onUpdateSequence,
-  onDeleteSequence,
+  onUpdateSetting,
+  onDeleteSetting,
+  onUpdateRequirement,
+  onDeleteRequirement,
   onClearBounds,
-  onClearContext,
-  onClearSequence,
+  onClearSetting,
+  onClearRequirements,
 }: {
   profile?: WorkProfile;
+  preview?: WorkPreview | null;
+  production?: WorkProduction | null;
   editable?: boolean;
   compact?: boolean;
   onUpdateBound?: (id: string, spec: string) => void;
   onDeleteBound?: (id: string) => void;
-  onUpdateContext?: (id: string, spec: string) => void;
-  onDeleteContext?: (id: string) => void;
-  onUpdateSequence?: (id: string, spec: string) => void;
-  onDeleteSequence?: (id: string) => void;
+  onUpdateSetting?: (id: string, spec: string) => void;
+  onDeleteSetting?: (id: string) => void;
+  onUpdateRequirement?: (id: string, spec: string) => void;
+  onDeleteRequirement?: (id: string) => void;
   onClearBounds?: () => void;
-  onClearContext?: () => void;
-  onClearSequence?: () => void;
+  onClearSetting?: () => void;
+  onClearRequirements?: () => void;
 }) {
   const normalizedProfile = useMemo(
     () => parseProfileJson(profile ?? EMPTY_PROFILE),
@@ -556,16 +562,21 @@ export function ProfilePanel({
   const [skippedSteps, setSkippedSteps] = useState<ProfileSetupStep[]>([]);
 
   const setupView = useMemo(
-    () => buildProfileSetupView(normalizedProfile, { skippedSteps }),
-    [normalizedProfile, skippedSteps],
+    () =>
+      buildProfileSetupView(normalizedProfile, {
+        skippedSteps,
+        preview,
+        production,
+      }),
+    [normalizedProfile, skippedSteps, preview, production],
   );
   const { state, headline, activeStep } = setupView;
 
   const handleSkip = useCallback((stepId: ProfileSetupStep) => {
     if (
       stepId !== "style" &&
-      stepId !== "context" &&
-      stepId !== "sequence" &&
+      stepId !== "setting" &&
+      stepId !== "requirements" &&
       stepId !== "bounds"
     ) {
       return;
@@ -590,13 +601,13 @@ export function ProfilePanel({
           editable={editable}
           onUpdateBound={onUpdateBound}
           onDeleteBound={onDeleteBound}
-          onUpdateContext={onUpdateContext}
-          onDeleteContext={onDeleteContext}
-          onUpdateSequence={onUpdateSequence}
-          onDeleteSequence={onDeleteSequence}
+          onUpdateSetting={onUpdateSetting}
+          onDeleteSetting={onDeleteSetting}
+          onUpdateRequirement={onUpdateRequirement}
+          onDeleteRequirement={onDeleteRequirement}
           onClearBounds={onClearBounds}
-          onClearContext={onClearContext}
-          onClearSequence={onClearSequence}
+          onClearSetting={onClearSetting}
+          onClearRequirements={onClearRequirements}
           onSkipStep={handleSkip}
         />
       </div>

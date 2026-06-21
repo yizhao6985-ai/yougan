@@ -50,7 +50,7 @@ export function OpeningNextStepSuggestions({
 
   return (
     <div
-      className={cn("w-full max-w-5xl", className)}
+      className={cn("w-full", className)}
       aria-busy={!reveal.isDone}
       aria-live="polite"
     >

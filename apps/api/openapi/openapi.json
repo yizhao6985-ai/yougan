@@ -186,6 +186,60 @@
               }
             }
           },
+          "setting": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "spec": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "spec"
+              ]
+            }
+          },
+          "requirements": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "spec": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "spec"
+              ]
+            }
+          },
+          "bounds": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "spec": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "spec"
+              ]
+            }
+          },
           "context": {
             "type": "array",
             "items": {
@@ -225,30 +279,10 @@
                 "spec"
               ]
             }
-          },
-          "bounds": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "spec": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "id",
-                "spec"
-              ]
-            }
           }
         },
         "required": [
           "direction",
-          "context",
-          "sequence",
           "bounds"
         ]
       },
@@ -361,6 +395,525 @@
         "items": {
           "$ref": "#/components/schemas/WorkReference"
         }
+      },
+      "PreviewContent": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "note"
+                ]
+              },
+              "body": {
+                "type": "string"
+              },
+              "images": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "alt": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "prompt": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "transient": {
+                      "type": "boolean"
+                    },
+                    "taskId": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "url"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "kind",
+              "body",
+              "images"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "article"
+                ]
+              },
+              "body": {
+                "type": "string"
+              },
+              "cover": {
+                "type": "object",
+                "nullable": true,
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "alt": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "prompt": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "transient": {
+                    "type": "boolean"
+                  },
+                  "taskId": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "id",
+                  "url"
+                ]
+              },
+              "images": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "alt": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "prompt": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "transient": {
+                      "type": "boolean"
+                    },
+                    "taskId": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "url"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "kind",
+              "body"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "blog"
+                ]
+              },
+              "body": {
+                "type": "string"
+              },
+              "cover": {
+                "type": "object",
+                "nullable": true,
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "alt": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "prompt": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "transient": {
+                    "type": "boolean"
+                  },
+                  "taskId": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "id",
+                  "url"
+                ]
+              },
+              "images": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "alt": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "prompt": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "transient": {
+                      "type": "boolean"
+                    },
+                    "taskId": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "url"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "kind",
+              "body"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "short_post"
+                ]
+              },
+              "body": {
+                "type": "string"
+              },
+              "cover": {
+                "type": "object",
+                "nullable": true,
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "alt": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "prompt": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "transient": {
+                    "type": "boolean"
+                  },
+                  "taskId": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "id",
+                  "url"
+                ]
+              },
+              "images": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "alt": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "prompt": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "transient": {
+                      "type": "boolean"
+                    },
+                    "taskId": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "url"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "kind",
+              "body"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "novel"
+                ]
+              },
+              "body": {
+                "type": "string"
+              },
+              "cover": {
+                "type": "object",
+                "nullable": true,
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "alt": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "prompt": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "transient": {
+                    "type": "boolean"
+                  },
+                  "taskId": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "id",
+                  "url"
+                ]
+              },
+              "images": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "alt": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "prompt": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "transient": {
+                      "type": "boolean"
+                    },
+                    "taskId": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "url"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "kind",
+              "body"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "video_script"
+                ]
+              },
+              "body": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "body"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "short_video"
+                ]
+              },
+              "body": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "body"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "podcast"
+                ]
+              },
+              "body": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "body"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "music"
+                ]
+              },
+              "body": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "body"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "illustration"
+                ]
+              },
+              "images": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "alt": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "prompt": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "transient": {
+                      "type": "boolean"
+                    },
+                    "taskId": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "url"
+                  ]
+                },
+                "minItems": 1
+              },
+              "caption": {
+                "type": "string",
+                "nullable": true
+              }
+            },
+            "required": [
+              "kind",
+              "images"
+            ]
+          }
+        ]
       },
       "PreviewBlock": {
         "oneOf": [
@@ -531,16 +1084,18 @@
             "type": "string",
             "nullable": true
           },
+          "content": {
+            "$ref": "#/components/schemas/PreviewContent"
+          },
           "blocks": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PreviewBlock"
-            },
-            "minItems": 1
+            }
           }
         },
         "required": [
-          "blocks"
+          "content"
         ]
       },
       "RevisionAnchor": {

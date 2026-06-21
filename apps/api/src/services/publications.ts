@@ -9,6 +9,7 @@ import {
   DISCOVER_TOPIC_CATEGORIES,
   parseBlockComposition,
   previewHasContent,
+  previewContentToLegacyBlocks,
   type PublicationSummaryOverrides,
   type WorkPreview,
 } from "@yougan/domain";
@@ -369,14 +370,16 @@ export async function previewPublicationSummaryForWork(
     throw new Error("WORK_OUTPUT_EMPTY");
   }
 
+  const blocks = previewContentToLegacyBlocks(preview!);
+
   const summary = await summarizePublicationSummary({
-    blocks: preview!.blocks,
+    blocks,
     preview,
     workTitle: work.title,
     profile: work.profile,
   });
 
-  return buildPublicationSummaryPreview(summary, preview!.blocks);
+  return buildPublicationSummaryPreview(summary, blocks);
 }
 
 export async function createPublicationFromWork(
@@ -399,8 +402,10 @@ export async function createPublicationFromWork(
     where: { userId, workId: input.workId, status: { not: "archived" } },
   });
 
+  const blocks = previewContentToLegacyBlocks(preview!);
+
   const summary = await summarizePublicationSummary({
-    blocks: preview!.blocks,
+    blocks,
     preview,
     workTitle: work.title,
     profile: work.profile,
@@ -410,7 +415,7 @@ export async function createPublicationFromWork(
   const fields = summaryToPublicationFields(
     summary,
     work,
-    preview!.blocks,
+    blocks,
     overrides,
   );
 
@@ -421,7 +426,7 @@ export async function createPublicationFromWork(
       where: { id: existing.id },
       data: {
         ...fields,
-        blocks: preview!.blocks as unknown as Prisma.InputJsonValue,
+        blocks: blocks as unknown as Prisma.InputJsonValue,
         blockComposition:
           fields.blockComposition as unknown as Prisma.InputJsonValue,
         hashtags: preview!.hashtags ?? [],
@@ -440,7 +445,7 @@ export async function createPublicationFromWork(
       workId: input.workId,
       slug: buildSlug(fields.title),
       ...fields,
-      blocks: preview!.blocks as unknown as Prisma.InputJsonValue,
+      blocks: blocks as unknown as Prisma.InputJsonValue,
       blockComposition:
         fields.blockComposition as unknown as Prisma.InputJsonValue,
       hashtags: preview!.hashtags ?? [],

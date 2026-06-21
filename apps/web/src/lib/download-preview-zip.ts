@@ -1,5 +1,10 @@
 import JSZip from "jszip";
-import type { PreviewBlock, WorkPreview } from "@yougan/domain";
+import {
+  previewContentToLegacyBlocks,
+  previewPlainText,
+  previewImages,
+  type WorkPreview,
+} from "@yougan/domain";
 
 import { resolveReferenceAssetUrl } from "@/lib/reference-asset-url";
 
@@ -70,13 +75,13 @@ async function fetchAsset(
   return { data: await response.arrayBuffer(), contentType };
 }
 
-function collectMediaAssets(blocks: PreviewBlock[]): MediaAsset[] {
+function collectMediaAssets(preview: WorkPreview): MediaAsset[] {
   const assets: MediaAsset[] = [];
   let imageIndex = 0;
   let audioIndex = 0;
   let videoIndex = 0;
 
-  for (const block of blocks) {
+  for (const block of previewContentToLegacyBlocks(preview)) {
     if (block.type === "image" && block.url.trim()) {
       imageIndex += 1;
       assets.push({
@@ -119,21 +124,14 @@ function buildPreviewMarkdown(preview: WorkPreview): string {
     lines.push("", preview.hook.trim());
   }
 
-  for (const block of preview.blocks) {
-    if (block.type === "text" && block.markdown.trim()) {
-      lines.push("", block.markdown.trim());
-      continue;
-    }
-    if (block.type === "audio") {
-      if (block.title?.trim()) {
-        lines.push("", `## ${block.title.trim()}`);
-      }
-      if (block.transcript?.trim()) {
-        lines.push("", block.transcript.trim());
-      }
-    }
-    if (block.type === "video" && block.title?.trim()) {
-      lines.push("", `## ${block.title.trim()}`);
+  const body = previewPlainText(preview);
+  if (body) {
+    lines.push("", body);
+  }
+
+  for (const image of previewImages(preview)) {
+    if (image.alt?.trim()) {
+      lines.push("", `![${image.alt.trim()}](${image.url})`);
     }
   }
 
@@ -196,7 +194,7 @@ export async function downloadPreviewAsZip(
   options?: { filename?: string },
 ): Promise<void> {
   const zip = new JSZip();
-  const assets = collectMediaAssets(preview.blocks);
+  const assets = collectMediaAssets(preview);
 
   const markdown = buildPreviewMarkdown(preview);
   if (markdown) {

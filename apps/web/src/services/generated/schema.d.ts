@@ -1211,14 +1211,13 @@ export interface components {
                 verbal?: string | null;
                 visual?: string | null;
             };
-            context: {
+            setting?: {
                 id: string;
                 spec: string;
             }[];
-            sequence: {
+            requirements?: {
                 id: string;
                 spec: string;
-                role?: string | null;
             }[];
             bounds: {
                 id: string;
@@ -1251,6 +1250,137 @@ export interface components {
             created_at: string;
         };
         WorkReferences: components["schemas"]["WorkReference"][];
+        PreviewContent: {
+            /** @enum {string} */
+            kind: "note";
+            body: string;
+            images: {
+                id: string;
+                /** Format: uri */
+                url: string;
+                alt?: string | null;
+                prompt?: string | null;
+                transient?: boolean;
+                taskId?: string | null;
+            }[];
+        } | {
+            /** @enum {string} */
+            kind: "article";
+            body: string;
+            cover?: {
+                id: string;
+                /** Format: uri */
+                url: string;
+                alt?: string | null;
+                prompt?: string | null;
+                transient?: boolean;
+                taskId?: string | null;
+            } | null;
+            images?: {
+                id: string;
+                /** Format: uri */
+                url: string;
+                alt?: string | null;
+                prompt?: string | null;
+                transient?: boolean;
+                taskId?: string | null;
+            }[];
+        } | {
+            /** @enum {string} */
+            kind: "blog";
+            body: string;
+            cover?: {
+                id: string;
+                /** Format: uri */
+                url: string;
+                alt?: string | null;
+                prompt?: string | null;
+                transient?: boolean;
+                taskId?: string | null;
+            } | null;
+            images?: {
+                id: string;
+                /** Format: uri */
+                url: string;
+                alt?: string | null;
+                prompt?: string | null;
+                transient?: boolean;
+                taskId?: string | null;
+            }[];
+        } | {
+            /** @enum {string} */
+            kind: "short_post";
+            body: string;
+            cover?: {
+                id: string;
+                /** Format: uri */
+                url: string;
+                alt?: string | null;
+                prompt?: string | null;
+                transient?: boolean;
+                taskId?: string | null;
+            } | null;
+            images?: {
+                id: string;
+                /** Format: uri */
+                url: string;
+                alt?: string | null;
+                prompt?: string | null;
+                transient?: boolean;
+                taskId?: string | null;
+            }[];
+        } | {
+            /** @enum {string} */
+            kind: "novel";
+            body: string;
+            cover?: {
+                id: string;
+                /** Format: uri */
+                url: string;
+                alt?: string | null;
+                prompt?: string | null;
+                transient?: boolean;
+                taskId?: string | null;
+            } | null;
+            images?: {
+                id: string;
+                /** Format: uri */
+                url: string;
+                alt?: string | null;
+                prompt?: string | null;
+                transient?: boolean;
+                taskId?: string | null;
+            }[];
+        } | {
+            /** @enum {string} */
+            kind: "video_script";
+            body: string;
+        } | {
+            /** @enum {string} */
+            kind: "short_video";
+            body: string;
+        } | {
+            /** @enum {string} */
+            kind: "podcast";
+            body: string;
+        } | {
+            /** @enum {string} */
+            kind: "music";
+            body: string;
+        } | {
+            /** @enum {string} */
+            kind: "illustration";
+            images: {
+                id: string;
+                /** Format: uri */
+                url: string;
+                alt?: string | null;
+                prompt?: string | null;
+                transient?: boolean;
+                taskId?: string | null;
+            }[];
+            caption?: string | null;
+        };
         PreviewBlock: {
             id: string;
             taskId?: string | null;
@@ -1294,7 +1424,8 @@ export interface components {
             hook?: string | null;
             hashtags?: string[];
             notes?: string | null;
-            blocks: components["schemas"]["PreviewBlock"][];
+            content: components["schemas"]["PreviewContent"];
+            blocks?: components["schemas"]["PreviewBlock"][];
         } | null;
         RevisionAnchor: {
             blockId: string;

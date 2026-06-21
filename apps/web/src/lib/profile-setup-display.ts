@@ -1,4 +1,5 @@
 import {
+  buildProfileSetupProgressOptions,
   getActiveProfileStep,
   getProfileSetupHeadline,
   getProfileSetupPlaceholder,
@@ -9,14 +10,22 @@ import {
   mergeProfileForDisplay,
   parseProfileJson,
   type ProfileSetupState,
+  type ProfileSetupStateOptions,
   type ProfileSetupStep,
   type TurnRuntime,
+  type WorkPreview,
+  type WorkProduction,
   type WorkProfile,
 } from "@yougan/domain";
 
 import { CHAT_COPY } from "@/lib/site-copy";
 
 export type { ProfileSetupState, ProfileSetupStep };
+
+export type ProfileSetupViewInput = ProfileSetupStateOptions & {
+  preview?: WorkPreview | null;
+  production?: WorkProduction | null;
+};
 
 type StreamProfileSource = {
   profile?: WorkProfile;
@@ -49,10 +58,17 @@ export function resolveStreamProfile(
 
 export function buildProfileSetupView(
   profile: WorkProfile | undefined,
-  options?: { skippedSteps?: ProfileSetupStep[] },
+  options?: ProfileSetupViewInput,
 ) {
   const normalized = parseProfileJson(profile);
-  const state = getProfileSetupState(normalized, options);
+  const progressOptions = buildProfileSetupProgressOptions({
+    profile: normalized,
+    preview: options?.preview,
+    production: options?.production,
+    skippedSteps: options?.skippedSteps,
+    lockAtReady: options?.lockAtReady,
+  });
+  const state = getProfileSetupState(normalized, progressOptions);
   return {
     profile: normalized,
     state,
@@ -65,23 +81,39 @@ export function buildProfileSetupView(
 
 export function profileSetupStatusHint(
   profile: WorkProfile | undefined,
-  skippedSteps: ProfileSetupStep[] = [],
+  options?: ProfileSetupViewInput,
 ): string {
-  return getProfileSetupStatusHint(profile, skippedSteps);
+  const normalized = parseProfileJson(profile);
+  const progressOptions = buildProfileSetupProgressOptions({
+    profile: normalized,
+    preview: options?.preview,
+    production: options?.production,
+    skippedSteps: options?.skippedSteps,
+    lockAtReady: options?.lockAtReady,
+  });
+  return getProfileSetupStatusHint(normalized, progressOptions);
 }
 
 export function profileSetupPlaceholder(
   profile: WorkProfile | undefined,
   activeKind: string | null | undefined,
-  skippedSteps: ProfileSetupStep[] = [],
+  options?: ProfileSetupViewInput,
 ): string {
   if (activeKind && activeKind !== "profile") {
     return CHAT_COPY.placeholderDefault;
   }
-  if (!isProfileSetupPhase(profile)) {
+  const normalized = parseProfileJson(profile);
+  const progressOptions = buildProfileSetupProgressOptions({
+    profile: normalized,
+    preview: options?.preview,
+    production: options?.production,
+    skippedSteps: options?.skippedSteps,
+    lockAtReady: options?.lockAtReady,
+  });
+  if (!isProfileSetupPhase(normalized, progressOptions)) {
     return CHAT_COPY.placeholderDefault;
   }
-  return getProfileSetupPlaceholder(profile, skippedSteps);
+  return getProfileSetupPlaceholder(normalized, progressOptions);
 }
 
 export { getActiveProfileStep, getProfileStepCopy, isProfileSetupPhase };
