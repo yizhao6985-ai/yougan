@@ -68,6 +68,8 @@ import {
 } from "@/lib/thread-run-coordination";
 import { useAuthToken } from "@/store/auth";
 import { patchConversationsCache } from "@/hooks/queries/conversations";
+import type { ConversationSuggestionsCache } from "@/hooks/use-conversation-suggestions-cache";
+import type { NextStepSuggestions } from "@/lib/types";
 
 /**
  * Studio 聊天与 LangGraph thread 之间的核心数据层。
@@ -138,10 +140,18 @@ interface UseYouganStreamOptions {
   work: Work | null;
   conversation: WorkConversation | null;
   modelTemperature: number;
+  /** 按对话缓存 nextStepSuggestions，切换回来时复用、避免重复 bootstrap */
+  suggestionsCache?: ConversationSuggestionsCache;
   /** conversation 首次拿到 LangGraph threadId 时回写 DB（SDK onThreadId 回调） */
   onThreadId?: (conversationId: string, threadId: string | null) => void;
   /** 回合 committed 后触发（刷新作品物化列、侧边栏等） */
   onRunComplete?: (workId: string, values: YouganValues) => void;
+}
+
+function hasNextStepSuggestions(
+  value: NextStepSuggestions | null | undefined,
+): boolean {
+  return (value?.suggestions?.length ?? 0) > 0;
 }
 
 /**
@@ -221,6 +231,7 @@ export function useYouganStream({
   work,
   conversation,
   modelTemperature,
+  suggestionsCache,
   onThreadId,
   onRunComplete,
 }: UseYouganStreamOptions) {
@@ -734,6 +745,33 @@ export function useYouganStream({
     return { ...(base ?? {}), ...postCancelValues } as YouganValues;
   }, [postCancelValues, stream.values]);
 
+  useEffect(() => {
+    if (!workId || !conversationId || !suggestionsCache) return;
+    const suggestions = mergedStreamValues?.nextStepSuggestions;
+    if (!hasNextStepSuggestions(suggestions)) return;
+    suggestionsCache.set(workId, conversationId, suggestions);
+  }, [
+    conversationId,
+    mergedStreamValues?.nextStepSuggestions,
+    suggestionsCache,
+    workId,
+  ]);
+
+  const displayStreamValues = useMemo((): YouganValues | undefined => {
+    const cached = suggestionsCache?.get(workId, conversationId) ?? null;
+    if (!mergedStreamValues) {
+      if (!cached) return undefined;
+      return { nextStepSuggestions: cached } as YouganValues;
+    }
+    if (hasNextStepSuggestions(mergedStreamValues.nextStepSuggestions)) {
+      return mergedStreamValues;
+    }
+    if (cached) {
+      return { ...mergedStreamValues, nextStepSuggestions: cached };
+    }
+    return mergedStreamValues;
+  }, [conversationId, mergedStreamValues, suggestionsCache, workId]);
+
   /**
    * 异常对账：SSE 已停但 mergedStreamValues 仍显示 in-flight（needsAbnormalReconcile）。
    *
@@ -882,6 +920,14 @@ export function useYouganStream({
     if (!work || !conversation || !token) return;
     if (stream.messages.length > 0) return;
     if (hasActiveRun) return;
+    if (suggestionsCache?.has(work.id, conversation.id)) return;
+    if (
+      hasNextStepSuggestions(
+        (stream.values as YouganValues | undefined)?.nextStepSuggestions,
+      )
+    ) {
+      return;
+    }
 
     await awaitCancelIfInFlight();
     setPostCancelValues(null);
@@ -902,6 +948,10 @@ export function useYouganStream({
     isThreadLoading: stream.isThreadLoading,
     isCancelling,
     hasActiveRun,
+    hasCachedSuggestions: suggestionsCache?.has(workId, conversationId) ?? false,
+    hasCheckpointSuggestions: hasNextStepSuggestions(
+      mergedStreamValues?.nextStepSuggestions,
+    ),
     submitOpeningBootstrap,
   });
 
@@ -999,6 +1049,7 @@ export function useYouganStream({
       setLiveRunProgress(null);
 
       if (workId && conversationId) {
+        suggestionsCache?.clear(workId, conversationId);
         void queryClient.invalidateQueries({
           queryKey: queryKeys.works.openingBootstrap(workId, conversationId),
         });
@@ -1049,6 +1100,8 @@ export function useYouganStream({
         attachments.length > 0 ||
         previewSelections.length > 0;
       if (!hasPayload || !work || !conversation) return;
+
+      suggestionsCache?.clear(work.id, conversation.id);
 
       /** 首条消息时用内容生成对话标题，optimistic 写 React Query cache */
       if (
@@ -1213,9 +1266,9 @@ export function useYouganStream({
     !isAwaitingTurnConfirm &&
     !isResumingInterrupt;
 
-  /** checkpoint 里是否已有 opening 下一步建议（有则不再 bootstrap） */
+  /** checkpoint 或会话缓存里是否已有 opening 下一步建议（有则不再 bootstrap） */
   const hasOpeningSuggestions =
-    (mergedStreamValues?.nextStepSuggestions?.suggestions?.length ?? 0) > 0;
+    hasNextStepSuggestions(displayStreamValues?.nextStepSuggestions);
 
   /**
    * 空对话 opening 加载态：无 messages、无 suggestions，且 bootstrap query / thread / stream 仍在忙。
@@ -1237,17 +1290,20 @@ export function useYouganStream({
    * - isLoading：join/resume 期间强制 true，避免 composer 误以为可发送
    */
   const streamWithPostCancel = useMemo(() => {
+    const baseValues = displayStreamValues ?? stream.values;
     const base = postCancelValues
       ? {
           ...stream,
           values: {
-            ...(stream.values ?? {}),
+            ...(baseValues ?? {}),
             ...postCancelValues,
           } as YouganValues,
         }
-      : stream;
+      : displayStreamValues
+        ? { ...stream, values: displayStreamValues }
+        : stream;
     return isStreamBusy ? { ...base, isLoading: true } : base;
-  }, [isStreamBusy, postCancelValues, stream]);
+  }, [displayStreamValues, isStreamBusy, postCancelValues, stream]);
 
   /**
    * 聊天区底部进度文案：liveRunProgress（custom 心跳）优先于 checkpoint.runProgress。

@@ -2,6 +2,8 @@
 export const LLM_TIMEOUT_MS = {
   chat: 120_000,
   structured: 180_000,
+  /** 下一步建议：条数少、失败可静默跳过，上限应低于 structured */
+  suggestions: 120_000,
   production: 480_000,
   image: 90_000,
 } as const;
@@ -32,13 +34,39 @@ export function isLlmTimeoutError(error: unknown): error is LlmTimeoutError {
   return error instanceof LlmTimeoutError;
 }
 
+function isTimeoutError(error: unknown): boolean {
+  if (error != null && typeof error === "object" && "name" in error) {
+    return (error as { name: string }).name === "TimeoutError";
+  }
+  return false;
+}
+
 function isTimeoutDeadline(deadline: AbortSignal): boolean {
   if (!deadline.aborted) return false;
-  const reason = deadline.reason;
-  if (reason != null && typeof reason === "object" && "name" in reason) {
-    return (reason as { name: string }).name === "TimeoutError";
-  }
-  return true;
+  return isTimeoutError(deadline.reason) || deadline.reason == null;
+}
+
+function isTimeoutLike(deadline: AbortSignal, error: unknown): boolean {
+  return isTimeoutDeadline(deadline) || isTimeoutError(error);
+}
+
+/** LangChain structured invoke 可能不响应 AbortSignal；Promise.race 兜底硬超时。 */
+function createHardTimeout(timeoutMs: number): {
+  promise: Promise<never>;
+  clear: () => void;
+} {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const promise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      reject(new DOMException("The operation timed out.", "TimeoutError"));
+    }, timeoutMs);
+  });
+  return {
+    promise,
+    clear: () => {
+      if (timer !== undefined) clearTimeout(timer);
+    },
+  };
 }
 
 function throwLlmTimeout(
@@ -64,8 +92,10 @@ export async function withLlmRetry<T>(opts: {
       ? AbortSignal.any([opts.parentSignal, deadline])
       : deadline;
 
+    const hardTimeout = createHardTimeout(opts.timeoutMs);
+
     try {
-      return await opts.run(signal);
+      return await Promise.race([opts.run(signal), hardTimeout.promise]);
     } catch (error) {
       lastError = error;
 
@@ -74,19 +104,21 @@ export async function withLlmRetry<T>(opts: {
       }
 
       if (opts.canRetry && !opts.canRetry()) {
-        if (isTimeoutDeadline(deadline)) {
+        if (isTimeoutLike(deadline, error)) {
           throwLlmTimeout(opts.timeoutMs, attempt + 1, error);
         }
         throw error;
       }
 
-      if (!isTimeoutDeadline(deadline)) {
+      if (!isTimeoutLike(deadline, error)) {
         throw error;
       }
 
       if (attempt === MAX_ATTEMPTS - 1) {
         throwLlmTimeout(opts.timeoutMs, MAX_ATTEMPTS, error);
       }
+    } finally {
+      hardTimeout.clear();
     }
   }
 

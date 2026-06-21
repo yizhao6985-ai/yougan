@@ -17,7 +17,12 @@ import {
 
 import { invokeStructured } from "#agent/llm/invoke/index.js";
 import { patchAiUsageMetering } from "#agent/llm/invoke/metering.js";
+import { LLM_TIMEOUT_MS } from "#agent/llm/invoke/timeout.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
+import {
+  buildRunProgress,
+  withRunProgressHeartbeat,
+} from "#agent/state-io/run-progress.js";
 import { getPreview, getProfile } from "#agent/state-io/index.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
@@ -27,7 +32,7 @@ import { buildNextStepSuggestionsPrompt } from "./prompt.js";
 import { nextStepSuggestionsResponseSchema } from "./schema.js";
 
 const OPENING_HINT = "";
-const MAX_SUGGESTION_INVOKE_ATTEMPTS = 3;
+const MAX_SUGGESTION_INVOKE_ATTEMPTS = 2;
 
 function buildSuggestionRetryPromptSuffix(count: number): string {
   return `
@@ -92,7 +97,10 @@ async function invokeNextStepSuggestions(
         llm,
         nextStepSuggestionsResponseSchema(options.count),
         [new HumanMessage(prompt)],
-        { name: "next_step_suggestions" },
+        {
+          name: "next_step_suggestions",
+          timeoutMs: LLM_TIMEOUT_MS.suggestions,
+        },
         config,
       );
       const suggestions = resolveProfileSetupSuggestionRoles(
@@ -169,6 +177,14 @@ export async function generateSuggestionsNode(
     return {};
   }
 
-  const nextStepSuggestions = await resolveNextStepSuggestions(state, config);
-  return { nextStepSuggestions, ...patchAiUsageMetering(state.aiUsage, config) };
+  const progress = buildRunProgress("suggestions", "正在生成建议…");
+  const nextStepSuggestions = await withRunProgressHeartbeat(
+    progress,
+    config,
+    () => resolveNextStepSuggestions(state, config),
+  );
+  return {
+    nextStepSuggestions,
+    ...patchAiUsageMetering(state.aiUsage, config),
+  };
 }

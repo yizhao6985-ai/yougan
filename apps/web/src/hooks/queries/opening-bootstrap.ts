@@ -11,6 +11,8 @@ interface UseOpeningBootstrapQueryOptions {
   isThreadLoading: boolean;
   isCancelling: boolean;
   hasActiveRun: boolean;
+  hasCachedSuggestions: boolean;
+  hasCheckpointSuggestions: boolean;
   submitOpeningBootstrap: () => Promise<void>;
 }
 
@@ -25,6 +27,8 @@ export function useOpeningBootstrapQuery({
   isThreadLoading,
   isCancelling,
   hasActiveRun,
+  hasCachedSuggestions,
+  hasCheckpointSuggestions,
   submitOpeningBootstrap,
 }: UseOpeningBootstrapQueryOptions) {
   const workId = work?.id ?? null;
@@ -35,7 +39,9 @@ export function useOpeningBootstrapQuery({
     messageCount === 0 &&
     !isThreadLoading &&
     !isCancelling &&
-    !hasActiveRun;
+    !hasActiveRun &&
+    !hasCachedSuggestions &&
+    !hasCheckpointSuggestions;
 
   return useQuery<OpeningBootstrapQueryData>({
     queryKey:

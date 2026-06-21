@@ -22,6 +22,10 @@ import {
   useYouganStream,
   type YouganStream,
 } from "@/hooks/use-yougan-stream";
+import {
+  useConversationSuggestionsCache,
+  type ConversationSuggestionsCache,
+} from "@/hooks/use-conversation-suggestions-cache";
 import { useWorksStore, type WorksStore } from "@/hooks/use-works-store";
 import type { Work, YouganValues } from "@/lib/types";
 
@@ -38,10 +42,12 @@ const StudioContext = createContext<StudioContextValue | null>(null);
 function ConversationStreamKeyed({
   worksStore,
   conversationsStore,
+  suggestionsCache,
   children,
 }: {
   worksStore: WorksStore;
   conversationsStore: ConversationsStore;
+  suggestionsCache: ConversationSuggestionsCache;
   children: ReactNode;
 }) {
   const queryClient = useQueryClient();
@@ -101,6 +107,7 @@ function ConversationStreamKeyed({
     work: worksStore.activeWork,
     conversation: conversationsStore.activeConversation,
     modelTemperature: temperatureControl.temperature,
+    suggestionsCache,
     onThreadId: conversationsStore.setConversationThreadId,
     onRunComplete: handleRunComplete,
   });
@@ -168,10 +175,12 @@ function ConversationStreamKeyed({
 function ConversationStreamInner({
   worksStore,
   conversationsStore,
+  suggestionsCache,
   children,
 }: {
   worksStore: WorksStore;
   conversationsStore: ConversationsStore;
+  suggestionsCache: ConversationSuggestionsCache;
   children: ReactNode;
 }) {
   const conversationKey =
@@ -182,6 +191,7 @@ function ConversationStreamInner({
       key={conversationKey}
       worksStore={worksStore}
       conversationsStore={conversationsStore}
+      suggestionsCache={suggestionsCache}
     >
       {children}
     </ConversationStreamKeyed>
@@ -196,11 +206,13 @@ function StreamBridge({
   children: ReactNode;
 }) {
   const conversationsStore = useConversationsStore(worksStore.activeWork?.id ?? null);
+  const suggestionsCache = useConversationSuggestionsCache();
 
   return (
     <ConversationStreamInner
       worksStore={worksStore}
       conversationsStore={conversationsStore}
+      suggestionsCache={suggestionsCache}
     >
       {children}
     </ConversationStreamInner>
