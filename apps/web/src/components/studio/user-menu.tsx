@@ -1,6 +1,7 @@
 import {
   ChevronDownIcon,
   CircleUserRoundIcon,
+  CompassIcon,
   CrownIcon,
   ReceiptIcon,
   FolderKanbanIcon,
@@ -24,8 +25,9 @@ import {
 import { AuthorAvatar } from "@/components/content/author-avatar";
 import { formatAccountLabel, maskChinaMobilePhone } from "@yougan/domain";
 
+import { useStudioOnboardingOptional } from "@/components/studio/onboarding/studio-onboarding-provider";
 import { useLogoutMutation, useMeQuery } from "@/hooks/queries/auth";
-import { BILLING, FEEDBACK, MEMBERSHIP, SETTINGS } from "@/lib/site-copy";
+import { BILLING, FEEDBACK, MEMBERSHIP, SETTINGS, STUDIO_ONBOARDING } from "@/lib/site-copy";
 import type { AuthUser } from "@/services/auth";
 
 type UserMenuItem = {
@@ -73,6 +75,7 @@ export function UserMenu() {
   const navigate = useNavigate();
   const { data: user } = useMeQuery();
   const logoutMutation = useLogoutMutation();
+  const onboarding = useStudioOnboardingOptional();
 
   const displayName = getDisplayName(user);
   const author = user
@@ -148,6 +151,15 @@ export function UserMenu() {
           </DropdownMenuGroup>
         ))}
         <DropdownMenuSeparator />
+        {onboarding ? (
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onSelect={() => onboarding.startTour()}
+          >
+            <CompassIcon />
+            {STUDIO_ONBOARDING.userMenuLabel}
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuItem asChild>
           <Link to="/feedback" className="cursor-pointer">
             <MessageSquarePlusIcon />

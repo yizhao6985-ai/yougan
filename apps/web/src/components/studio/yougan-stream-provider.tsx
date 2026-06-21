@@ -227,3 +227,7 @@ export function useYouganStreamContext() {
   }
   return value;
 }
+
+export function useYouganStreamContextOptional() {
+  return useContext(StudioContext);
+}

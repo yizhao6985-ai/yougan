@@ -116,11 +116,17 @@ export function StudioCreateView() {
   return (
     <ComposerPreviewSelectionsProvider>
       <div className="grid h-full min-h-0 flex-1 overflow-hidden lg:grid-cols-[280px_minmax(0,1fr)_auto]">
-        <aside className="hidden min-h-0 flex-col border-r border-border/80 bg-card/80 lg:flex">
+        <aside
+          data-onboarding="works-aside"
+          className="hidden min-h-0 flex-col border-r border-border/80 bg-card/80 lg:flex"
+        >
           <WorksAside />
         </aside>
 
-        <div className="flex min-h-0 min-w-0 flex-col overflow-hidden bg-gradient-to-b from-accent/35 to-background">
+        <div
+          data-onboarding="chat-area"
+          className="flex min-h-0 min-w-0 flex-col overflow-hidden bg-gradient-to-b from-accent/35 to-background"
+        >
           <YouganChat />
         </div>
 

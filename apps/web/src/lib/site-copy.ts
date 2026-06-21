@@ -423,6 +423,7 @@ export const STUDIO = {
   emptyTitle: "创建第一件作品",
   emptyBody:
     "从定方案开始：对话整理制作方案，需要时提问答疑，方案就绪后 AI 团队按计划制作。",
+  emptyTourCta: "先看 30 秒快速引导",
   emptyWorksList: "还没有作品，创建一件并从定方案开始。",
   emptyWorksFiltered: "创建一件作品，从定方案开始。",
   referencesCount: (n: number) => `已添加 ${n} 条参考素材`,
@@ -430,6 +431,20 @@ export const STUDIO = {
   modelTemperatureLabel: "创意度",
   modelTemperatureHint:
     "调节制作环节 AI 的发散程度（文字、视觉等）。不影响定方案、提问与制作计划。",
+} as const;
+
+/** 创作台 · 快速引导（Spotlight Tour） */
+export const STUDIO_ONBOARDING = {
+  triggerLabel: "快速引导",
+  triggerShortLabel: "引导",
+  skip: "跳过引导",
+  next: "下一步",
+  finish: "开始创作",
+  close: "关闭",
+  progress: (current: number, total: number) => `${current} / ${total}`,
+  finishGuideLink: "查看完整使用指南",
+  finishAssistantHint: "还有疑问？打开页头「有感助手」随时提问。",
+  userMenuLabel: "创作台快速引导",
 } as const;
 
 export const CHAT_COPY = {

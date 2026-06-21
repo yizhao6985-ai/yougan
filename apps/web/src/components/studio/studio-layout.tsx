@@ -1,5 +1,6 @@
 import { Outlet } from "react-router-dom";
 
+import { StudioOnboardingProvider } from "@/components/studio/onboarding/studio-onboarding-provider";
 import { SiteHeader } from "@/components/site-header";
 import {
   YouganStreamProvider,
@@ -10,12 +11,14 @@ export function StudioLayout() {
   return (
     <TooltipProvider delayDuration={300}>
       <YouganStreamProvider>
-        <div className="flex h-screen flex-col overflow-hidden bg-background">
-          <SiteHeader />
-          <div className="min-h-0 flex-1 overflow-hidden">
-            <Outlet />
+        <StudioOnboardingProvider>
+          <div className="flex h-screen flex-col overflow-hidden bg-background">
+            <SiteHeader />
+            <div className="min-h-0 flex-1 overflow-hidden">
+              <Outlet />
+            </div>
           </div>
-        </div>
+        </StudioOnboardingProvider>
       </YouganStreamProvider>
     </TooltipProvider>
   );

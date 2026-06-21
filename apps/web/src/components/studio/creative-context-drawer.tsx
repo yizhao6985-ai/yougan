@@ -3,18 +3,15 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 
 import { creativeContextPanelClassNames } from "@/components/studio/creative-context/shared";
 import { CREATIVE_CONTEXT_PANEL } from "@/lib/site-copy";
-import { readStoredString, writeStoredString } from "@/lib/storage-value";
+import {
+  readCreativeContextDrawerOpen,
+  STUDIO_DRAWER_OPEN_EVENT,
+  STUDIO_DRAWER_OPEN_KEY,
+} from "@/lib/studio-drawer-events";
+import { writeStoredString } from "@/lib/storage-value";
 import { cn } from "@/lib/utils";
 
-const DRAWER_OPEN_KEY = "yougan:creative-context-drawer-open";
 const DRAWER_WIDTH = "min(480px, 46vw)";
-
-function readDrawerOpen(): boolean {
-  const raw = readStoredString(DRAWER_OPEN_KEY);
-  if (raw === "0") return false;
-  if (raw === "1") return true;
-  return true;
-}
 
 type CreativeContextDrawerProps = {
   header?: ReactNode;
@@ -27,12 +24,23 @@ export function CreativeContextDrawer({
   children,
   className,
 }: CreativeContextDrawerProps) {
-  const [open, setOpen] = useState(readDrawerOpen);
+  const [open, setOpen] = useState(readCreativeContextDrawerOpen);
 
   const setOpenPersisted = useCallback((next: boolean) => {
     setOpen(next);
-    writeStoredString(DRAWER_OPEN_KEY, next ? "1" : "0");
+    writeStoredString(STUDIO_DRAWER_OPEN_KEY, next ? "1" : "0");
   }, []);
+
+  useEffect(() => {
+    const onDrawerOpen = (event: Event) => {
+      const detail = (event as CustomEvent<{ open?: boolean }>).detail;
+      if (detail?.open) setOpenPersisted(true);
+    };
+
+    window.addEventListener(STUDIO_DRAWER_OPEN_EVENT, onDrawerOpen);
+    return () =>
+      window.removeEventListener(STUDIO_DRAWER_OPEN_EVENT, onDrawerOpen);
+  }, [setOpenPersisted]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -57,6 +65,7 @@ export function CreativeContextDrawer({
 
   return (
     <div
+      data-onboarding="creative-panel"
       className={cn("relative h-full min-h-0 shrink-0 overflow-visible", className)}
       style={{ width: open ? DRAWER_WIDTH : 0 }}
     >

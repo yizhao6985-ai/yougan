@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { CompassIcon } from "lucide-react";
 
 import type { Message as LangChainMessage } from "@langchain/langgraph-sdk";
 
@@ -25,6 +26,7 @@ import { Shimmer } from "@/components/ai-elements/shimmer";
 import { useYouganStreamContext } from "@/components/studio/yougan-stream-provider";
 import { useWorkItemNameDialog } from "@/hooks/use-work-item-name-dialog";
 import { WorksCreateMenu } from "@/components/studio/works-create-menu";
+import { useStudioOnboardingOptional } from "@/components/studio/onboarding/studio-onboarding-provider";
 import { HumanMessageAttachments } from "@/components/studio/human-message-attachments";
 import { HumanMessagePreviewSelections } from "@/components/studio/human-message-preview-selections";
 import { buildRenderItems, mergeChatMessages } from "@/lib/message-utils";
@@ -62,6 +64,7 @@ export function YouganChat() {
     openCreateWork,
     openCreateGroup,
   } = useWorkItemNameDialog();
+  const onboarding = useStudioOnboardingOptional();
   const [input, setInput] = useState("");
 
   const streamValues = stream.values as YouganValues | undefined;
@@ -170,11 +173,23 @@ export function YouganChat() {
           <p className="max-w-md text-sm text-muted-foreground">
             {STUDIO.emptyBody}
           </p>
-          <WorksCreateMenu
-            onCreateWork={() => openCreateWork()}
-            onCreateGroup={() => openCreateGroup()}
-            align="center"
-          />
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <WorksCreateMenu
+              onCreateWork={() => openCreateWork()}
+              onCreateGroup={() => openCreateGroup()}
+              align="center"
+            />
+            {onboarding ? (
+              <button
+                type="button"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border/70 bg-card/85 px-3 py-2 text-sm text-muted-foreground shadow-sm shadow-border/20 transition hover:border-primary/20 hover:bg-accent/40 hover:text-foreground"
+                onClick={() => onboarding.startTour()}
+              >
+                <CompassIcon className="size-3.5 shrink-0 text-primary/80" aria-hidden />
+                {STUDIO.emptyTourCta}
+              </button>
+            ) : null}
+          </div>
         </div>
         {workNameDialog}
       </>
@@ -439,7 +454,7 @@ export function YouganChat() {
           </Conversation>
         )}
 
-        <div className={scene.composer}>
+        <div className={scene.composer} data-onboarding="chat-composer">
           <div className="pointer-events-auto mx-auto w-full max-w-3xl">
             <ComposerAttachmentsProvider>
               <StudioChatComposer
