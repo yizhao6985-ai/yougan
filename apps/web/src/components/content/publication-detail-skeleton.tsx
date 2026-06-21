@@ -12,7 +12,7 @@ function Bone({ className }: { className?: string }) {
 
 export function PublicationDetailSkeleton() {
   return (
-    <div className={scene.articleColumn} aria-busy aria-label="加载中">
+    <div className="space-y-10 sm:space-y-12" aria-busy aria-label="加载中">
       <div className="space-y-5 sm:space-y-6">
         <Bone className="h-4 w-32" />
         <Bone className="h-12 w-full" />
@@ -24,15 +24,13 @@ export function PublicationDetailSkeleton() {
         </div>
       </div>
 
-      <Bone className="mt-10 aspect-[16/10] w-full rounded-2xl sm:mt-12" />
-
-      <div className="mt-10 space-y-3 sm:mt-12">
+      <div className="space-y-3">
         {Array.from({ length: 6 }).map((_, index) => (
           <Bone key={index} className="h-4 w-full" />
         ))}
       </div>
 
-      <Bone className="mt-12 h-24 w-full rounded-2xl sm:mt-14" />
+      <Bone className="h-24 w-full rounded-2xl" />
     </div>
   );
 }

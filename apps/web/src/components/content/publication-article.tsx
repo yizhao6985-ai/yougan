@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowRightIcon } from "lucide-react";
 
 import { AuthorAvatar } from "@/components/content/author-avatar";
+import { PublicationDetailCover } from "@/components/content/publication-detail-cover";
 import { PreviewBlockList } from "@/components/preview-block-list";
 import { authorDisplayName } from "@/lib/publication-utils";
 import { topicCategoryLabel } from "@yougan/domain";
@@ -19,12 +20,14 @@ function ArticleCategoryLine({
     publication.compositionLabel?.trim(),
     topicCategoryLabel(publication.topicCategory),
   ].filter(Boolean);
-
-  if (!parts.length) return null;
+  const categoryText = parts.join(" · ");
 
   return (
-    <p className={scene.articleCategory}>
-      {parts.join(" · ")}
+    <p
+      className={cn(scene.articleCategory, !categoryText && "invisible")}
+      aria-hidden={!categoryText}
+    >
+      {categoryText || "占位"}
     </p>
   );
 }
@@ -118,8 +121,10 @@ export function PublicationArticle({
   publication: Publication;
 }) {
   return (
-    <article className="pb-4">
-      <header className={cn(scene.articleColumn, "space-y-5 sm:space-y-6")}>
+    <article className="space-y-10 pb-4 sm:space-y-12">
+      <PublicationDetailCover coverUrl={publication.coverUrl} />
+
+      <header className="space-y-5 sm:space-y-6">
         <ArticleCategoryLine publication={publication} />
 
         {publication.title ? (
@@ -133,13 +138,7 @@ export function PublicationArticle({
         <ArticleByline publication={publication} />
       </header>
 
-      <div
-        className={cn(
-          scene.articleColumn,
-          scene.articleProse,
-          "mt-10 sm:mt-12",
-        )}
-      >
+      <div className={scene.articleProse}>
         <PreviewBlockList
           blocks={publication.blocks}
           galleryKey={publication.slug}
@@ -147,7 +146,7 @@ export function PublicationArticle({
       </div>
 
       {publication.hashtags?.length ? (
-        <div className={cn(scene.articleColumn, "mt-10 flex flex-wrap gap-2")}>
+        <div className="flex flex-wrap gap-2">
           {publication.hashtags.map((tag) => (
             <span
               key={tag}
@@ -159,9 +158,7 @@ export function PublicationArticle({
         </div>
       ) : null}
 
-      <div className={cn(scene.articleColumn, "mt-12 sm:mt-14")}>
-        <ArticleAuthorCard publication={publication} />
-      </div>
+      <ArticleAuthorCard publication={publication} />
     </article>
   );
 }

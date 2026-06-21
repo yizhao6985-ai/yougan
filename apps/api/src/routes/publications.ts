@@ -39,7 +39,7 @@ const FeedQuerySchema = z.object({
 const PublicationSummaryOverridesSchema = z.object({
   title: z.string().optional(),
   hook: z.string().optional(),
-  coverBlockId: z.string().nullable().optional(),
+  coverUrl: z.string().url().nullable().optional(),
   compositionLabel: z.string().optional(),
   topicCategory: z.enum(topicIds as [string, ...string[]]).optional(),
 });
@@ -129,6 +129,7 @@ publicationsRouter.post("/", requireAuth, async (req: AuthedRequest, res) => {
       res.status(400).json({ error: "作品还没有可发布的成稿内容" });
       return;
     }
+    console.error("[publications] Publish failed:", error);
     res.status(500).json({ error: "Publish failed" });
   }
 });

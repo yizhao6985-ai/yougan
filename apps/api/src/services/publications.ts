@@ -339,7 +339,7 @@ function summaryToPublicationFields(
   blocks: WorkPreview["blocks"],
   overrides?: PublicationSummaryOverrides | null,
 ) {
-  const applied = applyPublicationSummaryOverrides(summary, overrides, blocks);
+  const applied = applyPublicationSummaryOverrides(summary, overrides);
   const legacy = legacyMetadataFromSummary(work, applied, blocks);
 
   return {
@@ -379,7 +379,7 @@ export async function previewPublicationSummaryForWork(
     profile: work.profile,
   });
 
-  return buildPublicationSummaryPreview(summary, blocks);
+  return buildPublicationSummaryPreview(summary);
 }
 
 export async function createPublicationFromWork(

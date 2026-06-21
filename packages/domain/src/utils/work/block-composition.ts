@@ -1,10 +1,15 @@
 import type {
   BlockComposition,
   PublicationCover,
-  PublicationCoverOption,
 } from "../../models/work/publication-summary.js";
 import type { PreviewBlock, PreviewBlockType } from "../../models/work/preview.js";
 import { sortMediaModalities } from "../media-modalities.js";
+
+type PublicationCoverOption = {
+  blockId: string;
+  url: string;
+  label: string;
+};
 
 const BLOCK_TYPE_ORDER: PreviewBlockType[] = [
   "text",

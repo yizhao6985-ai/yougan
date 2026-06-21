@@ -49,33 +49,38 @@ export function ContentDetailPage() {
       <SiteHeader />
 
       <main className={cn(scene.pageShell, scene.pageMain)}>
-        <Link
-          to="/content"
-          className={cn(scene.backLink, "mb-8 inline-flex sm:mb-10")}
-        >
-          <ArrowLeftIcon className="size-4" aria-hidden />
-          {discoverBackLabel()}
-        </Link>
-
-        {loading ? (
-          <PublicationDetailSkeleton />
-        ) : notFound || !publication ? (
-          <div
-            className={cn(
-              scene.surface,
-              scene.articleColumn,
-              "px-6 py-14 text-center sm:px-10",
-            )}
+        <div className={scene.articleColumn}>
+          <Link
+            to="/content"
+            className={cn(scene.backLink, "mb-8 inline-flex sm:mb-10")}
           >
-            <p className={scene.sectionHint}>{DISCOVER_SECTION.notFound}</p>
-            <Button type="button" className="mt-6 rounded-full" size="sm" asChild>
-              <Link to="/content">{DISCOVER_SECTION.continueBrowse}</Link>
-            </Button>
-          </div>
-        ) : (
-          <>
-            <PublicationArticle publication={publication} />
+            <ArrowLeftIcon className="size-4" aria-hidden />
+            {discoverBackLabel()}
+          </Link>
 
+          {loading ? (
+            <PublicationDetailSkeleton />
+          ) : notFound || !publication ? (
+            <div
+              className={cn(scene.surface, "px-6 py-14 text-center sm:px-10")}
+            >
+              <p className={scene.sectionHint}>{DISCOVER_SECTION.notFound}</p>
+              <Button
+                type="button"
+                className="mt-6 rounded-full"
+                size="sm"
+                asChild
+              >
+                <Link to="/content">{DISCOVER_SECTION.continueBrowse}</Link>
+              </Button>
+            </div>
+          ) : (
+            <PublicationArticle publication={publication} />
+          )}
+        </div>
+
+        {!loading && publication ? (
+          <>
             {feedQuery.isLoading || hasRelated ? (
               <section
                 className={cn(
@@ -104,7 +109,7 @@ export function ContentDetailPage() {
               </section>
             ) : null}
           </>
-        )}
+        ) : null}
       </main>
     </div>
   );

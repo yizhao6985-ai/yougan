@@ -2,6 +2,7 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import type { RunnableConfig } from "@langchain/core/runnables";
 
 import { invokeStructured } from "#agent/llm/invoke/index.js";
+import { LLM_TIMEOUT_MS } from "#agent/llm/invoke/timeout.js";
 import { patchAiUsageMetering } from "#agent/llm/invoke/metering.js";
 import { createProductionChatModel } from "#agent/llm/providers/index.js";
 import {
@@ -145,7 +146,7 @@ export async function applyRevisionNode(
           new SystemMessage(buildApplyRevisionSystemPrompt(state)),
           new HumanMessage(buildApplyRevisionHumanPrompt(state)),
         ],
-        { name: "apply_revision" },
+        { name: "apply_revision", timeoutMs: LLM_TIMEOUT_MS.production },
         config,
       ),
     );

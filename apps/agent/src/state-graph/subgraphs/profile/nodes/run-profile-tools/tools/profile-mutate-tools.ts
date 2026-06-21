@@ -36,14 +36,25 @@ export const updateProfileStyle = createProfileTool({
   emptyMessage: "未提供可更新的风格字段。",
 });
 
-export const updateProfileSetting = createProfileTool({
-  name: "update_profile_setting",
-  description:
-    "更新方案「背景」：品牌事实、故事背景、人设等固定信息（items + mode）。",
-  schema: settingFieldsSchema,
-  toPatch: (input) => buildSettingPatch(input),
-  emptyMessage: "未提供可更新的背景字段。",
-});
+function createProfileSettingTool(name: string) {
+  return createProfileTool({
+    name,
+    description:
+      "更新方案「背景」：品牌事实、故事背景、人设等固定信息（items + mode）。",
+    schema: settingFieldsSchema,
+    toPatch: (input) => buildSettingPatch(input),
+    emptyMessage: "未提供可更新的背景字段。",
+  });
+}
+
+export const updateProfileSetting = createProfileSettingTool(
+  "update_profile_setting",
+);
+
+/** LLM 常按 UI「背景」误写为 background；与 update_profile_setting 等价 */
+export const updateProfileBackground = createProfileSettingTool(
+  "update_profile_background",
+);
 
 export const updateProfileRequirements = createProfileTool({
   name: "update_profile_requirements",
@@ -67,6 +78,7 @@ export const PROFILE_TOOLS = [
   updateProfileDirection,
   updateProfileStyle,
   updateProfileSetting,
+  updateProfileBackground,
   updateProfileRequirements,
   updateProfileBounds,
 ];

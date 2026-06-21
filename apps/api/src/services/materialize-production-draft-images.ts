@@ -1,5 +1,6 @@
 import { nanoid } from "nanoid";
 import type {
+  ImagePreviewBlock,
   PreviewBlock,
   PreviewImage,
   WorkPreview,
@@ -7,6 +8,7 @@ import type {
   ProductionDraftImage,
 } from "@yougan/domain";
 import {
+  parsePreviewBlocks,
   parseWorkPreview,
   previewContentToLegacyBlocks,
   previewImages,

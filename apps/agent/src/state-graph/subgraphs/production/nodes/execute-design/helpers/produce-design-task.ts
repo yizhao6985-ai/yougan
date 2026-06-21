@@ -3,6 +3,11 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import type { LangGraphRunnableConfig } from "@langchain/langgraph";
 
 import { invokeStructured } from "#agent/llm/invoke/index.js";
+import {
+  isLlmTimeoutError,
+  LLM_TIMEOUT_FAILURE_MESSAGE,
+  LLM_TIMEOUT_MS,
+} from "#agent/llm/invoke/timeout.js";
 import { patchAiUsageMetering } from "#agent/llm/invoke/metering.js";
 import { createProductionChatModel } from "#agent/llm/providers/index.js";
 import {
@@ -18,6 +23,7 @@ import {
 } from "#agent/state-io/index.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
+import { markActiveTaskFailed } from "../../../helpers/mark-task-failed.js";
 import { productionExecuteDesignProgress } from "../../../helpers/progress-labels.js";
 import { resolveProductionMaxTokens } from "../../../helpers/resolve-production-max-tokens.js";
 import {
@@ -83,11 +89,18 @@ export async function produceDesignTask(
           ),
           new HumanMessage(buildDesignTaskHumanPrompt(promptInput)),
         ],
-        { name: "executor_produce_design_task" },
+        { name: "executor_produce_design_task", timeoutMs: LLM_TIMEOUT_MS.production },
         config,
       ),
     );
-  } catch {
+  } catch (error) {
+    if (isLlmTimeoutError(error)) {
+      return {
+        ...markActiveTaskFailed(state, task.id, LLM_TIMEOUT_FAILURE_MESSAGE),
+        ...patchRunProgress(progress),
+        ...patchAiUsageMetering(state.aiUsage, config),
+      };
+    }
     payload = {
       body: "illustration, high quality, detailed composition",
       title: null,

@@ -2,6 +2,10 @@
 import type { LangGraphRunnableConfig } from "@langchain/langgraph";
 
 import { generateDesignImage } from "#agent/llm/providers/dashscope-image.js";
+import {
+  isLlmTimeoutError,
+  LLM_TIMEOUT_FAILURE_MESSAGE,
+} from "#agent/llm/invoke/timeout.js";
 import { resolveImageAspectRatio } from "@yougan/domain";
 import {
   patchRunProgress,
@@ -15,6 +19,7 @@ import {
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
 import { productionRenderDesignProgress } from "../../helpers/progress-labels.js";
+import { markActiveTaskFailed } from "../../helpers/mark-task-failed.js";
 import { currentActiveTask } from "../../helpers/task-plan.js";
 
 const MAX_RENDER_ATTEMPTS = 2;
@@ -105,6 +110,12 @@ export async function renderDesignImageNode(
         ...patchRunProgress(progress),
       };
     } catch (error) {
+      if (isLlmTimeoutError(error)) {
+        return {
+          ...markActiveTaskFailed(state, task.id, LLM_TIMEOUT_FAILURE_MESSAGE),
+          ...patchRunProgress(progress),
+        };
+      }
       lastError =
         error instanceof Error ? error.message : "图片生成失败，请稍后重试。";
     }

@@ -10,6 +10,7 @@ export const TOOL_LABELS: Record<string, string> = {
   update_profile_direction: "更新方向",
   update_profile_style: "更新风格",
   update_profile_setting: "更新背景",
+  update_profile_background: "更新背景",
   update_profile_requirements: "更新需求",
   update_profile_bounds: "更新边界",
   add_plan_task: "添加制作任务",
@@ -79,6 +80,7 @@ export function getToolInputSummary(
         readString(toolInput.verbal) || readString(toolInput.visual) || ""
       );
     case "update_profile_setting":
+    case "update_profile_background":
       return summarizePatchList(toolInput.items, "背景") ?? "";
     case "update_profile_requirements":
       return summarizePatchList(toolInput.items, "需求") ?? "";

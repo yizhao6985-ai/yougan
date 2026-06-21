@@ -107,6 +107,14 @@ export const scene = {
     "grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3",
   contentGrid4:
     "grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
+  /** 发现页推荐流 */
+  discoverFeedGrid:
+    "grid grid-cols-1 gap-x-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-3",
+  discoverFilterBar: "border-b border-border/60",
+  discoverFilterSticky:
+    "sticky top-[57px] z-20 -mx-5 bg-background/90 px-5 backdrop-blur-md sm:-mx-0 sm:px-0 lg:top-[61px]",
+  discoverControlsPanel:
+    "rounded-2xl bg-card/75 p-4 ring-1 ring-border/60 backdrop-blur-sm sm:p-5",
   contentGrid2: "grid grid-cols-1 gap-6 sm:grid-cols-2",
   backLink:
     "inline-flex cursor-pointer items-center gap-1.5 text-sm text-muted-foreground transition-colors duration-200 hover:text-primary",

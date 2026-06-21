@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { ChevronDownIcon } from "lucide-react";
 
 import {
   DISCOVER_INTENT_ENTRIES,
@@ -6,6 +7,8 @@ import {
   type DiscoverFacets,
   type DiscoverFilters,
 } from "@yougan/domain";
+import { DISCOVER_SECTION } from "@/lib/content-section";
+import { scene } from "@/lib/scene-styles";
 import { cn } from "@/lib/utils";
 
 type DiscoverControlsProps = {
@@ -39,21 +42,24 @@ function activeIntent(filters: DiscoverFilters) {
   );
 }
 
-function DiscoverPill({
+function Pill({
   active,
   onClick,
   children,
+  size = "md",
 }: {
   active: boolean;
   onClick: () => void;
   children: ReactNode;
+  size?: "md" | "sm";
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        "shrink-0 cursor-pointer rounded-full px-3.5 py-1.5 text-sm font-medium whitespace-nowrap transition-colors duration-200",
+        "inline-flex shrink-0 cursor-pointer items-center rounded-full font-medium whitespace-nowrap transition-colors duration-200",
+        size === "sm" ? "px-2.5 py-1 text-xs" : "px-3.5 py-1.5 text-sm",
         active
           ? "bg-foreground text-background"
           : "text-muted-foreground hover:bg-secondary hover:text-foreground",
@@ -72,24 +78,13 @@ function ScrollRow({
   children: ReactNode;
 }) {
   return (
-    <div className="min-w-0">
-      <div
-        aria-label={ariaLabel}
-        role="group"
-        className="flex items-center gap-1.5 overflow-x-auto scroll-smooth pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function GroupDivider() {
-  return (
     <div
-      aria-hidden
-      className="mx-0.5 h-4 w-px shrink-0 self-center bg-border/80"
-    />
+      aria-label={ariaLabel}
+      role="group"
+      className="flex items-center gap-1 overflow-x-auto scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+    >
+      {children}
+    </div>
   );
 }
 
@@ -101,6 +96,21 @@ export function DiscoverControls({
   const intent = activeIntent(filters);
   const hasActiveFilters = !isAllActive(filters);
 
+  const groups: FilterGroup[] = [
+    { key: "contentFormat", options: facets.contentFormat },
+    { key: "topicCategory", options: facets.topicCategory },
+    { key: "mediaType", options: facets.mediaType },
+  ]
+    .filter((group) => group.options.length > 0)
+    .filter((group) => !(intent && group.key in intent.filters));
+
+  const visibleGroups = groups.filter((group) => group.options.length > 0);
+  const hasFacetFilters = visibleGroups.some(
+    (group) => filters[group.key] !== undefined,
+  );
+
+  const [refineOpen, setRefineOpen] = useState(hasFacetFilters);
+
   const updateFilter = (
     key: "contentFormat" | "topicCategory" | "mediaType",
     value?: string,
@@ -111,81 +121,88 @@ export function DiscoverControls({
     onChange(next);
   };
 
-  const groups: FilterGroup[] = [
-    { key: "contentFormat", options: facets.contentFormat },
-    { key: "topicCategory", options: facets.topicCategory },
-    { key: "mediaType", options: facets.mediaType },
-  ]
-    .filter((group) => group.options.length > 0)
-    .filter((group) => !(intent && group.key in intent.filters));
-
-  const visibleGroups = groups.filter((group) => group.options.length > 0);
-
-  const hasExtraFilters =
-    hasActiveFilters &&
-    (!intent ||
-      Object.entries(filters).some(
-        ([key, value]) => value && !(key in intent.filters),
-      ));
-
-  const showRefineRow = visibleGroups.length > 0 || hasExtraFilters;
+  const showRefine =
+    visibleGroups.length > 0 && (refineOpen || hasFacetFilters);
 
   return (
-    <div className="mt-8 space-y-3">
-      <ScrollRow aria-label="浏览方向">
-        <DiscoverPill active={isAllActive(filters)} onClick={() => onChange({})}>
-          全部
-        </DiscoverPill>
-        {DISCOVER_INTENT_ENTRIES.map((entry) => (
-          <DiscoverPill
-            key={entry.id}
-            active={isIntentActive(filters, entry.filters)}
-            onClick={() =>
-              onChange(
-                isIntentActive(filters, entry.filters) ? {} : { ...entry.filters },
-              )
-            }
-          >
-            {entry.label}
-          </DiscoverPill>
-        ))}
-      </ScrollRow>
-
-      {showRefineRow ? (
-        <ScrollRow aria-label="筛选条件">
-          {visibleGroups.map((group, groupIndex) => (
-            <div key={group.key} className="contents">
-              {groupIndex > 0 ? <GroupDivider /> : null}
-              {group.options.map((option) => {
-                const active = filters[group.key] === option.id;
-                return (
-                  <DiscoverPill
-                    key={option.id}
-                    active={active}
-                    onClick={() =>
-                      updateFilter(group.key, active ? undefined : option.id)
-                    }
-                  >
-                    {option.label}
-                  </DiscoverPill>
-                );
-              })}
-            </div>
+    <div className={cn(scene.discoverFilterBar, "py-3")}>
+      <div className="flex items-center gap-3">
+        <ScrollRow aria-label="浏览方向" >
+          <Pill active={isAllActive(filters)} onClick={() => onChange({})}>
+            全部
+          </Pill>
+          {DISCOVER_INTENT_ENTRIES.map((entry) => (
+            <Pill
+              key={entry.id}
+              active={isIntentActive(filters, entry.filters)}
+              onClick={() =>
+                onChange(
+                  isIntentActive(filters, entry.filters) ? {} : { ...entry.filters },
+                )
+              }
+            >
+              {entry.label}
+            </Pill>
           ))}
-
-          {hasExtraFilters ? (
-            <>
-              {visibleGroups.length > 0 ? <GroupDivider /> : null}
-              <button
-                type="button"
-                onClick={() => onChange(intent ? { ...intent.filters } : {})}
-                className="shrink-0 cursor-pointer rounded-full px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-              >
-                重置
-              </button>
-            </>
-          ) : null}
         </ScrollRow>
+
+        {visibleGroups.length > 0 ? (
+          <button
+            type="button"
+            onClick={() => setRefineOpen((open) => !open)}
+            className={cn(
+              "ml-auto inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium transition-colors",
+              refineOpen || hasFacetFilters
+                ? "bg-secondary text-foreground"
+                : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+            )}
+          >
+            筛选
+            <ChevronDownIcon
+              className={cn(
+                "size-3.5 transition-transform",
+                showRefine && "rotate-180",
+              )}
+              aria-hidden
+            />
+          </button>
+        ) : null}
+
+        {hasActiveFilters ? (
+          <button
+            type="button"
+            onClick={() => onChange({})}
+            className="shrink-0 text-xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            清除
+          </button>
+        ) : null}
+      </div>
+
+      {showRefine ? (
+        <div
+          aria-label="筛选条件"
+          role="group"
+          className="mt-2 flex flex-wrap items-center gap-1 border-t border-border/50 pt-2"
+        >
+          {visibleGroups.flatMap((group) =>
+            group.options.map((option) => {
+              const active = filters[group.key] === option.id;
+              return (
+                <Pill
+                  key={option.id}
+                  size="sm"
+                  active={active}
+                  onClick={() =>
+                    updateFilter(group.key, active ? undefined : option.id)
+                  }
+                >
+                  {option.label}
+                </Pill>
+              );
+            }),
+          )}
+        </div>
       ) : null}
     </div>
   );

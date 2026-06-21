@@ -15,7 +15,7 @@
 export const BRAND = {
   full: "有感 · Yougan",
   en: "Yougan",
-  taglineLanding: "AI 多媒体创作助手",
+  taglineLanding: "AI 让你有感而发",
   taglineApp: "方案 · 制作 · 提问",
   metaDescription:
     "有感 Yougan — AI 多媒体创作助手。支持文字、图片、音频、视频与混排作品；维护制作方案、解析参考素材、AI 团队按计划出稿，可版本回溯与一键发布。",
@@ -280,6 +280,7 @@ export const DISCOVER_SECTION = {
   notFound: "内容不存在或已下架",
   continueBrowse: "返回发现灵感",
   clearFilters: "清除筛选",
+  dismissBanner: "关闭活动横幅",
 } as const;
 
 export function discoverBackLabel() {
@@ -649,7 +650,7 @@ export const PUBLISH = {
   confirmTitle: "确认发布",
   confirmDescription:
     "系统已根据作品内容生成推荐流摘要，确认后将完整发布所有内容块。",
-  feedPreviewHeading: "发现页预览",
+  feedPreviewHeading: "发现页列表预览",
   blockCompositionHeading: "内容构成",
   previewLoading: "正在生成发布摘要…",
   previewError: "无法加载发布预览，请稍后再试",
@@ -657,7 +658,12 @@ export const PUBLISH = {
   fieldHook: "摘要",
   fieldCompositionLabel: "构成标签",
   fieldTopic: "主题类别",
-  fieldCover: "封面",
+  uploadCover: "上传列表封面",
+  replaceCover: "更换列表封面",
+  removeCover: "移除列表封面",
+  coverUploadHint: "点击上方卡片上传封面（4:3，用于发现页列表；详情页将以宽图展示，可选）",
+  coverUploading: "上传中…",
+  coverUploadError: "封面上传失败",
   cancel: "取消",
   confirmPublish: "确认发布",
   goPublish: "去创作台开始制作",

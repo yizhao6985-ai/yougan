@@ -3,6 +3,7 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import type { RunnableConfig } from "@langchain/core/runnables";
 
 import { invokeStructured } from "#agent/llm/invoke/index.js";
+import { LLM_TIMEOUT_MS } from "#agent/llm/invoke/timeout.js";
 import { patchAiUsageMetering } from "#agent/llm/invoke/metering.js";
 import { createProductionChatModel } from "#agent/llm/providers/index.js";
 import {
@@ -91,7 +92,7 @@ export async function assemblePreviewNode(
             }),
           ),
         ],
-        { name: "assemble_preview" },
+        { name: "assemble_preview", timeoutMs: LLM_TIMEOUT_MS.production },
         config,
       ),
     );

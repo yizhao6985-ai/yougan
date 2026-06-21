@@ -8,6 +8,7 @@ import {
 } from "@yougan/domain";
 
 import { env } from "#agent/env.js";
+import { LLM_TIMEOUT_MS, withLlmRetry } from "#agent/llm/invoke/timeout.js";
 import { DASHSCOPE_MODELS } from "./catalog.js";
 
 const IMAGE_GENERATION_PATH =
@@ -67,48 +68,55 @@ export async function generateDesignImage(
   const aspectRatio = normalizeDesignImageAspectRatio(input.aspectRatio);
   const size = aspectRatioToQwenImageSize(aspectRatio);
 
-  const response = await fetch(resolveImageGenerationUrl(), {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.dashscopeApiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: DASHSCOPE_MODELS.image,
-      input: {
-        messages: [
-          {
-            role: "user",
-            content: [{ text: input.prompt.slice(0, 1500) }],
+  return withLlmRetry({
+    timeoutMs: LLM_TIMEOUT_MS.image,
+    run: async (signal) => {
+      const response = await fetch(resolveImageGenerationUrl(), {
+        method: "POST",
+        signal,
+        headers: {
+          Authorization: `Bearer ${env.dashscopeApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: DASHSCOPE_MODELS.image,
+          input: {
+            messages: [
+              {
+                role: "user",
+                content: [{ text: input.prompt.slice(0, 1500) }],
+              },
+            ],
           },
-        ],
-      },
-      parameters: {
-        size,
-        n: 1,
-        prompt_extend: false,
-        watermark: false,
-        ...(input.negativePrompt?.trim()
-          ? { negative_prompt: input.negativePrompt.trim() }
-          : {}),
-      },
-    }),
+          parameters: {
+            size,
+            n: 1,
+            prompt_extend: false,
+            watermark: false,
+            ...(input.negativePrompt?.trim()
+              ? { negative_prompt: input.negativePrompt.trim() }
+              : {}),
+          },
+        }),
+      });
+
+      const payload = (await response.json()) as QwenImageGenerationResponse;
+      if (!response.ok || (payload.code && payload.code !== "Success")) {
+        throw new Error(
+          payload.message ??
+            `DASHSCOPE_IMAGE_REQUEST_FAILED: ${response.status}`,
+        );
+      }
+
+      const imageUrl = extractImageUrl(payload);
+      if (!imageUrl) {
+        throw new Error(payload.message ?? "DASHSCOPE_IMAGE_GENERATION_FAILED");
+      }
+
+      return {
+        imageUrl,
+        requestId: payload.request_id,
+      };
+    },
   });
-
-  const payload = (await response.json()) as QwenImageGenerationResponse;
-  if (!response.ok || (payload.code && payload.code !== "Success")) {
-    throw new Error(
-      payload.message ?? `DASHSCOPE_IMAGE_REQUEST_FAILED: ${response.status}`,
-    );
-  }
-
-  const imageUrl = extractImageUrl(payload);
-  if (!imageUrl) {
-    throw new Error(payload.message ?? "DASHSCOPE_IMAGE_GENERATION_FAILED");
-  }
-
-  return {
-    imageUrl,
-    requestId: payload.request_id,
-  };
 }

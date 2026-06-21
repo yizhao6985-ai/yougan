@@ -39,7 +39,8 @@ export interface PublicationSummary {
 export type PublicationSummaryOverrides = {
   title?: string;
   hook?: string;
-  coverBlockId?: string | null;
+  /** 用户上传的封面 URL；不传或传 null 表示无封面 */
+  coverUrl?: string | null;
   compositionLabel?: string;
   topicCategory?: string;
 };
@@ -51,11 +52,4 @@ export type PublicationSummaryPreview = {
     compositionLabel: string;
     consumptionHint: string | null;
   };
-  coverOptions: PublicationCoverOption[];
-};
-
-export type PublicationCoverOption = {
-  blockId: string;
-  url: string;
-  label: string;
 };

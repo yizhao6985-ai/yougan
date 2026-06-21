@@ -22,6 +22,7 @@ import {
   getDashScopeChatKwargs,
   resolveDashScopeChatFamily,
 } from "#agent/llm/providers/dashscope-chat-config.js";
+import { LLM_TIMEOUT_MS, withLlmRetry } from "./timeout.js";
 
 type StructuredOutputMethod = "functionCalling" | "jsonMode";
 
@@ -31,6 +32,7 @@ export type StructuredInvokeOptions = {
   meteringModelId?: MeteringModelId;
   /** 保留 human 消息中的 image_url / 多模态 part（默认会压平成纯文本） */
   preserveMultimodal?: boolean;
+  timeoutMs?: number;
 };
 
 type ChatModelWithKwargs = BaseChatModel & {
@@ -114,35 +116,47 @@ export async function invokeStructured<T extends Record<string, unknown>>(
 ): Promise<T> {
   const meteringModelId = resolveStructuredMeteringModelId(llm, options);
   const baseConfig = isolatedStructuredConfig(config);
-  const callCountBefore = getRunMeteringAccumulator(config).callCount;
-  const meteredConfig = withMeteringCallbacks(
-    baseConfig,
-    meteringModelId,
-    config,
+  const timeoutMs = options?.timeoutMs ?? LLM_TIMEOUT_MS.structured;
+  const sanitizedInput = sanitizeStructuredInput(
+    input,
+    options?.preserveMultimodal,
   );
   const structured = forStructuredInvoke(llm).withStructuredOutput(schema, {
     name: options?.name ?? "structured_output",
     method: options?.method ?? "functionCalling",
     includeRaw: true,
   });
-  const result = (await structured.invoke(
-    sanitizeStructuredInput(input, options?.preserveMultimodal),
-    meteredConfig,
-  )) as { parsed: T | null | undefined; raw: BaseMessage };
-  if (getRunMeteringAccumulator(config).callCount === callCountBefore) {
-    const raw = result.raw;
-    if (raw instanceof AIMessage) {
-      recordRunMeteringUsageIfMissing(
-        config,
+
+  return withLlmRetry({
+    parentSignal: config?.signal,
+    timeoutMs,
+    run: async (signal) => {
+      const callCountBefore = getRunMeteringAccumulator(config).callCount;
+      const meteredConfig = withMeteringCallbacks(
+        { ...baseConfig, signal },
         meteringModelId,
-        raw.usage_metadata,
+        config,
       );
-    }
-  }
-  if (result.parsed == null) {
-    throw new Error("STRUCTURED_OUTPUT_PARSE_FAILED");
-  }
-  return result.parsed;
+      const result = (await structured.invoke(
+        sanitizedInput,
+        meteredConfig,
+      )) as { parsed: T | null | undefined; raw: BaseMessage };
+      if (getRunMeteringAccumulator(config).callCount === callCountBefore) {
+        const raw = result.raw;
+        if (raw instanceof AIMessage) {
+          recordRunMeteringUsageIfMissing(
+            config,
+            meteringModelId,
+            raw.usage_metadata,
+          );
+        }
+      }
+      if (result.parsed == null) {
+        throw new Error("STRUCTURED_OUTPUT_PARSE_FAILED");
+      }
+      return result.parsed;
+    },
+  });
 }
 
 /** 多模态结构化输出（图片/视频帧等 content part 不会被压平成纯文本）。 */

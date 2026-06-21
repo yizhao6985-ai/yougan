@@ -55,7 +55,7 @@ export function HomePage() {
             <h1 className={cn("mt-4 max-w-4xl", scene.pageTitleHero)}>
               {HOME.title}
             </h1>
-            <p className="mt-3 text-xl font-medium tracking-tight text-muted-foreground sm:text-2xl">
+            <p className="mt-3 text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
               {HOME.tagline}
             </p>
             <p className={cn("mt-6 max-w-2xl", scene.pageSubtitle)}>

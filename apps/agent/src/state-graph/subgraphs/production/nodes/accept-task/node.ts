@@ -4,6 +4,10 @@ import type { RunnableConfig } from "@langchain/core/runnables";
 import { z } from "zod";
 
 import { invokeStructured } from "#agent/llm/invoke/index.js";
+import {
+  isLlmTimeoutError,
+  LLM_TIMEOUT_FAILURE_MESSAGE,
+} from "#agent/llm/invoke/timeout.js";
 import { patchAiUsageMetering } from "#agent/llm/invoke/metering.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
 import {
@@ -20,6 +24,7 @@ import {
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
 import { acceptAttemptsExhausted, MAX_ACCEPT_ATTEMPTS } from "../../helpers/pipeline.js";
+import { markActiveTaskFailed } from "../../helpers/mark-task-failed.js";
 import { productionAcceptProgress } from "../../helpers/progress-labels.js";
 import {
   defaultTaskGuidance,
@@ -170,7 +175,14 @@ export async function acceptTaskNode(
       );
       passed = parsed.passed;
       feedback = parsed.feedback?.trim() ?? "";
-    } catch {
+    } catch (error) {
+      if (isLlmTimeoutError(error)) {
+        return {
+          ...markActiveTaskFailed(state, task.id, LLM_TIMEOUT_FAILURE_MESSAGE),
+          ...progressPatch,
+          ...patchAiUsageMetering(state.aiUsage, config),
+        };
+      }
       passed = false;
       feedback = "验收服务暂时不可用，请重新执行该任务。";
     }

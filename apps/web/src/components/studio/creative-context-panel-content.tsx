@@ -6,6 +6,11 @@ import { ReferencePanel } from "@/components/reference-panel";
 import { WorkHistoryPanel } from "@/components/studio/work-history-panel";
 import { creativeContextPanelClassNames } from "@/components/studio/creative-context/shared";
 import {
+  UnderlineTabsList,
+  UnderlineTabsPanel,
+  UnderlineTabsTrigger,
+} from "@/components/ui/underline-tabs";
+import {
   CREATIVE_CONTEXT_PANEL,
   type CreativeContextTabId,
 } from "@/lib/site-copy";
@@ -18,7 +23,6 @@ import type {
   WorkReference,
   WorkRevision,
 } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
 const TAB_ORDER: CreativeContextTabId[] = [
   "profile",
@@ -92,37 +96,33 @@ export function CreativeContextPanelContent({
 
   return (
     <div className={creativeContextPanelClassNames.tabShell}>
-      <div
-        role="tablist"
+      <UnderlineTabsList
         aria-label={CREATIVE_CONTEXT_PANEL.title}
         className={creativeContextPanelClassNames.tabList}
       >
         {TAB_ORDER.map((tabId) => {
           const selected = activeTab === tabId;
+          const disabled = tabId === "history" && !activeWork;
+
           return (
-            <button
+            <UnderlineTabsTrigger
               key={tabId}
-              type="button"
-              role="tab"
+              active={selected}
+              disabled={disabled}
               id={`creative-context-tab-${tabId}`}
-              aria-selected={selected}
               aria-controls={`creative-context-panel-${tabId}`}
-              className={cn(
-                creativeContextPanelClassNames.tabTrigger,
-                selected && creativeContextPanelClassNames.tabTriggerActive,
-              )}
+              className={creativeContextPanelClassNames.tabTrigger}
               onClick={() => selectTab(tabId)}
             >
               {CREATIVE_CONTEXT_PANEL.tabs[tabId]}
-            </button>
+            </UnderlineTabsTrigger>
           );
         })}
-      </div>
+      </UnderlineTabsList>
 
       <div className={creativeContextPanelClassNames.tabPanel}>
         {activeTab === "profile" ? (
-          <div
-            role="tabpanel"
+          <UnderlineTabsPanel
             id="creative-context-panel-profile"
             aria-labelledby="creative-context-tab-profile"
           >
@@ -142,12 +142,11 @@ export function CreativeContextPanelContent({
               onDeleteSetting={onDeleteSetting}
               onClearSetting={onClearSetting}
             />
-          </div>
+          </UnderlineTabsPanel>
         ) : null}
 
         {activeTab === "preview" ? (
-          <div
-            role="tabpanel"
+          <UnderlineTabsPanel
             id="creative-context-panel-preview"
             aria-labelledby="creative-context-tab-preview"
           >
@@ -160,22 +159,20 @@ export function CreativeContextPanelContent({
               enablePreviewSelection={enablePreviewSelection}
               onRemoveRevisionIntent={onRemoveRevisionIntent}
             />
-          </div>
+          </UnderlineTabsPanel>
         ) : null}
 
         {activeTab === "references" ? (
-          <div
-            role="tabpanel"
+          <UnderlineTabsPanel
             id="creative-context-panel-references"
             aria-labelledby="creative-context-tab-references"
           >
             <ReferencePanel references={references} compact />
-          </div>
+          </UnderlineTabsPanel>
         ) : null}
 
         {activeTab === "history" && activeWork ? (
-          <div
-            role="tabpanel"
+          <UnderlineTabsPanel
             id="creative-context-panel-history"
             aria-labelledby="creative-context-tab-history"
           >
@@ -185,7 +182,7 @@ export function CreativeContextPanelContent({
               onDuplicated={onDuplicated}
               onRestored={onRestored}
             />
-          </div>
+          </UnderlineTabsPanel>
         ) : null}
       </div>
     </div>

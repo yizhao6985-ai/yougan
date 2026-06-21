@@ -3,14 +3,11 @@ import { useSearchParams } from "react-router-dom";
 
 import { DiscoverControls } from "@/components/content/discover-controls";
 import { DiscoverEmptyState } from "@/components/content/discover-empty-state";
-import { DiscoverFeaturedHero } from "@/components/content/discover-featured-hero";
+import { DiscoverFeaturedRail } from "@/components/content/discover-featured-rail";
 import { DiscoverFeedCard } from "@/components/content/discover-feed-card";
 import { DiscoverFeedSkeleton } from "@/components/content/discover-feed-skeleton";
 import { DiscoverPageHeader } from "@/components/content/discover-page-header";
-import {
-  MarketingPageShell,
-  MarketingSection,
-} from "@/components/marketing/marketing-page-layout";
+import { DiscoverPromoBanner } from "@/components/content/discover-promo-banner";
 import { SiteHeader } from "@/components/site-header";
 import { usePublicationFeedQuery } from "@/hooks/queries/publications";
 import { DISCOVER_SECTION } from "@/lib/content-section";
@@ -23,6 +20,7 @@ import {
   type DiscoverFilters,
 } from "@/lib/discover-filters";
 import { type DiscoverFacets } from "@yougan/domain";
+import { cn } from "@/lib/utils";
 
 const EMPTY_FACETS: DiscoverFacets = {
   contentFormat: [],
@@ -42,36 +40,40 @@ export function ContentFeedPage() {
   const facets = data?.facets ?? EMPTY_FACETS;
   const total = data?.total ?? 0;
 
-  const { featured, rest } = useMemo(() => {
-    if (hasActiveFilters) {
-      return { featured: [] as typeof publications, rest: publications };
-    }
-    return pickFeaturedPublications(publications);
-  }, [hasActiveFilters, publications]);
+  const { featured, rest } = useMemo(
+    () => pickFeaturedPublications(publications),
+    [publications],
+  );
 
   const handleFiltersChange = (next: DiscoverFilters) => {
-    const params = buildDiscoverSearchParams(next);
-    setSearchParams(params, { replace: true });
+    setSearchParams(buildDiscoverSearchParams(next), { replace: true });
   };
 
   const showControls = !isLoading && !isError;
+  const showEditorial = featured.length > 0;
 
   return (
     <div className={scene.marketing}>
       <SiteHeader />
 
-      <MarketingPageShell>
+      <main className={cn(scene.pageShell, scene.pageMainCompact)}>
         <DiscoverPageHeader total={total} loading={isLoading} />
 
+        <div className="mt-5">
+          <DiscoverPromoBanner />
+        </div>
+
         {showControls ? (
-          <DiscoverControls
-            filters={filters}
-            facets={facets}
-            onChange={handleFiltersChange}
-          />
+          <div className={cn(scene.discoverFilterSticky, "mt-5")}>
+            <DiscoverControls
+              filters={filters}
+              facets={facets}
+              onChange={handleFiltersChange}
+            />
+          </div>
         ) : null}
 
-        <div className="mt-10">
+        <div className="mt-8">
           {isLoading ? (
             <DiscoverFeedSkeleton />
           ) : isError ? (
@@ -90,22 +92,14 @@ export function ContentFeedPage() {
               }
             />
           ) : (
-            <div className={scene.sectionStack}>
-              {featured[0] ? (
-                <DiscoverFeaturedHero publication={featured[0]} />
+            <div className="space-y-10">
+              {showEditorial ? (
+                <DiscoverFeaturedRail publications={featured} />
               ) : null}
 
               {rest.length > 0 ? (
-                <MarketingSection
-                  title={
-                    hasActiveFilters
-                      ? `筛选结果 · ${total} 篇`
-                      : featured[0]
-                        ? DISCOVER_SECTION.moreHeading
-                        : DISCOVER_SECTION.title
-                  }
-                >
-                  <div className={scene.contentGrid4}>
+                <section aria-label={DISCOVER_SECTION.title}>
+                  <div className={scene.discoverFeedGrid}>
                     {rest.map((publication) => (
                       <DiscoverFeedCard
                         key={publication.id}
@@ -113,12 +107,12 @@ export function ContentFeedPage() {
                       />
                     ))}
                   </div>
-                </MarketingSection>
+                </section>
               ) : null}
             </div>
           )}
         </div>
-      </MarketingPageShell>
+      </main>
     </div>
   );
 }

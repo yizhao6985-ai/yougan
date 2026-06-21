@@ -15,9 +15,6 @@ import {
   blockTypesToMediaTypes,
   buildCompositionLabel,
   buildConsumptionHint,
-  listPublicationCoverOptions,
-  pickDefaultCoverBlockId,
-  resolvePublicationCover,
 } from "../work/block-composition.js";
 import {
   previewExcerpt,
@@ -48,12 +45,10 @@ export function buildPublicationSummary(input: {
     previewPlainText(preview, 160) ||
     title;
 
-  const coverBlockId = pickDefaultCoverBlockId(blocks);
-  const cover =
-    resolvePublicationCover(blocks, coverBlockId) ?? {
-      url: "",
-      sourceBlockId: null,
-    };
+  const cover: PublicationSummary["cover"] = {
+    url: "",
+    sourceBlockId: null,
+  };
 
   const profile = input.profile ? parseProfileJson(input.profile) : null;
   const contentTopic = profile ? getDirectionSummary(profile) || null : null;
@@ -86,19 +81,16 @@ function isValidTopicCategory(
 export function applyPublicationSummaryOverrides(
   summary: PublicationSummary,
   overrides?: PublicationSummaryOverrides | null,
-  blocks?: PreviewBlock[] | null,
 ): PublicationSummary {
   if (!overrides) return summary;
 
-  const coverBlockId =
-    overrides.coverBlockId !== undefined
-      ? overrides.coverBlockId
-      : summary.cover.sourceBlockId;
-
-  const cover =
-    blocks && coverBlockId
-      ? (resolvePublicationCover(blocks, coverBlockId) ?? summary.cover)
-      : summary.cover;
+  let cover = summary.cover;
+  if (overrides.coverUrl !== undefined) {
+    const url = overrides.coverUrl?.trim() ?? "";
+    cover = url
+      ? { url, sourceBlockId: null }
+      : { url: "", sourceBlockId: null };
+  }
 
   return {
     ...summary,
@@ -115,7 +107,6 @@ export function applyPublicationSummaryOverrides(
 
 export function buildPublicationSummaryPreview(
   summary: PublicationSummary,
-  blocks: PreviewBlock[],
 ): PublicationSummaryPreview {
   return {
     summary,
@@ -124,7 +115,6 @@ export function buildPublicationSummaryPreview(
       compositionLabel: summary.compositionLabel,
       consumptionHint: summary.consumptionHint,
     },
-    coverOptions: listPublicationCoverOptions(blocks),
   };
 }
 

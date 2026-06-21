@@ -12,28 +12,38 @@ function Bone({ className }: { className?: string }) {
 
 export function DiscoverFeedSkeleton() {
   return (
-    <div className="space-y-12" aria-busy aria-label="加载中">
-      <div className="overflow-hidden rounded-2xl ring-1 ring-border/60">
-        <div className="grid lg:grid-cols-2">
-          <Bone className="aspect-[16/10] rounded-none lg:min-h-[22rem]" />
-          <div className="space-y-4 p-8">
-            <Bone className="h-3 w-20" />
-            <Bone className="h-8 w-4/5" />
-            <Bone className="h-4 w-full" />
-            <Bone className="h-4 w-3/4" />
-            <Bone className="mt-4 h-10 w-40" />
-          </div>
+    <div className="space-y-10" aria-busy aria-label="加载中">
+      <section>
+        <Bone className="mb-3 h-4 w-16" />
+        <div className="flex gap-4 overflow-hidden">
+          {Array.from({ length: 2 }).map((_, index) => (
+            <div
+              key={index}
+              className="w-[17.5rem] shrink-0 overflow-hidden rounded-xl ring-1 ring-border/60"
+            >
+              <Bone className="aspect-[4/3] w-full rounded-none" />
+              <div className="space-y-2 p-4">
+                <Bone className="h-3 w-12" />
+                <Bone className="h-5 w-full" />
+                <Bone className="h-4 w-3/4" />
+              </div>
+            </div>
+          ))}
         </div>
-      </div>
+      </section>
 
-      <div className={scene.contentGrid4}>
-        {Array.from({ length: 8 }).map((_, index) => (
-          <div key={index} className="space-y-3">
-            <Bone className="aspect-[4/3] w-full rounded-xl" />
-            <Bone className="h-3 w-16" />
-            <Bone className="h-5 w-full" />
-            <Bone className="h-4 w-2/3" />
-            <Bone className="h-8 w-32" />
+      <div className={scene.discoverFeedGrid}>
+        {Array.from({ length: 6 }).map((_, index) => (
+          <div
+            key={index}
+            className="overflow-hidden rounded-xl ring-1 ring-border/60"
+          >
+            <Bone className="aspect-[4/3] w-full rounded-none" />
+            <div className="space-y-2 p-4">
+              <Bone className="h-3 w-12" />
+              <Bone className="h-5 w-full" />
+              <Bone className="h-4 w-2/3" />
+            </div>
           </div>
         ))}
       </div>

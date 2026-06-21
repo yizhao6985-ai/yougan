@@ -3,7 +3,7 @@ import { publicationCoverFromBlocks } from "@/components/preview-block-list";
 
 export function pickFeaturedPublications(
   publications: Publication[],
-  limit = 1,
+  limit = 2,
 ) {
   if (publications.length === 0) {
     return { featured: [] as Publication[], rest: [] as Publication[] };

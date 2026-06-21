@@ -19,6 +19,7 @@ import {
   resolveDashScopeMeteringModelId,
   withMeteringCallbacks,
 } from "./metering.js";
+import { LLM_TIMEOUT_MS, withLlmRetry } from "./timeout.js";
 
 /** 关闭 LLM callback 自动 messages 流，改由 pushMessage 推增量 chunk。 */
 const NOSTREAM_TAGS = ["nostream"] as const;
@@ -70,37 +71,48 @@ export async function streamChat(
     options?.meteringModelId ??
     resolveDashScopeMeteringModelId(DASHSCOPE_MODELS.chat);
   const messages = sanitizeMessagesForTextChat(input);
-  const callCountBefore = getRunMeteringAccumulator(config).callCount;
-  const meteredConfig = withMeteringCallbacks(
-    withNoStreamTags(config),
-    meteringModelId,
-    config,
-  );
-  const stream = await model.stream(messages, meteredConfig);
-  let accumulated: AIMessageChunk | undefined;
-  let messageId: string | undefined;
+  const attemptState = { hadStreamDelta: false };
 
-  for await (const chunk of stream) {
-    accumulated = accumulated ? accumulated.concat(chunk) : chunk;
-    const id = accumulated.id ?? messageId ?? (messageId = nanoid());
-    messageId = id;
-    if (hasStreamDelta(chunk)) {
-      pushMessage(chunkToAIMessage(chunk, id), config);
-    }
-  }
+  return withLlmRetry({
+    parentSignal: config.signal,
+    timeoutMs: LLM_TIMEOUT_MS.chat,
+    canRetry: () => !attemptState.hadStreamDelta,
+    run: async (signal) => {
+      attemptState.hadStreamDelta = false;
+      const callCountBefore = getRunMeteringAccumulator(config).callCount;
+      const meteredConfig = withMeteringCallbacks(
+        { ...withNoStreamTags(config), signal },
+        meteringModelId,
+        config,
+      );
+      const stream = await model.stream(messages, meteredConfig);
+      let accumulated: AIMessageChunk | undefined;
+      let messageId: string | undefined;
 
-  if (!accumulated) {
-    throw new Error("Chat stream returned no chunks");
-  }
+      for await (const chunk of stream) {
+        accumulated = accumulated ? accumulated.concat(chunk) : chunk;
+        const id = accumulated.id ?? messageId ?? (messageId = nanoid());
+        messageId = id;
+        if (hasStreamDelta(chunk)) {
+          attemptState.hadStreamDelta = true;
+          pushMessage(chunkToAIMessage(chunk, id), config);
+        }
+      }
 
-  const finalId = accumulated.id ?? messageId ?? nanoid();
-  const message = chunkToAIMessage(accumulated, finalId);
-  if (getRunMeteringAccumulator(config).callCount === callCountBefore) {
-    recordRunMeteringUsageIfMissing(
-      config,
-      meteringModelId,
-      message.usage_metadata,
-    );
-  }
-  return message;
+      if (!accumulated) {
+        throw new Error("Chat stream returned no chunks");
+      }
+
+      const finalId = accumulated.id ?? messageId ?? nanoid();
+      const message = chunkToAIMessage(accumulated, finalId);
+      if (getRunMeteringAccumulator(config).callCount === callCountBefore) {
+        recordRunMeteringUsageIfMissing(
+          config,
+          meteringModelId,
+          message.usage_metadata,
+        );
+      }
+      return message;
+    },
+  });
 }

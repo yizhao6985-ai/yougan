@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { ImagePlusIcon, Loader2Icon, XIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +24,8 @@ import {
   type PublicationSummaryPreview,
 } from "@yougan/domain";
 import { PUBLISH } from "@/lib/site-copy";
+import { ApiError } from "@/services/client";
+import { uploadImage } from "@/services/upload";
 import { cn } from "@/lib/utils";
 
 type PublishConfirmDialogProps = {
@@ -42,6 +45,9 @@ function FeedCardPreview({
   compositionLabel,
   consumptionHint,
   topicLabel,
+  coverUploading,
+  onCoverClick,
+  onCoverRemove,
 }: {
   title: string;
   hook: string;
@@ -49,18 +55,71 @@ function FeedCardPreview({
   compositionLabel: string;
   consumptionHint: string | null;
   topicLabel: string | null;
+  coverUploading?: boolean;
+  onCoverClick: () => void;
+  onCoverRemove?: () => void;
 }) {
   return (
     <div className="overflow-hidden rounded-xl border border-border/80 bg-card">
-      <div
-        className={cn(
-          "aspect-[4/3] bg-secondary/50",
-          coverUrl
-            ? "bg-cover bg-center"
-            : "bg-gradient-to-br from-accent/50 via-card to-secondary/40",
-        )}
-        style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : undefined}
-      />
+      <div className="group relative">
+        <button
+          type="button"
+          onClick={onCoverClick}
+          disabled={coverUploading}
+          className={cn(
+            "relative block aspect-[4/3] w-full overflow-hidden bg-secondary/50 transition hover:opacity-95",
+            coverUrl ? "bg-cover bg-center" : "bg-gradient-to-br from-accent/50 via-card to-secondary/40",
+          )}
+          style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : undefined}
+        >
+          <div
+            className={cn(
+              "absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/0 text-white transition group-hover:bg-black/35",
+              coverUploading && "bg-black/35",
+            )}
+          >
+            {coverUploading ? (
+              <Loader2Icon className="size-6 animate-spin" />
+            ) : (
+              <>
+                <ImagePlusIcon
+                  className={cn(
+                    "size-6 transition",
+                    coverUrl
+                      ? "opacity-0 group-hover:opacity-100"
+                      : "text-muted-foreground group-hover:text-white",
+                  )}
+                />
+                <span
+                  className={cn(
+                    "text-xs font-medium transition",
+                    coverUrl
+                      ? "opacity-0 group-hover:opacity-100"
+                      : "text-muted-foreground group-hover:text-white",
+                  )}
+                >
+                  {coverUrl ? PUBLISH.replaceCover : PUBLISH.uploadCover}
+                </span>
+              </>
+            )}
+          </div>
+        </button>
+
+        {coverUrl && onCoverRemove && !coverUploading ? (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onCoverRemove();
+            }}
+            className="absolute right-2 top-2 rounded-full bg-black/55 p-1 text-white opacity-0 transition hover:bg-black/70 group-hover:opacity-100"
+            aria-label={PUBLISH.removeCover}
+          >
+            <XIcon className="size-3.5" />
+          </button>
+        ) : null}
+      </div>
+
       <div className="space-y-2 p-4">
         {(compositionLabel || topicLabel) && (
           <div className="flex flex-wrap items-center gap-1.5 text-xs">
@@ -104,21 +163,42 @@ function PublishSummaryForm({
   onCancel: () => void;
   isSubmitting: boolean;
 }) {
-  const { summary, labels, coverOptions } = preview;
+  const { summary, labels } = preview;
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
   const [draft, setDraft] = useState<PublicationSummaryOverrides>(() => ({
     title: summary.title,
     hook: summary.hook,
     compositionLabel: summary.compositionLabel,
     topicCategory: summary.topicCategory,
-    coverBlockId: summary.cover.sourceBlockId,
   }));
 
-  const selectedCover =
-    coverOptions.find((item) => item.blockId === draft.coverBlockId) ??
-    coverOptions[0] ??
-    null;
+  const coverUrl = draft.coverUrl?.trim() || null;
 
-  const coverUrl = selectedCover?.url ?? summary.cover.url ?? null;
+  const handleCoverUpload = async (file: File | undefined) => {
+    if (!file) return;
+    setCoverUploadError(null);
+    setCoverUploading(true);
+    try {
+      const { url } = await uploadImage(file, "cover");
+      setDraft((current) => ({ ...current, coverUrl: url }));
+    } catch (err) {
+      setCoverUploadError(
+        err instanceof ApiError ? err.message : PUBLISH.coverUploadError,
+      );
+    } finally {
+      setCoverUploading(false);
+      if (coverInputRef.current) coverInputRef.current.value = "";
+    }
+  };
+
+  const handleConfirm = () => {
+    void onConfirm({
+      ...draft,
+      coverUrl: coverUrl,
+    });
+  };
 
   return (
     <>
@@ -138,7 +218,28 @@ function PublishSummaryForm({
                 (item) => item.id === draft.topicCategory,
               )?.label ?? labels.topicCategory
             }
+            coverUploading={coverUploading}
+            onCoverClick={() => coverInputRef.current?.click()}
+            onCoverRemove={() =>
+              setDraft((current) => ({ ...current, coverUrl: null }))
+            }
           />
+          <input
+            ref={coverInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            className="hidden"
+            onChange={(event) =>
+              void handleCoverUpload(event.target.files?.[0])
+            }
+          />
+          {coverUploadError ? (
+            <p className="mt-1.5 text-xs text-red-600">{coverUploadError}</p>
+          ) : (
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              {PUBLISH.coverUploadHint}
+            </p>
+          )}
         </div>
 
         <div className="rounded-lg border border-border/80 bg-secondary/30 px-3 py-2.5">
@@ -227,43 +328,6 @@ function PublishSummaryForm({
               </SelectContent>
             </Select>
           </div>
-
-          {coverOptions.length > 1 ? (
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">
-                {PUBLISH.fieldCover}
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {coverOptions.map((option) => {
-                  const active = draft.coverBlockId === option.blockId;
-                  return (
-                    <button
-                      key={option.blockId}
-                      type="button"
-                      onClick={() =>
-                        setDraft((current) => ({
-                          ...current,
-                          coverBlockId: option.blockId,
-                        }))
-                      }
-                      className={cn(
-                        "overflow-hidden rounded-md border-2 transition",
-                        active
-                          ? "border-primary"
-                          : "border-transparent opacity-80 hover:opacity-100",
-                      )}
-                    >
-                      <img
-                        src={option.url}
-                        alt={option.label}
-                        className="size-16 object-cover"
-                      />
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ) : null}
         </div>
       </div>
 
@@ -278,8 +342,13 @@ function PublishSummaryForm({
         </Button>
         <Button
           type="button"
-          disabled={isSubmitting || !draft.title?.trim() || !draft.hook?.trim()}
-          onClick={() => void onConfirm(draft)}
+          disabled={
+            isSubmitting ||
+            coverUploading ||
+            !draft.title?.trim() ||
+            !draft.hook?.trim()
+          }
+          onClick={handleConfirm}
         >
           {isSubmitting ? PUBLISH.publishing : PUBLISH.confirmPublish}
         </Button>
@@ -302,7 +371,6 @@ export function PublishConfirmDialog({
         preview.summary.title,
         preview.summary.hook,
         preview.summary.compositionLabel,
-        preview.summary.cover.sourceBlockId,
       ].join("\u0000")
     : "loading";
 
