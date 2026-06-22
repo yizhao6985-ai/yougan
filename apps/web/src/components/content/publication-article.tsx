@@ -3,7 +3,7 @@ import { ArrowRightIcon } from "lucide-react";
 
 import { AuthorAvatar } from "@/components/content/author-avatar";
 import { PublicationDetailCover } from "@/components/content/publication-detail-cover";
-import { PreviewBlockList } from "@/components/preview-block-list";
+import { PreviewContentList } from "@/components/preview-content-list";
 import { authorDisplayName } from "@/lib/publication-utils";
 import { topicCategoryLabel } from "@yougan/domain";
 import { formatPublishedAt } from "@/lib/platform-labels";
@@ -139,9 +139,12 @@ export function PublicationArticle({
       </header>
 
       <div className={scene.articleProse}>
-        <PreviewBlockList
-          blocks={publication.blocks}
+        <PreviewContentList
+          preview={publication.preview}
           galleryKey={publication.slug}
+          excludeImageIds={
+            publication.coverImageId ? [publication.coverImageId] : undefined
+          }
         />
       </div>
 

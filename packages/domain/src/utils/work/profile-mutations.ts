@@ -21,7 +21,7 @@ export function patchDirection(
     direction: {
       summary:
         direction.summary !== undefined
-          ? direction.summary
+          ? normalizeProfileTextField(direction.summary) ?? ""
           : base.direction.summary,
       format:
         direction.format !== undefined
@@ -29,7 +29,7 @@ export function patchDirection(
           : base.direction.format,
       audience:
         direction.audience !== undefined
-          ? direction.audience
+          ? normalizeProfileTextField(direction.audience)
           : base.direction.audience,
     },
   };

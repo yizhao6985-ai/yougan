@@ -17,7 +17,7 @@ export function buildMutateReferencesPrompt(state: AgentStateType): string {
 
 **工具**
 - delete_reference：删除一条参考（reference_id / index / asset_url 三选一）
-- update_reference_intent：为指定参考写入借鉴说明（user_context，后续节点会归纳 summary）
+- update_reference_intent：为指定参考写入借鉴说明（user_context，后续 finalize 节点写入 intent.summary）
 - set_pending_references_context：未指定条目时，为所有 pending 及本轮新上传参考写入统一借鉴说明
 
 **规则**
@@ -25,7 +25,7 @@ export function buildMutateReferencesPrompt(state: AgentStateType): string {
 - 明确针对某条 → update_reference_intent；笼统说明借鉴方式 → set_pending_references_context
 - 若只是确认/闲聊、无删改意图 → 不调用工具，**不要输出任何对用户可见的文字**
 - 禁止修改 analysis；禁止直接写 intent.summary
-- 禁止向${YOUGAN_USER_LABEL}做完整回合回复（后续 summarize 节点负责）
+- 禁止向${YOUGAN_USER_LABEL}做完整回合回复（后续 finalize 节点负责）
 
 当前参考列表：
 ${profileReferencesSummary(references)}

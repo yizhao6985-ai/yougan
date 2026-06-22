@@ -7,10 +7,6 @@ import { LLM_TIMEOUT_MS } from "#agent/llm/invoke/timeout.js";
 import { patchAiUsageMetering } from "#agent/llm/invoke/metering.js";
 import { createProductionChatModel } from "#agent/llm/providers/index.js";
 import {
-  patchRunProgress,
-  withRunProgressHeartbeat,
-} from "#agent/state-io/run-progress.js";
-import {
   contentFromProductionTasks,
   getDirectionSummary,
   getProfileFormat,
@@ -26,7 +22,6 @@ import {
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
 import { allTasksReady } from "../../helpers/task-plan.js";
-import { productionAssembleProgress } from "../../helpers/progress-labels.js";
 import { resolveProductionMaxTokens } from "../../helpers/resolve-production-max-tokens.js";
 import {
   buildConsolidateHumanPrompt,
@@ -46,7 +41,6 @@ export async function assemblePreviewNode(
     return {};
   }
 
-  const progress = productionAssembleProgress();
   const tasks = production.pending_tasks;
   const profile = getProfile(state);
   const content = contentFromProductionTasks(
@@ -78,23 +72,21 @@ export async function assemblePreviewNode(
 
   let payload: ConsolidatedPreview;
   try {
-    payload = await withRunProgressHeartbeat(progress, config, () =>
-      invokeStructured(
-        llm,
-        ConsolidatedPreviewSchema,
-        [
-          new SystemMessage(buildConsolidateSystemPrompt({ profile })),
-          new HumanMessage(
-            buildConsolidateHumanPrompt({
-              profile,
-              plan: production,
-              deliverables,
-            }),
-          ),
-        ],
-        { name: "assemble_preview", timeoutMs: LLM_TIMEOUT_MS.production },
-        config,
-      ),
+    payload = await invokeStructured(
+      llm,
+      ConsolidatedPreviewSchema,
+      [
+        new SystemMessage(buildConsolidateSystemPrompt({ profile })),
+        new HumanMessage(
+          buildConsolidateHumanPrompt({
+            profile,
+            plan: production,
+            deliverables,
+          }),
+        ),
+      ],
+      { name: "assemble_preview", timeoutMs: LLM_TIMEOUT_MS.production },
+      config,
     );
   } catch {
     payload = {
@@ -125,7 +117,6 @@ export async function assemblePreviewNode(
         pending_tasks: [],
       },
     }),
-    ...patchRunProgress(progress),
     ...patchAiUsageMetering(state.aiUsage, config),
   };
 }

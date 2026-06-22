@@ -1,4 +1,4 @@
-/** dispatchTask 之后：无计划则直接总结；否则进入执行（design / audio 入库 / 文案） */
+/** dispatchTask 之后：无计划则直接 finalize；否则进入执行（design / audio 入库 / 文案） */
 import { getProduction } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 
@@ -18,7 +18,7 @@ export type AfterDispatchTaskTarget =
   | "executeWriting"
   | "executeDesign"
   | "ingestProductionAudio"
-  | "summarizeProduction";
+  | "finalizeProduction";
 
 export function selectAfterDispatchTask(
   state: AgentStateType,
@@ -26,12 +26,12 @@ export function selectAfterDispatchTask(
   const production = getProduction(state);
 
   if (productionPlanIsEmpty(production)) {
-    return "summarizeProduction";
+    return "finalizeProduction";
   }
 
   const task = currentActiveTask(production);
   if (!task || productionHasTerminalFailure(production)) {
-    return "summarizeProduction";
+    return "finalizeProduction";
   }
 
   if (
@@ -46,7 +46,7 @@ export function selectAfterDispatchTask(
   }
 
   if (!taskNeedsProduce(task)) {
-    return "summarizeProduction";
+    return "finalizeProduction";
   }
 
   return "executeWriting";
@@ -56,5 +56,5 @@ export const paths = {
   executeWriting: "executeWriting",
   executeDesign: "executeDesign",
   ingestProductionAudio: "ingestProductionAudio",
-  summarizeProduction: "summarizeProduction",
+  finalizeProduction: "finalizeProduction",
 } as const;

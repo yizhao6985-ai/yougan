@@ -1,10 +1,7 @@
 import { Link } from "react-router-dom";
 
 import { MarkdownContent } from "@/components/markdown-content";
-import {
-  publicationCoverFromBlocks,
-  publicationPlainExcerpt,
-} from "@/components/preview-block-list";
+import { publicationPlainExcerpt } from "@/components/preview-content-list";
 import { topicCategoryLabel } from "@yougan/domain";
 import { formatPublishedAt } from "@/lib/platform-labels";
 import { publicationContentPath } from "@/lib/publication-path";
@@ -16,8 +13,7 @@ export function AccountPublicationCard({
 }: {
   publication: Publication;
 }) {
-  const cover =
-    publication.coverUrl || publicationCoverFromBlocks(publication.blocks);
+  const cover = publication.coverUrl?.trim() || null;
   const timeLabel = publication.publishedAt
     ? formatPublishedAt(publication.publishedAt)
     : null;
@@ -42,7 +38,7 @@ export function AccountPublicationCard({
           <div className="flex size-full items-center justify-center px-6">
             <p className="line-clamp-4 text-center text-sm leading-6 text-muted-foreground">
               {publication.excerpt?.trim() ||
-                publicationPlainExcerpt(publication.blocks, 120)}
+                publicationPlainExcerpt(publication.preview, 120)}
             </p>
           </div>
         )}
@@ -69,7 +65,7 @@ export function AccountPublicationCard({
             )}
           >
             <MarkdownContent
-              content={publicationPlainExcerpt(publication.blocks, 160)}
+              content={publicationPlainExcerpt(publication.preview, 160)}
             />
           </div>
         )}

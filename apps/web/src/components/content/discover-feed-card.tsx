@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 
 import { DiscoverFeedCover } from "@/components/content/discover-publication-cover";
-import { publicationCoverFromBlocks } from "@/components/preview-block-list";
 import { AuthorAvatar } from "@/components/content/author-avatar";
 import { authorDisplayName } from "@/lib/publication-utils";
 import { topicCategoryLabel } from "@yougan/domain";
@@ -17,10 +16,7 @@ export function DiscoverFeedCard({
   publication: Publication;
   featured?: boolean;
 }) {
-  const coverUrl =
-    publication.coverUrl ||
-    publicationCoverFromBlocks(publication.blocks) ||
-    null;
+  const coverUrl = publication.coverUrl?.trim() || null;
   const topic = topicCategoryLabel(publication.topicCategory);
   const timeLabel = publication.publishedAt
     ? formatPublishedAt(publication.publishedAt)

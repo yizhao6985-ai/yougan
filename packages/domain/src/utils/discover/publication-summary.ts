@@ -4,8 +4,8 @@ import type {
   PublicationSummaryPreview,
 } from "../../models/work/publication-summary.js";
 import type { WorkProfile } from "../../models/work/profile.js";
-import type { PreviewBlock } from "../../models/work/preview.js";
 import type { WorkPreview } from "../../models/work/preview.js";
+import type { MediaModalityId } from "../../models/content-form/modalities.js";
 import {
   DISCOVER_TOPIC_CATEGORIES,
   type DiscoverTopicCategoryId,
@@ -15,6 +15,7 @@ import {
   blockTypesToMediaTypes,
   buildCompositionLabel,
   buildConsumptionHint,
+  resolvePublicationCover,
 } from "../work/block-composition.js";
 import {
   previewExcerpt,
@@ -24,31 +25,27 @@ import { getDirectionSummary, parseProfileJson } from "../work/profile.js";
 import { normalizeTopicCategory, topicCategoryLabel } from "./publication-metadata.js";
 
 export function buildPublicationSummary(input: {
-  blocks: PreviewBlock[];
-  preview?: WorkPreview | null;
+  preview: WorkPreview;
   workTitle?: string | null;
   profile?: WorkProfile | unknown | null;
 }): PublicationSummary {
-  const blocks = input.blocks;
-  const blockComposition = analyzeBlockComposition(blocks);
-  const preview = input.preview ?? null;
+  const preview = input.preview;
+  const blockComposition = analyzeBlockComposition(preview);
 
   const title =
-    preview?.title?.trim() ||
+    preview.title?.trim() ||
     input.workTitle?.trim() ||
     previewPlainText(preview, 40) ||
     "未命名作品";
 
   const hook =
-    preview?.hook?.trim() ||
+    preview.hook?.trim() ||
     previewExcerpt(preview, 160) ||
     previewPlainText(preview, 160) ||
     title;
 
-  const cover: PublicationSummary["cover"] = {
-    url: "",
-    sourceBlockId: null,
-  };
+  const cover =
+    resolvePublicationCover(preview) ?? { url: "", sourceImageId: null };
 
   const profile = input.profile ? parseProfileJson(input.profile) : null;
   const contentTopic = profile ? getDirectionSummary(profile) || null : null;
@@ -81,6 +78,7 @@ function isValidTopicCategory(
 export function applyPublicationSummaryOverrides(
   summary: PublicationSummary,
   overrides?: PublicationSummaryOverrides | null,
+  options?: { preview?: WorkPreview | null },
 ): PublicationSummary {
   if (!overrides) return summary;
 
@@ -88,8 +86,16 @@ export function applyPublicationSummaryOverrides(
   if (overrides.coverUrl !== undefined) {
     const url = overrides.coverUrl?.trim() ?? "";
     cover = url
-      ? { url, sourceBlockId: null }
-      : { url: "", sourceBlockId: null };
+      ? { url, sourceImageId: null }
+      : { url: "", sourceImageId: null };
+  } else if (overrides.coverImageId !== undefined) {
+    const imageId = overrides.coverImageId?.trim() ?? "";
+    if (!imageId) {
+      cover = { url: "", sourceImageId: null };
+    } else {
+      const resolved = resolvePublicationCover(options?.preview, imageId);
+      cover = resolved ?? { url: "", sourceImageId: null };
+    }
   }
 
   return {
@@ -120,12 +126,12 @@ export function buildPublicationSummaryPreview(
 
 export function parseBlockComposition(raw: unknown) {
   if (!raw || typeof raw !== "object") {
-    return analyzeBlockComposition([]);
+    return analyzeBlockComposition(null);
   }
   const value = raw as Record<string, unknown>;
   const blockTypes = Array.isArray(value.blockTypes)
     ? value.blockTypes.filter(
-        (item): item is PreviewBlock["type"] =>
+        (item): item is MediaModalityId =>
           item === "text" ||
           item === "image" ||
           item === "audio" ||

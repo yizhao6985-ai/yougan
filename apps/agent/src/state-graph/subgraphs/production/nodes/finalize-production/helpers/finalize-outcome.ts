@@ -1,4 +1,4 @@
-/** summarizeProduction 对话文案 */
+/** finalizeProduction 对话文案 */
 import {
   previewPlainText,
   previewHasContent,
@@ -21,11 +21,11 @@ function formatPreviewExcerpt(preview: WorkPreview): string {
  * 判定优先级：成稿 preview > 任务失败 > 无计划 > 其他未完成。
  * preview 优先于 pending_tasks 为空，因 assemblePreview 成功后会清空任务队列。
  */
-export function buildProductionSummaryMessage(
+export function buildProductionFinalizeMessage(
   production: WorkProduction,
   preview: WorkPreview | null,
 ): string {
-  if (previewHasContent(preview)) {
+  if (preview != null && previewHasContent(preview)) {
     return formatPreviewExcerpt(preview);
   }
 

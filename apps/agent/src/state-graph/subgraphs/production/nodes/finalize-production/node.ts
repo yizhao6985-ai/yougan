@@ -3,28 +3,21 @@ import { AIMessage } from "@langchain/core/messages";
 import type { RunnableConfig } from "@langchain/core/runnables";
 
 import { getPreview, getProduction } from "#agent/state-io/index.js";
+import { patchAiUsageMetering } from "#agent/llm/invoke/metering.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
-import {
-  emitRunProgress,
-  patchRunProgress,
-} from "#agent/state-io/run-progress.js";
 
-import { buildProductionSummaryMessage } from "./helpers/summarize-outcome.js";
-import { productionSummarizeProgress } from "../../helpers/progress-labels.js";
+import { buildProductionFinalizeMessage } from "./helpers/finalize-outcome.js";
 
-export async function summarizeProductionNode(
+export async function finalizeProductionNode(
   state: AgentStateType,
   config?: RunnableConfig,
 ): Promise<AgentStatePatch> {
-  const progress = productionSummarizeProgress();
-  emitRunProgress(progress, config);
-
-  const content = buildProductionSummaryMessage(
+  const content = buildProductionFinalizeMessage(
     getProduction(state),
     getPreview(state),
   );
   return {
     messages: [new AIMessage(content)],
-    ...patchRunProgress(progress),
+    ...patchAiUsageMetering(state.aiUsage, config),
   };
 }

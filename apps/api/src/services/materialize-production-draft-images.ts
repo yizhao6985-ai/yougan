@@ -1,18 +1,11 @@
 import { nanoid } from "nanoid";
 import type {
-  ImagePreviewBlock,
-  PreviewBlock,
   PreviewImage,
   WorkPreview,
   WorkProduction,
   ProductionDraftImage,
 } from "@yougan/domain";
-import {
-  parsePreviewBlocks,
-  parseWorkPreview,
-  previewContentToLegacyBlocks,
-  previewImages,
-} from "@yougan/domain";
+import { parseWorkPreview } from "@yougan/domain";
 
 import { env } from "../env.js";
 import { uploadFile } from "./storage.js";
@@ -142,17 +135,17 @@ async function materializeDraftImage(
   }
 }
 
-async function materializePreviewImageBlock(
-  block: ImagePreviewBlock,
-): Promise<ImagePreviewBlock> {
+async function materializePreviewImage(
+  image: PreviewImage,
+): Promise<PreviewImage> {
   const materialized = await materializeDraftImage({
-    url: block.url,
-    alt: block.alt,
-    prompt: block.prompt,
-    transient: block.transient,
+    url: image.url,
+    alt: image.alt,
+    prompt: image.prompt,
+    transient: image.transient,
   });
   return {
-    ...block,
+    ...image,
     url: materialized.url,
     alt: materialized.alt ?? null,
     prompt: materialized.prompt ?? null,
@@ -165,18 +158,6 @@ async function materializeDraftImageList(
 ): Promise<ProductionDraftImage[] | undefined> {
   if (!images?.length) return images;
   return Promise.all(images.map(materializeDraftImage));
-}
-
-async function materializePreviewBlocks(
-  blocks: PreviewBlock[] | undefined,
-): Promise<PreviewBlock[] | undefined> {
-  if (!blocks?.length) return blocks;
-  return Promise.all(
-    blocks.map(async (block) => {
-      if (block.type !== "image") return block;
-      return materializePreviewImageBlock(block);
-    }),
-  );
 }
 
 /** 将 production 任务 deliverable 与顶层 preview 的临时配图物化到自有 storage。 */
@@ -210,30 +191,7 @@ export async function materializeWorkPreviewImages(
   const normalized =
     parseWorkPreview(preview) ??
     (preview.content ? preview : null);
-  if (!normalized?.content) {
-    const legacyBlocks = previewContentToLegacyBlocks(preview);
-    if (!legacyBlocks.length) return preview;
-    const blocks = (await materializePreviewBlocks(legacyBlocks)) ?? legacyBlocks;
-    return { ...preview, content: undefined, blocks };
-  }
-
-  async function materializeImage(image: PreviewImage): Promise<PreviewImage> {
-    if (!image.url.trim()) return image;
-    const block = await materializePreviewImageBlock({
-      id: image.id,
-      type: "image",
-      url: image.url,
-      alt: image.alt ?? null,
-      prompt: image.prompt ?? null,
-      transient: image.transient,
-      taskId: image.taskId ?? null,
-    });
-    return {
-      ...image,
-      url: block.url,
-      transient: undefined,
-    };
-  }
+  if (!normalized?.content) return preview;
 
   const content = normalized.content;
   if (content.kind === "illustration") {
@@ -241,7 +199,7 @@ export async function materializeWorkPreviewImages(
       ...normalized,
       content: {
         ...content,
-        images: await Promise.all(content.images.map(materializeImage)),
+        images: await Promise.all(content.images.map(materializePreviewImage)),
       },
     };
   }
@@ -251,23 +209,19 @@ export async function materializeWorkPreviewImages(
       ...normalized,
       content: {
         ...content,
-        images: await Promise.all(content.images.map(materializeImage)),
+        images: await Promise.all(content.images.map(materializePreviewImage)),
       },
     };
   }
 
   if ("body" in content) {
-    const cover = content.cover
-      ? await materializeImage(content.cover)
-      : content.cover;
     const images = content.images
-      ? await Promise.all(content.images.map(materializeImage))
+      ? await Promise.all(content.images.map(materializePreviewImage))
       : content.images;
     return {
       ...normalized,
       content: {
         ...content,
-        cover,
         images,
       },
     };
@@ -290,13 +244,9 @@ export async function materializeAgentRunValues(
 
   if (values.preview && typeof values.preview === "object") {
     next.preview = await materializeWorkPreviewImages(
-      values.preview as import("@yougan/domain").WorkPreview,
+      values.preview as WorkPreview,
     );
   }
 
   return next;
-}
-
-export function parsePublicationBlocks(raw: unknown): PreviewBlock[] {
-  return parsePreviewBlocks(raw);
 }

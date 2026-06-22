@@ -1,5 +1,4 @@
 import { MessageResponse } from "@/components/ai-elements/message";
-import { ChatLoadingDots } from "@/components/studio/chat-loading-dots";
 import {
   ChatStreamBlock,
   chatStreamBlock,
@@ -16,12 +15,8 @@ export function AIResponse({
 }: AIResponseProps) {
   const hasContent = Boolean(content.trim());
 
-  if (!hasContent && !isStreaming) {
+  if (!hasContent) {
     return null;
-  }
-
-  if (!hasContent && isStreaming) {
-    return <ChatLoadingDots />;
   }
 
   return (

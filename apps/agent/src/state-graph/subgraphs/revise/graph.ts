@@ -1,22 +1,19 @@
-/** 改稿子图：改稿总监排产 → 执行 → 更新 preview → 清空 revision */
+/** 改稿子图：执行改稿 → 更新 preview → 清空 revision → 回复感友 */
 import { END, START, StateGraph } from "@langchain/langgraph";
 
 import { AgentState } from "#agent/state.js";
 
 import { applyRevisionNode } from "./nodes/apply-revision/node.js";
+import { enterReviseNode } from "./nodes/enter-revise/node.js";
 import { finalizeRevisionNode } from "./nodes/finalize-revision/node.js";
-import { planRevisionNode } from "./nodes/plan-revision/node.js";
-import { summarizeRevisionNode } from "./nodes/summarize-revision/node.js";
 
 const workflow = new StateGraph(AgentState)
-  .addNode("planRevision", planRevisionNode)
+  .addNode("enterRevise", enterReviseNode)
   .addNode("applyRevision", applyRevisionNode)
   .addNode("finalizeRevision", finalizeRevisionNode)
-  .addNode("summarizeRevision", summarizeRevisionNode)
-  .addEdge(START, "planRevision")
-  .addEdge("planRevision", "applyRevision")
+  .addEdge(START, "enterRevise")
+  .addEdge("enterRevise", "applyRevision")
   .addEdge("applyRevision", "finalizeRevision")
-  .addEdge("finalizeRevision", "summarizeRevision")
-  .addEdge("summarizeRevision", END);
+  .addEdge("finalizeRevision", END);
 
 export const reviseGraph = workflow.compile();

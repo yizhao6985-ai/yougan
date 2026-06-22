@@ -39,6 +39,7 @@ const FeedQuerySchema = z.object({
 const PublicationSummaryOverridesSchema = z.object({
   title: z.string().optional(),
   hook: z.string().optional(),
+  coverImageId: z.string().nullable().optional(),
   coverUrl: z.string().url().nullable().optional(),
   compositionLabel: z.string().optional(),
   topicCategory: z.enum(topicIds as [string, ...string[]]).optional(),

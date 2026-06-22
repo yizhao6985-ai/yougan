@@ -8,17 +8,12 @@ import {
 } from "#agent/llm/invoke/timeout.js";
 import { resolveImageAspectRatio } from "@yougan/domain";
 import {
-  patchRunProgress,
-  withRunProgressHeartbeat,
-} from "#agent/state-io/run-progress.js";
-import {
   getProduction,
   getProfile,
   patchPendingProductionFields,
 } from "#agent/state-io/index.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
-import { productionRenderDesignProgress } from "../../helpers/progress-labels.js";
 import { markActiveTaskFailed } from "../../helpers/mark-task-failed.js";
 import { currentActiveTask } from "../../helpers/task-plan.js";
 
@@ -59,24 +54,21 @@ export async function renderDesignImageNode(
     return {};
   }
 
-  const progress = productionRenderDesignProgress(task.description);
   const profile = getProfile(state);
   const aspectRatio = resolveImageAspectRatio(profile);
   let lastError = "图片生成失败";
 
   for (let attempt = 1; attempt <= MAX_RENDER_ATTEMPTS; attempt += 1) {
     try {
-      const generated = await withRunProgressHeartbeat(progress, config, () =>
-        generateDesignImage({
-          prompt: buildImageGenerationPrompt({
-            body: promptBody,
-            aspectRatio,
-            notes: deliverable?.notes,
-          }),
+      const generated = await generateDesignImage({
+        prompt: buildImageGenerationPrompt({
+          body: promptBody,
           aspectRatio,
-          responseFormat: "url",
+          notes: deliverable?.notes,
         }),
-      );
+        aspectRatio,
+        responseFormat: "url",
+      });
 
       const imageUrl = generated.imageUrl?.trim();
       if (!imageUrl) {
@@ -107,13 +99,11 @@ export async function renderDesignImageNode(
 
       return {
         ...patchPendingProductionFields(state, { ...plan, pending_tasks }),
-        ...patchRunProgress(progress),
       };
     } catch (error) {
       if (isLlmTimeoutError(error)) {
         return {
           ...markActiveTaskFailed(state, task.id, LLM_TIMEOUT_FAILURE_MESSAGE),
-          ...patchRunProgress(progress),
         };
       }
       lastError =
@@ -136,6 +126,5 @@ export async function renderDesignImageNode(
 
   return {
     ...patchPendingProductionFields(state, { ...plan, pending_tasks }),
-    ...patchRunProgress(progress),
   };
 }

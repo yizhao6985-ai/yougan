@@ -4,10 +4,6 @@ import type { ReferenceAnalysis } from "@yougan/domain";
 
 import { patchAiUsageMetering } from "#agent/llm/invoke/metering.js";
 import {
-  patchRunProgress,
-  withRunProgressHeartbeat,
-} from "#agent/state-io/run-progress.js";
-import {
   getProduction,
   getReferences,
   patchPendingProductionFields,
@@ -16,7 +12,6 @@ import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
 import { analyzeReferenceContent } from "../../../reference/nodes/run-preprocess-tools/tools/helpers/analyze/analyze-content.js";
 import { prepareReferenceAsset } from "../../../reference/nodes/run-preprocess-tools/tools/helpers/prepare/prepare-asset.js";
-import { productionIngestAudioProgress } from "../../helpers/progress-labels.js";
 import { resolveProductionAudioAsset } from "../../helpers/resolve-production-audio-asset.js";
 import {
   audioTaskNeedsIngest,
@@ -63,7 +58,6 @@ export async function ingestProductionAudioNode(
     return {};
   }
 
-  const progress = productionIngestAudioProgress(task.description);
   const body = asset.url.trim();
   let title: string | null = asset.original_name?.trim() || null;
   let notes: string | null = null;
@@ -79,12 +73,8 @@ export async function ingestProductionAudioNode(
     }
   } else {
     try {
-      const analysis = await withRunProgressHeartbeat(progress, config, () =>
-        (async () => {
-          const prep = await prepareReferenceAsset(asset);
-          return analyzeReferenceContent(prep);
-        })(),
-      );
+      const prep = await prepareReferenceAsset(asset);
+      const analysis = await analyzeReferenceContent(prep);
 
       notes =
         analysis.transcript?.trim() ||
@@ -115,7 +105,6 @@ export async function ingestProductionAudioNode(
 
   return {
     ...patchPendingProductionFields(state, { ...plan, pending_tasks }),
-    ...patchRunProgress(progress),
     ...patchAiUsageMetering(state.aiUsage, config),
   };
 }

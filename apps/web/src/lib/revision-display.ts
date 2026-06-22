@@ -21,19 +21,3 @@ export function groupRevisionItemsByBlock(
 
   return { items, byBlock, unanchored };
 }
-
-const HIGHLIGHT_CLASS = "ring-2 ring-primary/35 ring-offset-2 ring-offset-background";
-
-export function scrollToPreviewBlock(blockId: string) {
-  const element = document.querySelector<HTMLElement>(
-    `[data-block-id="${blockId}"]`,
-  );
-  if (!element) return false;
-
-  element.scrollIntoView({ behavior: "smooth", block: "center" });
-  element.classList.add(HIGHLIGHT_CLASS, "rounded-md", "transition-shadow");
-  window.setTimeout(() => {
-    element.classList.remove(HIGHLIGHT_CLASS, "rounded-md", "transition-shadow");
-  }, 2000);
-  return true;
-}

@@ -7,6 +7,26 @@ import {
   type RevisionIntentSource,
   type WorkRevision,
 } from "../../models/work/revision.js";
+import { normalizeProfileTextField } from "./profile.js";
+
+/** 改稿引用原文：过滤 null / "null" 等无效占位。 */
+export function normalizeRevisionQuote(value: unknown): string | null {
+  return normalizeProfileTextField(value);
+}
+
+function sanitizeRevisionAnchor(
+  anchor: RevisionAnchor | null | undefined,
+): RevisionAnchor | null {
+  if (!anchor) return null;
+  const blockId = anchor.blockId.trim();
+  const quote = normalizeRevisionQuote(anchor.quote);
+  if (!blockId || !quote) return null;
+  return {
+    ...anchor,
+    blockId,
+    quote,
+  };
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object";
@@ -15,7 +35,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function parseRevisionAnchor(raw: unknown): RevisionAnchor | null {
   if (!isRecord(raw)) return null;
   const blockId = typeof raw.blockId === "string" ? raw.blockId.trim() : "";
-  const quote = typeof raw.quote === "string" ? raw.quote.trim() : "";
+  const quote = normalizeRevisionQuote(raw.quote);
   if (!blockId || !quote) return null;
   return {
     blockId,
@@ -94,7 +114,7 @@ export function appendRevisionIntent(
   const item: RevisionIntent = {
     id: nanoid(),
     instruction: input.instruction.trim(),
-    anchor: input.anchor ?? null,
+    anchor: sanitizeRevisionAnchor(input.anchor),
     source: input.source ?? "manual",
     created_at: new Date().toISOString(),
     status: "open",

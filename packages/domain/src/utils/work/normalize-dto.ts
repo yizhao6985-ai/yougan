@@ -1,7 +1,7 @@
 import type { WorkProfile } from "../../models/work/profile.js";
 import type { WorkProduction } from "../../models/work/production.js";
 import type { WorkReference } from "../../models/work/reference.js";
-import { parseProductionFromLegacyFields } from "./production.js";
+import { parseProductionJson } from "./production.js";
 import { parseProfileJson, resolveReferencesFromWork } from "./profile.js";
 import { resolvePreviewFromWork } from "./production.js";
 import { parseRevisionJson } from "./revision.js";
@@ -13,8 +13,6 @@ export type NormalizableWorkFields = {
   production?: WorkProduction | unknown;
   preview?: unknown | null;
   revision?: unknown | null;
-  /** 旧 wire / 快照字段，parseProductionFromLegacyFields 合并 */
-  productionPlan?: WorkProduction | unknown;
   groupId?: string | null;
   headVersionId?: string | null;
   sourceWorkId?: string | null;
@@ -24,13 +22,9 @@ export type NormalizableWorkFields = {
 /** 规范化作品 JSON 字段与空值 */
 export function normalizeWorkDto<T extends NormalizableWorkFields>(work: T): T {
   const profile = parseProfileJson(work.profile);
-  const production = parseProductionFromLegacyFields({
-    production: work.production,
-    productionPlan: work.productionPlan,
-  });
+  const production = parseProductionJson(work.production);
   const preview = resolvePreviewFromWork({
     preview: work.preview,
-    production: work.production,
     format: profile.direction.format,
   });
   const revision = parseRevisionJson(work.revision);

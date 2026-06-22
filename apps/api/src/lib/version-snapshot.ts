@@ -2,7 +2,6 @@ import {
   EMPTY_WORK_PRODUCTION,
   EMPTY_WORK_PROFILE,
   EMPTY_WORK_REFERENCES,
-  parseProductionFromLegacyFields,
   parseProductionJson,
   parseProfileJson,
   parseReferencesJson,
@@ -23,49 +22,40 @@ export function emptySnapshot(): WorkVersionSnapshot {
   };
 }
 
-function resolveSnapshotPreview(raw: Record<string, unknown>) {
-  return resolvePreviewFromWork({
-    preview: raw.preview,
-    production: raw.production,
-  });
-}
-
 export function parseSnapshot(raw: unknown): WorkVersionSnapshot {
   if (!raw || typeof raw !== "object") return emptySnapshot();
   const value = raw as Record<string, unknown>;
-  const production = parseProductionFromLegacyFields({
-    production: value.production,
-    productionPlan: value.productionPlan,
-  });
+  const profile = parseProfileJson(value.profile);
   return {
-    profile: parseProfileJson(value.profile),
+    profile,
     references:
       value.references !== undefined
         ? parseReferencesJson(value.references)
         : [],
-    preview: resolveSnapshotPreview(value),
-    production,
+    preview: resolvePreviewFromWork({
+      preview: value.preview,
+      format: profile.direction.format,
+    }),
+    production: parseProductionJson(value.production),
   };
 }
 
 export function snapshotFromAgentValues(
   values: Record<string, unknown>,
 ): WorkVersionSnapshot {
-  const production = parseProductionJson(values.production);
-  const preview =
-    values.preview !== undefined
-      ? parseWorkPreview(values.preview)
-      : resolvePreviewFromWork({
-          preview: undefined,
-          production: values.production,
-        });
+  const profile = parseProfileJson(values.profile);
   return {
-    profile: parseProfileJson(values.profile),
+    profile,
     references: resolveReferencesFromWork({
       references: values.references,
     }),
-    preview,
-    production,
+    preview:
+      values.preview !== undefined
+        ? parseWorkPreview(values.preview, {
+            format: profile.direction.format,
+          })
+        : null,
+    production: parseProductionJson(values.production),
   };
 }
 

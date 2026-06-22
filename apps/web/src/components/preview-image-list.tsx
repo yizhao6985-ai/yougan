@@ -4,7 +4,7 @@ import { PreviewImageGallery } from "@/components/preview-image-gallery";
 import { PreviewImageFigure } from "@/components/preview-image-figure";
 import { cn } from "@/lib/utils";
 
-/** 预览展示用配图项（来自 ImagePreviewBlock，不含 block 元数据） */
+/** 预览展示用配图项（来自 PreviewImage，不含元数据） */
 export type PreviewImageItem = {
   url: string;
   alt?: string | null;

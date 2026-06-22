@@ -15,12 +15,6 @@ export function getUserRequirements(
   return production.summary ?? null;
 }
 
-function extractLegacyPreview(raw: unknown): unknown {
-  if (!raw || typeof raw !== "object") return undefined;
-  const value = raw as { preview?: unknown };
-  return value.preview;
-}
-
 /** 解析 production JSON（不含 preview） */
 export function parseProductionJson(raw: unknown): WorkProduction {
   if (!raw || typeof raw !== "object") {
@@ -33,36 +27,13 @@ export function parseProductionJson(raw: unknown): WorkProduction {
   });
 }
 
-/** 从 Work 字段解析 preview（顶层优先，兼容 production.preview） */
+/** 从 Work 顶层 preview 字段解析 */
 export function resolvePreviewFromWork(input: {
   preview?: unknown | null;
-  production?: unknown;
   format?: ContentFormatId | null;
 }): ReturnType<typeof parseWorkPreview> {
-  const options = { format: input.format };
-  if (input.preview !== undefined && input.preview !== null) {
-    return parseWorkPreview(input.preview, options);
+  if (input.preview === undefined || input.preview === null) {
+    return null;
   }
-  const legacy = extractLegacyPreview(input.production);
-  if (legacy !== undefined) {
-    return legacy === null ? null : parseWorkPreview(legacy, options);
-  }
-  return null;
-}
-
-/** 从旧列 productionPlan + preview 或版本快照合并解析 */
-export function parseProductionFromLegacyFields(input: {
-  production?: unknown;
-  productionPlan?: unknown;
-  preview?: unknown | null;
-}): WorkProduction {
-  if (
-    input.production !== undefined &&
-    input.production !== null &&
-    typeof input.production === "object"
-  ) {
-    return parseProductionJson(input.production);
-  }
-
-  return parseProductionJson(input.productionPlan);
+  return parseWorkPreview(input.preview, { format: input.format });
 }

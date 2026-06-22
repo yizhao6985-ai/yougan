@@ -12,6 +12,10 @@ import * as afterDispatchTurnQueue from "./state-graph/conditional-edges/after-d
 import * as atGraphStart from "./state-graph/conditional-edges/at-graph-start.js";
 import { confirmProductionTurnNode } from "./state-graph/nodes/confirm-production-turn/node.js";
 import { confirmReviseTurnNode } from "./state-graph/nodes/confirm-revise-turn/node.js";
+import { enterProductionConfirmNode } from "./state-graph/nodes/enter-production-confirm/node.js";
+import { enterReviseConfirmNode } from "./state-graph/nodes/enter-revise-confirm/node.js";
+import { enterSummarizeMessagesNode } from "./state-graph/nodes/enter-summarize-messages/node.js";
+import { setTurnPlanningProgressNode } from "./state-graph/nodes/set-turn-planning-progress/node.js";
 import { advanceTurnQueueNode } from "./state-graph/nodes/advance-turn-queue/node.js";
 import { commitTurnNode } from "./state-graph/nodes/commit-turn/node.js";
 import { dispatchTurnQueueNode } from "./state-graph/nodes/dispatch-turn-queue/node.js";
@@ -28,13 +32,17 @@ import { suggestionsGraph } from "./state-graph/subgraphs/suggestions/graph.js";
 import { AgentState } from "./state.js";
 
 const workflow = new StateGraph(AgentState)
+  .addNode("setTurnPlanningProgress", setTurnPlanningProgressNode)
   .addNode("planTurnQueue", planTurnQueueNode)
   .addNode("dispatchTurnQueue", dispatchTurnQueueNode)
+  .addNode("enterProductionConfirm", enterProductionConfirmNode)
   .addNode("confirmProductionTurn", confirmProductionTurnNode)
+  .addNode("enterReviseConfirm", enterReviseConfirmNode)
   .addNode("confirmReviseTurn", confirmReviseTurnNode)
   .addNode("advanceTurnQueue", advanceTurnQueueNode)
   .addNode("commitTurn", commitTurnNode)
   .addNode("summarizeMessages", summarizeMessagesNode)
+  .addNode("enterSummarizeMessages", enterSummarizeMessagesNode)
   .addNode("finalizeRunMetering", finalizeRunMeteringNode)
   .addNode("referenceGraph", referenceGraph)
   .addNode("profileGraph", profileGraph)
@@ -48,17 +56,20 @@ const workflow = new StateGraph(AgentState)
     atGraphStart.selectAtGraphStart,
     atGraphStart.paths,
   )
+  .addEdge("setTurnPlanningProgress", "planTurnQueue")
   .addEdge("planTurnQueue", "dispatchTurnQueue")
   .addConditionalEdges(
     afterDispatchTurnQueue.from,
     afterDispatchTurnQueue.selectAfterDispatchTurnQueue,
     afterDispatchTurnQueue.paths,
   )
+  .addEdge("enterProductionConfirm", "confirmProductionTurn")
   .addConditionalEdges(
     "confirmProductionTurn",
     afterConfirmProductionTurn.selectAfterConfirmProductionTurn,
     afterConfirmProductionTurn.paths,
   )
+  .addEdge("enterReviseConfirm", "confirmReviseTurn")
   .addConditionalEdges(
     "confirmReviseTurn",
     afterConfirmReviseTurn.selectAfterConfirmReviseTurn,
@@ -80,7 +91,8 @@ const workflow = new StateGraph(AgentState)
     afterCommitTurn.selectAfterCommitTurn,
     afterCommitTurn.paths,
   )
-  .addEdge("suggestionsGraph", "summarizeMessages")
+  .addEdge("suggestionsGraph", "enterSummarizeMessages")
+  .addEdge("enterSummarizeMessages", "summarizeMessages")
   .addEdge("summarizeMessages", "finalizeRunMetering")
   .addEdge("finalizeRunMetering", END);
 

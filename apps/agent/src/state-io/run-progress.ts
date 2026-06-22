@@ -1,78 +1,33 @@
-import type { LangGraphRunnableConfig } from "@langchain/langgraph";
-import { getWriter } from "@langchain/langgraph";
-import type { RunProgress } from "@yougan/domain";
+import type { RunProgress, RunProgressPhase } from "@yougan/domain";
 
 import type { AgentStatePatch } from "#agent/state.js";
 
-/** 与前端 onCustomEvent 约定的事件名 */
-export const RUN_PROGRESS_EVENT = "run_progress" as const;
-
-export type RunProgressCustomPayload = {
-  event: typeof RUN_PROGRESS_EVENT;
-  progress: RunProgress;
+const RUN_PHASE_LABELS: Record<RunProgressPhase, string> = {
+  turn_planning: "正在理解你的意图…",
+  reference: "正在分析参考素材…",
+  profile: "正在整理制作方案…",
+  collect_revision: "正在记录改稿意见…",
+  production: "正在创作…",
+  revise: "正在改稿…",
+  ask: "正在准备回答…",
+  suggestions: "正在生成建议…",
+  messages_summary: "正在整理对话记录…",
+  production_confirm: "等待确认是否开始创作",
+  revise_confirm: "等待确认是否开始改稿",
 };
 
-export function buildRunProgress(
-  phase: RunProgress["phase"],
-  label: string,
-  detail?: string | null,
-): RunProgress {
+export function buildRunProgress(phase: RunProgressPhase): RunProgress {
   return {
     phase,
-    label,
-    detail: detail ?? null,
+    label: RUN_PHASE_LABELS[phase],
     updatedAt: Date.now(),
   };
 }
 
-/** 经 custom stream 推送进度（SSE 心跳 + 前端即时展示） */
-export function emitRunProgress(
-  progress: RunProgress,
-  config?: LangGraphRunnableConfig,
-): void {
-  const writer = getWriter(config);
-  if (!writer) return;
-  const payload: RunProgressCustomPayload = {
-    event: RUN_PROGRESS_EVENT,
-    progress: { ...progress, updatedAt: Date.now() },
-  };
-  writer(payload);
-}
-
-export function patchRunProgress(progress: RunProgress): AgentStatePatch {
-  return { runProgress: progress };
+export function patchRunProgress(phase: RunProgressPhase): AgentStatePatch {
+  return { runProgress: buildRunProgress(phase) };
 }
 
 export function clearRunProgressPatch(): AgentStatePatch {
   return { runProgress: null };
-}
-
-/** 长耗时 work 包裹：进入时推送进度，并定时心跳直至完成 */
-export async function withRunProgressHeartbeat<T>(
-  progress: RunProgress,
-  config: LangGraphRunnableConfig | undefined,
-  work: () => Promise<T>,
-  intervalMs = 12_000,
-): Promise<T> {
-  emitRunProgress(progress, config);
-  const timer = setInterval(() => {
-    emitRunProgress(progress, config);
-  }, intervalMs);
-  try {
-    return await work();
-  } finally {
-    clearInterval(timer);
-  }
-}
-
-export function isRunProgressCustomPayload(
-  data: unknown,
-): data is RunProgressCustomPayload {
-  if (!data || typeof data !== "object") return false;
-  const record = data as Record<string, unknown>;
-  return (
-    record.event === RUN_PROGRESS_EVENT &&
-    record.progress != null &&
-    typeof record.progress === "object"
-  );
 }

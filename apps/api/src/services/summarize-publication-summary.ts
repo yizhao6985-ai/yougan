@@ -1,11 +1,13 @@
 import type {
   PublicationSummary,
-  PreviewBlock,
+  WorkPreview,
   WorkProfile,
 } from "@yougan/domain";
 import {
   buildCompositionLabel,
   buildPublicationSummary,
+  previewImages,
+  previewPlainText,
 } from "@yougan/domain";
 
 import { env } from "../env.js";
@@ -14,27 +16,22 @@ type AiSummaryPatch = Partial<
   Pick<PublicationSummary, "title" | "hook" | "compositionLabel">
 >;
 
-function blocksDigest(blocks: PreviewBlock[]): string {
-  return blocks
-    .map((block, index) => {
-      switch (block.type) {
-        case "text":
-          return `[${index + 1}] 文字：${block.markdown.trim().slice(0, 400)}`;
-        case "image":
-          return `[${index + 1}] 图片：${block.alt?.trim() || block.prompt?.trim() || "（无说明）"}`;
-        case "audio":
-          return `[${index + 1}] 音频：${block.title?.trim() || "（无标题）"}`;
-        case "video":
-          return `[${index + 1}] 视频：${block.title?.trim() || "（无标题）"}`;
-        default:
-          return `[${index + 1}] 未知块`;
-      }
-    })
-    .join("\n");
+function previewDigest(preview: WorkPreview): string {
+  const parts: string[] = [];
+  const body = previewPlainText(preview);
+  if (body) {
+    parts.push(`[正文] ${body.slice(0, 400)}`);
+  }
+  previewImages(preview).forEach((image, index) => {
+    parts.push(
+      `[图 ${index + 1}] ${image.alt?.trim() || image.prompt?.trim() || "（无说明）"}`,
+    );
+  });
+  return parts.join("\n") || "（无内容）";
 }
 
 async function callDashScopeSummary(input: {
-  blocks: PreviewBlock[];
+  preview: WorkPreview;
   profile: WorkProfile | null;
   baseline: PublicationSummary;
 }): Promise<AiSummaryPatch | null> {
@@ -51,7 +48,7 @@ async function callDashScopeSummary(input: {
 - 不要改写正文，只输出列表展示用的 title、hook、compositionLabel
 - title 概括整件作品，15–30 字
 - hook 是一句话摘要，40–80 字，吸引点击
-- compositionLabel 用自然语言描述 block 构成，如「防晒测评 · 3 图 · 附短视频」，不超过 24 字
+- compositionLabel 用自然语言描述内容构成，如「防晒测评 · 3 图」，不超过 24 字
 - 只返回 JSON：{"title":"...","hook":"...","compositionLabel":"..."}`;
 
   const user = `创作定位：${intent}
@@ -59,8 +56,8 @@ async function callDashScopeSummary(input: {
 当前标题：${input.baseline.title}
 当前摘要：${input.baseline.hook}
 
-作品内容片段（按顺序）：
-${blocksDigest(input.blocks)}
+作品内容片段：
+${previewDigest(input.preview)}
 
 请输出 JSON。`;
 
@@ -117,20 +114,12 @@ ${blocksDigest(input.blocks)}
 }
 
 export async function summarizePublicationSummary(input: {
-  blocks: PreviewBlock[];
-  preview?: {
-    title?: string | null;
-    hook?: string | null;
-    hashtags?: string[];
-  } | null;
+  preview: WorkPreview;
   workTitle?: string | null;
   profile?: WorkProfile | unknown | null;
 }): Promise<PublicationSummary> {
   const baseline = buildPublicationSummary({
-    blocks: input.blocks,
-    preview: input.preview
-      ? { ...input.preview, blocks: input.blocks }
-      : null,
+    preview: input.preview,
     workTitle: input.workTitle,
     profile: input.profile,
   });
@@ -141,7 +130,7 @@ export async function summarizePublicationSummary(input: {
         ? (input.profile as WorkProfile)
         : null;
     const patch = await callDashScopeSummary({
-      blocks: input.blocks,
+      preview: input.preview,
       profile,
       baseline,
     });

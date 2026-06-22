@@ -1,5 +1,8 @@
 import type { ContentFormatId } from "../content-form/formats.js";
 
+/** 成稿正文块 ID（改稿锚点、选区引用） */
+export const PREVIEW_BODY_BLOCK_ID = "content:body" as const;
+
 /** 成稿配图 */
 export interface PreviewImage {
   id: string;
@@ -10,7 +13,15 @@ export interface PreviewImage {
   taskId?: string | null;
 }
 
-/** 体裁成稿主体（与 direction.format 对齐） */
+/** 脚本/口播分段 */
+export interface ScriptSegment {
+  id: string;
+  label?: string | null;
+  body: string;
+  durationSec?: number | null;
+}
+
+/** 体裁成稿主体（kind 由 profile.direction.format 决定，写入时对齐） */
 export type PreviewContent =
   | NotePreviewContent
   | TextPreviewContent
@@ -26,13 +37,14 @@ export interface NotePreviewContent {
 export interface TextPreviewContent {
   kind: "article" | "blog" | "short_post" | "novel";
   body: string;
-  cover?: PreviewImage | null;
   images?: PreviewImage[];
 }
 
 export interface ScriptPreviewContent {
   kind: "video_script" | "short_video" | "podcast" | "music";
-  body: string;
+  segments: ScriptSegment[];
+  /** segments 拼接结果，供摘要/搜索；写入时同步 */
+  body?: string;
 }
 
 export interface IllustrationPreviewContent {
@@ -43,54 +55,13 @@ export interface IllustrationPreviewContent {
 
 export type PreviewContentKind = PreviewContent["kind"];
 
-/** @deprecated 旧 block 模型；读库迁移用 */
-export type PreviewBlockType = "text" | "image" | "audio" | "video";
-
-/** @deprecated */
-export interface PreviewBlockBase {
-  id: string;
-  taskId?: string | null;
-}
-
-/** @deprecated */
-export interface TextPreviewBlock extends PreviewBlockBase {
-  type: "text";
-  markdown: string;
-}
-
-/** @deprecated */
-export interface ImagePreviewBlock extends PreviewBlockBase {
-  type: "image";
-  url: string;
-  alt?: string | null;
-  prompt?: string | null;
-  transient?: boolean;
-}
-
-/** @deprecated */
-export interface AudioPreviewBlock extends PreviewBlockBase {
-  type: "audio";
-  url: string;
-  title?: string | null;
-  durationSec?: number | null;
-  transcript?: string | null;
-}
-
-/** @deprecated */
-export interface VideoPreviewBlock extends PreviewBlockBase {
-  type: "video";
-  url: string;
-  posterUrl?: string | null;
-  title?: string | null;
-  durationSec?: number | null;
-}
-
-/** @deprecated */
-export type PreviewBlock =
-  | TextPreviewBlock
-  | ImagePreviewBlock
-  | AudioPreviewBlock
-  | VideoPreviewBlock;
+/** LLM / 改稿输出用：不含 kind，由 format 决定形态 */
+export type PreviewContentPayload = {
+  body?: string;
+  images?: PreviewImage[];
+  caption?: string | null;
+  segments?: ScriptSegment[];
+};
 
 /**
  * 作品预览（Work 顶层字段 preview）。
@@ -121,4 +92,15 @@ export function defaultPreviewContentKind(
   if (format === "podcast") return "podcast";
   if (format === "music") return "music";
   return "note";
+}
+
+export function isScriptPreviewKind(
+  kind: PreviewContentKind,
+): kind is ScriptPreviewContent["kind"] {
+  return (
+    kind === "video_script" ||
+    kind === "short_video" ||
+    kind === "podcast" ||
+    kind === "music"
+  );
 }

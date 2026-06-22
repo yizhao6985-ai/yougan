@@ -1,5 +1,4 @@
 import type { Publication } from "@/lib/publication-types";
-import { publicationCoverFromBlocks } from "@/components/preview-block-list";
 
 export function pickFeaturedPublications(
   publications: Publication[],
@@ -11,8 +10,7 @@ export function pickFeaturedPublications(
 
   const withVisual = publications.filter(
     (item) =>
-      item.coverUrl ||
-      publicationCoverFromBlocks(item.blocks) ||
+      item.coverUrl?.trim() ||
       (item.excerpt?.trim().length ?? 0) > 40,
   );
   const pool = withVisual.length > 0 ? withVisual : publications;

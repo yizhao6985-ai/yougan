@@ -5,8 +5,11 @@ import {
   extractAttachmentAssetsFromContent,
   extractPreviewSelectionsFromContent,
   isDefaultAttachmentPromptText,
+  isTurnActivityMessage,
+  parseTurnActivityFromMessage,
   type HumanAttachmentAsset,
   type HumanPreviewSelection,
+  type TurnActivityStatus,
 } from "@yougan/domain";
 import { messageContentToText as coreMessageContentToText } from "@/lib/message-content";
 
@@ -77,88 +80,10 @@ export function extractAIMessageText(message: MessageWithBlocks): string {
   return coreMessageContentToText(message.content);
 }
 
-type ToolCallLike = {
-  id?: string;
-  name?: string;
-  args?: Record<string, unknown>;
-  error?: string;
-};
-
 type AiMessageWithTools = Message & {
-  tool_calls?: ToolCallLike[];
-  invalid_tool_calls?: ToolCallLike[];
+  tool_calls?: { id?: string; name?: string; args?: Record<string, unknown> }[];
+  invalid_tool_calls?: { id?: string; name?: string; args?: Record<string, unknown> }[];
 };
-
-function collectToolResults(messages: Message[]) {
-  const map = new Map<string, Message>();
-  for (const message of messages) {
-    if (message.type === "tool" && message.tool_call_id) {
-      map.set(message.tool_call_id, message);
-    }
-  }
-  return map;
-}
-
-function parseToolCallArgs(args: unknown): Record<string, unknown> {
-  if (args && typeof args === "object" && !Array.isArray(args)) {
-    return args as Record<string, unknown>;
-  }
-  return {};
-}
-
-function readToolResult(message: Message): { output?: unknown; error?: string } {
-  const status = (message as { status?: string }).status;
-  if (status === "error") {
-    return {
-      error: messageContentToText(message.content) || "工具执行失败",
-    };
-  }
-
-  const content = message.content;
-  if (typeof content === "string") {
-    return { output: content };
-  }
-
-  return { output: content };
-}
-
-function pushToolItems(
-  items: RenderItem[],
-  toolCalls: ToolCallLike[],
-  options: {
-    messageId: string;
-    messageIndex: number;
-    lastHumanIndex: number;
-    isLoading: boolean;
-    toolResultsById: Map<string, Message>;
-  },
-) {
-  for (let toolIndex = 0; toolIndex < toolCalls.length; toolIndex += 1) {
-    const call = toolCalls[toolIndex];
-    const callId = call.id ?? `${options.messageId}-tool-${toolIndex}`;
-    const resultMessage = call.id
-      ? options.toolResultsById.get(call.id)
-      : undefined;
-    const { output, error } = resultMessage
-      ? readToolResult(resultMessage)
-      : { output: undefined, error: call.error };
-    const isStreaming =
-      options.isLoading &&
-      options.messageIndex > options.lastHumanIndex &&
-      !resultMessage &&
-      !error;
-
-    items.push({
-      id: callId,
-      kind: "tool",
-      toolName: call.name ?? "unknown_tool",
-      toolInput: parseToolCallArgs(call.args),
-      toolOutput: output,
-      toolError: error,
-      isStreaming,
-    });
-  }
-}
 
 export type RenderItem =
   | {
@@ -177,12 +102,10 @@ export type RenderItem =
     }
   | {
       id: string;
-      kind: "tool";
-      toolName: string;
-      toolInput: Record<string, unknown>;
-      toolOutput?: unknown;
-      toolError?: string;
-      isStreaming?: boolean;
+      kind: "activity";
+      label: string;
+      detail?: string | null;
+      status: TurnActivityStatus;
     }
   | {
       id: string;
@@ -263,7 +186,7 @@ import {
 
 /**
  * 将 LangGraph updates 事件合并进 values。
- * 与 streamMode `messages-tuple` 并用：正文走 messages 通道，updates 只合并 tool/human 与 AI 的 tool_calls。
+ * 与 streamMode `messages-tuple` 并用：正文走 messages 通道，updates 合并 human / AI tool_calls / activity 等。
  */
 export function applyGraphUpdatesToValues<T extends { messages?: Message[] }>(
   prev: T,
@@ -329,7 +252,7 @@ function findLastMessageIndex(
   return -1;
 }
 
-/** 合并 stream.messages（流式）与 values.messages（节点一次性写入，如 summarizeProduction） */
+/** 合并 stream.messages（流式）与 values.messages（节点一次性写入，如 finalizeProduction） */
 export function mergeChatMessages(
   streamMessages: Message[],
   valuesMessages: Message[] | undefined,
@@ -347,7 +270,6 @@ export function buildRenderItems(
   const items: RenderItem[] = [];
   const lastHumanIndex = findLastMessageIndex(messages, "human");
   const lastAiMessageIndex = findLastMessageIndex(messages, "ai");
-  const toolResultsById = collectToolResults(messages);
 
   for (let index = 0; index < messages.length; index++) {
     const message = messages[index];
@@ -369,6 +291,19 @@ export function buildRenderItems(
 
     if (message.type === "system") {
       if (isInternalOpeningModeSystemMessage(message)) continue;
+      if (isTurnActivityMessage(message)) {
+        const activity = parseTurnActivityFromMessage(message);
+        if (activity) {
+          items.push({
+            id: message.id ?? `activity-${index}`,
+            kind: "activity",
+            label: activity.label,
+            detail: activity.detail,
+            status: activity.status,
+          });
+        }
+        continue;
+      }
       const content = messageContentToText(message.content);
       if (content) {
         items.push({
@@ -385,7 +320,6 @@ export function buildRenderItems(
     }
 
     if (message.type === "ai") {
-      const aiMessage = message as AiMessageWithTools;
       const messageId = message.id ?? `ai-${index}`;
 
       const text = extractAIMessageText(message);
@@ -393,18 +327,6 @@ export function buildRenderItems(
         isLoading &&
         index === lastAiMessageIndex &&
         index > lastHumanIndex;
-
-      pushToolItems(
-        items,
-        [...(aiMessage.tool_calls ?? []), ...(aiMessage.invalid_tool_calls ?? [])],
-        {
-          messageId,
-          messageIndex: index,
-          lastHumanIndex,
-          isLoading,
-          toolResultsById,
-        },
-      );
 
       if (text || isStreamingAi || interrupted.has(messageId)) {
         items.push({

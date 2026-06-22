@@ -26,13 +26,13 @@ Checkpoint：**与 API 共用 Postgres**（`POSTGRES_URI`，默认 `:5432/yougan
 
 ### 内层子图（`state-graph/subgraphs/`）
 
-**reference**：`preprocessReferences` ⇄ `runPreprocessTools` → `mutateReferences` ⇄ `runMutateTools` → `summarizeReferences`。预处理未分析资源；按意图原子工具删改参考。
+**reference**：`preprocessReferences` ⇄ `runPreprocessTools` → `mutateReferences` ⇄ `runMutateTools` → `finalizeReferences`。预处理未分析资源；按意图原子工具删改参考。
 
-**profile**：`mutateProfile` ⇄ `runProfileTools` → `summarizeProfile`。按意图原子工具改方案；末位总结回复。
+**profile**：`mutateProfile` ⇄ `runProfileTools` → `finalizeProfile`。按意图原子工具改方案；末位模板回复。
 
 **suggestions**：`generateSuggestions`。`commitTurn` 后执行；开屏 9 条 / 回合末 4 条，写入 `nextStepSuggestions`。
 
-**production**（`subgraphs/production/README.md`）：`planProduction` → `dispatchTask` → `execute*` → `acceptTask` → `routeProduction` →（`dispatchTask`、`assemblePreview`、计划为空或验收 3 次失败时直达 `summarizeProduction`）→ `summarizeProduction`。
+**production**（`subgraphs/production/README.md`）：`planProduction` → `dispatchTask` → `execute*` → `acceptTask` → `routeProduction` →（`dispatchTask`、`assemblePreview`、计划为空或验收 3 次失败时直达 `finalizeProduction`）→ `finalizeProduction`。
 
 **ask**：`answerQuestion` ⇄ `runAskTools`（`ToolNode` + `toolsCondition`）。
 

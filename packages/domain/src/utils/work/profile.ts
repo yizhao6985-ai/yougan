@@ -83,8 +83,7 @@ function parseProfileValue(value: Record<string, unknown>): WorkProfile {
 function parseDirection(raw: unknown): ProfileDirection {
   if (!raw || typeof raw !== "object") return { ...EMPTY_PROFILE_DIRECTION };
   const value = raw as Record<string, unknown>;
-  const summary =
-    typeof value.summary === "string" ? value.summary.trim() : "";
+  const summary = normalizeProfileTextField(value.summary) ?? "";
   const rawFormat = typeof value.format === "string" ? value.format : null;
   const format = isValidContentFormat(rawFormat) ? rawFormat : null;
   return {

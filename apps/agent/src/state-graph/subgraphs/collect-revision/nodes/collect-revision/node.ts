@@ -10,16 +10,25 @@ import { patchAiUsageMetering } from "#agent/llm/invoke/metering.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
 import {
   appendRevisionIntent,
+  normalizeRevisionQuote,
+  PREVIEW_BODY_BLOCK_ID,
   previewPlainText,
-  previewContentToLegacyBlocks,
 } from "@yougan/domain";
-import { getLatestHumanMessagePreviewSelections, getLatestHumanMessageText } from "#agent/messages/human.js";
+import {
+  getLatestHumanMessageId,
+  getLatestHumanMessagePreviewSelections,
+  getLatestHumanMessageText,
+} from "#agent/messages/human.js";
 import {
   patchPendingRevision,
   getPreview,
   getRevision,
 } from "#agent/state-io/index.js";
-import { patchRunProgress, buildRunProgress } from "#agent/state-io/run-progress.js";
+import {
+  COLLECT_REVISION_SUBJECT,
+  collectRevisionActivityId,
+  upsertTurnActivity,
+} from "#agent/state-io/turn-activities.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
 import {
@@ -34,22 +43,23 @@ function findAnchorBlockId(
 ): { blockId: string; quote: string } | null {
   const trimmed = quote?.trim();
   if (!trimmed) return null;
-  const preview = getPreview(state);
-  const blocks = preview ? previewContentToLegacyBlocks(preview) : [];
-  if (!blocks.length) return null;
-  for (const block of blocks) {
-    if (block.type === "text" && block.markdown.includes(trimmed)) {
-      return { blockId: block.id, quote: trimmed };
-    }
-  }
-  if (previewText.includes(trimmed)) {
-    const textBlock = blocks.find(
-      (block): block is Extract<typeof block, { type: "text" }> =>
-        block.type === "text",
-    );
-    if (textBlock) return { blockId: textBlock.id, quote: trimmed };
-  }
-  return null;
+  const text = previewText || previewPlainText(getPreview(state));
+  if (!text.includes(trimmed)) return null;
+  return { blockId: PREVIEW_BODY_BLOCK_ID, quote: trimmed };
+}
+
+function doneCollectRevisionActivity(
+  state: AgentStateType,
+): AgentStatePatch {
+  const humanMessageId = getLatestHumanMessageId(state.messages);
+  if (!humanMessageId) return {};
+  return upsertTurnActivity({
+    id: collectRevisionActivityId(humanMessageId),
+    refId: humanMessageId,
+    kind: "collect_revision",
+    status: "done",
+    subject: COLLECT_REVISION_SUBJECT,
+  });
 }
 
 export async function collectRevisionNode(
@@ -76,9 +86,7 @@ export async function collectRevisionNode(
     }
     return {
       ...patchPendingRevision(state, revision),
-      ...patchRunProgress(
-        buildRunProgress("collect_revision", "已加入改稿清单"),
-      ),
+      ...doneCollectRevisionActivity(state),
       ...patchAiUsageMetering(state.aiUsage, config),
     };
   }
@@ -108,7 +116,8 @@ export async function collectRevisionNode(
     parsed = { instruction: userMessage, quote: null };
   }
 
-  const anchorMatch = findAnchorBlockId(previewText, parsed.quote, state);
+  const normalizedQuote = normalizeRevisionQuote(parsed.quote);
+  const anchorMatch = findAnchorBlockId(previewText, normalizedQuote, state);
   const revision = appendRevisionIntent(getRevision(state), {
     instruction: parsed.instruction.trim() || userMessage,
     anchor: anchorMatch
@@ -116,17 +125,15 @@ export async function collectRevisionNode(
           blockId: anchorMatch.blockId,
           quote: anchorMatch.quote,
         }
-      : parsed.quote?.trim()
-        ? { blockId: "unknown", quote: parsed.quote.trim() }
+      : normalizedQuote
+        ? { blockId: "unknown", quote: normalizedQuote }
         : null,
     source: "chat",
   });
 
   return {
     ...patchPendingRevision(state, revision),
-    ...patchRunProgress(
-      buildRunProgress("collect_revision", "已加入改稿清单"),
-    ),
+    ...doneCollectRevisionActivity(state),
     ...patchAiUsageMetering(state.aiUsage, config),
   };
 }

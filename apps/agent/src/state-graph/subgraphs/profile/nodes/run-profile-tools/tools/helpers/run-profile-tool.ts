@@ -12,6 +12,11 @@ import {
   getState,
   patchPendingProfile,
 } from "#agent/state-io/index.js";
+import {
+  createTurnActivityMessage,
+  profileToolActivityId,
+  profileToolSubject,
+} from "#agent/state-io/turn-activities.js";
 
 export function createProfileTool<T extends z.ZodTypeAny>(options: {
   name: string;
@@ -26,6 +31,12 @@ export function createProfileTool<T extends z.ZodTypeAny>(options: {
       const state = getState();
       const profile = getProfile(state);
       const result = applyProfilePatch(profile, options.toPatch(input));
+      const activityBase = {
+        id: profileToolActivityId(options.name),
+        refId: options.name,
+        kind: "profile_update" as const,
+        subject: profileToolSubject(options.name),
+      };
 
       if (!result) {
         return new Command({
@@ -34,6 +45,10 @@ export function createProfileTool<T extends z.ZodTypeAny>(options: {
               new ToolMessage({
                 content: options.emptyMessage ?? "未应用方案变更。",
                 tool_call_id: toolCallId,
+              }),
+              createTurnActivityMessage({
+                ...activityBase,
+                status: "failed",
               }),
             ],
           },
@@ -46,6 +61,10 @@ export function createProfileTool<T extends z.ZodTypeAny>(options: {
             new ToolMessage({
               content: `已更新：${result.changes.join("、")}。`,
               tool_call_id: toolCallId,
+            }),
+            createTurnActivityMessage({
+              ...activityBase,
+              status: "done",
             }),
           ],
           ...patchPendingProfile(state, result.profile),

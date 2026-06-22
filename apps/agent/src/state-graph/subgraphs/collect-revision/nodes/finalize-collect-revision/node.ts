@@ -5,7 +5,7 @@ import { openRevisionItems } from "@yougan/domain";
 import { getRevision } from "#agent/state-io/index.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
-export async function summarizeCollectRevisionNode(
+export async function finalizeCollectRevisionNode(
   state: AgentStateType,
   _config?: RunnableConfig,
 ): Promise<AgentStatePatch> {

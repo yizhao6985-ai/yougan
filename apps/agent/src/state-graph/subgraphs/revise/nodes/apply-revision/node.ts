@@ -7,13 +7,15 @@ import { patchAiUsageMetering } from "#agent/llm/invoke/metering.js";
 import { createProductionChatModel } from "#agent/llm/providers/index.js";
 import {
   openRevisionItems,
-  migrateBlocksToContent,
-  previewHasContent,
+  normalizeRevisionQuote,
+  buildPreviewContent,
   getProfileFormat,
+  previewHasContent,
   type WorkPreview,
 } from "@yougan/domain";
 import { profileSummary } from "#agent/prompts/profile-summary.js";
 import { YOUGAN_USER_LABEL } from "#agent/system-prompt.js";
+import { getLatestHumanMessageId } from "#agent/messages/human.js";
 import {
   getModelTemperature,
   getPreview,
@@ -24,10 +26,10 @@ import {
   patchPendingPreview,
 } from "#agent/state-io/index.js";
 import {
-  buildRunProgress,
-  patchRunProgress,
-  withRunProgressHeartbeat,
-} from "#agent/state-io/run-progress.js";
+  REVISE_TURN_SUBJECT,
+  reviseTurnActivityId,
+  upsertTurnActivity,
+} from "#agent/state-io/turn-activities.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
 import {
@@ -42,7 +44,7 @@ function buildRevisionItemsBlock(
   if (!items.length) return "（无清单项，按用户最新消息改稿）";
   return items
     .map((item, index) => {
-      const anchor = item.anchor?.quote?.trim();
+      const anchor = normalizeRevisionQuote(item.anchor?.quote);
       return `${index + 1}. ${anchor ? `「${anchor}」→ ` : ""}${item.instruction}`;
     })
     .join("\n");
@@ -57,8 +59,10 @@ function buildApplyRevisionSystemPrompt(state: AgentStateType): string {
 规则：
 1. 必须落实改稿清单中的每一条意见
 2. 未在清单中要求修改的部分，尽量保持原文（允许为连贯性做最小衔接调整）
-3. 输出完整 preview.content（体裁成稿）；保留原有 image url（除非清单要求更换）
-4. 不要输出解释 prose，只输出结构化 preview`;
+3. 输出 preview.content 字段（不要输出 kind；体裁由作品方案 format 决定）
+4. 脚本类作品用 segments[] 分段；图文类保留 body / images
+5. 正文避免互联网黑话与空泛套话（如「赋能」「抓手」「链路」「颗粒度」「闭环」等）
+6. 不要输出解释 prose，只输出结构化 preview`;
 }
 
 function buildApplyRevisionHumanPrompt(state: AgentStateType): string {
@@ -85,32 +89,30 @@ ${buildRevisionItemsBlock(state)}
 ## 当前成稿（JSON）
 ${baselineJson}
 
-请输出更新后的完整 preview（含 content 或 blocks，优先 content）。`;
+请输出更新后的 preview（含 content  payload，不含 kind）。`;
+}
+
+function reviseActivityPatch(
+  state: AgentStateType,
+  status: "done" | "failed",
+): AgentStatePatch {
+  const humanMessageId = getLatestHumanMessageId(state.messages);
+  if (!humanMessageId) return {};
+  return upsertTurnActivity({
+    id: reviseTurnActivityId(humanMessageId),
+    refId: humanMessageId,
+    kind: "revise_step",
+    status,
+    subject: REVISE_TURN_SUBJECT,
+  });
 }
 
 function toWorkPreview(
   output: RevisePreviewOutput,
-  format: ReturnType<typeof getProfileFormat>,
+  state: AgentStateType,
 ): WorkPreview {
-  const blocks = output.blocks.map((block) => {
-    if (block.type === "image") {
-      return {
-        id: block.id,
-        type: "image" as const,
-        url: block.url,
-        alt: block.alt ?? null,
-        prompt: block.prompt ?? null,
-        taskId: block.taskId ?? null,
-      };
-    }
-    return {
-      id: block.id,
-      type: "text" as const,
-      markdown: block.markdown,
-      taskId: block.taskId ?? null,
-    };
-  });
-  const content = migrateBlocksToContent(blocks, format);
+  const format = getProfileFormat(getProfile(state));
+  const content = buildPreviewContent(format, output.content);
   return {
     title: output.title ?? null,
     hook: output.hook ?? null,
@@ -129,8 +131,6 @@ export async function applyRevisionNode(
     return {};
   }
 
-  const progress = buildRunProgress("revise_apply", "正在按清单改稿…");
-
   const llm = createProductionChatModel({
     temperature: getModelTemperature(state),
     maxTokens: 8192,
@@ -138,26 +138,33 @@ export async function applyRevisionNode(
 
   let output: RevisePreviewOutput;
   try {
-    output = await withRunProgressHeartbeat(progress, config, () =>
-      invokeStructured(
-        llm,
-        RevisePreviewOutputSchema,
-        [
-          new SystemMessage(buildApplyRevisionSystemPrompt(state)),
-          new HumanMessage(buildApplyRevisionHumanPrompt(state)),
-        ],
-        { name: "apply_revision", timeoutMs: LLM_TIMEOUT_MS.production },
-        config,
-      ),
+    output = await invokeStructured(
+      llm,
+      RevisePreviewOutputSchema,
+      [
+        new SystemMessage(buildApplyRevisionSystemPrompt(state)),
+        new HumanMessage(buildApplyRevisionHumanPrompt(state)),
+      ],
+      { name: "apply_revision", timeoutMs: LLM_TIMEOUT_MS.production },
+      config,
     );
   } catch {
-    return { ...patchRunProgress(progress) };
+    return {
+      ...reviseActivityPatch(state, "failed"),
+      ...patchAiUsageMetering(state.aiUsage, config),
+    };
   }
 
-  const nextPreview = toWorkPreview(output, getProfileFormat(getProfile(state)));
+  const nextPreview = toWorkPreview(output, state);
+  if (!previewHasContent(nextPreview)) {
+    return {
+      ...reviseActivityPatch(state, "failed"),
+      ...patchAiUsageMetering(state.aiUsage, config),
+    };
+  }
   return {
     ...patchPendingPreview(state, nextPreview),
-    ...patchRunProgress(progress),
+    ...reviseActivityPatch(state, "done"),
     ...patchAiUsageMetering(state.aiUsage, config),
   };
 }

@@ -31,7 +31,6 @@ import type {
   Work,
   WorkConversation,
   WorkProfile,
-  RunProgress,
 } from "@/lib/types";
 import {
   fallbackConversationTitleFromText,
@@ -46,10 +45,6 @@ import {
   isAiUsageCustomPayload,
   syncSubscriptionCacheFromAiUsage,
 } from "@/lib/ai-usage";
-import {
-  isRunProgressCustomPayload,
-  pickRunProgress,
-} from "@/lib/run-progress";
 import {
   resolveProductionConfirmInterrupt,
 } from "@/lib/production-confirm-interrupt";
@@ -265,10 +260,6 @@ export function useYouganStream({
    */
   const [postCancelValues, setPostCancelValues] =
     useState<Partial<YouganValues> | null>(null);
-  /** custom 事件或 updates 里的 runProgress，优先于 checkpoint 里的静态 runProgress */
-  const [liveRunProgress, setLiveRunProgress] = useState<RunProgress | null>(
-    null,
-  );
   /** joinStream 进行中（refresh 后恢复 run） */
   const [
     isJoiningRun,
@@ -400,7 +391,6 @@ export function useYouganStream({
           ...readSyncPatch,
           ...(aiUsage ? { aiUsage } : {}),
         }));
-        setLiveRunProgress(null);
         if (reconcileKey) idleReconcileKeyRef.current = reconcileKey;
         return;
       }
@@ -431,7 +421,6 @@ export function useYouganStream({
             ...repairPatch,
             ...(aiUsage ? { aiUsage } : {}),
           });
-          setLiveRunProgress(null);
         } catch (error) {
           console.error("[yougan] repair stale turn failed", error);
         } finally {
@@ -503,17 +492,10 @@ export function useYouganStream({
       setRunDiscoverySettled(true);
     },
     /**
-     * SDK stream 正常结束回调。
-     * 故意不传 config：避免 SDK 自动 refetch history；turn 收尾与 aiUsage 已在 onUpdateEvent 处理。
-     */
-    onFinish: () => {
-      setLiveRunProgress(null);
-    },
-    /**
      * checkpoint 增量合并入口：每个 SSE updates 事件触发一次。
-     * - mutate 内用 applyGraphUpdatesToValues 浅合并 turn / profile 等 channel
+     * - mutate 内用 applyGraphUpdatesToValues 浅合并 turn / profile / runProgress 等 channel
      * - 检测 turn.committed 沿 → onRunComplete
-     * - 从 update 子对象提取 aiUsage、runProgress
+     * - 从 update 子对象提取 aiUsage
      */
     onUpdateEvent: (update, { mutate }) => {
       let committedValues: YouganValues | null = null;
@@ -542,7 +524,7 @@ export function useYouganStream({
         onRunCompleteRef.current?.(workId!, committedValues);
       }
 
-      /** updates 可能来自多个 subgraph node，逐 value 扫 aiUsage / runProgress */
+      /** updates 可能来自多个 subgraph node，逐 value 扫 aiUsage */
       for (const raw of Object.values(update as Record<string, unknown>)) {
         if (!raw || typeof raw !== "object") continue;
         if ("aiUsage" in raw) {
@@ -551,20 +533,9 @@ export function useYouganStream({
             (raw as { aiUsage?: YouganValues["aiUsage"] }).aiUsage,
           );
         }
-        if (!("runProgress" in raw)) continue;
-        const progress = (raw as { runProgress?: RunProgress | null })
-          .runProgress;
-        if (progress && typeof progress === "object" && "label" in progress) {
-          setLiveRunProgress(progress);
-        }
       }
     },
-    /** Agent 图 withRunProgressHeartbeat 推送的 custom 事件（图片生成等长任务进度） */
     onCustomEvent: (data) => {
-      if (isRunProgressCustomPayload(data)) {
-        setLiveRunProgress(data.progress);
-        return;
-      }
       if (isAiUsageCustomPayload(data)) {
         syncSubscriptionCacheFromAiUsage(queryClient, data.aiUsage);
       }
@@ -966,8 +937,6 @@ export function useYouganStream({
 
     await awaitCancelIfInFlight();
     setPostCancelValues(null);
-    setLiveRunProgress(null);
-
     await stream.submit(
       buildStreamSubmitInput(work, conversation, modelTemperature),
       SUBMIT_OPTIONS,
@@ -1081,8 +1050,6 @@ export function useYouganStream({
         ...(settledAiUsage ? { aiUsage: settledAiUsage } : {}),
       });
 
-      setLiveRunProgress(null);
-
       if (workId && conversationId) {
         suppressSuggestionsCacheRef.current = true;
         suggestionsCache?.clear(workId, conversationId);
@@ -1160,8 +1127,6 @@ export function useYouganStream({
         nextStepSuggestions: null,
         runProgress: null,
       });
-      setLiveRunProgress(null);
-
       await stream.submit(
         buildStreamSubmitInput(work, conversation, modelTemperature, [message]),
         SUBMIT_OPTIONS,
@@ -1177,7 +1142,6 @@ export function useYouganStream({
     async (decision: ProductionConfirmDecision) => {
       if (isResumingInterrupt) return;
       startResumingInterrupt();
-      setLiveRunProgress(null);
       setPersistedProductionConfirmInterrupt(null);
       try {
         await stream.submit(null, {
@@ -1194,7 +1158,6 @@ export function useYouganStream({
     async (decision: ReviseConfirmDecision) => {
       if (isResumingInterrupt) return;
       startResumingInterrupt();
-      setLiveRunProgress(null);
       setPersistedReviseConfirmInterrupt(null);
       try {
         await stream.submit(null, {
@@ -1231,7 +1194,6 @@ export function useYouganStream({
       }
 
       setPostCancelValues(patch);
-      setLiveRunProgress(null);
       setPersistedProductionConfirmInterrupt(null);
       setPersistedReviseConfirmInterrupt(null);
     },
@@ -1273,13 +1235,6 @@ export function useYouganStream({
 
   const isAwaitingTurnConfirm =
     productionConfirmInterrupt != null || reviseConfirmInterrupt != null;
-
-  /** HITL 出现时清 runProgress，避免「正在生成…」与确认框同时显示 */
-  useEffect(() => {
-    if (isAwaitingTurnConfirm) {
-      setLiveRunProgress(null);
-    }
-  }, [isAwaitingTurnConfirm]);
 
   /**
    * HITL 等待时 run 已是 interrupted 而非 running。
@@ -1338,20 +1293,16 @@ export function useYouganStream({
   }, [displayStreamValues, isStreamBusy, stream]);
 
   /**
-   * 聊天区底部进度文案：liveRunProgress（custom 心跳）优先于 checkpoint.runProgress。
+   * 聊天区底部进度文案：来自 checkpoint values.runProgress。
    * HITL 等待时不显示进度。
    */
   const runProgress = useMemo(() => {
     if (isAwaitingTurnConfirm) return null;
-    return pickRunProgress(
-      liveRunProgress,
-      (streamWithPostCancel.values as YouganValues | undefined)?.runProgress,
+    return (
+      (streamWithPostCancel.values as YouganValues | undefined)?.runProgress ??
+      null
     );
-  }, [
-    isAwaitingTurnConfirm,
-    liveRunProgress,
-    streamWithPostCancel.values,
-  ]);
+  }, [isAwaitingTurnConfirm, streamWithPostCancel.values]);
 
   return {
     /** LangGraph stream（含合并 values 与扩展 isLoading） */

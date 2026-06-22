@@ -90,6 +90,7 @@ export function PublishPlatformActions({
         onConfirm={handlePublish}
         isSubmitting={publishMutation.isPending}
         preview={summaryPreviewQuery.data}
+        workPreview={preview}
         previewLoading={summaryPreviewQuery.isLoading}
         previewError={summaryPreviewQuery.isError}
       />

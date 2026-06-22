@@ -1,12 +1,12 @@
 import type { AgentStateType } from "#agent/state.js";
 
-export type AtGraphStartTarget = "planTurnQueue";
-
 /** START：进入回合队列规划 */
+export type AtGraphStartTarget = "setTurnPlanningProgress";
+
 export function selectAtGraphStart(
   _state: AgentStateType,
 ): AtGraphStartTarget {
-  return "planTurnQueue";
+  return "setTurnPlanningProgress";
 }
 
-export const paths: AtGraphStartTarget[] = ["planTurnQueue"];
+export const paths: AtGraphStartTarget[] = ["setTurnPlanningProgress"];

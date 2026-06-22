@@ -10,7 +10,7 @@ import {
   type PublicationMetadataOverrides,
 } from "../../models/discover/index.js";
 import type { WorkProfile } from "../../models/work/profile.js";
-import type { PreviewBlock } from "../../models/work/preview.js";
+import type { WorkPreview } from "../../models/work/preview.js";
 import {
   inferMediaModalities,
   isMediaModalityId,
@@ -31,10 +31,6 @@ const FORMAT_LABELS = Object.fromEntries(
 const TOPIC_LABELS = Object.fromEntries(
   DISCOVER_TOPIC_CATEGORIES.map((item) => [item.id, item.label]),
 ) as Record<DiscoverTopicCategoryId, string>;
-
-type OutputLike = {
-  blocks?: PreviewBlock[];
-};
 
 export function formatLabel(id: string | null | undefined) {
   if (!id) return null;
@@ -114,22 +110,20 @@ export function inferContentFormat(input: {
 
 export function inferMediaTypes(input: {
   coverUrl?: string | null;
-  blocks?: PreviewBlock[] | null;
+  preview?: WorkPreview | null;
   contentType?: string | null;
   contentFormat?: string | null;
 }): MediaModalityId[] {
-  const blocks = input.blocks ?? [];
-  if (blocks.length > 0) {
-    const fromBlocks = sortMediaModalities(
-      [...new Set(blocks.map((block) => block.type))].filter(
-        isMediaModalityId,
-      ),
+  const preview = input.preview;
+  if (preview?.content) {
+    const fromPreview = sortMediaModalities(
+      analyzePreviewMediaTypes(preview),
     );
-    if (fromBlocks.length) return fromBlocks;
+    if (fromPreview.length) return fromPreview;
   }
 
-  const bodyLength = previewTextLength(blocks);
-  const hasImage = Boolean(input.coverUrl) || previewHasImages(blocks);
+  const bodyLength = previewTextLength(preview);
+  const hasImage = Boolean(input.coverUrl) || previewHasImages(preview);
 
   return inferMediaModalities({
     contentType: input.contentType,
@@ -139,17 +133,22 @@ export function inferMediaTypes(input: {
   });
 }
 
+function analyzePreviewMediaTypes(preview: WorkPreview): MediaModalityId[] {
+  const types: MediaModalityId[] = [];
+  if (previewTextLength(preview) > 0) types.push("text");
+  if (previewHasImages(preview)) types.push("image");
+  return types.filter(isMediaModalityId);
+}
+
 export function buildPublicationMetadata(input: {
   profile?: WorkProfile | unknown | null;
-  output?: OutputLike | null;
+  preview?: WorkPreview | null;
   coverUrl?: string | null;
-  blocks?: PreviewBlock[] | null;
 }): PublicationMetadata {
-  const output = input.output ?? {};
-  const blocks = input.blocks ?? output.blocks ?? [];
-  const bodyLength = previewTextLength(blocks);
+  const preview = input.preview ?? null;
+  const bodyLength = previewTextLength(preview);
   const hasImage =
-    Boolean(input.coverUrl) || previewHasImages(blocks);
+    Boolean(input.coverUrl) || previewHasImages(preview);
 
   const contentForm = input.profile
     ? resolveContentFormFromProfile(parseProfileJson(input.profile))
@@ -176,7 +175,7 @@ export function buildPublicationMetadata(input: {
     ? sortMediaModalities(contentForm.modalities)
     : inferMediaTypes({
         coverUrl: input.coverUrl,
-        blocks,
+        preview,
         contentType,
         contentFormat,
       });

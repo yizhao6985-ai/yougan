@@ -488,12 +488,14 @@ export const CHAT_COPY = {
   revisionPanel: {
     trigger: (count: number) => `改稿 · ${count}`,
     dialogTitle: "改稿清单",
-    dialogHint:
-      "确认清单后，在对话中发送「开始改稿」「就按清单改吧」等指令即可执行。",
+    dialogHint: "核对每条意见，确认无误后在对话里发起改稿。",
+    dialogFooter:
+      "发送「开始改稿」或「就按清单改吧」，我会按清单统一修改成稿。",
+    anchoredSection: "正文引用",
     blockMarker: (count: number) => `改稿 · ${count}`,
-    locate: "定位",
     remove: "移除",
-    unanchoredSection: "未锚定正文",
+    unanchoredSection: "整体意见",
+    empty: "还没有改稿意见，可在成稿里划词选中后说明要如何修改。",
     openList: "查看改稿清单",
   },
   composerSubmit: {
@@ -661,7 +663,9 @@ export const PUBLISH = {
   uploadCover: "上传列表封面",
   replaceCover: "更换列表封面",
   removeCover: "移除列表封面",
-  coverUploadHint: "点击上方卡片上传封面（4:3，用于发现页列表；详情页将以宽图展示，可选）",
+  coverPickHeading: "从作品配图中选择",
+  coverPickHint: "列表封面仅用于发现页卡片；详情页顶部单独展示，正文中不再重复显示所选封面。",
+  coverUploadHint: "也可点击上方卡片上传自定义封面（4:3，用于发现页列表）",
   coverUploading: "上传中…",
   coverUploadError: "封面上传失败",
   cancel: "取消",

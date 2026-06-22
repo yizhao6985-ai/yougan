@@ -8,6 +8,7 @@ import {
   extractPreviewSelectionsFromContent,
   isHumanAssetContentPart,
   isHumanPreviewSelectionPart,
+  isTurnActivityMessage,
   previewSelectionsSummary,
 } from "@yougan/domain";
 
@@ -83,7 +84,8 @@ export function prepareChatMessagesForLlm(
   const messages = stripInterruptedMessagesForLlm(
     state.messages ?? [],
     state.turn.interruptedMessageIds,
-  );
+  ).filter((message) => !isTurnActivityMessage(message));
+
   const sanitized = sanitizeMessagesForTextChat(messages);
 
   const summary = state.conversationSummary?.trim();

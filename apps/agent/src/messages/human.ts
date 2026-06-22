@@ -28,6 +28,20 @@ export function getLatestHumanMessageText(
   return messageContentToText(content).trim();
 }
 
+/** 最近一条 human 消息的 id（Activity upsert 锚点） */
+export function getLatestHumanMessageId(
+  messages: BaseMessage[] | undefined,
+): string | null {
+  if (!messages?.length) return null;
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const message = messages[i];
+    if (HumanMessage.isInstance(message) && message.id) {
+      return message.id;
+    }
+  }
+  return null;
+}
+
 /** 最近一条 human 消息中的全部附件（图片、音频、视频等）。 */
 export function getLatestHumanMessageAttachments(
   messages: BaseMessage[] | undefined,

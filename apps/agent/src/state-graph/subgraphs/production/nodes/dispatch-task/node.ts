@@ -3,15 +3,17 @@ import {
   getProduction,
   patchPendingProductionFields,
 } from "#agent/state-io/index.js";
+import {
+  productionTaskActivityId,
+  upsertTurnActivity,
+} from "#agent/state-io/turn-activities.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
-import { patchRunProgress } from "#agent/state-io/run-progress.js";
 
 import {
   nextPendingTask,
   resolveDispatchTaskId,
   withActiveTask,
 } from "../../helpers/task-plan.js";
-import { productionDispatchProgress } from "../../helpers/progress-labels.js";
 
 export async function dispatchTaskNode(
   state: AgentStateType,
@@ -22,13 +24,19 @@ export async function dispatchTaskNode(
     return {};
   }
 
-  const task =
-    plan.pending_tasks.find((t) => t.id === taskId) ??
-    nextPendingTask(plan);
-  const progress = productionDispatchProgress(task?.description);
+  const task = plan.pending_tasks.find((t) => t.id === taskId);
+  if (!task) {
+    return {};
+  }
 
   return {
     ...patchPendingProductionFields(state, withActiveTask(plan, taskId)),
-    ...patchRunProgress(progress),
+    ...upsertTurnActivity({
+      id: productionTaskActivityId(taskId),
+      refId: taskId,
+      kind: "production_step",
+      status: "running",
+      subject: task.description,
+    }),
   };
 }

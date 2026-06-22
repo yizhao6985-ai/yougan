@@ -62,14 +62,14 @@ export function profileReferencesSummary(
 
 export function profileDirectionSummary(profile: WorkProfile): string {
   const { direction } = profile;
+  const summary = normalizeProfileTextField(direction.summary);
+  const audience = normalizeProfileTextField(direction.audience);
   const parts = [
-    direction.summary.trim() || "尚未确定创作定位",
+    summary || "尚未确定创作定位",
     direction.format
       ? `形式：${contentFormatLabel(direction.format)}（模板）`
       : null,
-    direction.audience?.trim()
-      ? `受众：${direction.audience.trim()}`
-      : null,
+    audience ? `受众：${audience}` : null,
   ].filter(Boolean);
   return parts.join("；");
 }

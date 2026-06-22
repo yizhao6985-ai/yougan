@@ -1,7 +1,17 @@
 import { useCallback, useEffect, useMemo, useState, type MouseEvent } from "react";
 import { createPortal } from "react-dom";
-import type { PreviewBlock, RevisionIntent, WorkRevision } from "@yougan/domain";
-import { openRevisionItems, previewCoverUrl, previewPlainText } from "@yougan/domain";
+import type {
+  RevisionIntent,
+  ScriptSegment,
+  WorkPreview,
+  WorkRevision,
+} from "@yougan/domain";
+import {
+  openRevisionItems,
+  PREVIEW_BODY_BLOCK_ID,
+  previewImages,
+  previewPlainText,
+} from "@yougan/domain";
 
 import { MarkdownContent } from "@/components/markdown-content";
 import { PreviewImageGallery } from "@/components/preview-image-gallery";
@@ -14,16 +24,12 @@ import { groupRevisionItemsByBlock } from "@/lib/revision-display";
 import { CHAT_COPY } from "@/lib/site-copy";
 import { cn } from "@/lib/utils";
 
-function blocksToImageItems(blocks: PreviewBlock[]): PreviewImageItem[] {
-  return blocks
-    .filter((block): block is Extract<PreviewBlock, { type: "image" }> =>
-      block.type === "image",
-    )
-    .map((block, index) => ({
-      url: block.url,
-      alt: block.alt ?? `配图 ${index + 1}`,
-      prompt: block.prompt ?? null,
-    }));
+function previewScriptSegments(preview: WorkPreview): ScriptSegment[] {
+  const content = preview.content;
+  if (content && "segments" in content && content.segments.length > 0) {
+    return content.segments;
+  }
+  return [];
 }
 
 type SelectionToolbarState = {
@@ -34,14 +40,16 @@ type SelectionToolbarState = {
 };
 
 function PreviewTextBlock({
-  block,
+  body,
+  blockId,
   revisionItems,
   expanded,
   onExpandedChange,
   onRemoveIntent,
   onSelectionReady,
 }: {
-  block: Extract<PreviewBlock, { type: "text" }>;
+  body: string;
+  blockId: string;
   revisionItems: RevisionIntent[];
   expanded: boolean;
   onExpandedChange: (open: boolean) => void;
@@ -64,28 +72,69 @@ function PreviewTextBlock({
 
     const rect = selection.getRangeAt(0).getBoundingClientRect();
     onSelectionReady({
-      blockId: block.id,
+      blockId,
       quote,
       top: rect.bottom + 8,
       left: Math.max(8, rect.left),
     });
   };
 
-  if (!block.markdown.trim()) return null;
+  if (!body.trim()) return null;
 
   return (
     <div
-      data-block-id={block.id}
+      data-block-id={blockId}
       className={cn("select-text scroll-mt-24", revisionItems.length > 0 && "relative")}
       onMouseUp={handleMouseUp}
     >
-      <MarkdownContent content={block.markdown} />
+      <MarkdownContent content={body} />
       <RevisionBlockMarker
         items={revisionItems}
         expanded={expanded}
         onExpandedChange={onExpandedChange}
         onRemoveIntent={onRemoveIntent}
       />
+    </div>
+  );
+}
+
+function PreviewScriptSegments({
+  segments,
+  revisionByBlock,
+  expandedBlockId,
+  onExpandedBlockIdChange,
+  onRemoveRevisionIntent,
+  onSelectionReady,
+}: {
+  segments: ScriptSegment[];
+  revisionByBlock: Map<string, RevisionIntent[]>;
+  expandedBlockId: string | null;
+  onExpandedBlockIdChange: (blockId: string | null) => void;
+  onRemoveRevisionIntent?: (intentId: string) => void;
+  onSelectionReady?: (selection: SelectionToolbarState | null) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      {segments.map((segment) => (
+        <div key={segment.id} className="space-y-1">
+          {segment.label?.trim() ? (
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {segment.label.trim()}
+            </p>
+          ) : null}
+          <PreviewTextBlock
+            body={segment.body}
+            blockId={segment.id}
+            revisionItems={revisionByBlock.get(segment.id) ?? []}
+            expanded={expandedBlockId === segment.id}
+            onExpandedChange={(open) =>
+              onExpandedBlockIdChange(open ? segment.id : null)
+            }
+            onRemoveIntent={onRemoveRevisionIntent}
+            onSelectionReady={onSelectionReady}
+          />
+        </div>
+      ))}
     </div>
   );
 }
@@ -139,66 +188,24 @@ function PreviewSelectionToolbar({
   );
 }
 
-function PreviewAudioBlock({
-  block,
-}: {
-  block: Extract<PreviewBlock, { type: "audio" }>;
-}) {
-  return (
-    <div className="space-y-2 rounded-xl border border-border/70 bg-secondary/20 p-4">
-      {block.title?.trim() ? (
-        <p className="text-sm font-medium text-foreground">{block.title}</p>
-      ) : null}
-      <audio controls className="w-full" src={block.url}>
-        您的浏览器不支持音频播放。
-      </audio>
-      {block.transcript?.trim() ? (
-        <p className="text-sm leading-6 text-muted-foreground">
-          {block.transcript.trim()}
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
-function PreviewVideoBlock({
-  block,
-}: {
-  block: Extract<PreviewBlock, { type: "video" }>;
-}) {
-  return (
-    <div className="space-y-2 rounded-xl border border-border/70 bg-secondary/20 p-4">
-      {block.title?.trim() ? (
-        <p className="text-sm font-medium text-foreground">{block.title}</p>
-      ) : null}
-      <video
-        controls
-        className="w-full rounded-lg"
-        src={block.url}
-        poster={block.posterUrl ?? undefined}
-      >
-        您的浏览器不支持视频播放。
-      </video>
-    </div>
-  );
-}
-
-export function PreviewBlockList({
-  blocks,
+export function PreviewContentList({
+  preview,
   compact = false,
   galleryKey,
   showImagePrompts = false,
   enablePreviewSelection = false,
+  excludeImageIds,
   revision,
   onRemoveRevisionIntent,
   expandedBlockId = null,
   onExpandedBlockIdChange,
 }: {
-  blocks: PreviewBlock[];
+  preview: WorkPreview;
   compact?: boolean;
   galleryKey?: string;
   showImagePrompts?: boolean;
   enablePreviewSelection?: boolean;
+  excludeImageIds?: string[];
   revision?: WorkRevision | null;
   onRemoveRevisionIntent?: (intentId: string) => void;
   expandedBlockId?: string | null;
@@ -217,7 +224,28 @@ export function PreviewBlockList({
     Boolean(item.anchor?.blockId?.trim()),
   );
 
-  const imageItems = useMemo(() => blocksToImageItems(blocks), [blocks]);
+  const scriptSegments = useMemo(
+    () => previewScriptSegments(preview),
+    [preview],
+  );
+  const body = previewPlainText(preview);
+  const excludedIds = useMemo(
+    () => new Set(excludeImageIds?.filter(Boolean) ?? []),
+    [excludeImageIds],
+  );
+  const images = useMemo(
+    () => previewImages(preview).filter((image) => !excludedIds.has(image.id)),
+    [preview, excludedIds],
+  );
+  const imageItems = useMemo(
+    () =>
+      images.map((image, index) => ({
+        url: image.url,
+        alt: image.alt ?? `配图 ${index + 1}`,
+        prompt: image.prompt ?? null,
+      })),
+    [images],
+  );
   const [galleryIndex, setGalleryIndex] = useState<number | null>(null);
 
   const handleAddToChat = () => {
@@ -242,54 +270,45 @@ export function PreviewBlockList({
     [onExpandedBlockIdChange],
   );
 
-  let imageCursor = 0;
-
   return (
     <>
       <div className={cn("space-y-4", hasRevisionMarkers && "space-y-5")}>
-        {blocks.map((block) => {
-          switch (block.type) {
-            case "text":
-              return (
-                <PreviewTextBlock
-                  key={block.id}
-                  block={block}
-                  revisionItems={revisionByBlock.get(block.id) ?? []}
-                  expanded={expandedBlockId === block.id}
-                  onExpandedChange={(open) =>
-                    setExpandedBlockId(open ? block.id : null)
-                  }
-                  onRemoveIntent={onRemoveRevisionIntent}
-                  onSelectionReady={
-                    canSelect ? setPendingSelection : undefined
-                  }
-                />
-              );
-            case "image": {
-              const index = imageCursor;
-              imageCursor += 1;
-              return (
-                <PreviewImageFigure
-                  key={block.id}
-                  image={{
-                    url: block.url,
-                    alt: block.alt,
-                    prompt: showImagePrompts ? block.prompt : null,
-                  }}
-                  index={index}
-                  compact={compact}
-                  onOpenGallery={setGalleryIndex}
-                />
-              );
+        {images.map((image, index) => (
+          <PreviewImageFigure
+            key={image.id}
+            image={{
+              url: image.url,
+              alt: image.alt,
+              prompt: showImagePrompts ? image.prompt : null,
+            }}
+            index={index}
+            compact={compact}
+            onOpenGallery={setGalleryIndex}
+          />
+        ))}
+
+        {scriptSegments.length > 0 ? (
+          <PreviewScriptSegments
+            segments={scriptSegments}
+            revisionByBlock={revisionByBlock}
+            expandedBlockId={expandedBlockId}
+            onExpandedBlockIdChange={setExpandedBlockId}
+            onRemoveRevisionIntent={onRemoveRevisionIntent}
+            onSelectionReady={canSelect ? setPendingSelection : undefined}
+          />
+        ) : (
+          <PreviewTextBlock
+            body={body}
+            blockId={PREVIEW_BODY_BLOCK_ID}
+            revisionItems={revisionByBlock.get(PREVIEW_BODY_BLOCK_ID) ?? []}
+            expanded={expandedBlockId === PREVIEW_BODY_BLOCK_ID}
+            onExpandedChange={(open) =>
+              setExpandedBlockId(open ? PREVIEW_BODY_BLOCK_ID : null)
             }
-            case "audio":
-              return <PreviewAudioBlock key={block.id} block={block} />;
-            case "video":
-              return <PreviewVideoBlock key={block.id} block={block} />;
-            default:
-              return null;
-          }
-        })}
+            onRemoveIntent={onRemoveRevisionIntent}
+            onSelectionReady={canSelect ? setPendingSelection : undefined}
+          />
+        )}
       </div>
 
       {pendingSelection && canSelect ? (
@@ -315,13 +334,9 @@ export function PreviewBlockList({
   );
 }
 
-export function publicationCoverFromBlocks(blocks: PreviewBlock[]): string | null {
-  return previewCoverUrl({ blocks });
-}
-
 export function publicationPlainExcerpt(
-  blocks: PreviewBlock[],
+  preview: WorkPreview | null | undefined,
   maxLength = 280,
 ): string {
-  return previewPlainText({ blocks }, maxLength);
+  return previewPlainText(preview, maxLength);
 }

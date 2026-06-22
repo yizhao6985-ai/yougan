@@ -1,4 +1,4 @@
-/** routeProduction 之后：失败/卡住则总结；全部备妥则整合；否则回到 dispatch */
+/** routeProduction 之后：失败/卡住则 finalize；全部备妥则整合；否则回到 dispatch */
 import { getProduction } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 
@@ -13,7 +13,7 @@ export const from = "routeProduction" as const;
 export type AfterRouteProductionTarget =
   | "dispatchTask"
   | "assemblePreview"
-  | "summarizeProduction";
+  | "finalizeProduction";
 
 export function selectAfterRouteProduction(
   state: AgentStateType,
@@ -21,11 +21,11 @@ export function selectAfterRouteProduction(
   const plan = getProduction(state);
 
   if (productionPipelineStuck(plan)) {
-    return "summarizeProduction";
+    return "finalizeProduction";
   }
 
   if (productionHasTerminalFailure(plan)) {
-    return "summarizeProduction";
+    return "finalizeProduction";
   }
 
   if (allTasksReady(plan)) {
@@ -38,5 +38,5 @@ export function selectAfterRouteProduction(
 export const paths = {
   dispatchTask: "dispatchTask",
   assemblePreview: "assemblePreview",
-  summarizeProduction: "summarizeProduction",
+  finalizeProduction: "finalizeProduction",
 } as const;

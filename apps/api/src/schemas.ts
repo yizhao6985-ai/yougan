@@ -87,6 +87,15 @@ export const PreviewImageSchema = z.object({
   taskId: z.string().nullable().optional(),
 });
 
+export const ScriptSegmentSchema = z
+  .object({
+    id: z.string(),
+    label: z.string().nullable().optional(),
+    body: z.string(),
+    durationSec: z.number().nullable().optional(),
+  })
+  .openapi("ScriptSegment");
+
 export const PreviewContentSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("note"),
@@ -96,42 +105,42 @@ export const PreviewContentSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("article"),
     body: z.string(),
-    cover: PreviewImageSchema.nullable().optional(),
     images: z.array(PreviewImageSchema).optional(),
   }),
   z.object({
     kind: z.literal("blog"),
     body: z.string(),
-    cover: PreviewImageSchema.nullable().optional(),
     images: z.array(PreviewImageSchema).optional(),
   }),
   z.object({
     kind: z.literal("short_post"),
     body: z.string(),
-    cover: PreviewImageSchema.nullable().optional(),
     images: z.array(PreviewImageSchema).optional(),
   }),
   z.object({
     kind: z.literal("novel"),
     body: z.string(),
-    cover: PreviewImageSchema.nullable().optional(),
     images: z.array(PreviewImageSchema).optional(),
   }),
   z.object({
     kind: z.literal("video_script"),
-    body: z.string(),
+    segments: z.array(ScriptSegmentSchema).min(1),
+    body: z.string().optional(),
   }),
   z.object({
     kind: z.literal("short_video"),
-    body: z.string(),
+    segments: z.array(ScriptSegmentSchema).min(1),
+    body: z.string().optional(),
   }),
   z.object({
     kind: z.literal("podcast"),
-    body: z.string(),
+    segments: z.array(ScriptSegmentSchema).min(1),
+    body: z.string().optional(),
   }),
   z.object({
     kind: z.literal("music"),
-    body: z.string(),
+    segments: z.array(ScriptSegmentSchema).min(1),
+    body: z.string().optional(),
   }),
   z.object({
     kind: z.literal("illustration"),
@@ -159,51 +168,13 @@ export const WorkProfileSchema = z
   })
   .openapi("WorkProfile");
 
-export const PreviewBlockSchema = z.discriminatedUnion("type", [
-  z.object({
-    id: z.string(),
-    taskId: z.string().nullable().optional(),
-    type: z.literal("text"),
-    markdown: z.string(),
-  }),
-  z.object({
-    id: z.string(),
-    taskId: z.string().nullable().optional(),
-    type: z.literal("image"),
-    url: z.string().url(),
-    alt: z.string().nullable().optional(),
-    prompt: z.string().nullable().optional(),
-    transient: z.boolean().optional(),
-  }),
-  z.object({
-    id: z.string(),
-    taskId: z.string().nullable().optional(),
-    type: z.literal("audio"),
-    url: z.string().url(),
-    title: z.string().nullable().optional(),
-    durationSec: z.number().nullable().optional(),
-    transcript: z.string().nullable().optional(),
-  }),
-  z.object({
-    id: z.string(),
-    taskId: z.string().nullable().optional(),
-    type: z.literal("video"),
-    url: z.string().url(),
-    posterUrl: z.string().url().nullable().optional(),
-    title: z.string().nullable().optional(),
-    durationSec: z.number().nullable().optional(),
-  }),
-]).openapi("PreviewBlock");
-
 export const WorkPreviewSchema = z
   .object({
     title: z.string().nullable().optional(),
     hook: z.string().nullable().optional(),
     hashtags: z.array(z.string()).optional(),
     notes: z.string().nullable().optional(),
-    content: PreviewContentSchema,
-    /** @deprecated 读库兼容 */
-    blocks: z.array(PreviewBlockSchema).optional(),
+    content: PreviewContentSchema.nullable().optional(),
   })
   .openapi("WorkPreview");
 
@@ -439,9 +410,9 @@ export const PublicationSchema = z
     slug: z.string(),
     title: z.string(),
     excerpt: z.string().nullable(),
-    blocks: z.array(PreviewBlockSchema),
+    preview: WorkPreviewSchema,
     coverUrl: z.string().url().nullable(),
-    coverBlockId: z.string().nullable(),
+    coverImageId: z.string().nullable(),
     compositionLabel: z.string().nullable(),
     consumptionHint: z.string().nullable(),
     blockComposition: z

@@ -19,10 +19,6 @@ import { invokeStructured } from "#agent/llm/invoke/index.js";
 import { patchAiUsageMetering } from "#agent/llm/invoke/metering.js";
 import { LLM_TIMEOUT_MS } from "#agent/llm/invoke/timeout.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
-import {
-  buildRunProgress,
-  withRunProgressHeartbeat,
-} from "#agent/state-io/run-progress.js";
 import { getPreview, getProfile } from "#agent/state-io/index.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
@@ -152,12 +148,7 @@ export async function generateSuggestionsNode(
     return {};
   }
 
-  const progress = buildRunProgress("suggestions", "正在生成建议…");
-  const nextStepSuggestions = await withRunProgressHeartbeat(
-    progress,
-    config,
-    () => resolveNextStepSuggestions(state, config),
-  );
+  const nextStepSuggestions = await resolveNextStepSuggestions(state, config);
   return {
     nextStepSuggestions,
     ...patchAiUsageMetering(state.aiUsage, config),

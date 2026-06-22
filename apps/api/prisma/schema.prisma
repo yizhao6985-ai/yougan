@@ -182,9 +182,9 @@ model Publication {
   slug          String    @unique
   title         String
   excerpt       String?
-  blocks        Json      @default("[]")
+  preview       Json?
   coverUrl          String?
-  coverBlockId      String?
+  coverImageId      String?
   compositionLabel  String?
   consumptionHint   String?
   blockComposition  Json      @default("{}")

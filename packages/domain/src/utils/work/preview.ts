@@ -1,18 +1,23 @@
 import { nanoid } from "nanoid";
 
 import type { ContentFormatId } from "../../models/content-form/formats.js";
+import { isValidContentFormat } from "../content-form-resolve.js";
 import type { ProductionDraftImage } from "../../models/work/production-draft.js";
 import type {
   IllustrationPreviewContent,
   NotePreviewContent,
-  PreviewBlock,
   PreviewContent,
+  PreviewContentPayload,
   PreviewImage,
   ScriptPreviewContent,
+  ScriptSegment,
   TextPreviewContent,
   WorkPreview,
 } from "../../models/work/preview.js";
-import { defaultPreviewContentKind } from "../../models/work/preview.js";
+import {
+  defaultPreviewContentKind,
+  isScriptPreviewKind,
+} from "../../models/work/preview.js";
 import type { ProductionTask } from "../../models/work/production.js";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -40,169 +45,115 @@ function parsePreviewImages(raw: unknown): PreviewImage[] {
     .filter((item): item is PreviewImage => item !== null);
 }
 
-function parseTextPreviewContent(
-  kind: TextPreviewContent["kind"],
-  raw: Record<string, unknown>,
-): TextPreviewContent | null {
+function parseScriptSegment(raw: unknown, index: number): ScriptSegment | null {
+  if (!isRecord(raw)) return null;
   const body = typeof raw.body === "string" ? raw.body.trim() : "";
   if (!body) return null;
   return {
-    kind,
+    id:
+      typeof raw.id === "string" && raw.id.trim()
+        ? raw.id.trim()
+        : `segment:${index}`,
+    label: typeof raw.label === "string" ? raw.label : null,
     body,
-    cover: parsePreviewImage(raw.cover),
-    images: parsePreviewImages(raw.images),
+    durationSec:
+      typeof raw.durationSec === "number" ? raw.durationSec : null,
   };
 }
 
-export function parsePreviewContent(raw: unknown): PreviewContent | null {
-  if (!isRecord(raw)) return null;
-  const kind = typeof raw.kind === "string" ? raw.kind : "";
-  const body = typeof raw.body === "string" ? raw.body.trim() : "";
-
-  switch (kind) {
-    case "note": {
-      if (!body) return null;
-      return {
-        kind: "note",
-        body,
-        images: parsePreviewImages(raw.images),
-      };
-    }
-    case "article":
-    case "blog":
-    case "short_post":
-    case "novel":
-      return parseTextPreviewContent(kind, raw);
-    case "video_script":
-    case "short_video":
-    case "podcast":
-    case "music": {
-      if (!body) return null;
-      return { kind, body };
-    }
-    case "illustration": {
-      const images = parsePreviewImages(raw.images);
-      if (!images.length) return null;
-      return {
-        kind: "illustration",
-        images,
-        caption: typeof raw.caption === "string" ? raw.caption : null,
-      };
-    }
-    default:
-      return null;
+export function normalizeScriptSegments(
+  segments: ScriptSegment[] | undefined,
+  body?: string | null,
+): ScriptSegment[] {
+  if (segments?.length) {
+    return segments
+      .map((segment, index) => ({
+        id: segment.id?.trim() || `segment:${index}`,
+        label: segment.label ?? null,
+        body: segment.body.trim(),
+        durationSec: segment.durationSec ?? null,
+      }))
+      .filter((segment) => segment.body);
   }
+
+  const text = body?.trim();
+  if (!text) return [];
+
+  return text
+    .split(/\n\n+/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part, index) => ({
+      id: `segment:${index}`,
+      body: part,
+    }));
 }
 
-/** @deprecated 读库迁移 */
-export function parsePreviewBlock(raw: unknown): PreviewBlock | null {
-  if (!isRecord(raw)) return null;
-  const type = typeof raw.type === "string" ? raw.type : "";
-  const id = typeof raw.id === "string" && raw.id.trim() ? raw.id : nanoid();
-  const taskId = typeof raw.taskId === "string" ? raw.taskId : null;
-
-  switch (type) {
-    case "text": {
-      const markdown = typeof raw.markdown === "string" ? raw.markdown.trim() : "";
-      if (!markdown) return null;
-      return { id, type: "text", markdown, taskId };
-    }
-    case "image": {
-      const url = typeof raw.url === "string" ? raw.url.trim() : "";
-      if (!url) return null;
-      return {
-        id,
-        type: "image",
-        url,
-        alt: typeof raw.alt === "string" ? raw.alt : null,
-        prompt: typeof raw.prompt === "string" ? raw.prompt : null,
-        transient: raw.transient === true ? true : undefined,
-        taskId,
-      };
-    }
-    case "audio": {
-      const url = typeof raw.url === "string" ? raw.url.trim() : "";
-      if (!url) return null;
-      return {
-        id,
-        type: "audio",
-        url,
-        title: typeof raw.title === "string" ? raw.title : null,
-        durationSec: typeof raw.durationSec === "number" ? raw.durationSec : null,
-        transcript: typeof raw.transcript === "string" ? raw.transcript : null,
-        taskId,
-      };
-    }
-    case "video": {
-      const url = typeof raw.url === "string" ? raw.url.trim() : "";
-      if (!url) return null;
-      return {
-        id,
-        type: "video",
-        url,
-        posterUrl: typeof raw.posterUrl === "string" ? raw.posterUrl : null,
-        title: typeof raw.title === "string" ? raw.title : null,
-        durationSec: typeof raw.durationSec === "number" ? raw.durationSec : null,
-        taskId,
-      };
-    }
-    default:
-      return null;
-  }
+export function scriptPlainText(content: ScriptPreviewContent): string {
+  const cached = content.body?.trim();
+  if (cached) return cached;
+  return content.segments
+    .map((segment) => segment.body.trim())
+    .filter(Boolean)
+    .join("\n\n");
 }
 
-/** @deprecated */
-export function parsePreviewBlocks(raw: unknown): PreviewBlock[] {
-  if (!Array.isArray(raw)) return [];
-  return raw
-    .map((item) => parsePreviewBlock(item))
-    .filter((item): item is PreviewBlock => item !== null);
+function parseContentPayload(raw: Record<string, unknown>): PreviewContentPayload {
+  const segments = Array.isArray(raw.segments)
+    ? raw.segments
+        .map((item, index) => parseScriptSegment(item, index))
+        .filter((item): item is ScriptSegment => item !== null)
+    : undefined;
+
+  const legacyCover = parsePreviewImage(raw.cover);
+  const images = parsePreviewImages(raw.images);
+  const mergedImages =
+    legacyCover &&
+    !images.some(
+      (image) => image.id === legacyCover.id || image.url === legacyCover.url,
+    )
+      ? [legacyCover, ...images]
+      : images;
+
+  return {
+    body: typeof raw.body === "string" ? raw.body : undefined,
+    images: mergedImages,
+    caption: typeof raw.caption === "string" ? raw.caption : null,
+    segments,
+  };
 }
 
-function blocksToTextParts(blocks: PreviewBlock[]): string[] {
-  return blocks.flatMap((block) => {
-    if (block.type === "text") return [block.markdown.trim()];
-    if (block.type === "audio" && block.transcript?.trim()) {
-      return [block.transcript.trim()];
-    }
-    return [];
-  });
-}
-
-function blocksToImages(blocks: PreviewBlock[]): PreviewImage[] {
-  return blocks.flatMap((block) => {
-    if (block.type !== "image" || !block.url.trim()) return [];
-    return [
-      {
-        id: block.id,
-        url: block.url,
-        alt: block.alt ?? null,
-        prompt: block.prompt ?? null,
-        transient: block.transient,
-        taskId: block.taskId ?? null,
-      },
-    ];
-  });
-}
-
-export function migrateBlocksToContent(
-  blocks: PreviewBlock[],
+function resolveContentFormat(
   format: ContentFormatId | null | undefined,
-): PreviewContent | null {
-  if (!blocks.length) return null;
+  raw: Record<string, unknown>,
+): ContentFormatId | null {
+  if (format) return format;
+  const kind = typeof raw.kind === "string" ? raw.kind : "";
+  return isValidContentFormat(kind) ? kind : null;
+}
 
+/** 按 profile.format 组装成稿（kind 由 format 决定） */
+export function buildPreviewContent(
+  format: ContentFormatId | null | undefined,
+  payload: PreviewContentPayload,
+): PreviewContent | null {
   const kind = defaultPreviewContentKind(format);
-  const body = blocksToTextParts(blocks).filter(Boolean).join("\n\n");
-  const images = blocksToImages(blocks);
 
   if (kind === "illustration") {
+    const images = payload.images ?? [];
     if (!images.length) return null;
-    return { kind: "illustration", images, caption: body || null };
+    return {
+      kind: "illustration",
+      images,
+      caption: payload.caption?.trim() || payload.body?.trim() || null,
+    };
   }
 
   if (kind === "note") {
+    const body = payload.body?.trim() ?? "";
+    const images = payload.images ?? [];
     if (!body && !images.length) return null;
-    return { kind: "note", body: body || "", images };
+    return { kind: "note", body, images };
   }
 
   if (
@@ -211,26 +162,34 @@ export function migrateBlocksToContent(
     kind === "short_post" ||
     kind === "novel"
   ) {
+    const body = payload.body?.trim() ?? "";
+    const images = payload.images ?? [];
     if (!body && !images.length) return null;
     return {
       kind,
-      body: body || "",
-      cover: images[0] ?? null,
-      images: images.length > 1 ? images.slice(1) : undefined,
+      body,
+      images: images.length ? images : undefined,
     };
   }
 
-  if (
-    kind === "video_script" ||
-    kind === "short_video" ||
-    kind === "podcast" ||
-    kind === "music"
-  ) {
-    if (!body) return null;
-    return { kind, body };
+  if (isScriptPreviewKind(kind)) {
+    const segments = normalizeScriptSegments(payload.segments, payload.body);
+    if (!segments.length) return null;
+    const body = payload.body?.trim() || scriptPlainText({ kind, segments });
+    return { kind, segments, body };
   }
 
-  return { kind: "note", body: body || "", images };
+  return null;
+}
+
+export function parsePreviewContent(
+  raw: unknown,
+  format?: ContentFormatId | null,
+): PreviewContent | null {
+  if (!isRecord(raw)) return null;
+  const resolvedFormat = resolveContentFormat(format, raw);
+  if (!resolvedFormat) return null;
+  return buildPreviewContent(resolvedFormat, parseContentPayload(raw));
 }
 
 export function parseWorkPreview(
@@ -239,11 +198,7 @@ export function parseWorkPreview(
 ): WorkPreview | null {
   if (!isRecord(raw)) return null;
 
-  let content = parsePreviewContent(raw.content);
-  if (!content && raw.blocks) {
-    const blocks = parsePreviewBlocks(raw.blocks);
-    content = migrateBlocksToContent(blocks, options?.format);
-  }
+  const content = parsePreviewContent(raw.content, options?.format);
   if (!content) return null;
 
   return {
@@ -261,8 +216,13 @@ export function previewHasContent(preview: WorkPreview | null | undefined): bool
   if (!preview?.content) return false;
   const content = preview.content;
   if (content.kind === "illustration") return content.images.length > 0;
-  if ("body" in content && content.body.trim()) return true;
-  if (content.kind === "note" && content.images.length > 0) return true;
+  if (content.kind === "note") {
+    return Boolean(content.body.trim()) || content.images.length > 0;
+  }
+  if ("segments" in content && content.segments.length > 0) {
+    return content.segments.some((segment) => segment.body.trim());
+  }
+  if ("body" in content && content.body?.trim()) return true;
   if ("images" in content && content.images?.length) return true;
   return false;
 }
@@ -274,7 +234,11 @@ export function previewPlainText(
   const content = preview?.content;
   if (!content) return "";
   let text = "";
-  if ("body" in content) text = content.body.trim();
+  if ("segments" in content) {
+    text = scriptPlainText(content);
+  } else if ("body" in content && typeof content.body === "string") {
+    text = content.body.trim();
+  }
   if (content.kind === "illustration" && content.caption?.trim()) {
     text = content.caption.trim();
   }
@@ -301,33 +265,20 @@ export function previewImages(
   if (!content) return [];
   if (content.kind === "illustration") return content.images;
   if (content.kind === "note") return content.images;
-  if ("images" in content) {
-    const list = [...(content.images ?? [])];
-    if ("cover" in content && content.cover) {
-      return [content.cover, ...list];
-    }
-    return list;
-  }
+  if ("images" in content) return content.images ?? [];
   return [];
 }
 
-export function previewCoverUrl(
+export function previewHasImages(
   preview: WorkPreview | null | undefined,
-): string | null {
-  const images = previewImages(preview);
-  return images[0]?.url.trim() || null;
+): boolean {
+  return previewImages(preview).length > 0;
 }
 
-/** @deprecated use previewImages */
-export function previewHasImages(blocks: PreviewBlock[] | null | undefined): boolean {
-  return Boolean(blocks?.some((block) => block.type === "image" && block.url.trim()));
-}
-
-/** @deprecated */
-export function previewTextLength(blocks: PreviewBlock[] | null | undefined): number {
-  return (blocks ?? [])
-    .filter((block): block is Extract<PreviewBlock, { type: "text" }> => block.type === "text")
-    .reduce((sum, block) => sum + block.markdown.trim().length, 0);
+export function previewTextLength(
+  preview: WorkPreview | null | undefined,
+): number {
+  return previewPlainText(preview).length;
 }
 
 function imageFromDraftImage(
@@ -414,67 +365,19 @@ export function contentFromProductionTasks(
     return {
       kind,
       body,
-      cover: images[0] ?? null,
-      images: images.length > 1 ? images.slice(1) : undefined,
+      images: images.length ? images : undefined,
     };
   }
 
-  if (!body) return null;
-  return { kind, body };
-}
+  if (isScriptPreviewKind(kind)) {
+    const segments = normalizeScriptSegments(undefined, body);
+    if (!segments.length) return null;
+    return { kind, segments, body };
+  }
 
-/** @deprecated use contentFromProductionTasks */
-export function blocksFromProductionTasks(tasks: ProductionTask[]): PreviewBlock[] {
-  const { textParts, images } = collectFromTasks(tasks);
-  const blocks: PreviewBlock[] = [];
-  for (const part of textParts) {
-    blocks.push({ id: nanoid(), type: "text", markdown: part, taskId: null });
-  }
-  for (const image of images) {
-    blocks.push({
-      id: image.id,
-      type: "image",
-      url: image.url,
-      alt: image.alt ?? null,
-      prompt: image.prompt ?? null,
-      transient: image.transient,
-      taskId: image.taskId ?? null,
-    });
-  }
-  return blocks;
+  return null;
 }
 
 export function copyablePreviewText(preview: WorkPreview): string {
   return previewPlainText(preview);
 }
-
-/** 供 block-composition 等兼容：从 content 合成虚拟 block 列表 */
-export function previewContentToLegacyBlocks(
-  preview: WorkPreview | null | undefined,
-): PreviewBlock[] {
-  const content = preview?.content;
-  if (!content) return [];
-  const blocks: PreviewBlock[] = [];
-  if ("body" in content && content.body.trim()) {
-    blocks.push({
-      id: "content:body",
-      type: "text",
-      markdown: content.body,
-      taskId: null,
-    });
-  }
-  for (const image of previewImages(preview)) {
-    blocks.push({
-      id: image.id,
-      type: "image",
-      url: image.url,
-      alt: image.alt ?? null,
-      prompt: image.prompt ?? null,
-      transient: image.transient,
-      taskId: image.taskId ?? null,
-    });
-  }
-  return blocks;
-}
-
-export type { PreviewBlock };

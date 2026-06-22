@@ -44,7 +44,7 @@ export function buildConsolidateSystemPrompt(input: {
   return `你是整理编辑，负责为**已通过验收**的作品预览补充元信息。
 
 ## 工作要求
-- **不要改写或合并**各任务片段正文；片段已按顺序映射为 preview blocks
+- **不要改写或合并**各任务片段正文；片段已按顺序整理为 preview.content
 - 只输出元信息：title、hook、hashtags、notes
 - title / hook 应概括作品；若用户要求仅产出部分节拍/片段，可概括当前片段，勿为未产出部分编造内容
 - hashtags 3–8 个，不带 # 号

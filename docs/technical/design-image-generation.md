@@ -72,7 +72,7 @@ executeDesign → renderDesignImage → acceptTask → routeProduction
 - 调 `generateMiniMaxImage`（`responseFormat: "url"`），最多重试 `MAX_RENDER_ATTEMPTS = 2` 次。
 - 成功：写入 `deliverable.images = [{ url, alt, prompt, transient: true }]`，清空 `render_error`。
 - 全部失败：`images` 置空、`render_error` 记最后错误信息（验收/总结时可读）。
-- 全程用 `withRunProgressHeartbeat` + `patchRunProgress` 推送运行进度。
+- 运行进度由主图 `enterProduction` 写入粗步骤 `runProgress`；用户可见的制作步骤通过 `production_step` Activity 写入 messages。
 
 ### 4. MiniMax image-01 客户端
 

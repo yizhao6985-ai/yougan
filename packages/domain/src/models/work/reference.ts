@@ -25,11 +25,11 @@ export const PENDING_REFERENCE_INTENT_SUMMARY =
   "待确认：请说明希望借鉴的风格、结构或语气";
 
 /**
- * 用户希望如何借鉴该参考（LLM 归纳，非用户原话）。
+ * 用户希望如何借鉴该参考（通常为感友原话，由 finalize 写入）。
  */
 export interface ReferenceIntent {
   summary: string;
-  /** 感友本轮说明；summarize 消费后清除，不持久化到 commit 后展示 */
+  /** 感友本轮说明；finalize 消费后清除，不持久化到 commit 后展示 */
   user_context?: string;
 }
 

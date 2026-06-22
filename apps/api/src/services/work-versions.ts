@@ -35,7 +35,7 @@ function snapshotFromWorkColumns(work: {
     }),
     preview: resolvePreviewFromWork({
       preview: work.preview,
-      production: work.production,
+      format: resolveProfileFromWork({ profile: work.profile }).direction.format,
     }),
     production: parseProduction(work.production),
   };

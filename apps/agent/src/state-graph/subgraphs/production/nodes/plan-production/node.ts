@@ -18,12 +18,7 @@ import {
   patchPendingProduction,
 } from "#agent/state-io/index.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
-import {
-  patchRunProgress,
-  withRunProgressHeartbeat,
-} from "#agent/state-io/run-progress.js";
 
-import { productionPlanProgress } from "../../helpers/progress-labels.js";
 import { captureUserRequirements } from "./helpers/capture-user-requirements.js";
 import { newPlanTask } from "./helpers/new-plan-task.js";
 import {
@@ -89,16 +84,12 @@ async function createProductionPlan(
     ...EMPTY_WORK_PRODUCTION,
     summary: userRequirements,
   };
-  const progress = productionPlanProgress();
 
   try {
-    const tasks = await withRunProgressHeartbeat(progress, config, () =>
-      planTasksWithLlm(state, userRequirements, config),
-    );
+    const tasks = await planTasksWithLlm(state, userRequirements, config);
 
     return {
       ...patchPendingProduction(state, applyPlanTasks(fresh, tasks)),
-      ...patchRunProgress(progress),
       ...patchAiUsageMetering(state.aiUsage, config),
     };
   } catch {
@@ -113,7 +104,6 @@ async function createProductionPlan(
         ...fresh,
         pending_tasks,
       }),
-      ...patchRunProgress(progress),
       ...patchAiUsageMetering(state.aiUsage, config),
     };
   }

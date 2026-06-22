@@ -10,10 +10,6 @@ import {
 } from "#agent/llm/invoke/timeout.js";
 import { patchAiUsageMetering } from "#agent/llm/invoke/metering.js";
 import { createProductionChatModel } from "#agent/llm/providers/index.js";
-import {
-  patchRunProgress,
-  withRunProgressHeartbeat,
-} from "#agent/state-io/run-progress.js";
 import type { ProductionDepartment } from "@yougan/domain";
 import {
   getModelTemperature,
@@ -25,10 +21,6 @@ import {
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
 import { markActiveTaskFailed } from "../../../helpers/mark-task-failed.js";
-import {
-  productionExecuteDesignProgress,
-  productionExecuteWritingProgress,
-} from "../../../helpers/progress-labels.js";
 import { resolveProductionMaxTokens } from "../../../helpers/resolve-production-max-tokens.js";
 import {
   currentActiveTask,
@@ -103,29 +95,22 @@ export async function produceNextTask(
   };
 
   let payload: TaskDeliverablePayload;
-  const progress =
-    executor === "executeDesign"
-      ? productionExecuteDesignProgress(task.description)
-      : productionExecuteWritingProgress(task.description);
 
   try {
-    payload = await withRunProgressHeartbeat(progress, config, () =>
-      invokeStructured(
-        llm,
-        TaskDeliverablePayloadSchema,
-        [
-          new SystemMessage(buildProduceTaskSystemPrompt(promptInput)),
-          new HumanMessage(buildProduceTaskHumanPrompt(promptInput)),
-        ],
-        { name: "executor_produce_task", timeoutMs: LLM_TIMEOUT_MS.production },
-        config,
-      ),
+    payload = await invokeStructured(
+      llm,
+      TaskDeliverablePayloadSchema,
+      [
+        new SystemMessage(buildProduceTaskSystemPrompt(promptInput)),
+        new HumanMessage(buildProduceTaskHumanPrompt(promptInput)),
+      ],
+      { name: "executor_produce_task", timeoutMs: LLM_TIMEOUT_MS.production },
+      config,
     );
   } catch (error) {
     if (isLlmTimeoutError(error)) {
       return {
         ...markActiveTaskFailed(state, task.id, LLM_TIMEOUT_FAILURE_MESSAGE),
-        ...patchRunProgress(progress),
         ...patchAiUsageMetering(state.aiUsage, config),
       };
     }
@@ -153,7 +138,6 @@ export async function produceNextTask(
 
   return {
     ...patchPendingProductionFields(state, { ...plan, pending_tasks }),
-    ...patchRunProgress(progress),
     ...patchAiUsageMetering(state.aiUsage, config),
   };
 }

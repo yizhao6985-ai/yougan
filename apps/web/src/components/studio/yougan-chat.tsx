@@ -15,12 +15,11 @@ import {
   chatStreamBlock,
 } from "@/components/studio/chat-stream-block";
 import { ComposerAttachmentsProvider } from "@/components/studio/composer-attachments-context";
-import { ChatToolActivity } from "@/components/studio/chat-tool-activity";
 import { NextStepSuggestionOptions } from "@/components/studio/next-step-suggestion-options";
 import { OpeningNextStepSuggestions } from "@/components/studio/opening-next-step-suggestions";
 import { useTurnNextStepSuggestions } from "@/hooks/use-turn-next-step-suggestions";
-import { ChatLoadingDots } from "@/components/studio/chat-loading-dots";
-import { ChatRunProgress } from "@/components/studio/chat-run-progress";
+import { ChatRunLoading } from "@/components/studio/chat-run-loading";
+import { ChatTurnActivity } from "@/components/studio/chat-turn-activity";
 import { StudioChatComposer } from "@/components/studio/studio-chat-composer";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { useYouganStreamContext } from "@/components/studio/yougan-stream-provider";
@@ -122,20 +121,12 @@ export function YouganChat() {
     return -1;
   }, [items]);
 
-  const hasStreamingAi = items.some(
-    (item) => item.kind === "ai" && item.isStreaming,
-  );
-  const hasStreamingTool = items.some(
-    (item) => item.kind === "tool" && item.isStreaming,
-  );
-  const showShimmer =
+  const showRunLoading =
     stream.isLoading &&
     !productionConfirmInterrupt &&
-    !reviseConfirmInterrupt &&
-    !hasStreamingAi &&
-    !hasStreamingTool &&
-    items.length > 0 &&
-    items[items.length - 1]?.kind === "human";
+    !reviseConfirmInterrupt;
+
+  const runLoadingLabel = runProgress?.label ?? CHAT_COPY.replying;
 
   const handleSend = useCallback(
     async ({
@@ -218,28 +209,7 @@ export function YouganChat() {
       return CHAT_COPY.reviseConfirm.statusHint;
     }
     if (stream.isLoading) {
-      if (runProgress?.label) {
-        return runProgress.detail?.trim()
-          ? `${runProgress.label} · ${runProgress.detail.trim()}`
-          : runProgress.label;
-      }
-      // submit 会清空 activeKind/runProgress，在 planner 写入前进度前先给中性加载文案
-      switch (activeKind) {
-        case "reference":
-          return CHAT_COPY.status.referenceProcessing;
-        case "production":
-          return CHAT_COPY.status.productionExecuting;
-        case "revise":
-          return CHAT_COPY.status.productionExecuting;
-        case "collectRevision":
-          return CHAT_COPY.replying;
-        case "ask":
-          return CHAT_COPY.status.askExploring;
-        case "profile":
-          return CHAT_COPY.status.profileExploring;
-        default:
-          return CHAT_COPY.replying;
-      }
+      return runProgress?.label ?? CHAT_COPY.replying;
     }
     switch (activeKind) {
       case "reference":
@@ -255,18 +225,6 @@ export function YouganChat() {
         return profileSetupStatusHint(profile, profileSetupOptions);
     }
   })();
-
-  const conversationRunProgress =
-    productionConfirmInterrupt || reviseConfirmInterrupt
-      ? null
-      : runProgress?.label
-      ? {
-          label: runProgress.label,
-          detail: runProgress.detail?.trim() || null,
-        }
-      : stream.isLoading
-        ? { label: statusHint, detail: null }
-        : null;
 
   const composerPlaceholder = profileSetupPlaceholder(
     profile,
@@ -353,6 +311,24 @@ export function YouganChat() {
                   );
                 }
 
+                if (item.kind === "activity") {
+                  return (
+                    <Message
+                      key={item.id}
+                      from="assistant"
+                      className="max-w-full"
+                    >
+                      <MessageContent className="w-full max-w-full p-0">
+                        <ChatTurnActivity
+                          label={item.label}
+                          detail={item.detail}
+                          status={item.status}
+                        />
+                      </MessageContent>
+                    </Message>
+                  );
+                }
+
                 if (item.kind === "system") {
                   return (
                     <Message
@@ -371,26 +347,6 @@ export function YouganChat() {
                             {item.content}
                           </p>
                         </ChatStreamBlock>
-                      </MessageContent>
-                    </Message>
-                  );
-                }
-
-                if (item.kind === "tool") {
-                  return (
-                    <Message
-                      key={item.id}
-                      from="assistant"
-                      className="max-w-full"
-                    >
-                      <MessageContent className="w-full max-w-full p-0">
-                        <ChatToolActivity
-                          toolName={item.toolName}
-                          toolInput={item.toolInput}
-                          toolOutput={item.toolOutput}
-                          toolError={item.toolError}
-                          isStreaming={item.isStreaming}
-                        />
                       </MessageContent>
                     </Message>
                   );
@@ -446,21 +402,6 @@ export function YouganChat() {
                   onDecline={() => void resumeReviseConfirm("decline")}
                 />
               ) : null}
-
-              {showShimmer && (
-                <Message from="assistant" className="max-w-full">
-                  <MessageContent className="w-full max-w-full p-0">
-                    {conversationRunProgress ? (
-                      <ChatRunProgress
-                        label={conversationRunProgress.label}
-                        detail={conversationRunProgress.detail}
-                      />
-                    ) : (
-                      <ChatLoadingDots />
-                    )}
-                  </MessageContent>
-                </Message>
-              )}
             </ConversationContent>
             <ConversationScrollButton
               className={scene.conversationScrollButton}
@@ -470,6 +411,9 @@ export function YouganChat() {
 
         <div className={scene.composer} data-onboarding="chat-composer">
           <div className={cn(scene.chatColumn, "pointer-events-auto")}>
+            {showRunLoading ? (
+              <ChatRunLoading label={runLoadingLabel} />
+            ) : null}
             <ComposerAttachmentsProvider>
               <StudioChatComposer
                 input={input}

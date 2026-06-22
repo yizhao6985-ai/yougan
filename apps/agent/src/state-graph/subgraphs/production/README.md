@@ -10,12 +10,12 @@ START → planProduction → dispatchTask
                               ├─ executeDesign → renderDesignImage → acceptTask → routeProduction
                               ├─ ingestProductionAudio → acceptTask → routeProduction
                               │     （用户上传音频 + audio 部门任务）
-                              └─ summarizeProduction（计划为空 / 无法执行）
+                              └─ finalizeProduction（计划为空 / 无法执行）
 routeProduction
   ├─ dispatchTask（尚有未完成任务）
-  ├─ assemblePreview（全部 ready）→ summarizeProduction
-  └─ summarizeProduction（失败 / 卡住；跳过整合）
-summarizeProduction → END
+  ├─ assemblePreview（全部 ready）→ finalizeProduction
+  └─ finalizeProduction（失败 / 卡住；跳过整合）
+finalizeProduction → END
 ```
 
 ## 设计任务流水线
@@ -40,7 +40,7 @@ dispatch 在「已有 prompt、待出图」时仍路由到 executeDesign（no-op
 | `acceptTask` | llm-work | 方向性验收；失败重试或标 `failed` |
 | `routeProduction`                  | plain    | 流转锚点（无状态变更）                                |
 | `assemblePreview`                  | llm-work | 写入 `preview` 后清空 `pending_tasks`（preview 未就绪则保留任务队列） |
-| `summarizeProduction`              | plain    | 对话末位摘要（成稿 / 失败 / 空计划）                  |
+| `finalizeProduction`              | plain    | 对话末位摘要（成稿 / 失败 / 空计划）                  |
 
 ## LLM 调用约定
 
@@ -62,7 +62,6 @@ dispatch 在「已有 prompt、待出图」时仍路由到 executeDesign（no-op
 | `pipeline.ts`                                   | `MAX_ACCEPT_ATTEMPTS`（验收上限）             |
 | `format-guidance.ts` / `word-count-guidance.ts` | 体裁与篇幅提示                                |
 | `resolve-production-max-tokens.ts`              | 制作 LLM 输出 token 上限                      |
-| `progress-labels.ts`                            | 运行进度文案                                  |
 
 ## 任务状态
 

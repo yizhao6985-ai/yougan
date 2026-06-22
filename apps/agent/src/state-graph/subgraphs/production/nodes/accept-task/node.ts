@@ -11,21 +11,19 @@ import {
 import { patchAiUsageMetering } from "#agent/llm/invoke/metering.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
 import {
-  emitRunProgress,
-  patchRunProgress,
-  withRunProgressHeartbeat,
-} from "#agent/state-io/run-progress.js";
-import {
   getProduction,
   getProfile,
   getReferences,
   patchPendingProductionFields,
 } from "#agent/state-io/index.js";
+import {
+  productionTaskActivityId,
+  upsertTurnActivity,
+} from "#agent/state-io/turn-activities.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
 import { acceptAttemptsExhausted, MAX_ACCEPT_ATTEMPTS } from "../../helpers/pipeline.js";
 import { markActiveTaskFailed } from "../../helpers/mark-task-failed.js";
-import { productionAcceptProgress } from "../../helpers/progress-labels.js";
 import {
   defaultTaskGuidance,
   isDesignTask,
@@ -56,21 +54,12 @@ function reconcileExhaustedInProgressTask(
   );
   if (!stuck) return null;
 
-  return patchPendingProductionFields(state, {
-    ...plan,
-    pending_tasks: plan.pending_tasks.map((t) =>
-      t.id === stuck.id
-        ? {
-            ...t,
-            status: "failed" as const,
-            deliverable: null,
-            failure_message:
-              t.failure_message?.trim() ||
-              `任务「${t.description}」验收已达上限仍未通过，已终止。`,
-          }
-        : t,
-    ),
-  });
+  return markActiveTaskFailed(
+    state,
+    stuck.id,
+    stuck.failure_message?.trim() ||
+      `任务「${stuck.description}」验收已达上限仍未通过，已终止。`,
+  );
 }
 
 const AcceptResultSchema = z.object({
@@ -99,10 +88,6 @@ export async function acceptTaskNode(
   if (!task) {
     return {};
   }
-
-  const progress = productionAcceptProgress(task.description);
-  const progressPatch = patchRunProgress(progress);
-  emitRunProgress(progress, config);
 
   const guidance = defaultTaskGuidance(task.description);
   if (task.direction?.trim()) {
@@ -159,19 +144,17 @@ export async function acceptTaskNode(
     };
 
     try {
-      const parsed = await withRunProgressHeartbeat(progress, config, () =>
-        invokeStructured(
-          llm,
-          AcceptResultSchema,
-          [
-            new SystemMessage(
-              buildAcceptTaskSystemPrompt({ profile, references, task }),
-            ),
-            new HumanMessage(buildAcceptTaskHumanPrompt(promptInput)),
-          ],
-          { name: "production_accept_task" },
-          config,
-        ),
+      const parsed = await invokeStructured(
+        llm,
+        AcceptResultSchema,
+        [
+          new SystemMessage(
+            buildAcceptTaskSystemPrompt({ profile, references, task }),
+          ),
+          new HumanMessage(buildAcceptTaskHumanPrompt(promptInput)),
+        ],
+        { name: "production_accept_task" },
+        config,
       );
       passed = parsed.passed;
       feedback = parsed.feedback?.trim() ?? "";
@@ -179,7 +162,6 @@ export async function acceptTaskNode(
       if (isLlmTimeoutError(error)) {
         return {
           ...markActiveTaskFailed(state, task.id, LLM_TIMEOUT_FAILURE_MESSAGE),
-          ...progressPatch,
           ...patchAiUsageMetering(state.aiUsage, config),
         };
       }
@@ -204,7 +186,13 @@ export async function acceptTaskNode(
             : t,
         ),
       }),
-      ...progressPatch,
+      ...upsertTurnActivity({
+        id: productionTaskActivityId(task.id),
+        refId: task.id,
+        kind: "production_step",
+        status: "done",
+        subject: task.description,
+      }),
       ...patchAiUsageMetering(state.aiUsage, config),
     };
   }
@@ -230,12 +218,11 @@ export async function acceptTaskNode(
             : t,
         ),
       }),
-      ...progressPatch,
       ...patchAiUsageMetering(state.aiUsage, config),
     };
   }
 
-  // 仅 LLM 方向性验收未通过时计数；缺交付物 / 仅重试出图不计入
+  // 仅 LLM 方向性验收未通过时计数
   const attemptCount = acceptanceReviewed
     ? (task.accept_retry_count ?? 0) + 1
     : (task.accept_retry_count ?? 0);
@@ -257,7 +244,6 @@ export async function acceptTaskNode(
             : t,
         ),
       }),
-      ...progressPatch,
       ...patchAiUsageMetering(state.aiUsage, config),
     };
   }
@@ -277,7 +263,6 @@ export async function acceptTaskNode(
           : t,
       ),
     }),
-    ...progressPatch,
     ...patchAiUsageMetering(state.aiUsage, config),
   };
 }

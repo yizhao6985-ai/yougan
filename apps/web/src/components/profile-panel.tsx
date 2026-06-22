@@ -206,8 +206,9 @@ function SpecList({
 function DirectionDisplay({ profile }: { profile: WorkProfile }) {
   const { direction } = profile;
   const rows: Array<{ label: string; value: string }> = [];
-  if (direction.summary.trim()) {
-    rows.push({ label: "定位", value: direction.summary.trim() });
+  const summary = normalizeProfileTextField(direction.summary);
+  if (summary) {
+    rows.push({ label: "定位", value: summary });
   }
   if (direction.format) {
     rows.push({
@@ -215,8 +216,9 @@ function DirectionDisplay({ profile }: { profile: WorkProfile }) {
       value: formatLabel(direction.format) ?? direction.format,
     });
   }
-  if (direction.audience?.trim()) {
-    rows.push({ label: "受众", value: direction.audience.trim() });
+  const audience = normalizeProfileTextField(direction.audience);
+  if (audience) {
+    rows.push({ label: "受众", value: audience });
   }
   return rows.length ? <SpecRows rows={rows} /> : null;
 }

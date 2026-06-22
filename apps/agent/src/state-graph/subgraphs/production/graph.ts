@@ -7,6 +7,7 @@ import { END, START, StateGraph } from "@langchain/langgraph";
 
 import { AgentState } from "#agent/state.js";
 
+import { createEnterPhaseNode } from "../../helpers/enter-phase-node.js";
 import * as afterDispatchTask from "./conditional-edges/after-dispatch-task.js";
 import * as afterRouteProduction from "./conditional-edges/after-route-production.js";
 import { acceptTaskNode } from "./nodes/accept-task/node.js";
@@ -18,9 +19,10 @@ import { ingestProductionAudioNode } from "./nodes/ingest-production-audio/node.
 import { planProductionNode } from "./nodes/plan-production/node.js";
 import { renderDesignImageNode } from "./nodes/render-design-image/node.js";
 import { routeProductionNode } from "./nodes/route-production/node.js";
-import { summarizeProductionNode } from "./nodes/summarize-production/node.js";
+import { finalizeProductionNode } from "./nodes/finalize-production/node.js";
 
 export const productionGraph = new StateGraph(AgentState)
+  .addNode("enterProduction", createEnterPhaseNode("production"))
   .addNode("planProduction", planProductionNode)
   .addNode("dispatchTask", dispatchTaskNode)
   .addNode("executeWriting", executeWritingNode)
@@ -30,8 +32,9 @@ export const productionGraph = new StateGraph(AgentState)
   .addNode("acceptTask", acceptTaskNode)
   .addNode("routeProduction", routeProductionNode)
   .addNode("assemblePreview", assemblePreviewNode)
-  .addNode("summarizeProduction", summarizeProductionNode)
-  .addEdge(START, "planProduction")
+  .addNode("finalizeProduction", finalizeProductionNode)
+  .addEdge(START, "enterProduction")
+  .addEdge("enterProduction", "planProduction")
   .addEdge("planProduction", "dispatchTask")
   .addConditionalEdges(
     afterDispatchTask.from,
@@ -48,6 +51,6 @@ export const productionGraph = new StateGraph(AgentState)
     afterRouteProduction.selectAfterRouteProduction,
     afterRouteProduction.paths,
   )
-  .addEdge("assemblePreview", "summarizeProduction")
-  .addEdge("summarizeProduction", END)
+  .addEdge("assemblePreview", "finalizeProduction")
+  .addEdge("finalizeProduction", END)
   .compile();

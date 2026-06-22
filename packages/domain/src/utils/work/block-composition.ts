@@ -1,91 +1,70 @@
+import type { MediaModalityId } from "../../models/content-form/modalities.js";
 import type {
   BlockComposition,
   PublicationCover,
 } from "../../models/work/publication-summary.js";
-import type { PreviewBlock, PreviewBlockType } from "../../models/work/preview.js";
+import type { WorkPreview } from "../../models/work/preview.js";
+import { previewImages, previewPlainText } from "./preview.js";
 import { sortMediaModalities } from "../media-modalities.js";
 
 type PublicationCoverOption = {
-  blockId: string;
+  imageId: string;
   url: string;
   label: string;
 };
 
-const BLOCK_TYPE_ORDER: PreviewBlockType[] = [
+const MEDIA_TYPE_ORDER: MediaModalityId[] = [
   "text",
   "image",
   "audio",
   "video",
 ];
 
-function uniqueBlockTypes(blocks: PreviewBlock[]): PreviewBlockType[] {
-  const seen = new Set<PreviewBlockType>();
-  for (const block of blocks) {
-    seen.add(block.type);
-  }
-  return BLOCK_TYPE_ORDER.filter((type) => seen.has(type));
-}
-
-export function analyzeBlockComposition(
-  blocks: PreviewBlock[] | null | undefined,
-): BlockComposition {
-  const list = blocks ?? [];
-  let textBlockCount = 0;
-  let imageCount = 0;
-  let audioCount = 0;
-  let videoCount = 0;
-  let textLength = 0;
-  let totalAudioDurationSec = 0;
-  let audioDurationKnown = false;
-  let totalVideoDurationSec = 0;
-  let videoDurationKnown = false;
-
-  for (const block of list) {
-    switch (block.type) {
-      case "text":
-        textBlockCount += 1;
-        textLength += block.markdown.trim().length;
-        break;
-      case "image":
-        imageCount += 1;
-        break;
-      case "audio":
-        audioCount += 1;
-        if (typeof block.durationSec === "number" && block.durationSec > 0) {
-          totalAudioDurationSec += block.durationSec;
-          audioDurationKnown = true;
-        }
-        break;
-      case "video":
-        videoCount += 1;
-        if (typeof block.durationSec === "number" && block.durationSec > 0) {
-          totalVideoDurationSec += block.durationSec;
-          videoDurationKnown = true;
-        }
-        break;
-      default:
-        break;
-    }
-  }
-
+function emptyComposition(): BlockComposition {
   return {
-    blockTypes: uniqueBlockTypes(list),
-    textBlockCount,
-    imageCount,
-    audioCount,
-    videoCount,
-    textLength,
-    totalAudioDurationSec: audioDurationKnown ? totalAudioDurationSec : null,
-    totalVideoDurationSec: videoDurationKnown ? totalVideoDurationSec : null,
+    blockTypes: [],
+    textBlockCount: 0,
+    imageCount: 0,
+    audioCount: 0,
+    videoCount: 0,
+    textLength: 0,
+    totalAudioDurationSec: null,
+    totalVideoDurationSec: null,
   };
 }
 
-function formatDuration(seconds: number): string {
-  if (seconds < 60) return `${Math.max(1, Math.round(seconds))} 秒`;
-  const minutes = Math.floor(seconds / 60);
-  const remainder = Math.round(seconds % 60);
-  if (remainder === 0) return `${minutes} 分钟`;
-  return `${minutes} 分 ${remainder} 秒`;
+function uniqueMediaTypes(types: MediaModalityId[]): MediaModalityId[] {
+  const seen = new Set<MediaModalityId>();
+  for (const type of types) {
+    seen.add(type);
+  }
+  return MEDIA_TYPE_ORDER.filter((type) => seen.has(type));
+}
+
+export function analyzeBlockComposition(
+  preview: WorkPreview | null | undefined,
+): BlockComposition {
+  if (!preview?.content) return emptyComposition();
+
+  const textLength = previewPlainText(preview).length;
+  const textBlockCount = textLength > 0 ? 1 : 0;
+  const imageCount = previewImages(preview).length;
+
+  const blockTypes = uniqueMediaTypes([
+    ...(textBlockCount > 0 ? (["text"] as const) : []),
+    ...(imageCount > 0 ? (["image"] as const) : []),
+  ]);
+
+  return {
+    blockTypes,
+    textBlockCount,
+    imageCount,
+    audioCount: 0,
+    videoCount: 0,
+    textLength,
+    totalAudioDurationSec: null,
+    totalVideoDurationSec: null,
+  };
 }
 
 function formatReadingMinutes(textLength: number): string {
@@ -147,80 +126,53 @@ export function buildConsumptionHint(
         : "图片",
     );
   }
-  if (composition.totalVideoDurationSec != null) {
-    hints.push(formatDuration(composition.totalVideoDurationSec));
-  } else if (composition.totalAudioDurationSec != null) {
-    hints.push(formatDuration(composition.totalAudioDurationSec));
-  }
 
   return hints.length ? hints.join(" · ") : null;
 }
 
 export function blockTypesToMediaTypes(
-  blockTypes: PreviewBlockType[],
+  blockTypes: MediaModalityId[],
 ): ReturnType<typeof sortMediaModalities> {
-  return sortMediaModalities(blockTypes as Parameters<typeof sortMediaModalities>[0]);
+  return sortMediaModalities(blockTypes);
 }
 
-function coverLabelForBlock(block: PreviewBlock, index: number): string {
-  switch (block.type) {
-    case "image":
-      return `图片 ${index + 1}`;
-    case "video":
-      return block.title?.trim() || `视频 ${index + 1}`;
-    default:
-      return `片段 ${index + 1}`;
-  }
+function coverLabelForImage(
+  image: { alt?: string | null },
+  index: number,
+): string {
+  return image.alt?.trim() || `图片 ${index + 1}`;
 }
 
 export function listPublicationCoverOptions(
-  blocks: PreviewBlock[] | null | undefined,
+  preview: WorkPreview | null | undefined,
 ): PublicationCoverOption[] {
-  const options: PublicationCoverOption[] = [];
-
-  blocks?.forEach((block, index) => {
-    if (block.type === "image" && block.url.trim()) {
-      options.push({
-        blockId: block.id,
-        url: block.url.trim(),
-        label: coverLabelForBlock(block, index),
-      });
-      return;
-    }
-    if (block.type === "video") {
-      const url = block.posterUrl?.trim() || block.url.trim();
-      if (!url) return;
-      options.push({
-        blockId: block.id,
-        url,
-        label: coverLabelForBlock(block, index),
-      });
-    }
-  });
-
-  return options;
+  return previewImages(preview).map((image, index) => ({
+    imageId: image.id,
+    url: image.url.trim(),
+    label: coverLabelForImage(image, index),
+  }));
 }
 
 export function resolvePublicationCover(
-  blocks: PreviewBlock[] | null | undefined,
-  coverBlockId?: string | null,
+  preview: WorkPreview | null | undefined,
+  coverImageId?: string | null,
 ): PublicationCover | null {
-  const options = listPublicationCoverOptions(blocks);
+  const options = listPublicationCoverOptions(preview);
   if (!options.length) return null;
 
-  const preferred = coverBlockId
-    ? options.find((item) => item.blockId === coverBlockId)
+  const preferred = coverImageId
+    ? options.find((item) => item.imageId === coverImageId)
     : undefined;
 
   const chosen = preferred ?? options[0]!;
   return {
     url: chosen.url,
-    sourceBlockId: chosen.blockId,
+    sourceImageId: chosen.imageId,
   };
 }
 
-export function pickDefaultCoverBlockId(
-  blocks: PreviewBlock[] | null | undefined,
+export function pickDefaultCoverImageId(
+  preview: WorkPreview | null | undefined,
 ): string | null {
-  return resolvePublicationCover(blocks)?.sourceBlockId ?? null;
+  return resolvePublicationCover(preview)?.sourceImageId ?? null;
 }

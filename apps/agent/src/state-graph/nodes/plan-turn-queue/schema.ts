@@ -9,7 +9,7 @@ export const TurnQueueDecisionSchema = z.object({
     .min(1)
     .max(8)
     .describe(
-      "本轮按顺序执行的对话子图队列。production=开写或整稿重写；collectRevision=有成稿时记录改稿意见；revise=明确要求执行改稿；profile=改方案/聊方向；ask=纯答疑；删改参考→reference（有附件时勿输出 reference）",
+      "本轮按顺序执行的对话子图队列。production=开写或整稿重做（按方案重新生成作品，非局部改稿）；collectRevision=有成稿时记录局部改稿意见；revise=在现有成稿上执行改稿；profile=改方案/聊方向；ask=纯答疑；整稿重做时禁止 collectRevision/revise；删改参考→reference（有附件时勿输出 reference）",
     ),
   reason: z.string().describe("一句话说明队列拆分依据"),
 });

@@ -11,10 +11,6 @@ import {
 import { patchAiUsageMetering } from "#agent/llm/invoke/metering.js";
 import { createProductionChatModel } from "#agent/llm/providers/index.js";
 import {
-  patchRunProgress,
-  withRunProgressHeartbeat,
-} from "#agent/state-io/run-progress.js";
-import {
   getModelTemperature,
   getProduction,
   getProfile,
@@ -24,7 +20,6 @@ import {
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
 import { markActiveTaskFailed } from "../../../helpers/mark-task-failed.js";
-import { productionExecuteDesignProgress } from "../../../helpers/progress-labels.js";
 import { resolveProductionMaxTokens } from "../../../helpers/resolve-production-max-tokens.js";
 import {
   currentActiveTask,
@@ -71,33 +66,28 @@ export async function produceDesignTask(
     executorLabel: "设计执行者",
   };
 
-  const progress = productionExecuteDesignProgress(task.description);
-
   let payload: DesignDeliverablePayload;
   try {
-    payload = await withRunProgressHeartbeat(progress, config, () =>
-      invokeStructured(
-        llm,
-        DesignDeliverablePayloadSchema,
-        [
-          new SystemMessage(
-            buildDesignTaskSystemPrompt({
-              profile,
-              references,
-              userRequirements: plan.summary ?? null,
-            }),
-          ),
-          new HumanMessage(buildDesignTaskHumanPrompt(promptInput)),
-        ],
-        { name: "executor_produce_design_task", timeoutMs: LLM_TIMEOUT_MS.production },
-        config,
-      ),
+    payload = await invokeStructured(
+      llm,
+      DesignDeliverablePayloadSchema,
+      [
+        new SystemMessage(
+          buildDesignTaskSystemPrompt({
+            profile,
+            references,
+            userRequirements: plan.summary ?? null,
+          }),
+        ),
+        new HumanMessage(buildDesignTaskHumanPrompt(promptInput)),
+      ],
+      { name: "executor_produce_design_task", timeoutMs: LLM_TIMEOUT_MS.production },
+      config,
     );
   } catch (error) {
     if (isLlmTimeoutError(error)) {
       return {
         ...markActiveTaskFailed(state, task.id, LLM_TIMEOUT_FAILURE_MESSAGE),
-        ...patchRunProgress(progress),
         ...patchAiUsageMetering(state.aiUsage, config),
       };
     }
@@ -129,7 +119,6 @@ export async function produceDesignTask(
 
   return {
     ...patchPendingProductionFields(state, { ...plan, pending_tasks }),
-    ...patchRunProgress(progress),
     ...patchAiUsageMetering(state.aiUsage, config),
   };
 }

@@ -3,14 +3,17 @@ import { toolsCondition } from "@langchain/langgraph/prebuilt";
 
 import { AgentState } from "#agent/state.js";
 
+import { createEnterPhaseNode } from "../../helpers/enter-phase-node.js";
 import * as afterAnswerQuestion from "./conditional-edges/after-answer-question.js";
 import { answerQuestionNode } from "./nodes/answer-question/node.js";
 import { runAskToolsNode } from "./nodes/run-ask-tools/node.js";
 
 export const askGraph = new StateGraph(AgentState)
+  .addNode("enterAsk", createEnterPhaseNode("ask"))
   .addNode("answerQuestion", answerQuestionNode)
   .addNode("runAskTools", runAskToolsNode)
-  .addEdge(START, "answerQuestion")
+  .addEdge(START, "enterAsk")
+  .addEdge("enterAsk", "answerQuestion")
   .addConditionalEdges(
     afterAnswerQuestion.from,
     toolsCondition,

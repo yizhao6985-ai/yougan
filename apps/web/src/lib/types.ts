@@ -22,7 +22,6 @@ export type {
   HumanMessageContentPart,
   WorkReference,
   WorkPreview,
-  PreviewBlock,
   WorkProduction,
   WorkProfile,
   WorkRevision,

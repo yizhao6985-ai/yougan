@@ -1,7 +1,13 @@
 import { HumanMessage } from "@langchain/core/messages";
 import type { RunnableConfig } from "@langchain/core/runnables";
 
-import { type TurnQueueKind } from "@yougan/domain";
+import {
+  filterProductionUnlessExplicitIntent,
+  isProfileSetupReady,
+  previewHasContent,
+  type TurnQueueKind,
+  type TurnQueuePlannerKind,
+} from "@yougan/domain";
 
 import {
   resetRunMeteringAccumulator,
@@ -19,10 +25,7 @@ import {
   getLatestHumanMessageAttachments,
   getLatestHumanMessageText,
 } from "#agent/messages/human.js";
-import {
-  buildRunProgress,
-  withRunProgressHeartbeat,
-} from "#agent/state-io/run-progress.js";
+import { getPreview, getProfile } from "#agent/state-io/index.js";
 import {
   initPendingTurn,
   mergeTurnPatch,
@@ -44,6 +47,17 @@ const OPENING_QUEUE: TurnQueueKind[] = [];
  * - 有附件且纯 ask：不前置 reference（纯讨论不入库）
  * - 有附件且非纯 ask：确定性前置 reference，供 preprocessReferences 预处理新附件
  */
+function withProductionIntentGuard(
+  queue: TurnQueuePlannerKind[],
+  state: AgentStateType,
+  userMessage: string,
+): TurnQueuePlannerKind[] {
+  return filterProductionUnlessExplicitIntent(queue, userMessage, {
+    hasPreview: previewHasContent(getPreview(state)),
+    profileReady: isProfileSetupReady(getProfile(state)),
+  });
+}
+
 function withReferenceQueue(
   queue: TurnQueueKind[],
   hasAttachments: boolean,
@@ -81,7 +95,10 @@ async function resolveTurnQueue(
     userMessage,
   );
   if (previewSelectionQueue) {
-    return withReferenceQueue(previewSelectionQueue, hasAttachments);
+    return withReferenceQueue(
+      withProductionIntentGuard(previewSelectionQueue, state, userMessage),
+      hasAttachments,
+    );
   }
 
   if (!userMessage && !hasAttachments) {
@@ -92,21 +109,17 @@ async function resolveTurnQueue(
   const prompt = buildTurnQueuePrompt(state, userMessage);
 
   try {
-    const parsed = (await withRunProgressHeartbeat(
-      buildRunProgress("turn_planning", "正在理解你的意图…"),
+    const parsed = (await invokeStructured(
+      llm,
+      TurnQueueDecisionSchema,
+      [new HumanMessage(prompt)],
+      { name: "turn_queue_decision" },
       config,
-      async () =>
-        invokeStructured(
-          llm,
-          TurnQueueDecisionSchema,
-          [new HumanMessage(prompt)],
-          { name: "turn_queue_decision" },
-          config,
-        ) as Promise<TurnQueueDecision>,
     )) as TurnQueueDecision;
     const queue = sortTurnQueue(parsed.kinds);
+    const base: TurnQueuePlannerKind[] = queue.length ? queue : ["profile"];
     return withReferenceQueue(
-      queue.length ? queue : ["profile"],
+      withProductionIntentGuard(base, state, userMessage),
       hasAttachments,
     );
   } catch {

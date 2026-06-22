@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import {
   CreativeContextEmpty,
@@ -6,9 +6,9 @@ import {
 } from "@/components/studio/creative-context/shared";
 import { PublishPlatformActions } from "@/components/studio/publish-platform-actions";
 import { RevisionListControls } from "@/components/studio/revision-list-dialog";
-import { PreviewBlockList } from "@/components/preview-block-list";
-import { groupRevisionItemsByBlock, scrollToPreviewBlock } from "@/lib/revision-display";
-import { previewContentToLegacyBlocks, previewHasContent } from "@yougan/domain";
+import { PreviewContentList } from "@/components/preview-content-list";
+import { groupRevisionItemsByBlock } from "@/lib/revision-display";
+import { previewHasContent } from "@yougan/domain";
 import { downloadPreviewAsZip } from "@/lib/download-preview-zip";
 import { PREVIEW_PANEL } from "@/lib/site-copy";
 import type { WorkPreview, WorkRevision } from "@/lib/types";
@@ -34,11 +34,6 @@ export function ContentPreview({
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [expandedBlockId, setExpandedBlockId] = useState<string | null>(null);
 
-  const previewBlocks = useMemo(
-    () => (preview ? previewContentToLegacyBlocks(preview) : []),
-    [preview],
-  );
-
   const { items: revisionItems, unanchored } = useMemo(
     () => groupRevisionItemsByBlock(revision),
     [revision],
@@ -48,11 +43,6 @@ export function ContentPreview({
       revisionItems.filter((item) => Boolean(item.anchor?.blockId?.trim())),
     [revisionItems],
   );
-
-  const handleLocateBlock = useCallback((blockId: string) => {
-    setExpandedBlockId(blockId);
-    scrollToPreviewBlock(blockId);
-  }, []);
 
   const handleDownload = () => {
     if (!preview || downloading) return;
@@ -70,7 +60,6 @@ export function ContentPreview({
         anchoredItems={anchoredItems}
         unanchored={unanchored}
         onRemoveIntent={onRemoveRevisionIntent}
-        onLocateBlock={handleLocateBlock}
       />
     ) : null;
 
@@ -94,8 +83,8 @@ export function ContentPreview({
               </h4>
             ) : null}
 
-            <PreviewBlockList
-              blocks={previewBlocks}
+            <PreviewContentList
+              preview={preview}
               compact={compact}
               galleryKey={workId}
               showImagePrompts

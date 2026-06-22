@@ -2,10 +2,7 @@ import { Link } from "react-router-dom";
 
 import { AuthorAvatar } from "@/components/content/author-avatar";
 import { MarkdownContent } from "@/components/markdown-content";
-import {
-  publicationCoverFromBlocks,
-  publicationPlainExcerpt,
-} from "@/components/preview-block-list";
+import { publicationPlainExcerpt } from "@/components/preview-content-list";
 import { authorDisplayName } from "@/lib/publication-utils";
 import { topicCategoryLabel } from "@yougan/domain";
 import { formatPublishedAt } from "@/lib/platform-labels";
@@ -69,8 +66,7 @@ export function PublicationFeedPost({
   compact?: boolean;
   hideAuthor?: boolean;
 }) {
-  const cover =
-    publication.coverUrl || publicationCoverFromBlocks(publication.blocks);
+  const cover = publication.coverUrl?.trim() || null;
   const timeLabel = publication.publishedAt
     ? formatPublishedAt(publication.publishedAt)
     : null;
@@ -147,7 +143,7 @@ export function PublicationFeedPost({
             )}
           >
             <MarkdownContent
-              content={publicationPlainExcerpt(publication.blocks, 280)}
+              content={publicationPlainExcerpt(publication.preview, 280)}
             />
           </div>
         )}

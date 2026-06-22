@@ -37,33 +37,45 @@ export function buildTurnQueuePrompt(
 ## 可选 kind
 - **reference**：删/改参考素材本身（有附件时由系统前置，勿输出）
 - **profile**：改作品方案（定位/选题/体裁/受众/节拍/边界/记入方案）
-- **production**：开写或整稿重写（无 preview 时明确开写；有 preview 时「重写/另写一版/重新开写」）
-- **collectRevision**：有成稿时，针对成稿的修改意见（写入改稿清单，**不立刻改稿**）
-- **revise**：明确要求**现在执行改稿**（「开始改稿 / 按清单改 / 就这些改吧 / 可以改了」）
+- **production**：开写或**整稿重做**（无 preview 时明确开写；有 preview 时「重写/另写一版/按方案重新生成/重新制作」——走制作流水线，**不是**在现有成稿上改）
+- **collectRevision**：有成稿时，**局部**修改意见（改标题/某段/语气等，写入改稿清单，**不立刻改稿**）
+- **revise**：明确要求**现在执行改稿**（「开始改稿 / 按清单改 / 就这些改吧 / 可以改了」——在现有成稿上改，**不重做**）
 - **ask**：纯答疑（不改方案、不改成稿、不开写）
 
 **suggestions** 在 commitTurn 后由系统独立生成，**勿入队**。
 
-## kind 分工速查（有成稿时最易混淆）
+## 改稿 vs 整稿重做（有成稿时**最易混淆**，须严格区分）
+- **改稿**（collectRevision / revise）：保留现有成稿，只改其中一部分；用户会点名标题、段落、语气、长度等**局部**问题，或要求「按清单改」
+- **整稿重做**（production）：放弃/覆盖当前成稿，按**作品方案**重新走制作流水线；用户会说「重写/另写/重新生成作品/按方案重新制作/不要这篇了重新写」等**整篇级**动作
+- 「重新生成」若指向**整篇作品/成稿**或**按方案**→ **production**；若仅指某段/标题/配图等局部 → **collectRevision**
+- production 与 collectRevision / revise **互斥**：整稿重做时**禁止**输出 collectRevision 或 revise
+
+## kind 分工速查
 | 用户说法 | kind | 说明 |
-| 「标题太硬 / 第二段改软一点 / 加个小标题」 | collectRevision | 只记清单 |
-| 「开始改稿 / 按刚才说的改 / 就这些改吧」 | revise | 执行改稿 |
-| 「重写一版 / 另写一篇 / 不要这篇了重新写」 | production | 整稿重做 |
+| 「标题太硬 / 第二段改软一点 / 加个小标题」 | collectRevision | 局部改稿，只记清单 |
+| 「开始改稿 / 按刚才说的改 / 就这些改吧」 | revise | 在现有成稿上执行改稿 |
+| 「重写一版 / 另写一篇 / 使用方案重新生成作品 / 按方案重新制作」 | production | 整稿重做，非改稿 |
 | 「定位改成职场新人 / 体裁换短视频脚本」 | profile | 改方案，非改成稿 |
 | 「小红书标题一般多长？」 | ask | 纯答疑 |
 
 ## 有成稿（has_preview=true）
 - has_preview_selection=true 且用户补充修改说明 → **collectRevision**
-- 针对成稿的润色/改标题/改段落/语气/长度等 → **collectRevision**（除非明确改方案）
+- 针对成稿的**局部**润色/改标题/改段落/语气/长度等 → **collectRevision**（除非明确改方案或整稿重做）
 - 明确改方案字段 → **profile**
-- 要求执行改稿 → **revise**；仅补充意见、未要求执行 → **collectRevision**
-- 整稿重写 → **production**
+- 要求执行改稿（按清单/就这些改）→ **revise**；仅补充局部意见、未要求执行 → **collectRevision**
+- 整稿重做（重写/另写/重新生成作品/按方案重新制作/不要这篇）→ **production**（**禁止** collectRevision / revise）
 - 纯咨询 → ask
 
 ## 无 preview
-- 聊方案/补方向/记要求 → profile
-- 明确开写/出稿/可以写了 → production
+- 聊方案/补方向/记要求/确认细节 → profile
+- **仅**当用户明确说开写/出稿/开始制作/开始创作/可以写了 → production
 - 纯咨询 → ask
+
+## 禁止误触 production（重要）
+- 「好的 / 继续 / 可以 / 没问题 / 就这样 / 方案可以了 / 再补充…」→ **仅 profile**，禁止 production
+- 方案已就绪、或上下文显示方案完整 → **不等于**用户要求开写；未听到明确开写口令时 **禁止** output production
+- 讨论选题、体裁、受众、风格、需求、边界 → profile
+- 系统另有「开始创作」确认环节；planner 不得替用户决定开写
 
 ## 附件与 reference
 - has_attachments=true：**勿输出 reference**（系统自动前置 preprocess）

@@ -1,8 +1,7 @@
 import JSZip from "jszip";
 import {
-  previewContentToLegacyBlocks,
-  previewPlainText,
   previewImages,
+  previewPlainText,
   type WorkPreview,
 } from "@yougan/domain";
 
@@ -78,37 +77,15 @@ async function fetchAsset(
 function collectMediaAssets(preview: WorkPreview): MediaAsset[] {
   const assets: MediaAsset[] = [];
   let imageIndex = 0;
-  let audioIndex = 0;
-  let videoIndex = 0;
 
-  for (const block of previewContentToLegacyBlocks(preview)) {
-    if (block.type === "image" && block.url.trim()) {
-      imageIndex += 1;
-      assets.push({
-        folder: "images",
-        index: imageIndex,
-        url: block.url.trim(),
-      });
-      continue;
-    }
-    if (block.type === "audio" && block.url.trim()) {
-      audioIndex += 1;
-      assets.push({
-        folder: "audio",
-        index: audioIndex,
-        url: block.url.trim(),
-      });
-      continue;
-    }
-    if (block.type === "video" && block.url.trim()) {
-      videoIndex += 1;
-      assets.push({
-        folder: "videos",
-        index: videoIndex,
-        url: block.url.trim(),
-        posterUrl: block.posterUrl,
-      });
-    }
+  for (const image of previewImages(preview)) {
+    if (!image.url.trim()) continue;
+    imageIndex += 1;
+    assets.push({
+      folder: "images",
+      index: imageIndex,
+      url: image.url.trim(),
+    });
   }
 
   return assets;
