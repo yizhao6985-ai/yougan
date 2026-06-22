@@ -3,7 +3,7 @@ export * from "./ai-usage.js";
 export * from "./state.js";
 export * from "./turn.js";
 export * from "./staging.js";
-export * from "./suggestions.js";
+export * from "./turn-briefing.js";
 export * from "./run-progress.js";
 export * from "./turn-activity.js";
 export * from "./interrupts.js";

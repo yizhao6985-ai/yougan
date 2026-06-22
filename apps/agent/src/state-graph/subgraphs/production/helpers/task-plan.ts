@@ -126,7 +126,7 @@ export function resolveDispatchTaskId(
 
 /**
  * dispatchTask 无任务可派且计划未收尾时，管线已卡住（典型：dispatch ↔ route 空转）。
- * 由 afterRouteProduction 转入 finalizeProduction 结束子图。
+ * 由 afterRouteProduction 转入 __end__ 结束子图；回合末评价由主图 reflectTurn 输出。
  */
 export function productionPipelineStuck(production: WorkProduction): boolean {
   if (

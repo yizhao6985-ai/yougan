@@ -9,15 +9,16 @@ import {
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
 import { Message, MessageContent } from "@/components/ai-elements/message";
+import { MessageResponse } from "@/components/ai-elements/message";
 import { AIResponse } from "@/components/studio/ai-response";
 import {
   ChatStreamBlock,
   chatStreamBlock,
 } from "@/components/studio/chat-stream-block";
 import { ComposerAttachmentsProvider } from "@/components/studio/composer-attachments-context";
-import { NextStepSuggestionOptions } from "@/components/studio/next-step-suggestion-options";
-import { OpeningNextStepSuggestions } from "@/components/studio/opening-next-step-suggestions";
-import { useTurnNextStepSuggestions } from "@/hooks/use-turn-next-step-suggestions";
+import { TurnDirectionOptions } from "@/components/studio/turn-direction-options";
+import { OpeningTurnDirections } from "@/components/studio/opening-turn-directions";
+import { useTurnDirections } from "@/hooks/use-turn-directions";
 import { ChatRunLoading } from "@/components/studio/chat-run-loading";
 import { ChatTurnActivity } from "@/components/studio/chat-turn-activity";
 import { StudioChatComposer } from "@/components/studio/studio-chat-composer";
@@ -28,7 +29,7 @@ import { WorksCreateMenu } from "@/components/studio/works-create-menu";
 import { useStudioOnboardingOptional } from "@/components/studio/onboarding/studio-onboarding-provider";
 import { HumanMessageAttachments } from "@/components/studio/human-message-attachments";
 import { HumanMessagePreviewSelections } from "@/components/studio/human-message-preview-selections";
-import { buildRenderItems, mergeChatMessages } from "@/lib/message-utils";
+import { buildRenderItems, findTurnDirectionsAnchorIndex, mergeChatMessages } from "@/lib/message-utils";
 import { scene } from "@/lib/scene-styles";
 import { cn } from "@/lib/utils";
 import { CHAT_COPY, STUDIO } from "@/lib/site-copy";
@@ -94,37 +95,40 @@ export function YouganChat() {
     [chatMessages, stream.isLoading, interruptedMessageIds],
   );
 
-  const { activeSuggestions } = useTurnNextStepSuggestions({
+  const { activeDirections } = useTurnDirections({
     values: streamValues,
-    isLoading: stream.isLoading,
   });
 
-  const openingSuggestions = useMemo(
+  const openingDirections = useMemo(
     () =>
       items.length === 0
-        ? (streamValues?.nextStepSuggestions ?? null)
+        ? (streamValues?.turnDirections ?? null)
         : null,
-    [items.length, streamValues?.nextStepSuggestions],
+    [items.length, streamValues?.turnDirections],
   );
 
-  const openingSuggestionItems = openingSuggestions?.suggestions ?? [];
-  const hasOpeningSuggestions = openingSuggestionItems.length > 0;
-  const openingSuggestionsKey = useMemo(
-    () => openingSuggestionItems.map((s) => s.id).join("\u0000"),
-    [openingSuggestionItems],
+  const openingDirectionItems = openingDirections?.directions ?? [];
+  const hasOpeningDirections = openingDirectionItems.length > 0;
+  const openingDirectionsKey = useMemo(
+    () => openingDirectionItems.map((d) => d.id).join("\u0000"),
+    [openingDirectionItems],
   );
 
-  const lastAiIndex = useMemo(() => {
-    for (let i = items.length - 1; i >= 0; i--) {
-      if (items[i]?.kind === "ai") return i;
-    }
-    return -1;
-  }, [items]);
+  const directionsAnchorIndex = useMemo(
+    () => findTurnDirectionsAnchorIndex(items),
+    [items],
+  );
+
+  const showDirectionsAtEnd =
+    directionsAnchorIndex === -1 &&
+    Boolean(activeDirections?.directions.length) &&
+    !stream.isLoading;
 
   const showRunLoading =
     stream.isLoading &&
     !productionConfirmInterrupt &&
-    !reviseConfirmInterrupt;
+    !reviseConfirmInterrupt &&
+    !items.some((item) => item.kind === "briefing" && item.isStreaming);
 
   const runLoadingLabel = runProgress?.label ?? CHAT_COPY.replying;
 
@@ -201,6 +205,18 @@ export function YouganChat() {
     null;
   const profileSetupOptions = { preview, production };
 
+  const turnDirectionsBlock =
+    activeDirections && activeDirections.directions.length > 0 ? (
+      <TurnDirectionOptions
+        directions={activeDirections.directions}
+        hint={activeDirections.hint}
+        profile={profile}
+        disabled={!canSend}
+        onSelect={(value) => void sendMessage(value)}
+        className="mt-3"
+      />
+    ) : null;
+
   const statusHint = (() => {
     if (productionConfirmInterrupt) {
       return CHAT_COPY.productionConfirm.statusHint;
@@ -261,11 +277,11 @@ export function YouganChat() {
                         {CHAT_COPY.openingSuggestionsLoading}
                       </Shimmer>
                     </div>
-                  ) : hasOpeningSuggestions ? (
-                    <OpeningNextStepSuggestions
-                      key={`${activeConversation?.id ?? ""}-${openingSuggestionsKey}`}
+                  ) : hasOpeningDirections ? (
+                    <OpeningTurnDirections
+                      key={`${activeConversation?.id ?? ""}-${openingDirectionsKey}`}
                       animate
-                      suggestions={openingSuggestionItems}
+                      directions={openingDirectionItems}
                       disabled={!canSend}
                       onSelect={(value) => void sendMessage(value)}
                     />
@@ -312,6 +328,7 @@ export function YouganChat() {
                 }
 
                 if (item.kind === "activity") {
+                  const showTurnDirections = index === directionsAnchorIndex;
                   return (
                     <Message
                       key={item.id}
@@ -324,6 +341,54 @@ export function YouganChat() {
                           detail={item.detail}
                           status={item.status}
                         />
+                        {showTurnDirections ? turnDirectionsBlock : null}
+                      </MessageContent>
+                    </Message>
+                  );
+                }
+
+                if (item.kind === "briefing") {
+                  const trimmedExcerpt = item.excerpt?.trim();
+                  const showTurnDirections = index === directionsAnchorIndex;
+                  const hasBody = Boolean(item.body.trim());
+                  const showExcerpt =
+                    trimmedExcerpt &&
+                    trimmedExcerpt !== "null" &&
+                    trimmedExcerpt !== "undefined";
+
+                  return (
+                    <Message
+                      key={item.id}
+                      from="assistant"
+                      className="max-w-full"
+                    >
+                      <MessageContent className="w-full max-w-full p-0">
+                        {hasBody || showExcerpt ? (
+                          <ChatStreamBlock>
+                            {hasBody ? (
+                              <MessageResponse
+                                className={cn(
+                                  chatStreamBlock.body,
+                                  "whitespace-pre-wrap",
+                                )}
+                                isAnimating={item.isStreaming}
+                              >
+                                {item.body}
+                              </MessageResponse>
+                            ) : null}
+                            {showExcerpt ? (
+                              <p
+                                className={cn(
+                                  chatStreamBlock.caption,
+                                  hasBody ? "mt-2 whitespace-pre-wrap" : "whitespace-pre-wrap",
+                                )}
+                              >
+                                {trimmedExcerpt}
+                              </p>
+                            ) : null}
+                          </ChatStreamBlock>
+                        ) : null}
+                        {showTurnDirections ? turnDirectionsBlock : null}
                       </MessageContent>
                     </Message>
                   );
@@ -352,9 +417,7 @@ export function YouganChat() {
                   );
                 }
 
-                const isLastAi = index === lastAiIndex;
-                const showTurnSuggestions =
-                  isLastAi && Boolean(activeSuggestions?.suggestions.length);
+                const showTurnDirections = index === directionsAnchorIndex;
                 return (
                   <Message
                     key={item.id}
@@ -369,21 +432,24 @@ export function YouganChat() {
                       {item.isInterrupted ? (
                         <p className="mt-2 text-xs text-muted-foreground">
                           {CHAT_COPY.interrupted}
+                          {!activeDirections?.directions.length
+                            ? ` ${CHAT_COPY.interruptedHint}`
+                            : null}
                         </p>
                       ) : null}
-                      {showTurnSuggestions && activeSuggestions && (
-                        <NextStepSuggestionOptions
-                          suggestions={activeSuggestions.suggestions}
-                          hint={activeSuggestions.hint}
-                          profile={profile}
-                          disabled={!canSend}
-                          onSelect={(value) => void sendMessage(value)}
-                        />
-                      )}
+                      {showTurnDirections ? turnDirectionsBlock : null}
                     </MessageContent>
                   </Message>
                 );
               })}
+
+              {showDirectionsAtEnd ? (
+                <Message from="assistant" className="max-w-full">
+                  <MessageContent className="w-full max-w-full p-0">
+                    {turnDirectionsBlock}
+                  </MessageContent>
+                </Message>
+              ) : null}
 
               {productionConfirmInterrupt ? (
                 <ProductionConfirmPrompt

@@ -7,7 +7,7 @@ export type RunProgressPhase =
   | "production"
   | "revise"
   | "ask"
-  | "suggestions"
+  | "turn_briefing"
   | "messages_summary"
   | "production_confirm"
   | "revise_confirm";

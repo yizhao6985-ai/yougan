@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
 
+import { buildRevisionWithoutIntent } from "@/components/studio/revision-panel";
 import {
   useConversationsStore,
   type ConversationsStore,
@@ -23,9 +24,9 @@ import {
   type YouganStream,
 } from "@/hooks/use-yougan-stream";
 import {
-  useConversationSuggestionsCache,
-  type ConversationSuggestionsCache,
-} from "@/hooks/use-conversation-suggestions-cache";
+  useConversationDirectionsCache,
+  type ConversationDirectionsCache,
+} from "@/hooks/use-conversation-directions-cache";
 import { useWorksStore, type WorksStore } from "@/hooks/use-works-store";
 import type { Work, YouganValues } from "@/lib/types";
 
@@ -42,12 +43,12 @@ const StudioContext = createContext<StudioContextValue | null>(null);
 function ConversationStreamKeyed({
   worksStore,
   conversationsStore,
-  suggestionsCache,
+  directionsCache,
   children,
 }: {
   worksStore: WorksStore;
   conversationsStore: ConversationsStore;
-  suggestionsCache: ConversationSuggestionsCache;
+  directionsCache: ConversationDirectionsCache;
   children: ReactNode;
 }) {
   const queryClient = useQueryClient();
@@ -107,7 +108,7 @@ function ConversationStreamKeyed({
     work: worksStore.activeWork,
     conversation: conversationsStore.activeConversation,
     modelTemperature: temperatureControl.temperature,
-    suggestionsCache,
+    directionsCache,
     onThreadId: conversationsStore.setConversationThreadId,
     onRunComplete: handleRunComplete,
   });
@@ -122,6 +123,33 @@ function ConversationStreamKeyed({
       }
     },
     [queryClient, streamState.syncMaterializedProfileToStream],
+  );
+
+  const syncRevisionAfterRemove = useCallback(
+    (workId: string, intentId: string) => {
+      const streamValues = streamState.stream.values as YouganValues | undefined;
+      const work =
+        queryClient
+          .getQueryData<Work[]>(queryKeys.works.list)
+          ?.find((item) => item.id === workId) ?? worksStore.activeWork;
+      const staging = streamValues?.turn?.staging;
+      const hasPendingStaging = Boolean(
+        staging && streamValues?.turn?.committed !== true,
+      );
+      const effectiveRevision =
+        (hasPendingStaging ? staging?.revision : undefined) ??
+        streamValues?.revision ??
+        work?.revision;
+      const nextRevision = buildRevisionWithoutIntent(effectiveRevision, intentId);
+      worksStore.patchRevision(workId, nextRevision);
+      streamState.syncMaterializedRevisionToStream(nextRevision);
+    },
+    [
+      queryClient,
+      streamState,
+      worksStore.activeWork,
+      worksStore.patchRevision,
+    ],
   );
 
   const profileMutations = useMemo(() => {
@@ -161,6 +189,7 @@ function ConversationStreamKeyed({
   const value: StudioContextValue = {
     ...worksStore,
     ...profileMutations,
+    removeRevisionIntentFromWork: syncRevisionAfterRemove,
     ...conversationsStore,
     ...streamState,
     modelTemperatureLevel: temperatureControl.level,
@@ -175,12 +204,12 @@ function ConversationStreamKeyed({
 function ConversationStreamInner({
   worksStore,
   conversationsStore,
-  suggestionsCache,
+  directionsCache,
   children,
 }: {
   worksStore: WorksStore;
   conversationsStore: ConversationsStore;
-  suggestionsCache: ConversationSuggestionsCache;
+  directionsCache: ConversationDirectionsCache;
   children: ReactNode;
 }) {
   const conversationKey =
@@ -191,7 +220,7 @@ function ConversationStreamInner({
       key={conversationKey}
       worksStore={worksStore}
       conversationsStore={conversationsStore}
-      suggestionsCache={suggestionsCache}
+      directionsCache={directionsCache}
     >
       {children}
     </ConversationStreamKeyed>
@@ -206,13 +235,13 @@ function StreamBridge({
   children: ReactNode;
 }) {
   const conversationsStore = useConversationsStore(worksStore.activeWork?.id ?? null);
-  const suggestionsCache = useConversationSuggestionsCache();
+  const directionsCache = useConversationDirectionsCache();
 
   return (
     <ConversationStreamInner
       worksStore={worksStore}
       conversationsStore={conversationsStore}
-      suggestionsCache={suggestionsCache}
+      directionsCache={directionsCache}
     >
       {children}
     </ConversationStreamInner>

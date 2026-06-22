@@ -6,6 +6,8 @@ import { inferModalitiesFromProfile, parseProfileJson } from "./profile.js";
 export type ProfileStepCopy = {
   title: string;
   hint: string;
+  /** 已有成稿或已进入制作时的步骤说明 */
+  completedHint?: string;
   emptyTitle: string;
   emptyBody: string;
   placeholder: string;
@@ -45,9 +47,9 @@ const DEFAULT_EXAMPLES: Record<
     "结尾给出选购建议",
   ],
   bounds: [
-    "配图中不出现人脸",
-    "不出现真实品牌 logo",
-    "不要用震惊体标题",
+    "配图里不要出现人脸",
+    "不要出现真实品牌 logo",
+    "标题不要用震惊体",
   ],
 };
 
@@ -170,6 +172,7 @@ export function getProfileStepCopy(
     return {
       title: "方案就绪",
       hint: "必填项已齐，可说「开始制作」；也可继续补充风格、背景、需求与边界",
+      completedHint: "方案已用于制作，仍可在对话中补充调整",
       emptyTitle: "",
       emptyBody: "",
       placeholder: "说「开始制作」，或继续补充方案…",

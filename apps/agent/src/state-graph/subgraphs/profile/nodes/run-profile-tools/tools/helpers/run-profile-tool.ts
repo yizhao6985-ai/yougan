@@ -28,9 +28,6 @@ export function createProfileTool<T extends z.ZodTypeAny>(options: {
   return tool(
     async (input, config) => {
       const toolCallId = (config as ToolRunnableConfig).toolCall?.id ?? "";
-      const state = getState();
-      const profile = getProfile(state);
-      const result = applyProfilePatch(profile, options.toPatch(input));
       const activityBase = {
         id: profileToolActivityId(options.name),
         refId: options.name,
@@ -38,13 +35,53 @@ export function createProfileTool<T extends z.ZodTypeAny>(options: {
         subject: profileToolSubject(options.name),
       };
 
-      if (!result) {
+      try {
+        const state = getState();
+        const profile = getProfile(state);
+        const result = applyProfilePatch(profile, options.toPatch(input));
+
+        if (!result) {
+          return new Command({
+            update: {
+              messages: [
+                new ToolMessage({
+                  content: options.emptyMessage ?? "未应用方案变更。",
+                  tool_call_id: toolCallId,
+                }),
+                createTurnActivityMessage({
+                  ...activityBase,
+                  status: "failed",
+                }),
+              ],
+            },
+          });
+        }
+
         return new Command({
           update: {
             messages: [
               new ToolMessage({
-                content: options.emptyMessage ?? "未应用方案变更。",
+                content: `已更新：${result.changes.join("、")}。`,
                 tool_call_id: toolCallId,
+              }),
+              createTurnActivityMessage({
+                ...activityBase,
+                status: "done",
+              }),
+            ],
+            ...patchPendingProfile(state, result.profile),
+          },
+        });
+      } catch (error) {
+        const detail =
+          error instanceof Error ? error.message : "方案更新失败。";
+        return new Command({
+          update: {
+            messages: [
+              new ToolMessage({
+                content: detail,
+                tool_call_id: toolCallId,
+                status: "error",
               }),
               createTurnActivityMessage({
                 ...activityBase,
@@ -54,22 +91,6 @@ export function createProfileTool<T extends z.ZodTypeAny>(options: {
           },
         });
       }
-
-      return new Command({
-        update: {
-          messages: [
-            new ToolMessage({
-              content: `已更新：${result.changes.join("、")}。`,
-              tool_call_id: toolCallId,
-            }),
-            createTurnActivityMessage({
-              ...activityBase,
-              status: "done",
-            }),
-          ],
-          ...patchPendingProfile(state, result.profile),
-        },
-      });
     },
     {
       name: options.name,

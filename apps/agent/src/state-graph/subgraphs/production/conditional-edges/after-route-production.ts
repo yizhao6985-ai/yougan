@@ -1,4 +1,6 @@
-/** routeProduction 之后：失败/卡住则 finalize；全部备妥则整合；否则回到 dispatch */
+/** routeProduction 之后：失败/卡住则结束；全部备妥则整合；否则回到 dispatch */
+import { END } from "@langchain/langgraph";
+
 import { getProduction } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 
@@ -13,7 +15,7 @@ export const from = "routeProduction" as const;
 export type AfterRouteProductionTarget =
   | "dispatchTask"
   | "assemblePreview"
-  | "finalizeProduction";
+  | "__end__";
 
 export function selectAfterRouteProduction(
   state: AgentStateType,
@@ -21,11 +23,11 @@ export function selectAfterRouteProduction(
   const plan = getProduction(state);
 
   if (productionPipelineStuck(plan)) {
-    return "finalizeProduction";
+    return "__end__";
   }
 
   if (productionHasTerminalFailure(plan)) {
-    return "finalizeProduction";
+    return "__end__";
   }
 
   if (allTasksReady(plan)) {
@@ -38,5 +40,5 @@ export function selectAfterRouteProduction(
 export const paths = {
   dispatchTask: "dispatchTask",
   assemblePreview: "assemblePreview",
-  finalizeProduction: "finalizeProduction",
+  __end__: END,
 } as const;

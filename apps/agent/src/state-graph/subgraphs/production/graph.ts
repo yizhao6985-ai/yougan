@@ -1,7 +1,8 @@
 /**
- * 制作子图：计划 → 分发 → 执行 → 验收 → 流转 →（整理 | 总结）
+ * 制作子图：计划 → 分发 → 执行 → 验收 → 流转 →（整理 | 结束）
  *
  * routeProduction 为空节点，仅作 acceptTask / dispatchTask 之后的流转锚点。
+ * 回合末影响评价由主图 reflectTurn 统一输出。
  */
 import { END, START, StateGraph } from "@langchain/langgraph";
 
@@ -19,7 +20,6 @@ import { ingestProductionAudioNode } from "./nodes/ingest-production-audio/node.
 import { planProductionNode } from "./nodes/plan-production/node.js";
 import { renderDesignImageNode } from "./nodes/render-design-image/node.js";
 import { routeProductionNode } from "./nodes/route-production/node.js";
-import { finalizeProductionNode } from "./nodes/finalize-production/node.js";
 
 export const productionGraph = new StateGraph(AgentState)
   .addNode("enterProduction", createEnterPhaseNode("production"))
@@ -32,7 +32,6 @@ export const productionGraph = new StateGraph(AgentState)
   .addNode("acceptTask", acceptTaskNode)
   .addNode("routeProduction", routeProductionNode)
   .addNode("assemblePreview", assemblePreviewNode)
-  .addNode("finalizeProduction", finalizeProductionNode)
   .addEdge(START, "enterProduction")
   .addEdge("enterProduction", "planProduction")
   .addEdge("planProduction", "dispatchTask")
@@ -51,6 +50,5 @@ export const productionGraph = new StateGraph(AgentState)
     afterRouteProduction.selectAfterRouteProduction,
     afterRouteProduction.paths,
   )
-  .addEdge("assemblePreview", "finalizeProduction")
-  .addEdge("finalizeProduction", END)
+  .addEdge("assemblePreview", END)
   .compile();

@@ -21,7 +21,7 @@ import {
   mergeTurnRuntime,
   type AiUsageSnapshot,
   type RunProgress,
-  type NextStepSuggestions,
+  type TurnDirections,
   type TurnRuntime,
   type WorkPreview,
   type WorkProduction,
@@ -89,11 +89,11 @@ export const AgentState = Annotation.Root({
       next ?? EMPTY_WORK_PRODUCTION,
     default: () => EMPTY_WORK_PRODUCTION,
   }),
-  /** suggestions 子图每轮写入的下一步建议（运行时字段，不入库） */
-  nextStepSuggestions: Annotation<NextStepSuggestions | null>({
+  /** turn-briefing 子图写入的延伸方向（运行时字段，不入库） */
+  turnDirections: Annotation<TurnDirections | null>({
     reducer: (
-      prev: NextStepSuggestions | null,
-      next: NextStepSuggestions | null | undefined,
+      prev: TurnDirections | null,
+      next: TurnDirections | null | undefined,
     ) => (next === undefined ? (prev ?? null) : next),
     default: () => null,
   }),

@@ -2,9 +2,7 @@ import { HumanMessage } from "@langchain/core/messages";
 import type { RunnableConfig } from "@langchain/core/runnables";
 
 import {
-  filterProductionUnlessExplicitIntent,
-  isProfileSetupReady,
-  previewHasContent,
+  filterProductionQueue,
   type TurnQueueKind,
   type TurnQueuePlannerKind,
 } from "@yougan/domain";
@@ -16,7 +14,7 @@ import {
 
 import { sortTurnQueue } from "./helpers/sort-turn-queue.js";
 import { tryResolvePreviewSelectionQueue } from "./helpers/try-resolve-preview-selection-queue.js";
-import { finalizeTurnQueue } from "./helpers/with-suggestions-queue.js";
+import { finalizeTurnQueue } from "./helpers/finalize-turn-queue.js";
 
 import { invokeStructured } from "#agent/llm/invoke/index.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
@@ -25,7 +23,7 @@ import {
   getLatestHumanMessageAttachments,
   getLatestHumanMessageText,
 } from "#agent/messages/human.js";
-import { getPreview, getProfile } from "#agent/state-io/index.js";
+import { getPreview, getProduction, getProfile } from "#agent/state-io/index.js";
 import {
   initPendingTurn,
   mergeTurnPatch,
@@ -41,30 +39,31 @@ const DEFAULT_QUEUE: TurnQueueKind[] = finalizeTurnQueue(["profile"]);
 const OPENING_QUEUE: TurnQueueKind[] = [];
 
 /**
+ * 方案向导状态门：未到「方案就绪」时剔除 production；整稿重做与局部改稿互斥。
+ * 用户意图完全由 planTurnQueue LLM 判定，此处不做话术正则。
+ */
+function withProductionQueueGate(
+  queue: TurnQueuePlannerKind[],
+  state: AgentStateType,
+): TurnQueuePlannerKind[] {
+  return filterProductionQueue(queue, getProfile(state), {
+    preview: getPreview(state),
+    production: getProduction(state),
+  });
+}
+
+/**
  * 合并模型队列与 reference 子图入队规则：
  * - 无附件：原样返回（reference 仅当模型判定为删/改参考素材时才会出现）
  * - 有附件且队列已含 reference：原样返回，避免重复
  * - 有附件且纯 ask：不前置 reference（纯讨论不入库）
  * - 有附件且非纯 ask：确定性前置 reference，供 preprocessReferences 预处理新附件
  */
-function withProductionIntentGuard(
-  queue: TurnQueuePlannerKind[],
-  state: AgentStateType,
-  userMessage: string,
-): TurnQueuePlannerKind[] {
-  return filterProductionUnlessExplicitIntent(queue, userMessage, {
-    hasPreview: previewHasContent(getPreview(state)),
-    profileReady: isProfileSetupReady(getProfile(state)),
-  });
-}
-
 function withReferenceQueue(
   queue: TurnQueueKind[],
   hasAttachments: boolean,
 ): TurnQueueKind[] {
-  const sorted = sortTurnQueue(
-    queue.filter((kind) => kind !== "suggestions") as TurnQueueKind[],
-  );
+  const sorted = sortTurnQueue(queue);
   const base: TurnQueueKind[] = sorted.length ? sorted : ["profile"];
   if (!hasAttachments || base.includes("reference")) {
     return finalizeTurnQueue(base);
@@ -96,7 +95,7 @@ async function resolveTurnQueue(
   );
   if (previewSelectionQueue) {
     return withReferenceQueue(
-      withProductionIntentGuard(previewSelectionQueue, state, userMessage),
+      withProductionQueueGate(previewSelectionQueue, state),
       hasAttachments,
     );
   }
@@ -119,7 +118,7 @@ async function resolveTurnQueue(
     const queue = sortTurnQueue(parsed.kinds);
     const base: TurnQueuePlannerKind[] = queue.length ? queue : ["profile"];
     return withReferenceQueue(
-      withProductionIntentGuard(base, state, userMessage),
+      withProductionQueueGate(base, state),
       hasAttachments,
     );
   } catch {
@@ -143,7 +142,7 @@ export async function planTurnQueueNode(
 
   return {
     ...(normalized ?? {}),
-    nextStepSuggestions: null,
+    turnDirections: null,
     ...patchTurn(baseState, {
       queue,
       staging,

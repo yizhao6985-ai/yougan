@@ -99,7 +99,7 @@ export function normalizeDirtyTurnState(
       activeKind: null,
       completedKinds: [],
     }),
-    nextStepSuggestions: null,
+    turnDirections: null,
   };
 }
 

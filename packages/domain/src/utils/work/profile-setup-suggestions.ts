@@ -1,7 +1,7 @@
 import type {
-  NextStepSuggestion,
-  ProfileSetupSuggestionRole,
-} from "../../models/agent/suggestions.js";
+  TurnDirection,
+  ProfileSetupDirectionRole,
+} from "../../models/agent/turn-briefing.js";
 import type {
   ProfileSetupStep,
   ProfileStepId,
@@ -21,7 +21,7 @@ import {
 import { getProfileStepCopy, getStyleFieldsForProfile } from "./profile-step-copy.js";
 
 export type ProfileSetupSuggestionSlot = {
-  role: ProfileSetupSuggestionRole;
+  role: ProfileSetupDirectionRole;
   step?: ProfileStepId | "ready";
   layer: "consolidate" | "advance";
 };
@@ -147,7 +147,7 @@ function getStepConsolidateFocusHint(
     case "requirements":
       return "对成稿的期望（字数、结构顺序等）；须呼应方向、风格与背景";
     case "bounds":
-      return "这件作品需避免的具体元素；须针对已定主题，不要泛泛禁忌";
+      return "写清要避免的具体内容（如不要人脸、不要震惊体），用用户会直接说的话，禁止只写「边界」「禁忌」类空标签";
     default:
       return null;
   }
@@ -416,9 +416,9 @@ export function buildProfileSetupSuggestionSlots(
 }
 
 function applySuggestionSlots(
-  suggestions: NextStepSuggestion[],
+  suggestions: TurnDirection[],
   slots: ProfileSetupSuggestionSlot[],
-): NextStepSuggestion[] {
+): TurnDirection[] {
   return suggestions.map((item, index) => {
     const slot = slots[index];
     if (!slot) return item;
@@ -431,10 +431,10 @@ function applySuggestionSlots(
 }
 
 /** 按槽位覆盖 step/role，供前端分层展示 */
-export function resolveProfileSetupSuggestionRoles(
-  suggestions: NextStepSuggestion[],
+export function resolveProfileSetupDirectionRoles(
+  suggestions: TurnDirection[],
   input: SuggestionContextInput,
-): NextStepSuggestion[] {
+): TurnDirection[] {
   if (suggestions.length === 0) return suggestions;
 
   const profile = parseProfileJson(input.profile);
@@ -454,11 +454,11 @@ export function resolveProfileSetupSuggestionRoles(
 }
 
 export function splitProfileSetupSuggestionLayers(
-  suggestions: NextStepSuggestion[],
+  suggestions: TurnDirection[],
   input: SuggestionContextInput,
 ): {
-  consolidate: NextStepSuggestion[];
-  advance: NextStepSuggestion[];
+  consolidate: TurnDirection[];
+  advance: TurnDirection[];
 } | null {
   const profile = parseProfileJson(input.profile);
   const layered = hasSuggestionLayeredContext(profile, {
@@ -468,7 +468,7 @@ export function splitProfileSetupSuggestionLayers(
     return null;
   }
 
-  const normalized = resolveProfileSetupSuggestionRoles(suggestions, input);
+  const normalized = resolveProfileSetupDirectionRoles(suggestions, input);
   const focus = buildProfileSetupSuggestionFocus({
     before: input.beforeProfile,
     after: profile,
@@ -481,8 +481,8 @@ export function splitProfileSetupSuggestionLayers(
     { hasPreview: input.hasPreview },
   );
 
-  const consolidate: NextStepSuggestion[] = [];
-  const advance: NextStepSuggestion[] = [];
+  const consolidate: TurnDirection[] = [];
+  const advance: TurnDirection[] = [];
 
   normalized.forEach((item, index) => {
     const slot = slots[index];
@@ -571,6 +571,7 @@ export function buildProfileSetupSuggestionHint(
 export function buildProfileSetupSuggestionPromptBlock(
   focus: ProfileSetupSuggestionFocus,
   profile: WorkProfile | undefined,
+  options?: { omitSuggestionExamples?: boolean },
 ): string {
   const parsed = parseProfileJson(profile);
   const setup = getProfileSetupState(parsed);
@@ -578,7 +579,7 @@ export function buildProfileSetupSuggestionPromptBlock(
 
   const lines = [
     "## 方案进度（生成建议时须对齐）",
-    "- **扩展当前状态**：锚定当前推进步，给灵感、补全、微调；须紧扣前述已定内容，禁止泛泛套话",
+    "- **扩展当前状态**：锚定当前推进步，给灵感、补全、微调；prompt 须是用户会发的具体话，禁止栏目名/清单/预警类抽象标签",
     "- **下一步引导**：像用户直接说出下一步要填的**具体内容**（不是描述要填哪一步、不是流程元说明）",
     `- 当前推进步：${activeMeta ? `第 ${activeMeta.index} 步 · ${activeMeta.title}` : focus.activeStep}（${focus.activeStatus}）`,
   ];
@@ -586,9 +587,11 @@ export function buildProfileSetupSuggestionPromptBlock(
   if (focus.activeStep !== "ready") {
     const copy = getProfileStepCopy(parsed, focus.activeStep);
     lines.push(`- 本步要填什么：${copy.hint}`);
-    lines.push(
-      `- 本步灵感方向参考（扩展向须落在此步，勿逐字复制）：${copy.suggestionExamples.join("；")}`,
-    );
+    if (!options?.omitSuggestionExamples) {
+      lines.push(
+        `- 本步灵感方向参考（扩展向须落在此步，勿逐字复制）：${copy.suggestionExamples.join("；")}`,
+      );
+    }
     lines.push(...buildStepAnchorLines(parsed, focus.activeStep));
     const activeSummary = summarizeProfileStepForSuggestions(
       parsed,
@@ -659,7 +662,7 @@ export function buildSuggestionSlotRecipe(
   if (!layered) {
     return [
       "## 建议槽位配方（须逐条对应）",
-      `- 全部为**下一步引导**（${count} 条）：根据作品标题、参考素材与上下文，给出可立刻动手的具体方向；互斥、可区分`,
+      `- 全部为**下一步引导**（${count} 条）：紧扣作品标题整体语义，给出着手完成该作品的不同切入点；互斥、可区分`,
       ...slots.map(
         (_, index) => `${index + 1}. [${layerLabels.advance}] role=navigate`,
       ),
@@ -676,7 +679,7 @@ export function buildSuggestionSlotRecipe(
 
   return [
     "## 建议槽位配方（须逐条对应）",
-    `- **扩展当前状态** ${layerCounts.consolidate} 条（refine）：锚定当前步，给灵感/补全/微调；紧扣前述已定内容`,
+    `- **扩展当前状态** ${layerCounts.consolidate} 条（refine）：锚定当前步，prompt 须是用户会说的具体话；禁止清单/预警/雷区类抽象标签`,
     `- **下一步引导** ${layerCounts.advance} 条（navigate）：直接写下一步的可发送内容；ready 时说开始制作；禁止流程元说明`,
     ...lines,
   ].join("\n");

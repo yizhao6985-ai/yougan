@@ -6,6 +6,8 @@ import {
   extractPreviewSelectionsFromContent,
   isDefaultAttachmentPromptText,
   isTurnActivityMessage,
+  isTurnBriefingAiMessage,
+  parseTurnBriefingExcerptFromMessage,
   parseTurnActivityFromMessage,
   type HumanAttachmentAsset,
   type HumanPreviewSelection,
@@ -106,6 +108,13 @@ export type RenderItem =
       label: string;
       detail?: string | null;
       status: TurnActivityStatus;
+    }
+  | {
+      id: string;
+      kind: "briefing";
+      body: string;
+      excerpt?: string | null;
+      isStreaming?: boolean;
     }
   | {
       id: string;
@@ -252,6 +261,19 @@ function findLastMessageIndex(
   return -1;
 }
 
+const ACTIVITY_STATUS_RANK: Record<TurnActivityStatus, number> = {
+  running: 0,
+  failed: 1,
+  done: 2,
+};
+
+function shouldPreferActivityStatus(
+  prev: TurnActivityStatus,
+  next: TurnActivityStatus,
+): boolean {
+  return ACTIVITY_STATUS_RANK[next] >= ACTIVITY_STATUS_RANK[prev];
+}
+
 /** 合并 stream.messages（流式）与 values.messages（节点一次性写入，如 finalizeProduction） */
 export function mergeChatMessages(
   streamMessages: Message[],
@@ -268,6 +290,7 @@ export function buildRenderItems(
 ): RenderItem[] {
   const interrupted = new Set(interruptedMessageIds);
   const items: RenderItem[] = [];
+  const activityIndexByStableId = new Map<string, number>();
   const lastHumanIndex = findLastMessageIndex(messages, "human");
   const lastAiMessageIndex = findLastMessageIndex(messages, "ai");
 
@@ -294,13 +317,26 @@ export function buildRenderItems(
       if (isTurnActivityMessage(message)) {
         const activity = parseTurnActivityFromMessage(message);
         if (activity) {
-          items.push({
+          const item: RenderItem = {
             id: message.id ?? `activity-${index}`,
             kind: "activity",
             label: activity.label,
             detail: activity.detail,
             status: activity.status,
-          });
+          };
+          const existingIndex = activityIndexByStableId.get(activity.id);
+          if (existingIndex !== undefined) {
+            const existing = items[existingIndex];
+            if (
+              existing?.kind === "activity" &&
+              shouldPreferActivityStatus(existing.status, activity.status)
+            ) {
+              items[existingIndex] = item;
+            }
+          } else {
+            activityIndexByStableId.set(activity.id, items.length);
+            items.push(item);
+          }
         }
         continue;
       }
@@ -322,6 +358,25 @@ export function buildRenderItems(
     if (message.type === "ai") {
       const messageId = message.id ?? `ai-${index}`;
 
+      if (isTurnBriefingAiMessage(message)) {
+        const text = extractAIMessageText(message);
+        const isStreamingBriefing =
+          isLoading &&
+          index === lastAiMessageIndex &&
+          index > lastHumanIndex;
+
+        if (text || isStreamingBriefing) {
+          items.push({
+            id: messageId,
+            kind: "briefing",
+            body: text,
+            excerpt: parseTurnBriefingExcerptFromMessage(message),
+            isStreaming: isStreamingBriefing,
+          });
+        }
+        continue;
+      }
+
       const text = extractAIMessageText(message);
       const isStreamingAi =
         isLoading &&
@@ -341,4 +396,24 @@ export function buildRenderItems(
   }
 
   return items;
+}
+
+/** 回合末方向 chips 的挂载点：最近一条 human 之后的最后一个 briefing / ai / activity */
+export function findTurnDirectionsAnchorIndex(items: RenderItem[]): number {
+  let lastHumanIndex = -1;
+  for (let i = items.length - 1; i >= 0; i -= 1) {
+    if (items[i]?.kind === "human") {
+      lastHumanIndex = i;
+      break;
+    }
+  }
+  if (lastHumanIndex === -1) return -1;
+
+  for (let i = items.length - 1; i > lastHumanIndex; i -= 1) {
+    const kind = items[i]?.kind;
+    if (kind === "briefing" || kind === "ai" || kind === "activity") {
+      return i;
+    }
+  }
+  return -1;
 }

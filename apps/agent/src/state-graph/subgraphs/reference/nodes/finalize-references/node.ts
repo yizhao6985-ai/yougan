@@ -1,5 +1,4 @@
-/** finalize-references：写入 intent.summary 并回复感友（模板，无 LLM） */
-import { AIMessage } from "@langchain/core/messages";
+/** finalize-references：写入 intent.summary（无 AIMessage） */
 import type { RunnableConfig } from "@langchain/core/runnables";
 
 import { deriveReferenceDelta } from "@yougan/domain";
@@ -20,10 +19,7 @@ import {
 } from "#agent/state-io/turn-activities.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
-import {
-  applyReferenceIntentFinalization,
-  buildReferenceFinalizeMessage,
-} from "./helpers/finalize-outcome.js";
+import { applyReferenceIntentFinalization } from "./helpers/finalize-outcome.js";
 
 export async function finalizeReferencesNode(
   state: AgentStateType,
@@ -42,7 +38,7 @@ export async function finalizeReferencesNode(
     Boolean(userMessage);
 
   if (!needsWork) {
-    return { messages: [new AIMessage("参考素材暂无变更。")] };
+    return {};
   }
 
   const next = applyReferenceIntentFinalization(staging);
@@ -61,9 +57,6 @@ export async function finalizeReferencesNode(
 
   return {
     ...patchPendingReferences(state, next),
-    messages: [
-      ...(activityMessage ? [activityMessage] : []),
-      new AIMessage(buildReferenceFinalizeMessage(delta)),
-    ],
+    ...(activityMessage ? { messages: [activityMessage] } : {}),
   };
 }

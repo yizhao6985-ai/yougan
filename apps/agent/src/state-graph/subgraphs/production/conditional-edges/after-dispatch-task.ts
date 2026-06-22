@@ -1,4 +1,6 @@
-/** dispatchTask 之后：无计划则直接 finalize；否则进入执行（design / audio 入库 / 文案） */
+/** dispatchTask 之后：无计划则结束；否则进入执行（design / audio 入库 / 文案） */
+import { END } from "@langchain/langgraph";
+
 import { getProduction } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
 
@@ -18,7 +20,7 @@ export type AfterDispatchTaskTarget =
   | "executeWriting"
   | "executeDesign"
   | "ingestProductionAudio"
-  | "finalizeProduction";
+  | "__end__";
 
 export function selectAfterDispatchTask(
   state: AgentStateType,
@@ -26,12 +28,12 @@ export function selectAfterDispatchTask(
   const production = getProduction(state);
 
   if (productionPlanIsEmpty(production)) {
-    return "finalizeProduction";
+    return "__end__";
   }
 
   const task = currentActiveTask(production);
   if (!task || productionHasTerminalFailure(production)) {
-    return "finalizeProduction";
+    return "__end__";
   }
 
   if (
@@ -46,7 +48,7 @@ export function selectAfterDispatchTask(
   }
 
   if (!taskNeedsProduce(task)) {
-    return "finalizeProduction";
+    return "__end__";
   }
 
   return "executeWriting";
@@ -56,5 +58,5 @@ export const paths = {
   executeWriting: "executeWriting",
   executeDesign: "executeDesign",
   ingestProductionAudio: "ingestProductionAudio",
-  finalizeProduction: "finalizeProduction",
+  __end__: END,
 } as const;

@@ -1,6 +1,8 @@
 # production 子图
 
-每次进入子图会**重置** `staging.production`，再排计划、按任务管线产出与验收，最终写入 `preview` 或向用户说明失败原因。
+每次进入子图会**重置** `staging.production`，再排计划、按任务管线产出与验收，最终写入 `preview` 或保留失败状态。
+
+回合末成稿节选 / 失败说明由主图 **`reflectTurn`** 统一输出（`turn_reflection`），本子图不再写 AIMessage。
 
 ## 拓扑
 
@@ -9,13 +11,11 @@ START → planProduction → dispatchTask
                               ├─ executeWriting → acceptTask → routeProduction
                               ├─ executeDesign → renderDesignImage → acceptTask → routeProduction
                               ├─ ingestProductionAudio → acceptTask → routeProduction
-                              │     （用户上传音频 + audio 部门任务）
-                              └─ finalizeProduction（计划为空 / 无法执行）
+                              └─ __end__（计划为空 / 无法执行）
 routeProduction
   ├─ dispatchTask（尚有未完成任务）
-  ├─ assemblePreview（全部 ready）→ finalizeProduction
-  └─ finalizeProduction（失败 / 卡住；跳过整合）
-finalizeProduction → END
+  ├─ assemblePreview（全部 ready）→ END
+  └─ __end__（失败 / 卡住；跳过整合）
 ```
 
 ## 设计任务流水线
@@ -40,7 +40,6 @@ dispatch 在「已有 prompt、待出图」时仍路由到 executeDesign（no-op
 | `acceptTask` | llm-work | 方向性验收；失败重试或标 `failed` |
 | `routeProduction`                  | plain    | 流转锚点（无状态变更）                                |
 | `assemblePreview`                  | llm-work | 写入 `preview` 后清空 `pending_tasks`（preview 未就绪则保留任务队列） |
-| `finalizeProduction`              | plain    | 对话末位摘要（成稿 / 失败 / 空计划）                  |
 
 ## LLM 调用约定
 

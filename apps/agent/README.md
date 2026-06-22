@@ -20,19 +20,19 @@ Checkpoint：**与 API 共用 Postgres**（`POSTGRES_URI`，默认 `:5432/yougan
 |------|------|------|------|
 | 计划者 | `nodes/plan-turn-queue/` | `planTurnQueue` | 解析用户意图 → `turnQueue[]`，fork `staging` |
 | 执行者 | `state-graph/` | `dispatchTurnQueue` / `advanceTurnQueue` + 子图 | 按队列路由并执行 reference / profile / production / ask |
-| 系统收尾 | `post-commit/`、`summarize-messages/` | `commitTurn` →（条件）`postCommit` → `summarizeMessages` → END | 首条 human 生成对话标题；messages 过多时滚动摘要 |
+| 系统收尾 | `reflect-turn/`、`summarize-messages/` | `reflectTurn` → `commitTurn` →（条件）`suggestionsGraph` → `summarizeMessages` → END | 回合末影响评价；对话过长滚动摘要 |
 
 图接线：`src/graph.ts`；`state-graph/` 含 `nodes/`、`conditional-edges/`、`subgraphs/*/graph.ts`
 
 ### 内层子图（`state-graph/subgraphs/`）
 
-**reference**：`preprocessReferences` ⇄ `runPreprocessTools` → `mutateReferences` ⇄ `runMutateTools` → `finalizeReferences`。预处理未分析资源；按意图原子工具删改参考。
+**reference**：`preprocessReferences` ⇄ `runPreprocessTools` → `mutateReferences` ⇄ `runMutateTools` → `finalizeReferences`（仅写 intent.summary）。预处理未分析资源；按意图原子工具删改参考。
 
-**profile**：`mutateProfile` ⇄ `runProfileTools` → `finalizeProfile`。按意图原子工具改方案；末位模板回复。
+**profile**：`mutateProfile` ⇄ `runProfileTools` → END。按意图原子工具改方案；回合末由 `reflectTurn` 评价影响。
 
 **suggestions**：`generateSuggestions`。`commitTurn` 后执行；开屏 9 条 / 回合末 4 条，写入 `nextStepSuggestions`。
 
-**production**（`subgraphs/production/README.md`）：`planProduction` → `dispatchTask` → `execute*` → `acceptTask` → `routeProduction` →（`dispatchTask`、`assemblePreview`、计划为空或验收 3 次失败时直达 `finalizeProduction`）→ `finalizeProduction`。
+**production**（`subgraphs/production/README.md`）：`planProduction` → … → `assemblePreview` 或提前结束；回合末由 `reflectTurn` 输出成稿/失败评价。
 
 **ask**：`answerQuestion` ⇄ `runAskTools`（`ToolNode` + `toolsCondition`）。
 

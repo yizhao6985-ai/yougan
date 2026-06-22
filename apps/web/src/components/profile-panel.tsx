@@ -243,7 +243,6 @@ function StyleDisplay({ profile }: { profile: WorkProfile }) {
 function ProfileStepList({
   steps,
   profile,
-  activeStepId,
   editable,
   onUpdateBound,
   onDeleteBound,
@@ -258,7 +257,6 @@ function ProfileStepList({
 }: {
   steps: ReturnType<typeof buildProfileSetupView>["state"]["steps"];
   profile: WorkProfile;
-  activeStepId: ProfileSetupStep;
   editable: boolean;
   onUpdateBound?: (id: string, spec: string) => void;
   onDeleteBound?: (id: string) => void;
@@ -274,7 +272,7 @@ function ProfileStepList({
   return (
     <ol className="space-y-3" aria-label={PROFILE_WIZARD.stepsOverviewLabel}>
       {steps.map((step) => {
-        const isActive = step.id === activeStepId;
+        const isActive = step.status === "active";
         const skipped = step.status === "skipped";
         const done = step.status === "done";
         const copy = getProfileStepCopy(profile, step.id);
@@ -347,7 +345,9 @@ function ProfileStepList({
                   </div>
                   {!skipped ? (
                     <p className="mt-1 text-pretty text-xs leading-5 text-muted-foreground">
-                      {copy.hint}
+                      {done && copy.completedHint
+                        ? copy.completedHint
+                        : copy.hint}
                     </p>
                   ) : (
                     <p className="mt-1 text-xs text-muted-foreground/60">
@@ -360,6 +360,7 @@ function ProfileStepList({
                   <StepContent
                     step={step.id}
                     profile={profile}
+                    completed={done}
                     editable={editable}
                     onUpdateBound={onUpdateBound}
                     onDeleteBound={onDeleteBound}
@@ -394,6 +395,7 @@ function ProfileStepList({
 function StepContent({
   step,
   profile,
+  completed = false,
   editable,
   onUpdateBound,
   onDeleteBound,
@@ -407,6 +409,7 @@ function StepContent({
 }: {
   step: ProfileSetupStep;
   profile: WorkProfile;
+  completed?: boolean;
   editable: boolean;
   onUpdateBound?: (id: string, spec: string) => void;
   onDeleteBound?: (id: string) => void;
@@ -424,7 +427,9 @@ function StepContent({
     return (
       <CreativeContextInset>
         <p className="text-sm leading-6 text-foreground">
-          {PROFILE_WIZARD.readyBody}
+          {completed
+            ? PROFILE_WIZARD.readyCompletedBody
+            : PROFILE_WIZARD.readyBody}
         </p>
       </CreativeContextInset>
     );
@@ -572,7 +577,7 @@ export function ProfilePanel({
       }),
     [normalizedProfile, skippedSteps, preview, production],
   );
-  const { state, headline, activeStep } = setupView;
+  const { state, headline } = setupView;
 
   const handleSkip = useCallback((stepId: ProfileSetupStep) => {
     if (
@@ -599,7 +604,6 @@ export function ProfilePanel({
         <ProfileStepList
           steps={state.steps}
           profile={normalizedProfile}
-          activeStepId={activeStep}
           editable={editable}
           onUpdateBound={onUpdateBound}
           onDeleteBound={onDeleteBound}

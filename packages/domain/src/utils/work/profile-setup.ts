@@ -40,6 +40,8 @@ export type ProfileSetupStateOptions = {
   skippedSteps?: ProfileSetupStep[];
   /** 已有成稿或已进入制作时，当前步骤停在「方案就绪」 */
   lockAtReady?: boolean;
+  /** 已有明确作品标题时，省略方案步通用示例，避免带偏选题 */
+  omitSuggestionExamples?: boolean;
 };
 
 export const PROFILE_SETUP_FLOW = PROFILE_STEP_IDS;
@@ -317,10 +319,18 @@ export function getProfileSetupState(
     },
   );
 
+  const lockedAtReady = Boolean(options?.lockAtReady && ready);
+
   const readyStep: ProfileSetupStepState = {
     id: "ready",
     index: PROFILE_SETUP_FLOW.length + 1,
-    status: activeStep === "ready" ? "active" : ready ? "done" : "pending",
+    status: lockedAtReady
+      ? "done"
+      : activeStep === "ready"
+        ? "active"
+        : ready
+          ? "done"
+          : "pending",
     required: false,
     items: [],
     filled: ready,
@@ -335,6 +345,14 @@ export function getProfileSetupState(
 }
 
 export function getProfileSetupHeadline(state: ProfileSetupState): string {
+  const readyStep = state.steps.find((step) => step.id === "ready");
+  if (
+    readyStep?.status === "done" &&
+    state.activeStep === "ready" &&
+    state.ready
+  ) {
+    return "制作方案已整理完成";
+  }
   if (state.activeStep === "ready") {
     return "方案已就绪，可以说「开始制作」";
   }
@@ -355,6 +373,14 @@ export function getProfileSetupStatusHint(
 ): string {
   const profile = parseProfileJson(raw);
   const state = getProfileSetupState(profile, options);
+  const readyStep = state.steps.find((step) => step.id === "ready");
+  if (
+    readyStep?.status === "done" &&
+    state.activeStep === "ready" &&
+    state.ready
+  ) {
+    return "制作方案已整理完成";
+  }
   if (state.activeStep === "ready") {
     return "制作方案已就绪，可说「开始制作」";
   }
@@ -381,6 +407,10 @@ export function buildProfileStepPromptSection(
 ): string {
   const profile = parseProfileJson(raw);
   const state = getProfileSetupState(profile, options);
+  const readyStep = state.steps.find((step) => step.id === "ready");
+  const lockedAtReady = Boolean(
+    options?.lockAtReady && state.ready && readyStep?.status === "done",
+  );
   const copy = getProfileStepCopy(profile, state.activeStep);
   const stepMeta = state.steps.find((step) => step.id === state.activeStep);
   const completedTitles = PROFILE_SETUP_FLOW.filter((step) =>
@@ -392,12 +422,20 @@ export function buildProfileStepPromptSection(
     .map((item) => item.key)
     .join("、");
 
-  const lines = [
-    "## 方案引导步骤",
-    `- 当前步骤：${stepMeta?.index ?? "?"} / ${PROFILE_SETUP_FLOW.length + 1} · ${copy.title}（${state.activeStep}）`,
-    `- 本步目标：${copy.hint}`,
-    `- 方案就绪：${state.ready ? "是" : "否"}`,
-  ];
+  const lines = ["## 方案引导步骤"];
+
+  if (lockedAtReady) {
+    lines.push(
+      "- 方案向导：已全部完成（已有成稿或已进入制作）",
+      `- 方案就绪：${state.ready ? "是" : "否"}`,
+    );
+  } else {
+    lines.push(
+      `- 当前步骤：${stepMeta?.index ?? "?"} / ${PROFILE_SETUP_FLOW.length + 1} · ${copy.title}（${state.activeStep}）`,
+      `- 本步目标：${copy.hint}`,
+      `- 方案就绪：${state.ready ? "是" : "否"}`,
+    );
+  }
 
   if (completedTitles.length) {
     lines.push(`- 已完成步骤：${completedTitles.join("、")}`);
@@ -417,7 +455,15 @@ export function buildProfileStepPromptSection(
   if (gaps) {
     lines.push(`- 本步缺口：${gaps}`);
   }
-  lines.push(`- 本步示例方向（勿逐字复制，须结合作品具体化）：${copy.suggestionExamples.join("；")}`);
+  if (!options?.omitSuggestionExamples) {
+    lines.push(
+      `- 本步示例方向（勿逐字复制，须结合作品具体化）：${copy.suggestionExamples.join("；")}`,
+    );
+  } else {
+    lines.push(
+      "- 本步示例：已省略（作品标题已明确，须紧扣标题而非套用通用选题）",
+    );
+  }
 
   return lines.join("\n");
 }

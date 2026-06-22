@@ -1,14 +1,42 @@
 /** planTurnQueue 用：根据用户最新消息判定 turnQueue kinds */
-import { previewHasContent, previewSelectionsSummary } from "@yougan/domain";
+import {
+  buildProfileSetupProgressOptions,
+  getActiveProfileStep,
+  getProfileStepCopy,
+  previewHasContent,
+  previewSelectionsSummary,
+} from "@yougan/domain";
 import { profileSummary } from "#agent/prompts/profile-summary.js";
 import { YOUGAN_USER_LABEL } from "#agent/system-prompt.js";
 import type { AgentStateType } from "#agent/state.js";
 import {
   getPreview,
+  getProduction,
   getProfile,
   getReferences,
 } from "#agent/state-io/index.js";
 import { getLatestHumanMessageAttachments, getLatestHumanMessagePreviewSelections, getLatestHumanMessageText } from "#agent/messages/human.js";
+
+function buildProfileWizardContext(state: AgentStateType): string {
+  const profile = getProfile(state);
+  const profileSetupOptions = buildProfileSetupProgressOptions({
+    profile,
+    preview: getPreview(state),
+    production: getProduction(state),
+  });
+  const activeStep = getActiveProfileStep(
+    profile,
+    profileSetupOptions.skippedSteps ?? [],
+    { lockAtReady: profileSetupOptions.lockAtReady },
+  );
+  const activeStepTitle = getProfileStepCopy(profile, activeStep).title;
+
+  if (activeStep === "ready") {
+    return `- 方案向导：已到「${activeStepTitle}」，仅当用户**明确要求**开写/整稿重做时可 output production`;
+  }
+
+  return `- 方案向导：当前在「${activeStepTitle}」步（尚未就绪）；用户在完善方案（含写背景/风格/需求/边界等）→ 只 output profile，**禁止** production`;
+}
 
 export function buildTurnQueuePrompt(
   state: AgentStateType,
@@ -73,8 +101,8 @@ export function buildTurnQueuePrompt(
 
 ## 禁止误触 production（重要）
 - 「好的 / 继续 / 可以 / 没问题 / 就这样 / 方案可以了 / 再补充…」→ **仅 profile**，禁止 production
-- 方案已就绪、或上下文显示方案完整 → **不等于**用户要求开写；未听到明确开写口令时 **禁止** output production
-- 讨论选题、体裁、受众、风格、需求、边界 → profile
+- 方案向导未到「方案就绪」、或用户正在完善方向/风格/背景/需求/边界 → **仅 profile**；「写一下背景」「帮我写人设」等是记方案，不是开写成稿
+- 方案内容已较完整 → **不等于**用户要求开写；未听到明确开写口令时 **禁止** output production
 - 系统另有「开始创作」确认环节；planner 不得替用户决定开写
 
 ## 附件与 reference
@@ -91,6 +119,7 @@ export function buildTurnQueuePrompt(
 - has_preview: ${hasPreview}
 - has_attachments: ${hasAttachments}
 - has_preview_selection: ${hasPreviewSelection}
+${buildProfileWizardContext(state)}
 - 作品方案：${profileSummary(profile, references)}
 
 ${YOUGAN_USER_LABEL}最新一条消息：

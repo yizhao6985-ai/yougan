@@ -8,9 +8,9 @@ import { mergeReferencesState } from "../../utils/reference-merge.js";
 
 /**
  * 单轮用户消息解析出的有序子图队列（FIFO）。
- * planTurnQueue 产出 kinds；带附件时系统前置 reference；队尾常驻 suggestions；其余由模型规划。
+ * planTurnQueue 产出 kinds；带附件时系统前置 reference；回合末简报在队列跑完后由 turnBriefingGraph 执行。
  */
-/** planTurnQueue LLM 可输出的队列项（不含系统常驻的 suggestions） */
+/** planTurnQueue LLM 可输出的队列项 */
 export const TURN_QUEUE_PLANNER_KINDS = [
   "reference",
   "profile",
@@ -22,16 +22,12 @@ export const TURN_QUEUE_PLANNER_KINDS = [
 
 export type TurnQueuePlannerKind = (typeof TURN_QUEUE_PLANNER_KINDS)[number];
 
-export const TURN_QUEUE_KINDS = [
-  ...TURN_QUEUE_PLANNER_KINDS,
-  "suggestions",
-] as const;
+export const TURN_QUEUE_KINDS = [...TURN_QUEUE_PLANNER_KINDS] as const;
 
 export type TurnQueueKind = (typeof TURN_QUEUE_KINDS)[number];
 
 /**
  * 队列排序权重（升序执行）。
- * reference → 素材；profile → 方案；production → 出稿；ask → 答疑；suggestions → 下一步建议（系统常驻队尾）。
  */
 export const TURN_QUEUE_ORDER: readonly TurnQueueKind[] = [
   "reference",
@@ -40,7 +36,6 @@ export const TURN_QUEUE_ORDER: readonly TurnQueueKind[] = [
   "collectRevision",
   "revise",
   "ask",
-  "suggestions",
 ];
 
 /**

@@ -70,7 +70,9 @@ START
 
 ### production 入队规则（`plan-turn-queue`）
 
-- **仅**当用户明确要求出稿、开写、改稿/预览交付物时，模型才输出 `production`
+- **意图判定**：完全由 `planTurnQueue` LLM 根据用户最新消息输出 `kinds`；不再用正则猜测开写话术
+- **状态门**：`filterProductionQueue` 在方案向导未到「方案就绪」时剔除 `production`（与侧栏五步一致）
+- **确认环节**：`production` 入队后仍经 `confirmProductionTurn` interrupt，用户最终确认是否开写
 - 讨论方案、描述创作方向、补充约束、聊选题 → `profile`（即使 `has_preview=true`）
 - 不确定是否该出稿 → 只输出 `profile`，禁止因已有成稿而默认 `production`
 

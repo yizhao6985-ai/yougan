@@ -9,6 +9,12 @@ import type { YouganValues } from "@/lib/types";
 
 import { buildTurnCancelPatch } from "./cancel-turn";
 
+function hasTurnDirections(
+  value: YouganValues["turnDirections"] | null | undefined,
+): boolean {
+  return (value?.directions.length ?? 0) > 0;
+}
+
 /** LangGraph SDK 将活跃 run id 写入 sessionStorage 的 key 前缀 */
 const LANGGRAPH_STREAM_RUN_KEY_PREFIX = "lg:stream:";
 
@@ -24,10 +30,10 @@ const RESUMABLE_LANGGRAPH_RUN_STATUSES = new Set([
 /** 新 submit 前重置的回合运行时与验收产物 */
 export const TURN_EPHEMERAL_RESET: Pick<
   YouganValues,
-  "turn" | "nextStepSuggestions" | "runProgress"
+  "turn" | "turnDirections" | "runProgress"
 > = {
   turn: { ...EMPTY_TURN_RUNTIME },
-  nextStepSuggestions: null,
+  turnDirections: null,
   runProgress: null,
 };
 
@@ -140,7 +146,7 @@ export function buildTurnFinalizePatch(
   messages: Message[],
 ): Pick<
   YouganValues,
-  "turn" | "nextStepSuggestions" | "runProgress"
+  "turn" | "turnDirections" | "runProgress"
 > {
   const { turn: cancelled } = buildTurnCancelPatch(prev, messages);
   return {
@@ -149,7 +155,10 @@ export function buildTurnFinalizePatch(
       activeKind: null,
       completedKinds: [],
     }),
-    nextStepSuggestions: null,
+    // 回合已跑到简报/方向生成后再停止时，保留已生成的 chips
+    turnDirections: hasTurnDirections(prev?.turnDirections)
+      ? prev!.turnDirections!
+      : null,
     runProgress: null,
   };
 }

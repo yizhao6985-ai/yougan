@@ -10,7 +10,7 @@ const RUN_PHASE_LABELS: Record<RunProgressPhase, string> = {
   production: "正在创作…",
   revise: "正在改稿…",
   ask: "正在准备回答…",
-  suggestions: "正在生成建议…",
+  turn_briefing: "正在整理本回合…",
   messages_summary: "正在整理对话记录…",
   production_confirm: "等待确认是否开始创作",
   revise_confirm: "等待确认是否开始改稿",

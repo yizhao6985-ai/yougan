@@ -4,7 +4,6 @@
 import { END, START, StateGraph } from "@langchain/langgraph";
 
 import { checkpointer } from "./checkpointer.js";
-import * as afterCommitTurn from "./state-graph/conditional-edges/after-commit-turn.js";
 import * as afterConfirmProductionTurn from "./state-graph/conditional-edges/after-confirm-production-turn.js";
 import * as afterConfirmReviseTurn from "./state-graph/conditional-edges/after-confirm-revise-turn.js";
 import * as afterAdvanceTurnQueue from "./state-graph/conditional-edges/after-advance-turn-queue.js";
@@ -14,13 +13,13 @@ import { confirmProductionTurnNode } from "./state-graph/nodes/confirm-productio
 import { confirmReviseTurnNode } from "./state-graph/nodes/confirm-revise-turn/node.js";
 import { enterProductionConfirmNode } from "./state-graph/nodes/enter-production-confirm/node.js";
 import { enterReviseConfirmNode } from "./state-graph/nodes/enter-revise-confirm/node.js";
-import { enterSummarizeMessagesNode } from "./state-graph/nodes/enter-summarize-messages/node.js";
 import { setTurnPlanningProgressNode } from "./state-graph/nodes/set-turn-planning-progress/node.js";
 import { advanceTurnQueueNode } from "./state-graph/nodes/advance-turn-queue/node.js";
 import { commitTurnNode } from "./state-graph/nodes/commit-turn/node.js";
 import { dispatchTurnQueueNode } from "./state-graph/nodes/dispatch-turn-queue/node.js";
 import { planTurnQueueNode } from "./state-graph/nodes/plan-turn-queue/node.js";
 import { summarizeMessagesNode } from "./state-graph/nodes/summarize-messages/node.js";
+import { enterSummarizeMessagesNode } from "./state-graph/nodes/enter-summarize-messages/node.js";
 import { finalizeRunMeteringNode } from "./state-graph/nodes/finalize-run-metering/node.js";
 import { askGraph } from "./state-graph/subgraphs/ask/graph.js";
 import { collectRevisionGraph } from "./state-graph/subgraphs/collect-revision/graph.js";
@@ -28,7 +27,7 @@ import { productionGraph } from "./state-graph/subgraphs/production/graph.js";
 import { profileGraph } from "./state-graph/subgraphs/profile/graph.js";
 import { referenceGraph } from "./state-graph/subgraphs/reference/graph.js";
 import { reviseGraph } from "./state-graph/subgraphs/revise/graph.js";
-import { suggestionsGraph } from "./state-graph/subgraphs/suggestions/graph.js";
+import { turnBriefingGraph } from "./state-graph/subgraphs/turn-briefing/graph.js";
 import { AgentState } from "./state.js";
 
 const workflow = new StateGraph(AgentState)
@@ -40,6 +39,7 @@ const workflow = new StateGraph(AgentState)
   .addNode("enterReviseConfirm", enterReviseConfirmNode)
   .addNode("confirmReviseTurn", confirmReviseTurnNode)
   .addNode("advanceTurnQueue", advanceTurnQueueNode)
+  .addNode("turnBriefingGraph", turnBriefingGraph)
   .addNode("commitTurn", commitTurnNode)
   .addNode("summarizeMessages", summarizeMessagesNode)
   .addNode("enterSummarizeMessages", enterSummarizeMessagesNode)
@@ -50,7 +50,6 @@ const workflow = new StateGraph(AgentState)
   .addNode("collectRevisionGraph", collectRevisionGraph)
   .addNode("reviseGraph", reviseGraph)
   .addNode("askGraph", askGraph)
-  .addNode("suggestionsGraph", suggestionsGraph)
   .addConditionalEdges(
     START,
     atGraphStart.selectAtGraphStart,
@@ -86,12 +85,8 @@ const workflow = new StateGraph(AgentState)
     afterAdvanceTurnQueue.selectAfterAdvanceTurnQueue,
     afterAdvanceTurnQueue.paths,
   )
-  .addConditionalEdges(
-    afterCommitTurn.from,
-    afterCommitTurn.selectAfterCommitTurn,
-    afterCommitTurn.paths,
-  )
-  .addEdge("suggestionsGraph", "enterSummarizeMessages")
+  .addEdge("turnBriefingGraph", "commitTurn")
+  .addEdge("commitTurn", "enterSummarizeMessages")
   .addEdge("enterSummarizeMessages", "summarizeMessages")
   .addEdge("summarizeMessages", "finalizeRunMetering")
   .addEdge("finalizeRunMetering", END);

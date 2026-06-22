@@ -28,6 +28,10 @@ export type ChatModel = Runnable<BaseMessage[], AIMessageChunk, RunnableConfig>;
 
 export type StreamChatOptions = {
   meteringModelId?: MeteringModelId;
+  /** 固定流式消息 id（与节点返回的 AIMessage 对齐） */
+  messageId?: string;
+  /** 合并进每个 chunk 与最终 AIMessage 的 additional_kwargs */
+  additionalKwargs?: Record<string, unknown>;
 };
 
 function withNoStreamTags(config: RunnableConfig): RunnableConfig {
@@ -48,13 +52,20 @@ function hasStreamDelta(chunk: AIMessageChunk): boolean {
   return false;
 }
 
-function chunkToAIMessage(chunk: AIMessageChunk, messageId: string): AIMessage {
+function chunkToAIMessage(
+  chunk: AIMessageChunk,
+  messageId: string,
+  additionalKwargs?: Record<string, unknown>,
+): AIMessage {
   return new AIMessage({
     id: messageId,
     content: chunk.content,
     tool_calls: chunk.tool_calls,
     invalid_tool_calls: chunk.invalid_tool_calls,
-    additional_kwargs: chunk.additional_kwargs,
+    additional_kwargs: {
+      ...chunk.additional_kwargs,
+      ...additionalKwargs,
+    },
     usage_metadata: chunk.usage_metadata,
     response_metadata: chunk.response_metadata,
   });
@@ -70,6 +81,8 @@ export async function streamChat(
   const meteringModelId =
     options?.meteringModelId ??
     resolveDashScopeMeteringModelId(DASHSCOPE_MODELS.chat);
+  const presetMessageId = options?.messageId;
+  const additionalKwargs = options?.additionalKwargs;
   const messages = sanitizeMessagesForTextChat(input);
   const attemptState = { hadStreamDelta: false };
 
@@ -87,15 +100,15 @@ export async function streamChat(
       );
       const stream = await model.stream(messages, meteredConfig);
       let accumulated: AIMessageChunk | undefined;
-      let messageId: string | undefined;
+      let messageId: string | undefined = presetMessageId;
 
       for await (const chunk of stream) {
         accumulated = accumulated ? accumulated.concat(chunk) : chunk;
-        const id = accumulated.id ?? messageId ?? (messageId = nanoid());
+        const id = presetMessageId ?? accumulated.id ?? messageId ?? (messageId = nanoid());
         messageId = id;
         if (hasStreamDelta(chunk)) {
           attemptState.hadStreamDelta = true;
-          pushMessage(chunkToAIMessage(chunk, id), config);
+          pushMessage(chunkToAIMessage(chunk, id, additionalKwargs), config);
         }
       }
 
@@ -103,8 +116,8 @@ export async function streamChat(
         throw new Error("Chat stream returned no chunks");
       }
 
-      const finalId = accumulated.id ?? messageId ?? nanoid();
-      const message = chunkToAIMessage(accumulated, finalId);
+      const finalId = presetMessageId ?? accumulated.id ?? messageId ?? nanoid();
+      const message = chunkToAIMessage(accumulated, finalId, additionalKwargs);
       if (getRunMeteringAccumulator(config).callCount === callCountBefore) {
         recordRunMeteringUsageIfMissing(
           config,

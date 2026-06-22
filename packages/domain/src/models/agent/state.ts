@@ -3,7 +3,7 @@ import type { WorkProduction } from "../work/production.js";
 import type { WorkPreview } from "../work/preview.js";
 import type { WorkReference } from "../work/reference.js";
 import type { WorkRevision } from "../work/revision.js";
-import type { NextStepSuggestions } from "./suggestions.js";
+import type { TurnDirections } from "./turn-briefing.js";
 import type { RunProgress } from "./run-progress.js";
 import type { AiUsageSnapshot } from "./ai-usage.js";
 import type { TurnRuntime } from "./turn.js";
@@ -26,8 +26,8 @@ export interface YouganAgentState {
   revision: WorkRevision;
   /** 已提交制作计划（不含 preview） */
   production: WorkProduction;
-  /** 回合末或开屏生成的下一步建议（不入库） */
-  nextStepSuggestions: NextStepSuggestions | null;
+  /** 回合简报延伸方向（开屏 / 回合末；不入库） */
+  turnDirections: TurnDirections | null;
   /** 单轮执行运行时（调度、staging、取消） */
   turn: TurnRuntime;
   /** API 注入；单次 LLM 结算后更新 */
@@ -51,7 +51,7 @@ export type YouganStreamValues = Partial<
     | "preview"
     | "revision"
     | "production"
-    | "nextStepSuggestions"
+    | "turnDirections"
     | "turn"
     | "aiUsage"
     | "runProgress"

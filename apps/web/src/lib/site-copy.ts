@@ -466,7 +466,9 @@ export const CHAT_COPY = {
     productionExecuting: "AI 团队正在执行制作",
   },
   replying: "正在回复…",
-  interrupted: "已中断",
+  interrupted: "生成已停止",
+  interruptedHint:
+    "本回合未完成（可能是你点了停止，或连接中断）。延伸方向不会出现，请重新发送消息继续。",
   productionConfirm: {
     confirm: "开始创作",
     confirmTooltip: "确认后开始执行制作，通常需要数分钟，并会消耗较多 Token",
@@ -583,6 +585,7 @@ export const PROFILE_WIZARD = {
   tierRecommended: "建议",
   tierOptional: "可选",
   readyBody: "必填项已齐。可说「开始制作」进入制作，或继续补充风格、背景、需求与边界。",
+  readyCompletedBody: "方案已用于制作。仍可在对话中补充风格、背景、需求与边界。",
   settingLabel: "背景",
   requirementsLabel: "需求",
   boundsLabel: "边界",

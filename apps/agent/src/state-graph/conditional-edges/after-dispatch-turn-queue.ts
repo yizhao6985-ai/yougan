@@ -19,7 +19,7 @@ export type AfterDispatchTurnQueueTarget =
   | "askGraph";
 
 function subgraphForKind(
-  kind: Exclude<TurnQueueKind, "suggestions">,
+  kind: TurnQueueKind,
 ): AfterDispatchTurnQueueTarget {
   switch (kind) {
     case "reference":
@@ -47,9 +47,6 @@ export function selectAfterDispatchTurnQueue(
 
   const kind: TurnQueueKind | undefined =
     getActiveTurnKind(state) ?? queue[0];
-  if (kind === "suggestions") {
-    return "advanceTurnQueue";
-  }
   return subgraphForKind(kind ?? "profile");
 }
 

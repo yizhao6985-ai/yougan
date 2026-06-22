@@ -31,14 +31,18 @@ import type {
   Work,
   WorkConversation,
   WorkProfile,
+  WorkRevision,
 } from "@/lib/types";
 import {
+  EMPTY_TURN_RUNTIME,
   fallbackConversationTitleFromText,
   isDefaultConversationTitle,
+  mergeTurnRuntime,
   type ProductionConfirmDecision,
   type ProductionConfirmInterruptValue,
   type ReviseConfirmDecision,
   type ReviseConfirmInterruptValue,
+  type TurnDirections,
 } from "@yougan/domain";
 import {
   aiUsageFromThreadState,
@@ -63,8 +67,7 @@ import {
 } from "@/lib/thread-run-coordination";
 import { useAuthToken } from "@/store/auth";
 import { patchConversationsCache } from "@/hooks/queries/conversations";
-import type { ConversationSuggestionsCache } from "@/hooks/use-conversation-suggestions-cache";
-import type { NextStepSuggestions } from "@/lib/types";
+import type { ConversationDirectionsCache } from "@/hooks/use-conversation-directions-cache";
 
 /**
  * Studio 聊天与 LangGraph thread 之间的核心数据层。
@@ -135,18 +138,30 @@ interface UseYouganStreamOptions {
   work: Work | null;
   conversation: WorkConversation | null;
   modelTemperature: number;
-  /** 按对话缓存 nextStepSuggestions，切换回来时复用、避免重复 bootstrap */
-  suggestionsCache?: ConversationSuggestionsCache;
+  /** 按对话缓存 turnDirections，切换回来时复用、避免重复 bootstrap */
+  directionsCache?: ConversationDirectionsCache;
   /** conversation 首次拿到 LangGraph threadId 时回写 DB（SDK onThreadId 回调） */
   onThreadId?: (conversationId: string, threadId: string | null) => void;
   /** 回合 committed 后触发（刷新作品物化列、侧边栏等） */
   onRunComplete?: (workId: string, values: YouganValues) => void;
 }
 
-function hasNextStepSuggestions(
-  value: NextStepSuggestions | null | undefined,
+function hasTurnDirections(
+  value: TurnDirections | null | undefined,
 ): boolean {
-  return (value?.suggestions?.length ?? 0) > 0;
+  return (value?.directions.length ?? 0) > 0;
+}
+
+function extractTurnDirectionsFromUpdate(
+  update: Record<string, unknown>,
+): TurnDirections | null | undefined {
+  for (const raw of Object.values(update)) {
+    if (!raw || typeof raw !== "object") continue;
+    if ("turnDirections" in raw) {
+      return (raw as { turnDirections: TurnDirections | null }).turnDirections;
+    }
+  }
+  return undefined;
 }
 
 /**
@@ -226,7 +241,7 @@ export function useYouganStream({
   work,
   conversation,
   modelTemperature,
-  suggestionsCache,
+  directionsCache,
   onThreadId,
   onRunComplete,
 }: UseYouganStreamOptions) {
@@ -260,6 +275,7 @@ export function useYouganStream({
    */
   const [postCancelValues, setPostCancelValues] =
     useState<Partial<YouganValues> | null>(null);
+  const postCancelValuesRef = useLatest(postCancelValues);
   /** joinStream 进行中（refresh 后恢复 run） */
   const [
     isJoiningRun,
@@ -524,6 +540,29 @@ export function useYouganStream({
         onRunCompleteRef.current?.(workId!, committedValues);
       }
 
+      const incomingDirections = extractTurnDirectionsFromUpdate(
+        update as Record<string, unknown>,
+      );
+      const shouldReleaseDirections =
+        (incomingDirections !== undefined &&
+          hasTurnDirections(incomingDirections)) ||
+        hasTurnDirections(committedValues?.turnDirections);
+      const shouldReleaseRunProgress = committedValues != null;
+
+      if (shouldReleaseDirections || shouldReleaseRunProgress) {
+        setPostCancelValues((prev) => {
+          if (!prev) return prev;
+          const next = { ...prev };
+          if (shouldReleaseDirections && prev.turnDirections === null) {
+            delete next.turnDirections;
+          }
+          if (shouldReleaseRunProgress && prev.runProgress === null) {
+            delete next.runProgress;
+          }
+          return Object.keys(next).length === 0 ? null : next;
+        });
+      }
+
       /** updates 可能来自多个 subgraph node，逐 value 扫 aiUsage */
       for (const raw of Object.values(update as Record<string, unknown>)) {
         if (!raw || typeof raw !== "object") continue;
@@ -541,6 +580,7 @@ export function useYouganStream({
       }
     },
   });
+  const streamValuesRef = useLatest(stream.values);
 
   // --- 生命周期 effect：rejoin 补同步 / sessionStorage 清理 / bootstrap / thread 切换重置 ---
 
@@ -718,10 +758,10 @@ export function useYouganStream({
     const merged = { ...(base ?? {}), ...postCancelValues } as YouganValues;
     /** stream 已写入本回合新 suggestions 时，不被 postCancel 的 null 覆盖 */
     if (
-      postCancelValues.nextStepSuggestions === null &&
-      hasNextStepSuggestions(base?.nextStepSuggestions)
+      postCancelValues.turnDirections === null &&
+      hasTurnDirections(base?.turnDirections)
     ) {
-      merged.nextStepSuggestions = base!.nextStepSuggestions!;
+      merged.turnDirections = base!.turnDirections!;
     }
     return merged;
   }, [postCancelValues, stream.values]);
@@ -733,26 +773,26 @@ export function useYouganStream({
   }, [isJoiningRun, stream.isLoading]);
 
   useEffect(() => {
-    if (!workId || !conversationId || !suggestionsCache) return;
+    if (!workId || !conversationId || !directionsCache) return;
     if (suppressSuggestionsCacheRef.current) return;
     if (stream.isLoading || isJoiningRun || isTurnInFlight(mergedStreamValues)) {
       return;
     }
-    const suggestions = mergedStreamValues?.nextStepSuggestions;
-    if (!hasNextStepSuggestions(suggestions)) return;
-    suggestionsCache.set(workId, conversationId, suggestions);
+    const directions = mergedStreamValues?.turnDirections;
+    if (!hasTurnDirections(directions)) return;
+    directionsCache.set(workId, conversationId, directions);
   }, [
     conversationId,
     isJoiningRun,
     mergedStreamValues,
-    mergedStreamValues?.nextStepSuggestions,
-    suggestionsCache,
+    mergedStreamValues?.turnDirections,
+    directionsCache,
     stream.isLoading,
     workId,
   ]);
 
   const displayStreamValues = useMemo((): YouganValues | undefined => {
-    const cached = suggestionsCache?.get(workId, conversationId) ?? null;
+    const cached = directionsCache?.get(workId, conversationId) ?? null;
     const canUseCachedOverlay =
       Boolean(cached) &&
       !stream.isLoading &&
@@ -760,13 +800,13 @@ export function useYouganStream({
       !isTurnInFlight(mergedStreamValues);
     if (!mergedStreamValues) {
       if (!canUseCachedOverlay) return undefined;
-      return { nextStepSuggestions: cached! } as YouganValues;
+      return { turnDirections: cached! } as YouganValues;
     }
-    if (hasNextStepSuggestions(mergedStreamValues.nextStepSuggestions)) {
+    if (hasTurnDirections(mergedStreamValues.turnDirections)) {
       return mergedStreamValues;
     }
     if (canUseCachedOverlay) {
-      return { ...mergedStreamValues, nextStepSuggestions: cached! };
+      return { ...mergedStreamValues, turnDirections: cached! };
     }
     return mergedStreamValues;
   }, [
@@ -774,7 +814,7 @@ export function useYouganStream({
     isJoiningRun,
     mergedStreamValues,
     stream.isLoading,
-    suggestionsCache,
+    directionsCache,
     workId,
   ]);
 
@@ -926,10 +966,10 @@ export function useYouganStream({
     if (!work || !conversation || !token) return;
     if (stream.messages.length > 0) return;
     if (hasActiveRun) return;
-    if (suggestionsCache?.has(work.id, conversation.id)) return;
+    if (directionsCache?.has(work.id, conversation.id)) return;
     if (
-      hasNextStepSuggestions(
-        (stream.values as YouganValues | undefined)?.nextStepSuggestions,
+      hasTurnDirections(
+        (stream.values as YouganValues | undefined)?.turnDirections,
       )
     ) {
       return;
@@ -952,9 +992,9 @@ export function useYouganStream({
     isThreadLoading: stream.isThreadLoading,
     isCancelling,
     hasActiveRun,
-    hasCachedSuggestions: suggestionsCache?.has(workId, conversationId) ?? false,
-    hasCheckpointSuggestions: hasNextStepSuggestions(
-      mergedStreamValues?.nextStepSuggestions,
+    hasCachedSuggestions: directionsCache?.has(workId, conversationId) ?? false,
+    hasCheckpointSuggestions: hasTurnDirections(
+      mergedStreamValues?.turnDirections,
     ),
     submitOpeningBootstrap,
   });
@@ -1052,7 +1092,9 @@ export function useYouganStream({
 
       if (workId && conversationId) {
         suppressSuggestionsCacheRef.current = true;
-        suggestionsCache?.clear(workId, conversationId);
+        if (!hasTurnDirections(cancelPatch.turnDirections)) {
+          directionsCache?.clear(workId, conversationId);
+        }
         void queryClient.invalidateQueries({
           queryKey: queryKeys.works.openingBootstrap(workId, conversationId),
         });
@@ -1105,7 +1147,7 @@ export function useYouganStream({
       if (!hasPayload || !work || !conversation) return;
 
       suppressSuggestionsCacheRef.current = true;
-      suggestionsCache?.clear(work.id, conversation.id);
+      directionsCache?.clear(work.id, conversation.id);
 
       /** 首条消息时用内容生成对话标题，optimistic 写 React Query cache */
       if (
@@ -1124,7 +1166,7 @@ export function useYouganStream({
 
       await awaitCancelIfInFlight();
       setPostCancelValues({
-        nextStepSuggestions: null,
+        turnDirections: null,
         runProgress: null,
       });
       await stream.submit(
@@ -1214,6 +1256,37 @@ export function useYouganStream({
     },
   );
 
+  /** 侧栏删改稿条目后同步 revision 到 checkpoint（含未提交 staging） */
+  const syncMaterializedRevisionToStream = useMemoizedFn(
+    (revision: WorkRevision) => {
+      const baseValues = streamValuesRef.current as YouganValues | undefined;
+      const prevPostCancel = postCancelValuesRef.current;
+      const currentValues = {
+        ...(baseValues ?? {}),
+        ...(prevPostCancel ?? {}),
+      } as YouganValues;
+      const currentTurn = currentValues.turn ?? EMPTY_TURN_RUNTIME;
+      const hasPendingStaging =
+        Boolean(currentTurn.staging) && currentTurn.committed !== true;
+
+      const patch: Partial<YouganValues> = { revision };
+      if (hasPendingStaging && currentTurn.staging) {
+        patch.turn = mergeTurnRuntime(currentTurn, {
+          staging: { ...currentTurn.staging, revision },
+        });
+      }
+
+      if (threadId) {
+        void stream.client.threads
+          .updateState(threadId, { values: patch })
+          .catch((error) => {
+            console.error("[yougan] sync materialized revision failed", error);
+          });
+      }
+      setPostCancelValues((prev) => ({ ...(prev ?? {}), ...patch }));
+    },
+  );
+
   /** 合并 stream.interrupt 与 bootstrap 持久化的 interrupt，供确认弹窗使用 */
   const productionConfirmInterrupt = useMemo(
     () =>
@@ -1263,7 +1336,7 @@ export function useYouganStream({
 
   /** checkpoint 或会话缓存里是否已有 opening 下一步建议（有则不再 bootstrap） */
   const hasOpeningSuggestions =
-    hasNextStepSuggestions(displayStreamValues?.nextStepSuggestions);
+    hasTurnDirections(displayStreamValues?.turnDirections);
 
   /**
    * 空对话 opening 加载态：无 messages、无 suggestions，且 bootstrap query / thread / stream 仍在忙。
@@ -1317,6 +1390,7 @@ export function useYouganStream({
     resumeReviseConfirm,
     applyMaterializedWorkState,
     syncMaterializedProfileToStream,
+    syncMaterializedRevisionToStream,
     productionConfirmInterrupt,
     reviseConfirmInterrupt,
     isResumingInterrupt,

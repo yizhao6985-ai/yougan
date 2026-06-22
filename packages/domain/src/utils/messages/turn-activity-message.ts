@@ -7,6 +7,7 @@ import {
   TURN_ACTIVITY_MESSAGE_KIND,
   turnActivityLabel,
 } from "../../models/agent/turn-activity.js";
+import { sanitizeBriefingExcerpt } from "./turn-briefing-message.js";
 
 export type TurnActivityMessagePayload = {
   yougan_message_kind: typeof TURN_ACTIVITY_MESSAGE_KIND;
@@ -38,7 +39,7 @@ export function buildTurnActivity(input: TurnActivityInput): TurnActivity {
     kind: input.kind,
     status: input.status,
     label,
-    detail: input.detail?.trim() || null,
+    detail: sanitizeBriefingExcerpt(input.detail),
     refId: input.refId ?? null,
     createdAt: input.createdAt ?? now,
     updatedAt: terminal ? (input.updatedAt ?? now) : input.updatedAt,
@@ -89,12 +90,7 @@ export function parseTurnActivityFromMessage(
     kind: record.kind as TurnActivity["kind"],
     status: parseActivityStatus(record.status),
     label: record.label,
-    detail:
-      typeof record.detail === "string"
-        ? record.detail
-        : record.detail == null
-          ? null
-          : null,
+    detail: sanitizeBriefingExcerpt(record.detail),
     refId:
       typeof record.refId === "string"
         ? record.refId

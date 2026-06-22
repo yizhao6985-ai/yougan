@@ -4,6 +4,8 @@ export const LLM_TIMEOUT_MS = {
   structured: 180_000,
   /** 下一步建议：条数少、失败可静默跳过，单次调用不重试 */
   suggestions: 60_000,
+  /** 回合末影响评价：短输出，失败回退规则模板 */
+  reflection: 60_000,
   production: 480_000,
   image: 90_000,
 } as const;

@@ -129,7 +129,7 @@ export function buildReadSyncPatchFromThreadHead(
 
   return {
     turn,
-    nextStepSuggestions: head.nextStepSuggestions ?? null,
+    turnDirections: head.turnDirections ?? null,
     runProgress: null,
   };
 }
