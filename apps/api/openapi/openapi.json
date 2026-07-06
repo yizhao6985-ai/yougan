@@ -239,46 +239,6 @@
                 "spec"
               ]
             }
-          },
-          "context": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "spec": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "id",
-                "spec"
-              ]
-            }
-          },
-          "sequence": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "spec": {
-                  "type": "string"
-                },
-                "role": {
-                  "type": "string",
-                  "nullable": true
-                }
-              },
-              "required": [
-                "id",
-                "spec"
-              ]
-            }
           }
         },
         "required": [
@@ -396,6 +356,29 @@
           "$ref": "#/components/schemas/WorkReference"
         }
       },
+      "ScriptSegment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string",
+            "nullable": true
+          },
+          "body": {
+            "type": "string"
+          },
+          "durationSec": {
+            "type": "number",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "body"
+        ]
+      },
       "PreviewContent": {
         "oneOf": [
           {
@@ -463,38 +446,6 @@
               "body": {
                 "type": "string"
               },
-              "cover": {
-                "type": "object",
-                "nullable": true,
-                "properties": {
-                  "id": {
-                    "type": "string"
-                  },
-                  "url": {
-                    "type": "string",
-                    "format": "uri"
-                  },
-                  "alt": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "prompt": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "transient": {
-                    "type": "boolean"
-                  },
-                  "taskId": {
-                    "type": "string",
-                    "nullable": true
-                  }
-                },
-                "required": [
-                  "id",
-                  "url"
-                ]
-              },
               "images": {
                 "type": "array",
                 "items": {
@@ -546,38 +497,6 @@
               },
               "body": {
                 "type": "string"
-              },
-              "cover": {
-                "type": "object",
-                "nullable": true,
-                "properties": {
-                  "id": {
-                    "type": "string"
-                  },
-                  "url": {
-                    "type": "string",
-                    "format": "uri"
-                  },
-                  "alt": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "prompt": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "transient": {
-                    "type": "boolean"
-                  },
-                  "taskId": {
-                    "type": "string",
-                    "nullable": true
-                  }
-                },
-                "required": [
-                  "id",
-                  "url"
-                ]
               },
               "images": {
                 "type": "array",
@@ -631,38 +550,6 @@
               "body": {
                 "type": "string"
               },
-              "cover": {
-                "type": "object",
-                "nullable": true,
-                "properties": {
-                  "id": {
-                    "type": "string"
-                  },
-                  "url": {
-                    "type": "string",
-                    "format": "uri"
-                  },
-                  "alt": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "prompt": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "transient": {
-                    "type": "boolean"
-                  },
-                  "taskId": {
-                    "type": "string",
-                    "nullable": true
-                  }
-                },
-                "required": [
-                  "id",
-                  "url"
-                ]
-              },
               "images": {
                 "type": "array",
                 "items": {
@@ -715,38 +602,6 @@
               "body": {
                 "type": "string"
               },
-              "cover": {
-                "type": "object",
-                "nullable": true,
-                "properties": {
-                  "id": {
-                    "type": "string"
-                  },
-                  "url": {
-                    "type": "string",
-                    "format": "uri"
-                  },
-                  "alt": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "prompt": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "transient": {
-                    "type": "boolean"
-                  },
-                  "taskId": {
-                    "type": "string",
-                    "nullable": true
-                  }
-                },
-                "required": [
-                  "id",
-                  "url"
-                ]
-              },
               "images": {
                 "type": "array",
                 "items": {
@@ -796,13 +651,20 @@
                   "video_script"
                 ]
               },
+              "segments": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ScriptSegment"
+                },
+                "minItems": 1
+              },
               "body": {
                 "type": "string"
               }
             },
             "required": [
               "kind",
-              "body"
+              "segments"
             ]
           },
           {
@@ -814,13 +676,20 @@
                   "short_video"
                 ]
               },
+              "segments": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ScriptSegment"
+                },
+                "minItems": 1
+              },
               "body": {
                 "type": "string"
               }
             },
             "required": [
               "kind",
-              "body"
+              "segments"
             ]
           },
           {
@@ -832,13 +701,20 @@
                   "podcast"
                 ]
               },
+              "segments": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ScriptSegment"
+                },
+                "minItems": 1
+              },
               "body": {
                 "type": "string"
               }
             },
             "required": [
               "kind",
-              "body"
+              "segments"
             ]
           },
           {
@@ -850,13 +726,20 @@
                   "music"
                 ]
               },
+              "segments": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ScriptSegment"
+                },
+                "minItems": 1
+              },
               "body": {
                 "type": "string"
               }
             },
             "required": [
               "kind",
-              "body"
+              "segments"
             ]
           },
           {
@@ -912,153 +795,9 @@
               "kind",
               "images"
             ]
-          }
-        ]
-      },
-      "PreviewBlock": {
-        "oneOf": [
-          {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "taskId": {
-                "type": "string",
-                "nullable": true
-              },
-              "type": {
-                "type": "string",
-                "enum": [
-                  "text"
-                ]
-              },
-              "markdown": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "id",
-              "type",
-              "markdown"
-            ]
           },
           {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "taskId": {
-                "type": "string",
-                "nullable": true
-              },
-              "type": {
-                "type": "string",
-                "enum": [
-                  "image"
-                ]
-              },
-              "url": {
-                "type": "string",
-                "format": "uri"
-              },
-              "alt": {
-                "type": "string",
-                "nullable": true
-              },
-              "prompt": {
-                "type": "string",
-                "nullable": true
-              },
-              "transient": {
-                "type": "boolean"
-              }
-            },
-            "required": [
-              "id",
-              "type",
-              "url"
-            ]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "taskId": {
-                "type": "string",
-                "nullable": true
-              },
-              "type": {
-                "type": "string",
-                "enum": [
-                  "audio"
-                ]
-              },
-              "url": {
-                "type": "string",
-                "format": "uri"
-              },
-              "title": {
-                "type": "string",
-                "nullable": true
-              },
-              "durationSec": {
-                "type": "number",
-                "nullable": true
-              },
-              "transcript": {
-                "type": "string",
-                "nullable": true
-              }
-            },
-            "required": [
-              "id",
-              "type",
-              "url"
-            ]
-          },
-          {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "taskId": {
-                "type": "string",
-                "nullable": true
-              },
-              "type": {
-                "type": "string",
-                "enum": [
-                  "video"
-                ]
-              },
-              "url": {
-                "type": "string",
-                "format": "uri"
-              },
-              "posterUrl": {
-                "type": "string",
-                "nullable": true,
-                "format": "uri"
-              },
-              "title": {
-                "type": "string",
-                "nullable": true
-              },
-              "durationSec": {
-                "type": "number",
-                "nullable": true
-              }
-            },
-            "required": [
-              "id",
-              "type",
-              "url"
-            ]
+            "nullable": true
           }
         ]
       },
@@ -1086,17 +825,8 @@
           },
           "content": {
             "$ref": "#/components/schemas/PreviewContent"
-          },
-          "blocks": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PreviewBlock"
-            }
           }
-        },
-        "required": [
-          "content"
-        ]
+        }
       },
       "RevisionAnchor": {
         "type": "object",

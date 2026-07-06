@@ -1250,6 +1250,12 @@ export interface components {
             created_at: string;
         };
         WorkReferences: components["schemas"]["WorkReference"][];
+        ScriptSegment: {
+            id: string;
+            label?: string | null;
+            body: string;
+            durationSec?: number | null;
+        };
         PreviewContent: {
             /** @enum {string} */
             kind: "note";
@@ -1267,15 +1273,6 @@ export interface components {
             /** @enum {string} */
             kind: "article";
             body: string;
-            cover?: {
-                id: string;
-                /** Format: uri */
-                url: string;
-                alt?: string | null;
-                prompt?: string | null;
-                transient?: boolean;
-                taskId?: string | null;
-            } | null;
             images?: {
                 id: string;
                 /** Format: uri */
@@ -1289,15 +1286,6 @@ export interface components {
             /** @enum {string} */
             kind: "blog";
             body: string;
-            cover?: {
-                id: string;
-                /** Format: uri */
-                url: string;
-                alt?: string | null;
-                prompt?: string | null;
-                transient?: boolean;
-                taskId?: string | null;
-            } | null;
             images?: {
                 id: string;
                 /** Format: uri */
@@ -1311,15 +1299,6 @@ export interface components {
             /** @enum {string} */
             kind: "short_post";
             body: string;
-            cover?: {
-                id: string;
-                /** Format: uri */
-                url: string;
-                alt?: string | null;
-                prompt?: string | null;
-                transient?: boolean;
-                taskId?: string | null;
-            } | null;
             images?: {
                 id: string;
                 /** Format: uri */
@@ -1333,15 +1312,6 @@ export interface components {
             /** @enum {string} */
             kind: "novel";
             body: string;
-            cover?: {
-                id: string;
-                /** Format: uri */
-                url: string;
-                alt?: string | null;
-                prompt?: string | null;
-                transient?: boolean;
-                taskId?: string | null;
-            } | null;
             images?: {
                 id: string;
                 /** Format: uri */
@@ -1354,19 +1324,23 @@ export interface components {
         } | {
             /** @enum {string} */
             kind: "video_script";
-            body: string;
+            segments: components["schemas"]["ScriptSegment"][];
+            body?: string;
         } | {
             /** @enum {string} */
             kind: "short_video";
-            body: string;
+            segments: components["schemas"]["ScriptSegment"][];
+            body?: string;
         } | {
             /** @enum {string} */
             kind: "podcast";
-            body: string;
+            segments: components["schemas"]["ScriptSegment"][];
+            body?: string;
         } | {
             /** @enum {string} */
             kind: "music";
-            body: string;
+            segments: components["schemas"]["ScriptSegment"][];
+            body?: string;
         } | {
             /** @enum {string} */
             kind: "illustration";
@@ -1380,52 +1354,13 @@ export interface components {
                 taskId?: string | null;
             }[];
             caption?: string | null;
-        };
-        PreviewBlock: {
-            id: string;
-            taskId?: string | null;
-            /** @enum {string} */
-            type: "text";
-            markdown: string;
-        } | {
-            id: string;
-            taskId?: string | null;
-            /** @enum {string} */
-            type: "image";
-            /** Format: uri */
-            url: string;
-            alt?: string | null;
-            prompt?: string | null;
-            transient?: boolean;
-        } | {
-            id: string;
-            taskId?: string | null;
-            /** @enum {string} */
-            type: "audio";
-            /** Format: uri */
-            url: string;
-            title?: string | null;
-            durationSec?: number | null;
-            transcript?: string | null;
-        } | {
-            id: string;
-            taskId?: string | null;
-            /** @enum {string} */
-            type: "video";
-            /** Format: uri */
-            url: string;
-            /** Format: uri */
-            posterUrl?: string | null;
-            title?: string | null;
-            durationSec?: number | null;
-        };
+        } | unknown;
         WorkPreview: {
             title?: string | null;
             hook?: string | null;
             hashtags?: string[];
             notes?: string | null;
-            content: components["schemas"]["PreviewContent"];
-            blocks?: components["schemas"]["PreviewBlock"][];
+            content?: components["schemas"]["PreviewContent"];
         } | null;
         RevisionAnchor: {
             blockId: string;
