@@ -1,5 +1,10 @@
 /** 执行 profile 子图 tool_calls（归一化误用工具名后交给 ToolNode），并收束 activity */
-import { AIMessage } from "@langchain/core/messages";
+import {
+  AIMessage,
+  isBaseMessage,
+  type BaseMessage,
+} from "@langchain/core/messages";
+import { Command, isCommand } from "@langchain/langgraph";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 
 import { hasPendingAiToolCalls } from "#agent/messages/pending-tool-calls.js";
@@ -46,6 +51,36 @@ function remapPendingProfileToolCalls(
   return remapped ? next : messages;
 }
 
+/** ToolNode 在 tool 返回 Command 时会产出 Command[]，需从中抽出 messages */
+function collectMessagesFromToolNodeResult(result: unknown): BaseMessage[] {
+  if (result == null) return [];
+
+  if (Array.isArray(result)) {
+    const messages: BaseMessage[] = [];
+    for (const item of result) {
+      if (isCommand(item)) {
+        const update = item.update as { messages?: BaseMessage | BaseMessage[] };
+        const nested = update?.messages;
+        if (!nested) continue;
+        messages.push(...(Array.isArray(nested) ? nested : [nested]));
+        continue;
+      }
+      if (isBaseMessage(item)) {
+        messages.push(item);
+      }
+    }
+    return messages;
+  }
+
+  if (typeof result === "object" && "messages" in result) {
+    const nested = (result as { messages?: BaseMessage | BaseMessage[] }).messages;
+    if (!nested) return [];
+    return Array.isArray(nested) ? nested : [nested];
+  }
+
+  return [];
+}
+
 export async function runProfileToolsNode(
   state: AgentStateType,
   config: Parameters<ToolNode["invoke"]>[1],
@@ -54,18 +89,32 @@ export async function runProfileToolsNode(
   const invokeState =
     messages === state.messages ? state : { ...state, messages };
   const result = await toolNode.invoke(invokeState, config);
-  const toolMessages = Array.isArray(result?.messages)
-    ? result.messages
-    : result?.messages
-      ? [result.messages]
-      : [];
+  const toolMessages = collectMessagesFromToolNodeResult(result);
   const finalized = finalizeRunningProfileActivities([
     ...invokeState.messages,
     ...toolMessages,
   ]);
 
-  return {
-    ...result,
-    messages: [...toolMessages, ...finalized],
-  };
+  // 无待收束 activity：原样返回，让图层正确应用 Command[]（含 staging.profile）
+  if (finalized.length === 0) {
+    return result;
+  }
+
+  // tool 已返回 Command 时不可展开成普通对象，否则会丢掉 profile 补丁
+  if (Array.isArray(result) && result.some(isCommand)) {
+    return [
+      ...result,
+      new Command({ update: { messages: finalized } }),
+    ];
+  }
+
+  if (result && typeof result === "object" && !Array.isArray(result)) {
+    const existing = collectMessagesFromToolNodeResult(result);
+    return {
+      ...result,
+      messages: [...existing, ...finalized],
+    };
+  }
+
+  return { messages: [...toolMessages, ...finalized] };
 }

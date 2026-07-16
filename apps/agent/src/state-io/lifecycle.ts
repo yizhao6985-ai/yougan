@@ -100,6 +100,7 @@ export function normalizeDirtyTurnState(
       completedKinds: [],
     }),
     turnDirections: null,
+    pendingTurnDirections: null,
   };
 }
 

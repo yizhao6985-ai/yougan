@@ -18,7 +18,7 @@ src/
         └── collect-revision/
 ```
 
-系统收尾：`generateTurnDirections`（延伸建议）→ `commitTurn` → `summarizeMessages`（历史压缩）→ `finalizeRunMetering`。
+系统收尾：`planTurnQueue` 后扇出 `generateTurnDirections`（∥ 主回合）→ `commitTurn`（defer，pending→turnDirections）→ `summarizeMessages` → `finalizeRunMetering`。
 
 主图接线在 `src/graph.ts`；各子图接线在 `state-graph/subgraphs/<name>/graph.ts`。
 

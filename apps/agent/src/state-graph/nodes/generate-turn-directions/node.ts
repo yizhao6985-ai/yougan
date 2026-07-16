@@ -1,4 +1,4 @@
-/** 结构化生成延伸方向，写入 state.turnDirections */
+/** 与主回合并行生成延伸方向，写入 state.pendingTurnDirections；commitTurn 再提升 */
 import { HumanMessage } from "@langchain/core/messages";
 import type { RunnableConfig } from "@langchain/core/runnables";
 
@@ -14,16 +14,13 @@ import {
 import type { NodeError } from "@langchain/langgraph";
 
 import { invokeStructured } from "#agent/llm/invoke/index.js";
-import { patchAiUsageMetering } from "#agent/llm/invoke/metering.js";
 import { createChatModel } from "#agent/llm/providers/index.js";
 import { getLatestHumanMessageText } from "#agent/messages/human.js";
 import { getProfile } from "#agent/state-io/index.js";
-import { patchRunProgress } from "#agent/state-io/run-progress.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
 import { rethrowUnlessRecoverable } from "../../helpers/recoverable-node-error.js";
 import { newTurnDirection } from "./helpers/direction-factory.js";
-import { buildFallbackTurnDirections } from "./helpers/build-fallback-turn-directions.js";
 import { buildTurnDirectionsPrompt } from "./prompt.js";
 import { turnDirectionsResponseSchema } from "./schema.js";
 
@@ -108,23 +105,10 @@ async function resolveTurnDirections(
   );
 }
 
-function turnDirectionsResultPatch(
-  state: AgentStateType,
-  turnDirections: TurnDirections | null,
-  config?: RunnableConfig,
+function pendingTurnDirectionsPatch(
+  pendingTurnDirections: TurnDirections | null,
 ): AgentStatePatch {
-  if (!turnDirections) {
-    return {
-      ...patchRunProgress("turn_briefing"),
-      ...patchAiUsageMetering(state.aiUsage, config),
-    };
-  }
-
-  return {
-    ...patchRunProgress("turn_briefing"),
-    turnDirections,
-    ...patchAiUsageMetering(state.aiUsage, config),
-  };
+  return { pendingTurnDirections };
 }
 
 export async function generateTurnDirectionsNode(
@@ -132,14 +116,14 @@ export async function generateTurnDirectionsNode(
   config?: RunnableConfig,
 ): Promise<AgentStatePatch> {
   if (state.turn.cancelled) {
-    return {};
+    return pendingTurnDirectionsPatch(null);
   }
 
-  const turnDirections =
-    (await resolveTurnDirections(state, config)) ??
-    buildFallbackTurnDirections(state);
-
-  return turnDirectionsResultPatch(state, turnDirections, config);
+  const turnDirections = await resolveTurnDirections(state, config);
+  if (state.turn.cancelled) {
+    return pendingTurnDirectionsPatch(null);
+  }
+  return pendingTurnDirectionsPatch(turnDirections);
 }
 
 export function generateTurnDirectionsErrorHandler(
@@ -147,8 +131,5 @@ export function generateTurnDirectionsErrorHandler(
   error: NodeError,
 ): AgentStatePatch {
   rethrowUnlessRecoverable(error);
-  return turnDirectionsResultPatch(
-    state,
-    buildFallbackTurnDirections(state),
-  );
+  return pendingTurnDirectionsPatch(null);
 }

@@ -32,9 +32,11 @@ function GuidedEmpty({
   return (
     <div className="min-h-[4.5rem] rounded-lg border border-dashed border-border bg-muted/50 px-4 py-4">
       <p className="text-sm font-medium text-foreground">{title}</p>
-      <p className="mt-1.5 text-pretty text-xs leading-6 text-muted-foreground">
-        {body}
-      </p>
+      {body.trim() ? (
+        <p className="mt-1.5 text-pretty text-xs leading-6 text-muted-foreground">
+          {body}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -328,11 +330,7 @@ function ProfileStepList({
                     >
                       {step.title}
                     </p>
-                    {step.required ? (
-                      <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                        {PROFILE_WIZARD.tierRequired}
-                      </span>
-                    ) : step.id !== "ready" ? (
+                    {step.id !== "ready" ? (
                       <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground/70">
                         {PROFILE_WIZARD.tierOptional}
                       </span>

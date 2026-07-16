@@ -12,7 +12,7 @@ import { getProfileStepCopy } from "./profile-step-copy.js";
 
 export type ProfileStepStatus = "pending" | "active" | "done" | "skipped";
 
-export type ProfileStepItemTier = "required" | "recommended" | "optional";
+export type ProfileStepItemTier = "recommended" | "optional";
 
 export type ProfileStepItem = {
   key: string;
@@ -24,7 +24,6 @@ export type ProfileSetupStepState = {
   id: ProfileSetupStep;
   index: number;
   status: ProfileStepStatus;
-  required: boolean;
   items: ProfileStepItem[];
   filled: boolean;
   title: string;
@@ -149,12 +148,12 @@ function buildStepItems(
         {
           key: "summary",
           filled: Boolean(profile.direction.summary.trim()),
-          tier: "required",
+          tier: "recommended",
         },
         {
           key: "format",
           filled: Boolean(profile.direction.format),
-          tier: "required",
+          tier: "recommended",
         },
         {
           key: "audience",
@@ -197,10 +196,6 @@ function buildStepItems(
     default:
       return [];
   }
-}
-
-function stepIsRequired(step: ProfileStepId): boolean {
-  return step === "direction";
 }
 
 function getFurthestFilledStepIndex(
@@ -260,14 +255,7 @@ export function getActiveProfileStep(
 ): ProfileSetupStep {
   const skipped = skippedSteps;
 
-  for (const step of PROFILE_SETUP_FLOW) {
-    if (!stepIsRequired(step)) break;
-    if (skipped.includes(step)) continue;
-    if (!isProfileStepFilled(profile, step)) {
-      return step;
-    }
-  }
-
+  // 向导步骤均可后补；开制仍由 isProfileSetupReady（定位+体裁）门禁
   if (!isProfileSetupReady(profile)) {
     return "direction";
   }
@@ -311,7 +299,6 @@ export function getProfileSetupState(
         id,
         index: index + 1,
         status,
-        required: stepIsRequired(id),
         items: buildStepItems(profile, id),
         filled,
         title: getProfileStepCopy(profile, id).title,
@@ -331,7 +318,6 @@ export function getProfileSetupState(
         : ready
           ? "done"
           : "pending",
-    required: false,
     items: [],
     filled: ready,
     title: getProfileStepCopy(profile, "ready").title,
@@ -358,9 +344,6 @@ export function getProfileSetupHeadline(state: ProfileSetupState): string {
   }
   const active = state.steps.find((step) => step.id === state.activeStep);
   if (!active) return "整理制作方案中";
-  if (active.required && !active.filled) {
-    return `第 ${active.index} 步 · ${active.title}（必填）`;
-  }
   if (!active.filled) {
     return `第 ${active.index} 步 · ${active.title}（建议补充）`;
   }
@@ -455,13 +438,12 @@ export function buildProfileStepPromptSection(
   if (gaps) {
     lines.push(`- 本步缺口：${gaps}`);
   }
-  if (!options?.omitSuggestionExamples) {
+  if (
+    !options?.omitSuggestionExamples &&
+    copy.suggestionExamples.length > 0
+  ) {
     lines.push(
       `- 本步示例方向（勿逐字复制，须结合作品具体化）：${copy.suggestionExamples.join("；")}`,
-    );
-  } else {
-    lines.push(
-      "- 本步示例：已省略（作品标题已明确，须紧扣标题而非套用通用选题）",
     );
   }
 

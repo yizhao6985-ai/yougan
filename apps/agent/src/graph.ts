@@ -52,7 +52,8 @@ const workflow = new StateGraph(AgentState)
     ...llmTimeoutOnly(LLM_TIMEOUT_MS.suggestions),
     errorHandler: asNodeErrorHandler(generateTurnDirectionsErrorHandler),
   })
-  .addNode("commitTurn", commitTurnNode)
+  /** defer：等主回合队列与并行建议都结束后再提交 */
+  .addNode("commitTurn", commitTurnNode, { defer: true })
   .addNode("summarizeMessages", summarizeMessagesNode, {
     ...llmTimeoutOnly(LLM_TIMEOUT_MS.structured),
     errorHandler: asNodeErrorHandler(summarizeMessagesErrorHandler),
@@ -64,11 +65,13 @@ const workflow = new StateGraph(AgentState)
   .addNode("reviseGraph", reviseGraph)
   .addNode("askGraph", askGraph)
   .addEdge(START, "planTurnQueue")
+  /** 规划后扇出：主回合队列 ∥ 延伸建议 */
   .addConditionalEdges(
     "planTurnQueue",
-    () => "dispatchTurnQueue",
+    () => ["dispatchTurnQueue", "generateTurnDirections"],
     withErrorHandlerDrawingPath("planTurnQueue", {
       dispatchTurnQueue: "dispatchTurnQueue",
+      generateTurnDirections: "generateTurnDirections",
     } as const),
   )
   .addConditionalEdges(

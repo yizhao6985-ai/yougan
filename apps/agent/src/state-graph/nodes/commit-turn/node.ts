@@ -7,7 +7,7 @@ import { clearRunProgressPatch } from "#agent/state-io/run-progress.js";
 import { getTurn } from "#agent/state-io/turn.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
-/** 提交 turn.staging → state 顶层；取消则回滚 */
+/** 提交 turn.staging → state 顶层；并行建议 pending → turnDirections；取消则回滚 */
 export async function commitTurnNode(
   state: AgentStateType,
 ): Promise<AgentStatePatch> {
@@ -15,11 +15,21 @@ export async function commitTurnNode(
 
   // 取消可在任意节点打断，图未必会走到 commitTurn；保留作兜底。
   if (turn.cancelled) {
-    return patchTurn(state, cancelledTurnPatch());
+    return {
+      ...patchTurn(state, cancelledTurnPatch()),
+      pendingTurnDirections: null,
+    };
   }
 
+  const turnDirections = state.pendingTurnDirections ?? null;
+
   if (!turn.staging) {
-    return patchTurn(state, { committed: true });
+    return {
+      ...patchTurn(state, { committed: true }),
+      turnDirections,
+      pendingTurnDirections: null,
+      ...clearRunProgressPatch(),
+    };
   }
 
   return {
@@ -29,6 +39,8 @@ export async function commitTurnNode(
       committed: true,
       cancelled: false,
     }),
+    turnDirections,
+    pendingTurnDirections: null,
     ...clearRunProgressPatch(),
   };
 }

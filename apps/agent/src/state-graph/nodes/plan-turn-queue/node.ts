@@ -41,7 +41,7 @@ const DEFAULT_QUEUE: TurnQueueKind[] = finalizeTurnQueue(["profile"]);
 const OPENING_QUEUE: TurnQueueKind[] = [];
 
 /**
- * 方案向导状态门：必填（定位+体裁）未齐时剔除 production；整稿重做与局部改稿互斥。
+ * 方案向导状态门：定位+体裁未齐时剔除 production；整稿重做与局部改稿互斥。
  * 可选步未填不拦截。明确开制口令由 withExplicitProductionIntent 确定性补入。
  */
 function withProductionQueueGate(
@@ -121,6 +121,7 @@ function planTurnQueuePatch(
   return {
     ...(normalized ?? {}),
     turnDirections: null,
+    pendingTurnDirections: null,
     ...patchTurn(baseState, {
       queue,
       staging,

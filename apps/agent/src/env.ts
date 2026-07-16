@@ -39,9 +39,6 @@ function parseEnv<S extends z.ZodTypeAny>(
   return result.data;
 }
 
-/** 未设置环境变量时的默认模型 ID */
-const DEFAULT_OPENAI_CHAT_MODEL = "deepseek-v4-pro";
-
 const AgentEnvSchema = z
   .object({
     POSTGRES_URI: requiredString,
@@ -60,16 +57,14 @@ const AgentEnvSchema = z
     TAVILY_API_KEY: optionalString,
   })
   .transform((env) => {
-    const openaiBaseUrl =
-      env.OPENAI_BASE_URL ??
-      "https://dashscope.aliyuncs.com/compatible-mode/v1";
+    const openaiBaseUrl = env.OPENAI_BASE_URL ?? "";
 
     return {
       postgresUri: env.POSTGRES_URI,
       openaiApiKey: env.OPENAI_API_KEY ?? "",
       openaiBaseUrl,
       openaiModels: {
-        chat: env.OPENAI_CHAT_MODEL ?? DEFAULT_OPENAI_CHAT_MODEL,
+        chat: env.OPENAI_CHAT_MODEL ?? "",
       },
       llmMaxTokens: env.LLM_MAX_TOKENS,
       llmProductionMaxTokens: env.LLM_PRODUCTION_MAX_TOKENS,

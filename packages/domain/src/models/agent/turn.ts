@@ -8,7 +8,7 @@ import { mergeReferencesState } from "../../utils/reference-merge.js";
 
 /**
  * 单轮用户消息解析出的有序子图队列（FIFO）。
- * planTurnQueue 产出 kinds；回合末延伸方向在队列跑完后由 generateTurnDirections 执行。
+ * planTurnQueue 产出 kinds；延伸方向与队列并行由 generateTurnDirections 生成，commitTurn 提交。
  */
 /** planTurnQueue LLM 可输出的队列项 */
 export const TURN_QUEUE_PLANNER_KINDS = [

@@ -31,9 +31,11 @@ export function buildWorkStateSection(
     : [...EMPTY_WORK_REFERENCES];
   const preview = getPreview(state);
   const production = getProduction(state);
+  // 标题或体裁已明确时，不再注入跨形态/通用选题示例，避免建议串题
   const omitSuggestionExamples =
     options?.omitSuggestionExamples ??
-    !isPlaceholderWorkTitle(state.workTitle);
+    (!isPlaceholderWorkTitle(state.workTitle) ||
+      Boolean(profile.direction.format));
   const profileSetupOptions = {
     ...buildProfileSetupProgressOptions({
       profile,

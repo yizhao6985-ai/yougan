@@ -117,10 +117,10 @@ export function YouganChat() {
     [items],
   );
 
+  /** commit 写入 turnDirections 后即可展示，不必等 summarize / finalize */
   const showDirectionsAtEnd =
     directionsAnchorIndex === -1 &&
-    Boolean(activeDirections?.directions.length) &&
-    !stream.isLoading;
+    Boolean(activeDirections?.directions.length);
 
   const showRunLoading =
     stream.isLoading &&
@@ -457,6 +457,10 @@ export function YouganChat() {
                   onDecline={() => void resumeReviseConfirm("decline")}
                 />
               ) : null}
+
+              {showRunLoading ? (
+                <ChatRunLoading label={runLoadingLabel} />
+              ) : null}
             </ConversationContent>
             <ConversationScrollButton
               className={scene.conversationScrollButton}
@@ -466,9 +470,6 @@ export function YouganChat() {
 
         <div className={scene.composer} data-onboarding="chat-composer">
           <div className={cn(scene.chatColumn, "pointer-events-auto")}>
-            {showRunLoading ? (
-              <ChatRunLoading label={runLoadingLabel} />
-            ) : null}
             <StudioChatComposer
               input={input}
               onInputChange={setInput}

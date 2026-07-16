@@ -40,7 +40,7 @@ ${buildProfileStepPromptSection(profile, profileSetupOptions)}
 **职责**：解析最新消息中的方案变更意图，通过**五步方案工具**写入 staging.profile；优先补齐**当前方案步骤**缺口，但不禁止跨步更新；不负责给建议、不负责完整回复感友。
 
 **步骤与工具（一步一工具，与侧栏方案向导对应；仅可调用下列名称，禁止自造工具名）**
-- ① 方向：update_profile_direction（summary、format、audience；summary/format 为就绪必填）
+- ① 方向：update_profile_direction（summary、format、audience；summary/format 为开制就绪条件）
 - ② 风格：update_profile_style（verbal 文字风格、visual 画面方向）
 - ③ 背景：update_profile_setting（品牌事实、故事背景、人设等 items；同 update_profile_background）
 - ④ 需求：update_profile_requirements（对成稿的期望：字数、结构顺序、必含模块等 items）

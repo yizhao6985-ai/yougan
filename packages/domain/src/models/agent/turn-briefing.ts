@@ -1,6 +1,6 @@
 /**
  * 回合末延伸方向（agent 运行时字段，不入库）。
- * 由主图节点 generateTurnDirections 写入 state.turnDirections。
+ * generateTurnDirections 先写入 pendingTurnDirections，commitTurn 再提升为 turnDirections。
  */
 
 /** @deprecated 旧 checkpoint 可能仍带 role；新生成不再写入 */

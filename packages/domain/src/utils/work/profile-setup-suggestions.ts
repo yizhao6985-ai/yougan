@@ -1,3 +1,4 @@
+import { CONTENT_FORMATS } from "../../models/content-form/formats.js";
 import type {
   ProfileSetupStep,
   ProfileStepId,
@@ -15,6 +16,10 @@ import {
   summarizeProfileStepForSuggestions,
 } from "./profile-setup.js";
 import { getProfileStepCopy, getStyleFieldsForProfile } from "./profile-step-copy.js";
+
+const FORMAT_LABELS = Object.fromEntries(
+  CONTENT_FORMATS.map((item) => [item.id, item.label]),
+) as Record<(typeof CONTENT_FORMATS)[number]["id"], string>;
 
 export type ProfileSetupSuggestionFocus = {
   activeStep: ProfileSetupStep;
@@ -168,6 +173,7 @@ function buildStepAnchorLines(
 function buildNextStepGuidanceLines(
   profile: WorkProfile,
   nextStep: ProfileStepId | "ready",
+  options?: { omitSuggestionExamples?: boolean },
 ): string[] {
   if (nextStep === "ready") {
     const prior = summarizePriorSteps(profile, "ready");
@@ -182,14 +188,24 @@ function buildNextStepGuidanceLines(
 
   const copy = getProfileStepCopy(profile, nextStep);
   const prior = summarizePriorSteps(profile, nextStep);
-  return [
+  const lines = [
     `- 可直接写「${copy.title}」的可发送内容（不是描述要填哪一步）`,
     prior !== "（无）"
       ? `- 须紧扣前述：${prior}`
       : "- 须紧扣已定方向主题",
-    `- 示例方向（须结合作品具体化，勿逐字复制）：${copy.suggestionExamples.join("；")}`,
-    `- 禁止：「推进到下一步」「帮我填${copy.title}」「${copy.title}定了…」等流程元说明`,
   ];
+  if (
+    !options?.omitSuggestionExamples &&
+    copy.suggestionExamples.length > 0
+  ) {
+    lines.push(
+      `- 示例方向（须结合作品具体化，勿逐字复制）：${copy.suggestionExamples.join("；")}`,
+    );
+  }
+  lines.push(
+    `- 禁止：「推进到下一步」「帮我填${copy.title}」「${copy.title}定了…」等流程元说明`,
+  );
+  return lines;
 }
 
 export function buildProfileSetupSuggestionFocus(input: {
@@ -283,16 +299,26 @@ export function buildProfileSetupSuggestionPromptBlock(
   const setup = getProfileSetupState(parsed);
   const activeMeta = setup.steps.find((step) => step.id === focus.activeStep);
 
+  const format = parsed.direction.format;
   const lines = [
     "## 方案进度（生成建议时须对齐）",
     "- 建议均为**下一步**：像用户会发送的具体话；禁止栏目名/清单/预警类抽象标签与流程元说明",
     `- 当前推进步：${activeMeta ? `第 ${activeMeta.index} 步 · ${activeMeta.title}` : focus.activeStep}（${focus.activeStatus}）`,
   ];
+  if (format) {
+    const formatLabel = FORMAT_LABELS[format] ?? format;
+    lines.push(
+      `- **体裁锚定**：已定形式为「${formatLabel}」——每条建议必须服务本件${formatLabel}，禁止换成测评、探店、口播、插画等其它形态选题`,
+    );
+  }
 
   if (focus.activeStep !== "ready") {
     const copy = getProfileStepCopy(parsed, focus.activeStep);
     lines.push(`- 本步要填什么：${copy.hint}`);
-    if (!options?.omitSuggestionExamples) {
+    if (
+      !options?.omitSuggestionExamples &&
+      copy.suggestionExamples.length > 0
+    ) {
       lines.push(
         `- 本步灵感方向参考（勿逐字复制）：${copy.suggestionExamples.join("；")}`,
       );
@@ -327,7 +353,11 @@ export function buildProfileSetupSuggestionPromptBlock(
     lines.push(
       `- 再下一步：${nextMeta ? `第 ${nextMeta.index} 步 · ${nextMeta.title}` : focus.nextStep}`,
     );
-    lines.push(...buildNextStepGuidanceLines(parsed, focus.nextStep));
+    lines.push(
+      ...buildNextStepGuidanceLines(parsed, focus.nextStep, {
+        omitSuggestionExamples: options?.omitSuggestionExamples,
+      }),
+    );
   }
 
   if (focus.activeGaps.length > 0) {

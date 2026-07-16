@@ -27,7 +27,7 @@ export function canQueueProduction(
 
 /**
  * 对 planner 队列做确定性 production 门禁（不解析用户话术）：
- * - 必填方案未齐（定位+体裁）→ 剔除 production
+ * - 定位+体裁未齐 → 剔除 production
  * - 含 production 时剔除 collectRevision / revise（与整稿重做互斥）
  */
 export function filterProductionQueue(

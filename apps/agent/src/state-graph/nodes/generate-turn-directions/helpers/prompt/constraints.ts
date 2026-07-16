@@ -1,3 +1,5 @@
+import type { ContentFormatId } from "@yougan/domain";
+
 import type { TurnDirectionsPromptInput } from "./types.js";
 import { isPlaceholderWorkTitle } from "./work-title.js";
 
@@ -10,6 +12,17 @@ function buildTitleAnchorRule(workTitle: string | undefined): string {
 - 方向之间可互斥，但须同属标题所指作品`;
 }
 
+function buildFormatAnchorRule(
+  format: ContentFormatId | null | undefined,
+  formatLabel?: string | null,
+): string {
+  if (!format) {
+    return "- 若作品状态已写出形式/体裁，建议须留在该形态内，禁止串成测评、探店、口播等其它选题";
+  }
+  const label = formatLabel?.trim() || format;
+  return `- **体裁锚定**：本件是「${label}」——每条方向必须推进这件${label}，禁止改成测评、探店、口播、插画等其它形态`;
+}
+
 function buildHintRule(input: TurnDirectionsPromptInput): string {
   if (input.isOpening) {
     return "hint：留空字符串（开屏操作指引由前端标题统一展示）";
@@ -19,7 +32,11 @@ function buildHintRule(input: TurnDirectionsPromptInput): string {
 
 export function buildConstraintsSection(
   input: TurnDirectionsPromptInput,
-  workTitle?: string,
+  options?: {
+    workTitle?: string;
+    format?: ContentFormatId | null;
+    formatLabel?: string | null;
+  },
 ): string {
   return `## 口吻（label 与 prompt 均须遵守）
 - 一律模拟**用户发给 AI** 的口语：可直接点击发送，读完即知「点了会说什么」
@@ -31,7 +48,8 @@ export function buildConstraintsSection(
 ## 禁止
 - 不要围绕对话标题或「对话」类占位名发挥
 - 禁止流程动作、客服腔、空泛套话
-${buildTitleAnchorRule(workTitle)}
+${buildTitleAnchorRule(options?.workTitle)}
+${buildFormatAnchorRule(options?.format, options?.formatLabel)}
 - 每条须是用户着手推进作品的一句可发送话
 - ${buildHintRule(input)}；勿写右侧面板
 - outcome 只写对作品/方案的效果，不复述 prompt 原文

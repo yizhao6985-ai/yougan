@@ -26,7 +26,7 @@ export interface YouganAgentState {
   revision: WorkRevision;
   /** 已提交制作计划（不含 preview） */
   production: WorkProduction;
-  /** 回合末延伸方向（开屏 / 回合末；不入库） */
+  /** 延伸方向（开屏 / 回合末；不入库；commitTurn 从 pendingTurnDirections 提升） */
   turnDirections: TurnDirections | null;
   /** 单轮执行运行时（调度、staging、取消） */
   turn: TurnRuntime;

@@ -45,6 +45,7 @@ export function createProfileTool<T extends z.ZodTypeAny>(options: {
             update: {
               messages: [
                 new ToolMessage({
+                  name: options.name,
                   content: options.emptyMessage ?? "未应用方案变更。",
                   tool_call_id: toolCallId,
                 }),
@@ -61,6 +62,7 @@ export function createProfileTool<T extends z.ZodTypeAny>(options: {
           update: {
             messages: [
               new ToolMessage({
+                name: options.name,
                 content: `已更新：${result.changes.join("、")}。`,
                 tool_call_id: toolCallId,
               }),
@@ -79,6 +81,7 @@ export function createProfileTool<T extends z.ZodTypeAny>(options: {
           update: {
             messages: [
               new ToolMessage({
+                name: options.name,
                 content: detail,
                 tool_call_id: toolCallId,
                 status: "error",

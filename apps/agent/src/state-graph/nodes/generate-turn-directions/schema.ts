@@ -26,7 +26,7 @@ export const TurnDirectionItemSchema = z.object({
 
 export function turnDirectionsResponseSchema(count: number) {
   return z.object({
-    hint: z.string().optional(),
+    hint: z.string().nullable().optional(),
     directions: z
       .array(TurnDirectionItemSchema)
       .length(count)

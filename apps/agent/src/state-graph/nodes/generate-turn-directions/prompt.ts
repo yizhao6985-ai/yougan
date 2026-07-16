@@ -1,4 +1,8 @@
-import { buildProfileSetupSuggestionFocus } from "@yougan/domain";
+import {
+  CONTENT_FORMATS,
+  buildProfileSetupSuggestionFocus,
+  type ContentFormatId,
+} from "@yougan/domain";
 
 import { getProfile } from "#agent/state-io/index.js";
 import type { AgentStateType } from "#agent/state.js";
@@ -11,6 +15,10 @@ import type { TurnDirectionsPromptInput } from "./helpers/prompt/types.js";
 import { buildWorkStateSection } from "./helpers/prompt/work-state.js";
 import { buildWorkTitleSection, isPlaceholderWorkTitle } from "./helpers/prompt/work-title.js";
 
+const FORMAT_LABELS = Object.fromEntries(
+  CONTENT_FORMATS.map((item) => [item.id, item.label]),
+) as Record<ContentFormatId, string>;
+
 export function buildTurnDirectionsPrompt(
   state: AgentStateType,
   input: TurnDirectionsPromptInput,
@@ -22,6 +30,7 @@ export function buildTurnDirectionsPrompt(
   });
 
   const titleAnchored = !isPlaceholderWorkTitle(state.workTitle);
+  const format = profile.direction.format;
 
   const promptInput: TurnDirectionsPromptInput = {
     ...input,
@@ -40,6 +49,10 @@ export function buildTurnDirectionsPrompt(
   return [
     `你是「有感 Yougan」创作搭子。${buildSceneIntro(promptInput)}`,
     workContext,
-    buildConstraintsSection(promptInput, state.workTitle),
+    buildConstraintsSection(promptInput, {
+      workTitle: state.workTitle,
+      format,
+      formatLabel: format ? FORMAT_LABELS[format] : null,
+    }),
   ].join("\n\n");
 }

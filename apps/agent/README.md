@@ -15,8 +15,9 @@ Checkpoint：与 API 共用 Postgres（`POSTGRES_URI`）。
 ## 主图流程
 
 ```text
-START → planTurnQueue → dispatchTurnQueue → [*Graph] → advanceTurnQueue
-  → generateTurnDirections → commitTurn → summarizeMessages → finalizeRunMetering → END
+START → planTurnQueue ┬→ dispatchTurnQueue → [*Graph] → advanceTurnQueue ─┐
+                      └→ generateTurnDirections ──────────────────────────┴→ commitTurn
+                         → summarizeMessages → finalizeRunMetering → END
 ```
 
 | TurnQueueKind | 子图 | 说明 |

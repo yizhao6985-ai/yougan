@@ -89,7 +89,18 @@ export const AgentState = Annotation.Root({
       next ?? EMPTY_WORK_PRODUCTION,
     default: () => EMPTY_WORK_PRODUCTION,
   }),
-  /** generateTurnDirections 写入的延伸方向（运行时字段，不入库） */
+  /**
+   * generateTurnDirections 并行写入的草稿延伸方向（运行时字段，不入库）。
+   * commitTurn 再提升为 turnDirections，避免主回合进行中提前展示。
+   */
+  pendingTurnDirections: Annotation<TurnDirections | null>({
+    reducer: (
+      prev: TurnDirections | null,
+      next: TurnDirections | null | undefined,
+    ) => (next === undefined ? (prev ?? null) : next),
+    default: () => null,
+  }),
+  /** commitTurn 提交后的延伸方向（运行时字段，不入库；前端读取） */
   turnDirections: Annotation<TurnDirections | null>({
     reducer: (
       prev: TurnDirections | null,

@@ -38,10 +38,10 @@ function buildProfileWizardContext(state: AgentStateType): string {
   }
 
   if (activeStep === "ready") {
-    return `- 方案向导：已到「${activeStepTitle}」（必填已齐）；仅当用户**明确要求**开写/整稿重做时可 output production`;
+    return `- 方案向导：已到「${activeStepTitle}」（定位与体裁已齐）；仅当用户**明确要求**开写/整稿重做时可 output production`;
   }
 
-  return `- 方案向导：当前在「${activeStepTitle}」步（必填已齐，可选步可跳过）；用户在完善风格/背景/需求/边界 → 默认 profile；但若明确说开写/出稿/开始制作/开始创作/可以写了 → **必须** output production，**禁止**因可选步未填而拒绝`;
+  return `- 方案向导：当前在「${activeStepTitle}」步（定位与体裁已齐，其余步可跳过）；用户在完善风格/背景/需求/边界 → 默认 profile；但若明确说开写/出稿/开始制作/开始创作/可以写了 → **必须** output production，**禁止**因可选步未填而拒绝`;
 }
 
 export function buildTurnQueuePrompt(
@@ -73,7 +73,7 @@ export function buildTurnQueuePrompt(
 - **revise**：明确要求**现在执行改稿**（「开始改稿 / 按清单改 / 就这些改吧 / 可以改了」——在现有成稿上改，**不重做**）
 - **ask**：纯答疑（不改方案、不改成稿、不开写）
 
-**suggestions** 在 commitTurn 后由系统独立生成，**勿入队**。
+**suggestions** 由系统与主回合并行生成、commitTurn 时提交，**勿入队**。
 
 ## 改稿 vs 整稿重做（有成稿时**最易混淆**，须严格区分）
 - **改稿**（collectRevision / revise）：保留现有成稿，只改其中一部分；用户会点名标题、段落、语气、长度等**局部**问题，或要求「按清单改」
@@ -99,14 +99,14 @@ export function buildTurnQueuePrompt(
 
 ## 无 preview
 - 聊方案/补方向/记要求/确认细节 → profile
-- **仅**当用户明确说开写/出稿/开始制作/开始创作/可以写了 → production（必填定位+体裁已齐时，**不论**可选步是否填完，**必须** output production）
+- **仅**当用户明确说开写/出稿/开始制作/开始创作/可以写了 → production（定位+体裁已齐时，**不论**其余步是否填完，**必须** output production）
 - 纯咨询 → ask
 
 ## 禁止误触 production（重要）
 - 「好的 / 继续 / 可以 / 没问题 / 就这样 / 方案可以了 / 再补充…」→ **仅 profile**，禁止 production
 - 「写一下背景」「帮我写人设」「补一下风格」等是记方案 → **仅 profile**，不是开写成稿
-- 创作定位或体裁未齐 → **禁止** production（先补必填）
-- 风格/背景/需求/边界等**可选**未填 → **不构成**拒绝开写的理由；用户一旦明确说开始制作/开写/出稿/可以写了 → **必须** production
+- 创作定位或体裁未齐 → **禁止** production（先补定位与体裁）
+- 风格/背景/需求/边界等未填 → **不构成**拒绝开写的理由；用户一旦明确说开始制作/开写/出稿/可以写了 → **必须** production
 - 方案内容已较完整 → **不等于**用户要求开写；未听到明确开写口令时 **禁止** output production
 - 系统另有「开始创作」确认环节；planner 不得替用户决定开写
 
