@@ -44,9 +44,9 @@ const ApiEnvSchema = z
     SMS_SIGN_NAME: optionalString,
     SMS_TEMPLATE_CODE: optionalString,
     SMS_REGION_ID: optionalString,
-    DASHSCOPE_API_KEY: optionalString,
-    DASHSCOPE_BASE_URL: optionalString,
-    DASHSCOPE_CHAT_MODEL: optionalString,
+    OPENAI_API_KEY: optionalString,
+    OPENAI_BASE_URL: optionalString,
+    OPENAI_CHAT_MODEL: optionalString,
   })
   .superRefine((env, ctx) => {
     if (env.STORAGE_DRIVER !== "oss") return;
@@ -126,11 +126,11 @@ const ApiEnvSchema = z
       },
     },
     llm: {
-      dashscopeApiKey: env.DASHSCOPE_API_KEY ?? "",
-      dashscopeBaseUrl:
-        env.DASHSCOPE_BASE_URL ??
+      openaiApiKey: env.OPENAI_API_KEY ?? "",
+      openaiBaseUrl:
+        env.OPENAI_BASE_URL ??
         "https://dashscope.aliyuncs.com/compatible-mode/v1",
-      dashscopeChatModel: env.DASHSCOPE_CHAT_MODEL ?? "qwen-plus",
+      openaiChatModel: env.OPENAI_CHAT_MODEL ?? "qwen-plus",
     },
   }));
 

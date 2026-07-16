@@ -9,7 +9,6 @@ import {
   isTurnBriefingAiMessage,
   parseTurnBriefingExcerptFromMessage,
   parseTurnActivityFromMessage,
-  type HumanAttachmentAsset,
   type HumanPreviewSelection,
   type TurnActivityStatus,
 } from "@yougan/domain";
@@ -30,29 +29,29 @@ type MessageWithBlocks = Message & {
 
 export function parseHumanMessageForDisplay(content: MessageContent): {
   text: string;
-  attachments: HumanAttachmentAsset[];
   previewSelections: HumanPreviewSelection[];
 } {
-  const attachments = extractAttachmentAssetsFromContent(content);
+  // 历史消息可能仍含 asset parts；展示时忽略附件，只保留文本与预览引用
+  const legacyAttachmentCount =
+    extractAttachmentAssetsFromContent(content).length;
   const previewSelections = extractPreviewSelectionsFromContent(content);
   let text = messageContentToText(content).trim();
-  if (isDefaultAttachmentPromptText(text, attachments.length)) {
+  if (isDefaultAttachmentPromptText(text, legacyAttachmentCount)) {
     text = "";
   }
-  return { text, attachments, previewSelections };
+  return { text, previewSelections };
 }
 
-/** 提交给 LangGraph 的 human 消息；domain asset part 无 type，与 SDK MessageContent 约定兼容。 */
+/** 提交给 LangGraph 的 human 消息；仅文本 + 预览引用，不再附带素材附件。 */
 export function buildSubmitHumanMessage(
   text: string,
-  attachments: HumanAttachmentAsset[] = [],
   previewSelections: HumanPreviewSelection[] = [],
 ): Message {
   return {
     type: "human",
     content: buildHumanMessageContent(
       text,
-      attachments,
+      [],
       previewSelections,
     ) as MessageContent,
   };
@@ -92,7 +91,6 @@ export type RenderItem =
       id: string;
       kind: "human";
       content: string;
-      attachments: HumanAttachmentAsset[];
       previewSelections: HumanPreviewSelection[];
     }
   | {
@@ -298,14 +296,14 @@ export function buildRenderItems(
     const message = messages[index];
 
     if (message.type === "human") {
-      const { text, attachments, previewSelections } =
-        parseHumanMessageForDisplay(message.content);
-      if (text || attachments.length > 0 || previewSelections.length > 0) {
+      const { text, previewSelections } = parseHumanMessageForDisplay(
+        message.content,
+      );
+      if (text || previewSelections.length > 0) {
         items.push({
           id: message.id ?? `human-${index}`,
           kind: "human",
           content: text,
-          attachments,
           previewSelections,
         });
       }
@@ -398,7 +396,7 @@ export function buildRenderItems(
   return items;
 }
 
-/** 回合末方向 chips 的挂载点：最近一条 human 之后的最后一个 briefing / ai / activity */
+/** 回合末方向 chips 的挂载点：最近一条 human 之后的最后一个 ai / activity（含历史 briefing） */
 export function findTurnDirectionsAnchorIndex(items: RenderItem[]): number {
   let lastHumanIndex = -1;
   for (let i = items.length - 1; i >= 0; i -= 1) {

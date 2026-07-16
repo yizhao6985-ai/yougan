@@ -3,11 +3,11 @@ import { z } from "zod";
 
 export const PlanTaskSchema = z.object({
   description: z.string().min(1).describe(
-    "节级执行任务：撰写某一内容节点的正文/脚本/提示词（如「撰写开篇 hook 正文」）。禁止大纲、策划、结构梳理等 meta 描述",
+    "节级执行任务：撰写某一内容节点的正文/脚本（如「撰写开篇 hook 正文」）。禁止大纲、策划、结构梳理等 meta 描述",
   ),
   department: z
-    .enum(["writing", "design", "audio", "video"])
-    .describe("负责部门"),
+    .enum(["writing", "video"])
+    .describe("负责部门：writing=文案；video=脚本/分镜文案"),
   direction: z
     .string()
     .min(1)
@@ -27,7 +27,7 @@ export const PlanResponseSchema = z.object({
     .array(PlanTaskSchema)
     .min(1)
     .describe(
-      "可执行任务列表，按成稿顺序排列；每条对应一个内容节点，可直接交给 execute 产出 deliverable。用户若限定范围（如「只写第一节拍」），列表只含该范围内的 tasks，勿扩写全篇",
+      "可执行任务列表，按成稿顺序排列；每条对应一个内容节点，可直接交给 executeWriting 产出 deliverable。用户若限定范围（如「只写第一节拍」），列表只含该范围内的 tasks，勿扩写全篇",
     ),
 });
 

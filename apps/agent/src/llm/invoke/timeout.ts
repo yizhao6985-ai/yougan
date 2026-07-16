@@ -1,135 +1,48 @@
-/** Agent ↔ LLM 集中超时与重试（超时 abort 后最多再试 1 次）。 */
+/**
+ * LLM 节点超时 / 重试：交给 LangGraph `addNode({ timeout, retryPolicy })`，
+ * 不在 invoke 层自建墙钟与重试。
+ *
+ * @see https://docs.langchain.com/oss/javascript/langgraph/fault-tolerance
+ */
+import {
+  isNodeTimeoutError,
+  type NodePolicyOptions,
+  type RetryPolicy,
+} from "@langchain/langgraph";
+
 export const LLM_TIMEOUT_MS = {
   chat: 120_000,
   structured: 180_000,
-  /** 下一步建议：条数少、失败可静默跳过，单次调用不重试 */
+  /** 下一步建议：条数少、失败可静默跳过，不重试 */
   suggestions: 60_000,
-  /** 回合末影响评价：短输出，失败回退规则模板 */
-  reflection: 60_000,
   production: 480_000,
-  image: 90_000,
 } as const;
 
 export const LLM_TIMEOUT_FAILURE_MESSAGE = "LLM 响应超时，请稍后重试。";
 
-const MAX_ATTEMPTS = 2;
+/** 可恢复 LLM 失败（非超时）时的用户可见文案 */
+export const LLM_FAILURE_MESSAGE = "服务暂时不可用，请稍后重试。";
 
-export class LlmTimeoutError extends Error {
-  readonly code = "LLM_TIMEOUT" as const;
+/** 仅对节点超时重试一次（含首次共 2 次），与旧 withLlmRetry 对齐 */
+export const LLM_TIMEOUT_RETRY_POLICY: RetryPolicy = {
+  maxAttempts: 2,
+  retryOn: (error) => isNodeTimeoutError(error),
+};
 
-  constructor(
-    readonly timeoutMs: number,
-    readonly attempts: number,
-    options?: { cause?: unknown },
-  ) {
-    super(
-      `LLM request timed out after ${attempts} attempt(s) (${timeoutMs}ms each)`,
-    );
-    this.name = "LlmTimeoutError";
-    if (options?.cause !== undefined) {
-      this.cause = options.cause;
-    }
-  }
-}
+export type LlmNodePolicyOptions = Pick<
+  NodePolicyOptions,
+  "timeout" | "retryPolicy"
+>;
 
-export function isLlmTimeoutError(error: unknown): error is LlmTimeoutError {
-  return error instanceof LlmTimeoutError;
-}
-
-function isTimeoutError(error: unknown): boolean {
-  if (error != null && typeof error === "object" && "name" in error) {
-    return (error as { name: string }).name === "TimeoutError";
-  }
-  return false;
-}
-
-function isTimeoutDeadline(deadline: AbortSignal): boolean {
-  if (!deadline.aborted) return false;
-  return isTimeoutError(deadline.reason) || deadline.reason == null;
-}
-
-function isTimeoutLike(deadline: AbortSignal, error: unknown): boolean {
-  return isTimeoutDeadline(deadline) || isTimeoutError(error);
-}
-
-/** LangChain structured invoke 可能不响应 AbortSignal；Promise.race 兜底硬超时。 */
-function createHardTimeout(timeoutMs: number): {
-  promise: Promise<never>;
-  clear: () => void;
-} {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const promise = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => {
-      reject(new DOMException("The operation timed out.", "TimeoutError"));
-    }, timeoutMs);
-  });
+/** 结构化 / 制作类 LLM 节点：墙钟超时 + 超时重试 */
+export function llmNodePolicy(timeoutMs: number): LlmNodePolicyOptions {
   return {
-    promise,
-    clear: () => {
-      if (timer !== undefined) clearTimeout(timer);
-    },
+    timeout: timeoutMs,
+    retryPolicy: LLM_TIMEOUT_RETRY_POLICY,
   };
 }
 
-function throwLlmTimeout(
-  timeoutMs: number,
-  attempts: number,
-  cause: unknown,
-): never {
-  throw new LlmTimeoutError(timeoutMs, attempts, { cause });
-}
-
-export async function withLlmRetry<T>(opts: {
-  parentSignal?: AbortSignal;
-  timeoutMs: number;
-  /** 默认 2；suggestions 等可跳过环节传 1 禁用超时重试 */
-  maxAttempts?: number;
-  run: (signal: AbortSignal) => Promise<T>;
-  /** streamChat：已有 chunk 输出时不重试 */
-  canRetry?: () => boolean;
-}): Promise<T> {
-  const maxAttempts = Math.max(1, opts.maxAttempts ?? MAX_ATTEMPTS);
-  let lastError: unknown;
-
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const deadline = AbortSignal.timeout(opts.timeoutMs);
-    const signal = opts.parentSignal
-      ? AbortSignal.any([opts.parentSignal, deadline])
-      : deadline;
-
-    const hardTimeout = createHardTimeout(opts.timeoutMs);
-
-    try {
-      return await Promise.race([opts.run(signal), hardTimeout.promise]);
-    } catch (error) {
-      lastError = error;
-
-      if (opts.parentSignal?.aborted) {
-        throw error;
-      }
-
-      if (opts.canRetry && !opts.canRetry()) {
-        if (isTimeoutLike(deadline, error)) {
-          throwLlmTimeout(opts.timeoutMs, attempt + 1, error);
-        }
-        throw error;
-      }
-
-      if (!isTimeoutLike(deadline, error)) {
-        throw error;
-      }
-
-      if (attempt === maxAttempts - 1) {
-        throwLlmTimeout(opts.timeoutMs, maxAttempts, error);
-      }
-    } finally {
-      hardTimeout.clear();
-    }
-  }
-
-  if (lastError != null) {
-    throwLlmTimeout(opts.timeoutMs, maxAttempts, lastError);
-  }
-
-  throw new LlmTimeoutError(opts.timeoutMs, maxAttempts);
+/** 流式对话 / 可静默跳过：仅超时，不重试（避免 pushMessage 重复） */
+export function llmTimeoutOnly(timeoutMs: number): LlmNodePolicyOptions {
+  return { timeout: timeoutMs };
 }

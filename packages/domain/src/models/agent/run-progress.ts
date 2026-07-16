@@ -1,7 +1,6 @@
 /** 运行中粗步骤（subgraph 级），供 Loading / 顶栏展示 */
 export type RunProgressPhase =
   | "turn_planning"
-  | "reference"
   | "profile"
   | "collect_revision"
   | "production"

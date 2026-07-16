@@ -1,8 +1,8 @@
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import type { RunnableConfig } from "@langchain/core/runnables";
+import type { NodeError } from "@langchain/langgraph";
 
 import { invokeStructured } from "#agent/llm/invoke/index.js";
-import { LLM_TIMEOUT_MS } from "#agent/llm/invoke/timeout.js";
 import { patchAiUsageMetering } from "#agent/llm/invoke/metering.js";
 import { createProductionChatModel } from "#agent/llm/providers/index.js";
 import {
@@ -25,6 +25,7 @@ import {
   getRevision,
   patchPendingPreview,
 } from "#agent/state-io/index.js";
+import { patchRunProgress } from "#agent/state-io/run-progress.js";
 import {
   REVISE_TURN_SUBJECT,
   reviseTurnActivityId,
@@ -32,6 +33,7 @@ import {
 } from "#agent/state-io/turn-activities.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
+import { rethrowUnlessRecoverable } from "../../../../helpers/recoverable-node-error.js";
 import {
   RevisePreviewOutputSchema,
   type RevisePreviewOutput,
@@ -107,12 +109,33 @@ function reviseActivityPatch(
   });
 }
 
+function applyRevisionFailedPatch(
+  state: AgentStateType,
+  config?: RunnableConfig,
+): AgentStatePatch {
+  return {
+    ...patchRunProgress("revise"),
+    ...reviseActivityPatch(state, "failed"),
+    ...patchAiUsageMetering(state.aiUsage, config),
+  };
+}
+
 function toWorkPreview(
   output: RevisePreviewOutput,
   state: AgentStateType,
 ): WorkPreview {
   const format = getProfileFormat(getProfile(state));
-  const content = buildPreviewContent(format, output.content);
+  const content = buildPreviewContent(format, {
+    ...output.content,
+    images: output.content.images?.map((image, index) => ({
+      ...image,
+      id: image.id ?? `image-${index}`,
+    })),
+    segments: output.content.segments?.map((segment, index) => ({
+      ...segment,
+      id: segment.id ?? `segment-${index}`,
+    })),
+  });
   return {
     title: output.title ?? null,
     hook: output.hook ?? null,
@@ -128,7 +151,7 @@ export async function applyRevisionNode(
 ): Promise<AgentStatePatch> {
   const preview = getPreview(state);
   if (!previewHasContent(preview)) {
-    return {};
+    return patchRunProgress("revise");
   }
 
   const llm = createProductionChatModel({
@@ -136,35 +159,33 @@ export async function applyRevisionNode(
     maxTokens: 8192,
   });
 
-  let output: RevisePreviewOutput;
-  try {
-    output = await invokeStructured(
-      llm,
-      RevisePreviewOutputSchema,
-      [
-        new SystemMessage(buildApplyRevisionSystemPrompt(state)),
-        new HumanMessage(buildApplyRevisionHumanPrompt(state)),
-      ],
-      { name: "apply_revision", timeoutMs: LLM_TIMEOUT_MS.production },
-      config,
-    );
-  } catch {
-    return {
-      ...reviseActivityPatch(state, "failed"),
-      ...patchAiUsageMetering(state.aiUsage, config),
-    };
-  }
+  const output = await invokeStructured(
+    llm,
+    RevisePreviewOutputSchema,
+    [
+      new SystemMessage(buildApplyRevisionSystemPrompt(state)),
+      new HumanMessage(buildApplyRevisionHumanPrompt(state)),
+    ],
+    { name: "apply_revision" },
+    config,
+  );
 
   const nextPreview = toWorkPreview(output, state);
   if (!previewHasContent(nextPreview)) {
-    return {
-      ...reviseActivityPatch(state, "failed"),
-      ...patchAiUsageMetering(state.aiUsage, config),
-    };
+    return applyRevisionFailedPatch(state, config);
   }
   return {
+    ...patchRunProgress("revise"),
     ...patchPendingPreview(state, nextPreview),
     ...reviseActivityPatch(state, "done"),
     ...patchAiUsageMetering(state.aiUsage, config),
   };
+}
+
+export function applyRevisionErrorHandler(
+  state: AgentStateType,
+  error: NodeError,
+): AgentStatePatch {
+  rethrowUnlessRecoverable(error);
+  return applyRevisionFailedPatch(state);
 }

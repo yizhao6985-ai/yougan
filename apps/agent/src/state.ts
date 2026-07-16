@@ -89,7 +89,7 @@ export const AgentState = Annotation.Root({
       next ?? EMPTY_WORK_PRODUCTION,
     default: () => EMPTY_WORK_PRODUCTION,
   }),
-  /** turn-briefing 子图写入的延伸方向（运行时字段，不入库） */
+  /** generateTurnDirections 写入的延伸方向（运行时字段，不入库） */
   turnDirections: Annotation<TurnDirections | null>({
     reducer: (
       prev: TurnDirections | null,

@@ -35,7 +35,7 @@ async function callDashScopeSummary(input: {
   profile: WorkProfile | null;
   baseline: PublicationSummary;
 }): Promise<AiSummaryPatch | null> {
-  const apiKey = env.llm.dashscopeApiKey;
+  const apiKey = env.llm.openaiApiKey;
   if (!apiKey) return null;
 
   const intent = input.profile?.direction.summary?.trim() || "未指定";
@@ -61,14 +61,14 @@ ${previewDigest(input.preview)}
 
 请输出 JSON。`;
 
-  const response = await fetch(`${env.llm.dashscopeBaseUrl}/chat/completions`, {
+  const response = await fetch(`${env.llm.openaiBaseUrl}/chat/completions`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: env.llm.dashscopeChatModel,
+      model: env.llm.openaiChatModel,
       messages: [
         { role: "system", content: system },
         { role: "user", content: user },
@@ -80,7 +80,7 @@ ${previewDigest(input.preview)}
 
   if (!response.ok) {
     console.warn(
-      "[summarize-publication-summary] DashScope request failed:",
+      "[summarize-publication-summary] OpenAI-compatible request failed:",
       response.status,
     );
     return null;

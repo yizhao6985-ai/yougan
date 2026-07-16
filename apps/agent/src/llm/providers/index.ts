@@ -1,21 +1,9 @@
 /**
- * 百炼 DashScope 模型工厂：文本 Chat、Omni 多模态、文生图。
+ * OpenAI 兼容端点模型工厂：文本 Chat。
  */
 export {
-  DASHSCOPE_MODELS,
-  type DashScopeModelRole,
-} from "./catalog.js";
-export {
-  getDashScopeChatKwargs,
-  resolveDashScopeChatFamily,
-  resolveDashScopeMeteringModelId,
-  type DashScopeChatFamily,
-  type DashScopeChatScenario,
-} from "./dashscope-chat-config.js";
-export { createChatModel, createProductionChatModel } from "./dashscope.js";
-export { createMultimodalChatModel } from "./dashscope-multimodal.js";
-export {
-  generateDesignImage,
-  type GenerateDesignImageInput,
-  type GenerateDesignImageResult,
-} from "./dashscope-image.js";
+  OPENAI_MODELS,
+  createChatModel,
+  createProductionChatModel,
+  type ChatModelOptions,
+} from "./chat.js";

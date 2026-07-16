@@ -2,7 +2,6 @@ import { useCallback, useState } from "react";
 
 import { ProfilePanel } from "@/components/profile-panel";
 import { ContentPreview } from "@/components/content-preview";
-import { ReferencePanel } from "@/components/reference-panel";
 import { WorkHistoryPanel } from "@/components/studio/work-history-panel";
 import { creativeContextPanelClassNames } from "@/components/studio/creative-context/shared";
 import {
@@ -20,13 +19,11 @@ import type {
   WorkPreview,
   WorkProduction,
   WorkProfile,
-  WorkReference,
   WorkRevision,
 } from "@/lib/types";
 
 const TAB_ORDER: CreativeContextTabId[] = [
   "profile",
-  "references",
   "preview",
   "history",
 ];
@@ -43,8 +40,7 @@ function readStoredTab(): CreativeContextTabId {
 
 type CreativeContextPanelContentProps = {
   activeWork: Work | null;
-  references?: WorkReference[];
-  /** 创作轮廓（含 references） */
+  /** 创作轮廓 */
   profile?: WorkProfile;
   preview?: WorkPreview | null;
   production?: WorkProduction | null;
@@ -67,7 +63,6 @@ type CreativeContextPanelContentProps = {
 
 export function CreativeContextPanelContent({
   activeWork,
-  references,
   profile,
   preview,
   production,
@@ -159,15 +154,6 @@ export function CreativeContextPanelContent({
               enablePreviewSelection={enablePreviewSelection}
               onRemoveRevisionIntent={onRemoveRevisionIntent}
             />
-          </UnderlineTabsPanel>
-        ) : null}
-
-        {activeTab === "references" ? (
-          <UnderlineTabsPanel
-            id="creative-context-panel-references"
-            aria-labelledby="creative-context-tab-references"
-          >
-            <ReferencePanel references={references} compact />
           </UnderlineTabsPanel>
         ) : null}
 

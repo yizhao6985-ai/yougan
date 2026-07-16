@@ -185,7 +185,7 @@ export const WorkProductionSchema = z
         id: z.string(),
         description: z.string(),
         created_at: z.string(),
-        department: z.enum(["writing", "design", "audio", "video"]).optional(),
+        department: z.enum(["writing", "video"]).optional(),
         status: z
           .enum(["pending", "in_progress", "ready", "failed"])
           .optional(),

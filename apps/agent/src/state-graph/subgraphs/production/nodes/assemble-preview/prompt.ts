@@ -23,13 +23,9 @@ function buildFragmentsBlock(input: ConsolidatePromptInput): string {
   return deliverables
     .map((d, i) => {
       const task = plan.pending_tasks.find((t) => t.id === d.taskId);
-      const isDesign = task?.department === "design";
-      const summary = isDesign
-        ? d.notes?.trim() || d.title?.trim() || "（视觉交付，成图已单独生成）"
-        : d.body;
       return `### 片段 ${i + 1}：${task?.description ?? d.taskId}
-${d.title ? `标题建议：${d.title}\n` : ""}${summary}
-${!isDesign && d.notes ? `备注：${d.notes}` : ""}`;
+${d.title ? `标题建议：${d.title}\n` : ""}${d.body}
+${d.notes ? `备注：${d.notes}` : ""}`;
     })
     .join("\n\n");
 }

@@ -242,6 +242,12 @@ export function withMeteringCallbacks(
   return mergeConfigs(config ?? {}, { callbacks: [handler] }) as RunnableConfig;
 }
 
-import { resolveDashScopeMeteringModelId as resolveDashScopeMeteringModelIdFromConfig } from "#agent/llm/providers/dashscope-chat-config.js";
-
-export { resolveDashScopeMeteringModelIdFromConfig as resolveDashScopeMeteringModelId };
+/** 将 env 模型名映射到计量单价表 */
+export function resolveMeteringModelId(modelName: string): MeteringModelId {
+  const normalized = modelName.toLowerCase();
+  if (normalized.includes("omni")) return "qwen-omni-flash";
+  if (normalized.includes("deepseek")) return "deepseek-v3";
+  if (normalized.includes("glm")) return "glm-5.2";
+  if (normalized.includes("plus")) return "qwen-plus";
+  return "qwen-max";
+}

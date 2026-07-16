@@ -1,7 +1,7 @@
 import type { Asset } from "@/lib/types";
 import { apiFetch } from "@/services/client";
 
-export type UploadPurpose = "reference" | "avatar" | "cover";
+export type UploadPurpose = "avatar" | "cover";
 
 export type UploadResponse = {
   purpose: UploadPurpose;

@@ -3,9 +3,14 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import type { RunnableConfig } from "@langchain/core/runnables";
 import { z } from "zod";
 
+import {
+  isNodeTimeoutError,
+  type NodeError,
+} from "@langchain/langgraph";
+
 import { invokeStructured } from "#agent/llm/invoke/index.js";
 import {
-  isLlmTimeoutError,
+  LLM_FAILURE_MESSAGE,
   LLM_TIMEOUT_FAILURE_MESSAGE,
 } from "#agent/llm/invoke/timeout.js";
 import { patchAiUsageMetering } from "#agent/llm/invoke/metering.js";
@@ -22,19 +27,15 @@ import {
 } from "#agent/state-io/turn-activities.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
+import { rethrowUnlessRecoverable } from "../../../../helpers/recoverable-node-error.js";
 import { acceptAttemptsExhausted, MAX_ACCEPT_ATTEMPTS } from "../../helpers/pipeline.js";
 import { markActiveTaskFailed } from "../../helpers/mark-task-failed.js";
 import {
   defaultTaskGuidance,
-  isDesignTask,
   resolveAcceptTaskId,
   taskAwaitingAccept,
-  taskNeedsRenderRetryAccept,
 } from "../../helpers/task-plan.js";
-import {
-  isValidDesignPromptDeliverable,
-  isValidTaskDeliverable,
-} from "./helpers/deliverable.js";
+import { isValidTaskDeliverable } from "./helpers/deliverable.js";
 import {
   buildAcceptTaskHumanPrompt,
   buildAcceptTaskSystemPrompt,
@@ -49,8 +50,7 @@ function reconcileExhaustedInProgressTask(
     (t) =>
       t.status === "in_progress" &&
       acceptAttemptsExhausted(t) &&
-      !taskAwaitingAccept(t) &&
-      !taskNeedsRenderRetryAccept(t),
+      !taskAwaitingAccept(t),
   );
   if (!stuck) return null;
 
@@ -99,22 +99,11 @@ export async function acceptTaskNode(
 
   let passed = true;
   let feedback = "";
-  // 结构层：交付物字段非空即可进入 LLM 验收；内容质量由验收员判断
   const acceptanceReviewed = isValidTaskDeliverable(deliverable, task);
 
   if (!acceptanceReviewed) {
     passed = false;
-    if (
-      isDesignTask(task) &&
-      isValidDesignPromptDeliverable(deliverable) &&
-      !deliverable?.images?.[0]?.url?.trim()
-    ) {
-      feedback =
-        deliverable?.render_error?.trim() ||
-        "图片尚未生成或生成失败，将重试出图。";
-    } else {
-      feedback = "缺少有效任务交付物，需先完成产出后再验收。";
-    }
+    feedback = "缺少有效任务交付物，需先完成产出后再验收。";
   } else {
     const llm = createChatModel({ temperature: 0.2 });
     const promptInput = {
@@ -125,49 +114,23 @@ export async function acceptTaskNode(
       direction: guidance.direction,
       acceptanceCriteria: guidance.acceptance_criteria,
       deliverableBody: deliverable!.body,
-      deliverableNotes:
-        task.department === "design"
-          ? [
-              deliverable!.title?.trim()
-                ? `标题：${deliverable!.title.trim()}`
-                : null,
-              deliverable!.notes?.trim()
-                ? `短说明：${deliverable!.notes.trim()}`
-                : null,
-              deliverable!.images?.[0]?.url?.trim()
-                ? `成图 URL（仅证明已出图，勿据此评判画面）：${deliverable!.images[0].url.trim()}`
-                : null,
-            ]
-              .filter(Boolean)
-              .join("\n") || null
-          : deliverable!.notes,
+      deliverableNotes: deliverable!.notes,
     };
 
-    try {
-      const parsed = await invokeStructured(
-        llm,
-        AcceptResultSchema,
-        [
-          new SystemMessage(
-            buildAcceptTaskSystemPrompt({ profile, references, task }),
-          ),
-          new HumanMessage(buildAcceptTaskHumanPrompt(promptInput)),
-        ],
-        { name: "production_accept_task" },
-        config,
-      );
-      passed = parsed.passed;
-      feedback = parsed.feedback?.trim() ?? "";
-    } catch (error) {
-      if (isLlmTimeoutError(error)) {
-        return {
-          ...markActiveTaskFailed(state, task.id, LLM_TIMEOUT_FAILURE_MESSAGE),
-          ...patchAiUsageMetering(state.aiUsage, config),
-        };
-      }
-      passed = false;
-      feedback = "验收服务暂时不可用，请重新执行该任务。";
-    }
+    const parsed = await invokeStructured(
+      llm,
+      AcceptResultSchema,
+      [
+        new SystemMessage(
+          buildAcceptTaskSystemPrompt({ profile, references, task }),
+        ),
+        new HumanMessage(buildAcceptTaskHumanPrompt(promptInput)),
+      ],
+      { name: "production_accept_task" },
+      config,
+    );
+    passed = parsed.passed;
+    feedback = parsed.feedback?.trim() ?? "";
   }
 
   if (passed) {
@@ -197,32 +160,6 @@ export async function acceptTaskNode(
     };
   }
 
-  const renderRetryOnly = taskNeedsRenderRetryAccept(task);
-
-  if (renderRetryOnly) {
-    return {
-      ...patchPendingProductionFields(state, {
-        ...plan,
-        pending_tasks: plan.pending_tasks.map((t) =>
-          t.id === task.id
-            ? {
-                ...t,
-                status: "in_progress" as const,
-                feedback,
-                deliverable: {
-                  ...deliverable!,
-                  images: undefined,
-                  render_error: feedback,
-                },
-              }
-            : t,
-        ),
-      }),
-      ...patchAiUsageMetering(state.aiUsage, config),
-    };
-  }
-
-  // 仅 LLM 方向性验收未通过时计数
   const attemptCount = acceptanceReviewed
     ? (task.accept_retry_count ?? 0) + 1
     : (task.accept_retry_count ?? 0);
@@ -265,4 +202,19 @@ export async function acceptTaskNode(
     }),
     ...patchAiUsageMetering(state.aiUsage, config),
   };
+}
+
+/** 重试耗尽后：标记当前验收任务失败 */
+export function acceptTaskErrorHandler(
+  state: AgentStateType,
+  error: NodeError,
+): AgentStatePatch {
+  rethrowUnlessRecoverable(error);
+  const plan = getProduction(state);
+  const taskId = resolveAcceptTaskId(plan);
+  if (!taskId) return {};
+  const message = isNodeTimeoutError(error.error)
+    ? LLM_TIMEOUT_FAILURE_MESSAGE
+    : LLM_FAILURE_MESSAGE;
+  return markActiveTaskFailed(state, taskId, message);
 }

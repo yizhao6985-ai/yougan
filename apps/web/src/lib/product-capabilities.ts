@@ -9,7 +9,6 @@ import {
   ListTreeIcon,
   MessageSquareTextIcon,
   PencilLineIcon,
-  ScanSearchIcon,
   Share2Icon,
   SparklesIcon,
   WandSparklesIcon,
@@ -54,22 +53,6 @@ export const STUDIO_CAPABILITIES: StudioCapability[] = [
       "方案就绪后说「开始制作」进入制作",
     ],
     avoids: ["不直接产出作品内容", "不执行制作任务"],
-  },
-  {
-    anchor: "reference",
-    icon: ScanSearchIcon,
-    label: "素材解析",
-    teaser: "上传并分析参考素材，记录借鉴意图。",
-    tagline: "参考素材",
-    summary:
-      "上传文本、图片、音视频等参考素材，系统自动分析内容与可借鉴要点，并记录借鉴意图，汇总在侧栏「参考」面板，供定方案与制作时引用。",
-    highlights: [
-      "支持文本、图片、音频、视频等多种参考形态",
-      "对话附带附件时自动触发分析",
-      "分析结果与借鉴意图写入「参考」面板",
-      "可在侧栏直接维护参考素材列表",
-    ],
-    avoids: ["不直接修改制作方案", "不产出作品内容"],
   },
   {
     anchor: "production",
@@ -117,11 +100,6 @@ export const STUDIO_PANELS = [
     body: "主题、要求与内容结构，确认后实时汇总。",
   },
   {
-    icon: ScanSearchIcon,
-    title: "参考素材",
-    body: "上传的参考经分析后汇总在这里，含内容与借鉴意图。",
-  },
-  {
     icon: ImageIcon,
     title: "作品内容",
     body: "AI 团队按方案制作的文字、画面、脚本等，显示在这里。",
@@ -142,10 +120,10 @@ export const FEATURES_LIFECYCLE_CAPABILITIES: StudioCapability[] = [
     teaser: "成稿里程碑自动记版，可回溯对比。",
     tagline: "版本历史",
     summary:
-      "每次产出作品内容时追加一个版本节点，记录该时刻的方案、参考与成稿快照。可随时回到历史版本，或以此为起点分叉探索。",
+      "每次产出作品内容时追加一个版本节点，记录该时刻的方案与成稿快照。可随时回到历史版本，或以此为起点分叉探索。",
     highlights: [
       "仅作品预览里程碑写入时间轴",
-      "方案与参考的 interim 修改不单独占版",
+      "方案的 interim 修改不单独占版",
       "支持恢复到任一历史成稿状态",
       "便于对比不同阶段的成稿差异",
     ],
@@ -192,12 +170,6 @@ export const HOME_CORE_FEATURES = [
     href: "/features#profile",
   },
   {
-    icon: ScanSearchIcon,
-    title: "参考素材",
-    body: "上传文本、图片、音视频等参考，自动分析内容与可借鉴要点。",
-    href: "/features#reference",
-  },
-  {
     icon: WandSparklesIcon,
     title: "AI 团队制作",
     body: "制定制作计划并按步骤执行，覆盖写作、设计、脚本与视听任务。",
@@ -223,19 +195,13 @@ export const HOME_CORE_FEATURES = [
   },
 ] as const;
 
-/** 首页 · 创作核心能力（含素材解析） — 能力页工作流区块使用 */
+/** 首页 · 创作核心能力 — 能力页工作流区块使用 */
 export const HOME_CREATION_WORKFLOW = [
   {
     icon: ListTreeIcon,
     title: "定方案",
     body: "整理主题、体裁、表达与结构，确认后再进入制作。",
     href: "/features#profile",
-  },
-  {
-    icon: ScanSearchIcon,
-    title: "素材解析",
-    body: "上传文本、图片、音视频等参考，自动分析内容与可借鉴要点，汇总到「参考」面板。",
-    href: "/features#reference",
   },
   {
     icon: WandSparklesIcon,
@@ -272,7 +238,6 @@ export const GUIDE_ANCHOR_LINKS = [
   { href: "#quick-start", label: "快速上手" },
   { href: "#studio-heading", label: "创作台" },
   { href: "#profile", label: "定方案" },
-  { href: "#reference", label: "备参考" },
   { href: "#production", label: "制作" },
   { href: "#ask", label: "提问" },
   { href: "#versions", label: "版本" },
@@ -288,7 +253,7 @@ export const GUIDE_QUICK_START_STEPS = [
   {
     icon: FilePlusIcon,
     title: "新建作品",
-    body: "进入创作台，点击「新建作品」并输入标题。一件作品可有多个对话，方案、参考与作品等内容在所有对话间共享。",
+    body: "进入创作台，点击「新建作品」并输入标题。一件作品可有多个对话，方案与作品等内容在所有对话间共享。",
   },
   {
     icon: ListTreeIcon,

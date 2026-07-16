@@ -1,12 +1,13 @@
-/** 执行 profile 子图 tool_calls（归一化误用工具名后交给 ToolNode） */
+/** 执行 profile 子图 tool_calls（归一化误用工具名后交给 ToolNode），并收束 activity */
 import { AIMessage } from "@langchain/core/messages";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 
 import { hasPendingAiToolCalls } from "#agent/messages/pending-tool-calls.js";
+import { finalizeRunningProfileActivities } from "#agent/state-io/finalize-profile-activities.js";
+import { resolveProfileToolName } from "#agent/state-io/profile-tool-registry.js";
 import type { AgentStateType } from "#agent/state.js";
 
 import { PROFILE_TOOLS } from "./tools/index.js";
-import { resolveProfileToolName } from "#agent/state-io/profile-tool-registry.js";
 
 const toolNode = new ToolNode(PROFILE_TOOLS);
 
@@ -50,8 +51,21 @@ export async function runProfileToolsNode(
   config: Parameters<ToolNode["invoke"]>[1],
 ) {
   const messages = remapPendingProfileToolCalls(state.messages);
-  if (messages === state.messages) {
-    return toolNode.invoke(state, config);
-  }
-  return toolNode.invoke({ ...state, messages }, config);
+  const invokeState =
+    messages === state.messages ? state : { ...state, messages };
+  const result = await toolNode.invoke(invokeState, config);
+  const toolMessages = Array.isArray(result?.messages)
+    ? result.messages
+    : result?.messages
+      ? [result.messages]
+      : [];
+  const finalized = finalizeRunningProfileActivities([
+    ...invokeState.messages,
+    ...toolMessages,
+  ]);
+
+  return {
+    ...result,
+    messages: [...toolMessages, ...finalized],
+  };
 }

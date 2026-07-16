@@ -1,25 +1,36 @@
 import { START, StateGraph } from "@langchain/langgraph";
 
+import {
+  LLM_TIMEOUT_MS,
+  llmTimeoutOnly,
+} from "#agent/llm/invoke/timeout.js";
 import { AgentState } from "#agent/state.js";
 
-import { createEnterPhaseNode } from "../../helpers/enter-phase-node.js";
+import {
+  asNodeErrorHandler,
+  withErrorHandlerDrawingPath,
+} from "../../helpers/as-node-error-handler.js";
 import * as afterMutateProfile from "./conditional-edges/after-mutate-profile.js";
-import { finalizeProfileActivitiesNode } from "./nodes/finalize-profile-activities/node.js";
-import { mutateProfileNode } from "./nodes/mutate-profile/node.js";
+import {
+  mutateProfileErrorHandler,
+  mutateProfileNode,
+} from "./nodes/mutate-profile/node.js";
 import { runProfileToolsNode } from "./nodes/run-profile-tools/node.js";
 
 export const profileGraph = new StateGraph(AgentState)
-  .addNode("enterProfile", createEnterPhaseNode("profile"))
-  .addNode("mutateProfile", mutateProfileNode)
+  .addNode("mutateProfile", mutateProfileNode, {
+    ...llmTimeoutOnly(LLM_TIMEOUT_MS.chat),
+    errorHandler: asNodeErrorHandler(mutateProfileErrorHandler),
+  })
   .addNode("runProfileTools", runProfileToolsNode)
-  .addNode("finalizeProfileActivities", finalizeProfileActivitiesNode)
-  .addEdge(START, "enterProfile")
-  .addEdge("enterProfile", "mutateProfile")
+  .addEdge(START, "mutateProfile")
   .addConditionalEdges(
     afterMutateProfile.from,
     afterMutateProfile.selectAfterMutateProfile,
-    afterMutateProfile.paths,
+    withErrorHandlerDrawingPath(
+      "mutateProfile",
+      afterMutateProfile.paths,
+    ),
   )
-  .addEdge("runProfileTools", "finalizeProfileActivities")
-  .addEdge("finalizeProfileActivities", "mutateProfile")
+  .addEdge("runProfileTools", "mutateProfile")
   .compile();

@@ -2,11 +2,7 @@ import type { TurnQueuePlannerKind } from "../../models/agent/turn.js";
 import type { WorkPreview } from "../../models/work/preview.js";
 import type { WorkProduction } from "../../models/work/production.js";
 import type { WorkProfile } from "../../models/work/profile.js";
-import { previewHasContent } from "./preview.js";
-import {
-  buildProfileSetupProgressOptions,
-  getActiveProfileStep,
-} from "./profile-setup.js";
+import { isProfileSetupReady } from "./profile-setup.js";
 
 const REVISION_QUEUE_KINDS = [
   "collectRevision",
@@ -18,30 +14,20 @@ export type ProductionQueueGateOptions = {
   production?: WorkProduction | null;
 };
 
-/** 方案向导已到「方案就绪」步时，才允许 production 入队。 */
+/**
+ * 创作定位 + 体裁已齐（`isProfileSetupReady`）时允许 production 入队。
+ * 风格 / 背景 / 需求 / 边界等可选步未填不拦截；与产品「方案就绪」口径一致。
+ */
 export function canQueueProduction(
   profile: WorkProfile,
-  options: ProductionQueueGateOptions = {},
+  _options: ProductionQueueGateOptions = {},
 ): boolean {
-  const progressOptions = buildProfileSetupProgressOptions({
-    profile,
-    preview: options.preview,
-    production: options.production,
-    hasPreview: previewHasContent(options.preview),
-  });
-
-  const activeStep = getActiveProfileStep(
-    profile,
-    progressOptions.skippedSteps ?? [],
-    { lockAtReady: progressOptions.lockAtReady },
-  );
-
-  return activeStep === "ready";
+  return isProfileSetupReady(profile);
 }
 
 /**
  * 对 planner 队列做确定性 production 门禁（不解析用户话术）：
- * - 方案向导未到 ready → 剔除 production
+ * - 必填方案未齐（定位+体裁）→ 剔除 production
  * - 含 production 时剔除 collectRevision / revise（与整稿重做互斥）
  */
 export function filterProductionQueue(

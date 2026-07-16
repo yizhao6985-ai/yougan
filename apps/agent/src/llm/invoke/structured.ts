@@ -2,6 +2,7 @@
  * 结构化输出调用（同步 invoke）。
  * 内部 LLM 默认带 nostream tag，避免 messages-tuple 泄漏到前端；
  * 并强制 streaming: false，走一次性 completion 而非流式读 chunk。
+ * 超时与重试由节点 `addNode({ timeout, retryPolicy })` 配置。
  */
 import { AIMessage, type BaseMessage } from "@langchain/core/messages";
 import type { BaseLanguageModelInput } from "@langchain/core/language_models/base";
@@ -11,34 +12,23 @@ import type { z } from "zod";
 import type { MeteringModelId } from "@yougan/domain";
 
 import { sanitizeMessagesForTextChat } from "#agent/messages/llm-input.js";
-import { DASHSCOPE_MODELS } from "#agent/llm/providers/catalog.js";
+import { OPENAI_MODELS } from "#agent/llm/providers/index.js";
 import {
   getRunMeteringAccumulator,
   recordRunMeteringUsageIfMissing,
-  resolveDashScopeMeteringModelId,
+  resolveMeteringModelId,
   withMeteringCallbacks,
 } from "./metering.js";
-import {
-  getDashScopeChatKwargs,
-  resolveDashScopeChatFamily,
-} from "#agent/llm/providers/dashscope-chat-config.js";
-import { LLM_TIMEOUT_MS, withLlmRetry } from "./timeout.js";
 
-type StructuredOutputMethod = "functionCalling" | "jsonMode";
+type StructuredOutputMethod = "functionCalling" | "jsonMode" | "jsonSchema";
 
 export type StructuredInvokeOptions = {
   name?: string;
   method?: StructuredOutputMethod;
   meteringModelId?: MeteringModelId;
-  /** 保留 human 消息中的 image_url / 多模态 part（默认会压平成纯文本） */
-  preserveMultimodal?: boolean;
-  timeoutMs?: number;
-  /** 超时重试次数，默认 2；传 1 表示不重试 */
-  maxAttempts?: number;
 };
 
-type ChatModelWithKwargs = BaseChatModel & {
-  modelKwargs?: Record<string, unknown>;
+type ChatModelWithStreaming = BaseChatModel & {
   /** ChatOpenAI：结构化 invoke 走非流式，避免 _streamResponseChunks 与 AbortSignal 交织 */
   streaming?: boolean;
 };
@@ -59,37 +49,26 @@ export function isolatedStructuredConfig(
   return { ...config, tags };
 }
 
-/** 关闭 thinking；结构化 invoke 关闭 streaming。 */
+/** 结构化 invoke 关闭 streaming。 */
 function forStructuredInvoke(llm: BaseChatModel): BaseChatModel {
-  const chat = llm as ChatModelWithKwargs;
+  const chat = llm as ChatModelWithStreaming;
   if ("streaming" in chat) {
     chat.streaming = false;
-  }
-  const named = llm as ChatModelWithName;
-  const modelName =
-    typeof named.model === "string"
-      ? named.model
-      : typeof named.modelName === "string"
-        ? named.modelName
-        : DASHSCOPE_MODELS.chat;
-  const kwargs = getDashScopeChatKwargs(
-    resolveDashScopeChatFamily(modelName),
-    "structured",
-  );
-  if (chat.modelKwargs !== undefined) {
-    chat.modelKwargs = {
-      ...chat.modelKwargs,
-      ...kwargs,
-    };
   }
   return llm;
 }
 
+function isStructuredCompatError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /tool_choice|Thinking mode|enable_thinking|response_format|json_schema/i.test(
+    message,
+  );
+}
+
 function sanitizeStructuredInput(
   input: BaseLanguageModelInput,
-  preserveMultimodal?: boolean,
 ): BaseLanguageModelInput {
-  if (preserveMultimodal || !Array.isArray(input)) return input;
+  if (!Array.isArray(input)) return input;
   return sanitizeMessagesForTextChat(input as BaseMessage[]);
 }
 
@@ -104,8 +83,8 @@ function resolveStructuredMeteringModelId(
       ? named.model
       : typeof named.modelName === "string"
         ? named.modelName
-        : DASHSCOPE_MODELS.chat;
-  return resolveDashScopeMeteringModelId(modelName);
+        : OPENAI_MODELS.chat;
+  return resolveMeteringModelId(modelName);
 }
 
 /** 同步结构化输出，返回 Zod 校验后的对象。 */
@@ -118,25 +97,34 @@ export async function invokeStructured<T extends Record<string, unknown>>(
 ): Promise<T> {
   const meteringModelId = resolveStructuredMeteringModelId(llm, options);
   const baseConfig = isolatedStructuredConfig(config);
-  const timeoutMs = options?.timeoutMs ?? LLM_TIMEOUT_MS.structured;
-  const sanitizedInput = sanitizeStructuredInput(
-    input,
-    options?.preserveMultimodal,
-  );
-  const structured = forStructuredInvoke(llm).withStructuredOutput(schema, {
-    name: options?.name ?? "structured_output",
-    method: options?.method ?? "functionCalling",
-    includeRaw: true,
-  });
+  const sanitizedInput = sanitizeStructuredInput(input);
+  const preparedLlm = forStructuredInvoke(llm);
+  const methodAttempts: (StructuredOutputMethod | undefined)[] =
+    options?.method !== undefined ? [options.method] : [undefined, "jsonMode"];
 
-  return withLlmRetry({
-    parentSignal: config?.signal,
-    timeoutMs,
-    maxAttempts: options?.maxAttempts,
-    run: async (signal) => {
+  let lastError: unknown;
+  for (const method of methodAttempts) {
+    const structuredOutputOptions: {
+      name: string;
+      includeRaw: true;
+      method?: StructuredOutputMethod;
+    } = {
+      name: options?.name ?? "structured_output",
+      includeRaw: true,
+    };
+    if (method !== undefined) {
+      structuredOutputOptions.method = method;
+    }
+
+    const structured = preparedLlm.withStructuredOutput(
+      schema,
+      structuredOutputOptions,
+    );
+
+    try {
       const callCountBefore = getRunMeteringAccumulator(config).callCount;
       const meteredConfig = withMeteringCallbacks(
-        { ...baseConfig, signal },
+        baseConfig,
         meteringModelId,
         config,
       );
@@ -158,25 +146,14 @@ export async function invokeStructured<T extends Record<string, unknown>>(
         throw new Error("STRUCTURED_OUTPUT_PARSE_FAILED");
       }
       return result.parsed;
-    },
-  });
-}
-
-/** 多模态结构化输出（图片/视频帧等 content part 不会被压平成纯文本）。 */
-export async function invokeMultimodalStructured<
-  T extends Record<string, unknown>,
->(
-  llm: BaseChatModel,
-  schema: z.ZodType<T>,
-  input: BaseLanguageModelInput,
-  options?: Omit<StructuredInvokeOptions, "preserveMultimodal">,
-  config?: RunnableConfig,
-): Promise<T> {
-  return invokeStructured(
-    llm,
-    schema,
-    input,
-    { ...options, preserveMultimodal: true },
-    config,
-  );
+    } catch (error) {
+      lastError = error;
+      const hasFallback =
+        methodAttempts.indexOf(method) + 1 < methodAttempts.length;
+      if (!hasFallback || !isStructuredCompatError(error)) {
+        throw error;
+      }
+    }
+  }
+  throw lastError;
 }

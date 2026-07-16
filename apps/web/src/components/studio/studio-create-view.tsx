@@ -4,7 +4,7 @@ import { ComposerPreviewSelectionsProvider } from "@/components/studio/composer-
 import { WorksAside } from "@/components/studio/works-aside";
 import { YouganChat } from "@/components/studio/yougan-chat";
 import { useYouganStreamContext } from "@/components/studio/yougan-stream-provider";
-import { EMPTY_WORK_REVISION, mergeReferencesForDisplay } from "@yougan/domain";
+import { EMPTY_WORK_REVISION } from "@yougan/domain";
 import { resolveStreamProfile } from "@/lib/profile-setup-display";
 
 export function StudioCreateView() {
@@ -27,19 +27,7 @@ export function StudioCreateView() {
 
   const streamValues = stream.values;
   const staging = streamValues?.turn?.staging;
-  const hasPendingStaging = Boolean(
-    staging && streamValues?.turn?.committed !== true,
-  );
   const profile = resolveStreamProfile(activeWork?.profile, streamValues);
-  const references = hasPendingStaging
-    ? mergeReferencesForDisplay(
-        activeWork?.references,
-        staging?.references ?? streamValues?.references,
-      )
-    : mergeReferencesForDisplay(
-        activeWork?.references,
-        streamValues?.references,
-      );
   const preview =
     staging?.preview ??
     streamValues?.preview ??
@@ -62,7 +50,6 @@ export function StudioCreateView() {
   const panelContent = (
     <CreativeContextPanelContent
       activeWork={activeWork}
-      references={references}
       profile={profile}
       preview={preview}
       production={production}

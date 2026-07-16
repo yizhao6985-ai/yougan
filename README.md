@@ -89,7 +89,7 @@ cp apps/web/.env.local.example apps/web/.env.local
 **本地开发最少需要：**
 
 - `apps/api/.env`：`DATABASE_URL`、`JWT_SECRET`
-- `apps/agent/.env`：`POSTGRES_URI`、`DASHSCOPE_API_KEY`（百炼 OpenAI 兼容端点，必填方可调用 LLM）；可选 `LANGSMITH_*` 开启 trace
+- `apps/agent/.env`：`POSTGRES_URI`、`OPENAI_API_KEY`（OpenAI 兼容端点，必填方可调用 LLM）；可选 `LANGSMITH_*` 开启 trace
 - `apps/web/.env.local`：默认指向 `http://localhost:4000` 即可
 
 ### 3. 初始化数据库
@@ -177,7 +177,7 @@ pnpm generate:api       # 生成 apps/web/src/services/generated/schema.d.ts
 | `pnpm install` 超时       | 使用 npmmirror 或检查代理                                                                          |
 | API 启动报数据库错误      | `docker compose up -d` 后执行 `pnpm db:push`                                                       |
 | Agent checkpoint 连接失败 | 确认 `POSTGRES_URI` 为 `:5432/yougan_agent`；执行 `docker compose up -d` 让 `postgres-init` 创建库 |
-| Studio 对话无响应         | 确认 `dev:agent` 已启动且 `DASHSCOPE_API_KEY` 有效                                                 |
+| Studio 对话无响应         | 确认 `dev:agent` 已启动且 `OPENAI_API_KEY` 有效                                                 |
 | `/docs` 503               | 在 `apps/api` 执行 `pnpm openapi:generate`                                                         |
 | LangGraph 401             | 前端未登录或 JWT 过期；代理路径应为 `/langgraph`                                                   |
 

@@ -2,13 +2,11 @@ import type { ProductionDraftImage } from "./production-draft.js";
 
 // —— 部门 ——
 
-/** 制作团队部门（内部编排，不对用户展示部门名） */
-export type ProductionDepartment = "writing" | "design" | "audio" | "video";
+/** 制作团队部门（内部编排，不对用户展示部门名）；当前仅文本产出 */
+export type ProductionDepartment = "writing" | "video";
 
 export const PRODUCTION_DEPARTMENTS: ProductionDepartment[] = [
   "writing",
-  "design",
-  "audio",
   "video",
 ];
 

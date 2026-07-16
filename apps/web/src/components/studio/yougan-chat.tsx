@@ -15,7 +15,6 @@ import {
   ChatStreamBlock,
   chatStreamBlock,
 } from "@/components/studio/chat-stream-block";
-import { ComposerAttachmentsProvider } from "@/components/studio/composer-attachments-context";
 import { TurnDirectionOptions } from "@/components/studio/turn-direction-options";
 import { OpeningTurnDirections } from "@/components/studio/opening-turn-directions";
 import { useTurnDirections } from "@/hooks/use-turn-directions";
@@ -27,7 +26,6 @@ import { useYouganStreamContext } from "@/components/studio/yougan-stream-provid
 import { useWorkItemNameDialog } from "@/hooks/use-work-item-name-dialog";
 import { WorksCreateMenu } from "@/components/studio/works-create-menu";
 import { useStudioOnboardingOptional } from "@/components/studio/onboarding/studio-onboarding-provider";
-import { HumanMessageAttachments } from "@/components/studio/human-message-attachments";
 import { HumanMessagePreviewSelections } from "@/components/studio/human-message-preview-selections";
 import { buildRenderItems, findTurnDirectionsAnchorIndex, mergeChatMessages } from "@/lib/message-utils";
 import { scene } from "@/lib/scene-styles";
@@ -135,15 +133,13 @@ export function YouganChat() {
   const handleSend = useCallback(
     async ({
       text,
-      attachments,
       previewSelections,
     }: {
       text: string;
-      attachments: Parameters<typeof sendMessage>[1];
-      previewSelections: Parameters<typeof sendMessage>[2];
+      previewSelections: Parameters<typeof sendMessage>[1];
     }) => {
       if (!canSend) return;
-      await sendMessage(text, attachments, previewSelections);
+      await sendMessage(text, previewSelections);
     },
     [canSend, sendMessage],
   );
@@ -210,7 +206,6 @@ export function YouganChat() {
       <TurnDirectionOptions
         directions={activeDirections.directions}
         hint={activeDirections.hint}
-        profile={profile}
         disabled={!canSend}
         onSelect={(value) => void sendMessage(value)}
         className="mt-3"
@@ -228,8 +223,6 @@ export function YouganChat() {
       return runProgress?.label ?? CHAT_COPY.replying;
     }
     switch (activeKind) {
-      case "reference":
-        return CHAT_COPY.status.referenceProcessing;
       case "production":
         return CHAT_COPY.status.productionExecuting;
       case "revise":
@@ -301,7 +294,6 @@ export function YouganChat() {
             >
               {items.map((item, index) => {
                 if (item.kind === "human") {
-                  const hasAttachments = item.attachments.length > 0;
                   const hasSelections = item.previewSelections.length > 0;
                   const hasText = Boolean(item.content);
                   return (
@@ -312,9 +304,6 @@ export function YouganChat() {
                             <HumanMessagePreviewSelections
                               items={item.previewSelections}
                             />
-                          ) : null}
-                          {hasAttachments ? (
-                            <HumanMessageAttachments items={item.attachments} />
                           ) : null}
                           {hasText ? (
                             <p className="whitespace-pre-wrap break-words">
@@ -480,16 +469,14 @@ export function YouganChat() {
             {showRunLoading ? (
               <ChatRunLoading label={runLoadingLabel} />
             ) : null}
-            <ComposerAttachmentsProvider>
-              <StudioChatComposer
-                input={input}
-                onInputChange={setInput}
-                onSend={handleSend}
-                onStop={canCancelActiveTurn ? cancelActiveTurn : undefined}
-                chatStatus={chatStatus}
-                placeholder={composerPlaceholder}
-              />
-            </ComposerAttachmentsProvider>
+            <StudioChatComposer
+              input={input}
+              onInputChange={setInput}
+              onSend={handleSend}
+              onStop={canCancelActiveTurn ? cancelActiveTurn : undefined}
+              chatStatus={chatStatus}
+              placeholder={composerPlaceholder}
+            />
           </div>
         </div>
       </div>

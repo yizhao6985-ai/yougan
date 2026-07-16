@@ -10,7 +10,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { PreviewImageItem } from "@/components/preview-image-list";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogOverlay, DialogPortal } from "@/components/ui/dialog";
-import { PREVIEW_PANEL, REFERENCE_PANEL } from "@/lib/site-copy";
+import { PREVIEW_PANEL } from "@/lib/site-copy";
 import { cn } from "@/lib/utils";
 
 function imageLabel(image: PreviewImageItem, index: number) {
@@ -142,7 +142,7 @@ export function PreviewImageGallery({
             <div className="flex max-h-full max-w-full flex-col items-center justify-center">
               {failed ? (
                 <p className="px-6 text-center text-sm text-white/70">
-                  {REFERENCE_PANEL.imageUnavailable}
+                  {PREVIEW_PANEL.imageUnavailable}
                 </p>
               ) : (
                 <img

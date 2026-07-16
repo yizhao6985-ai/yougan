@@ -20,8 +20,6 @@ import {
   getActiveLangGraphRunId,
   isActiveLangGraphRunStatus,
   isLangGraphThreadMissingError,
-  isProductionTurnActive,
-  isReviseTurnActive,
   isTurnInFlight,
   TURN_EPHEMERAL_RESET,
 } from "@/lib/turn-lifecycle";
@@ -1001,24 +999,10 @@ export function useYouganStream({
 
   /**
    * 是否允许用户点「停止生成」。
-   * production 环节与 HITL 确认期间禁止 cancel（避免半成品状态）。
+   * 任意进行中的回合均可中断（含 production / revise / HITL）；
+   * 真正能否执行由 cancelActiveTurn 内的 isStreamBusy / runId / isTurnInFlight 判断。
    */
-  const canCancelActiveTurn = useMemo(
-    () =>
-      !isProductionTurnActive(mergedStreamValues) &&
-      !isReviseTurnActive(mergedStreamValues) &&
-      !hasTurnConfirmInterrupt(
-        stream.interrupt,
-        persistedProductionConfirmInterrupt,
-        persistedReviseConfirmInterrupt,
-      ),
-    [
-      mergedStreamValues,
-      persistedProductionConfirmInterrupt,
-      persistedReviseConfirmInterrupt,
-      stream.interrupt,
-    ],
-  );
+  const canCancelActiveTurn = !isCancelling;
 
   /**
    * 取消当前回合：stop SSE → runs.cancel → updateState(cancelPatch) → postCancelValues。
@@ -1028,9 +1012,17 @@ export function useYouganStream({
    */
   const cancelActiveTurn = useMemoizedFn(async () => {
     if (isCancelling || !canCancelActiveTurn) return;
-    const values = stream.values as YouganValues | undefined;
+    const values = (mergedStreamValues ?? stream.values) as
+      | YouganValues
+      | undefined;
+    const awaitingConfirm = hasTurnConfirmInterrupt(
+      stream.interrupt,
+      persistedProductionConfirmInterrupt,
+      persistedReviseConfirmInterrupt,
+    );
     const canCancel =
       isStreamBusy ||
+      awaitingConfirm ||
       Boolean(threadId && getActiveLangGraphRunId(threadId)) ||
       isTurnInFlight(values);
     if (!canCancel) return;
@@ -1042,11 +1034,10 @@ export function useYouganStream({
 
     const run = (async () => {
       startCancelling();
+      setPersistedProductionConfirmInterrupt(null);
+      setPersistedReviseConfirmInterrupt(null);
 
-      const cancelPatch = buildTurnFinalizePatch(
-        stream.values as YouganValues,
-        stream.messages,
-      );
+      const cancelPatch = buildTurnFinalizePatch(values, stream.messages);
 
       /** sessionStorage 无 run id 时向 runs.list 查找（例如其他 tab 写入的情况） */
       const activeRunId =
@@ -1083,7 +1074,7 @@ export function useYouganStream({
 
       syncSubscriptionCacheFromAiUsage(
         queryClient,
-        settledAiUsage ?? (stream.values as YouganValues | undefined)?.aiUsage,
+        settledAiUsage ?? values?.aiUsage,
       );
       setPostCancelValues({
         ...cancelPatch,
@@ -1119,14 +1110,9 @@ export function useYouganStream({
   const sendMessage = useMemoizedFn(
     async (
       text: string,
-      attachments: Parameters<typeof buildSubmitHumanMessage>[1] = [],
-      previewSelections: Parameters<typeof buildSubmitHumanMessage>[2] = [],
+      previewSelections: Parameters<typeof buildSubmitHumanMessage>[1] = [],
     ) => {
-      const message = buildSubmitHumanMessage(
-        text,
-        attachments,
-        previewSelections,
-      );
+      const message = buildSubmitHumanMessage(text, previewSelections);
       const content = message.content;
       const hasText =
         typeof content === "string"
@@ -1140,10 +1126,7 @@ export function useYouganStream({
                 typeof part.text === "string" &&
                 part.text.trim().length > 0,
             );
-      const hasPayload =
-        hasText ||
-        attachments.length > 0 ||
-        previewSelections.length > 0;
+      const hasPayload = hasText || previewSelections.length > 0;
       if (!hasPayload || !work || !conversation) return;
 
       suppressSuggestionsCacheRef.current = true;
@@ -1287,24 +1270,36 @@ export function useYouganStream({
     },
   );
 
-  /** 合并 stream.interrupt 与 bootstrap 持久化的 interrupt，供确认弹窗使用 */
-  const productionConfirmInterrupt = useMemo(
-    () =>
-      resolveProductionConfirmInterrupt(
-        stream.interrupt,
-        persistedProductionConfirmInterrupt,
-      ),
-    [persistedProductionConfirmInterrupt, stream.interrupt],
-  );
+  /**
+   * 合并 stream.interrupt 与 bootstrap 持久化的 interrupt，供确认弹窗使用。
+   * 用户已取消 / turn.cancelled 时隐藏，避免 stream.interrupt 残留导致确认条闪回。
+   */
+  const suppressTurnConfirmInterrupt =
+    isCancelling || mergedStreamValues?.turn?.cancelled === true;
 
-  const reviseConfirmInterrupt = useMemo(
-    () =>
-      resolveReviseConfirmInterrupt(
-        stream.interrupt,
-        persistedReviseConfirmInterrupt,
-      ),
-    [persistedReviseConfirmInterrupt, stream.interrupt],
-  );
+  const productionConfirmInterrupt = useMemo(() => {
+    if (suppressTurnConfirmInterrupt) return null;
+    return resolveProductionConfirmInterrupt(
+      stream.interrupt,
+      persistedProductionConfirmInterrupt,
+    );
+  }, [
+    persistedProductionConfirmInterrupt,
+    stream.interrupt,
+    suppressTurnConfirmInterrupt,
+  ]);
+
+  const reviseConfirmInterrupt = useMemo(() => {
+    if (suppressTurnConfirmInterrupt) return null;
+    return resolveReviseConfirmInterrupt(
+      stream.interrupt,
+      persistedReviseConfirmInterrupt,
+    );
+  }, [
+    persistedReviseConfirmInterrupt,
+    stream.interrupt,
+    suppressTurnConfirmInterrupt,
+  ]);
 
   const isAwaitingTurnConfirm =
     productionConfirmInterrupt != null || reviseConfirmInterrupt != null;

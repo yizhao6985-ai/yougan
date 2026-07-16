@@ -8,15 +8,12 @@ import {
   PromptInputTextarea,
   PromptInputTools,
 } from "@/components/ai-elements/prompt-input";
-import { ComposerAttachmentDrawer } from "@/components/studio/composer-attachment-drawer";
-import { useComposerAttachmentsContext } from "@/components/studio/composer-attachments-context";
 import { ComposerPreviewSelectionTags } from "@/components/studio/composer-preview-selection-tags";
 import { useComposerPreviewSelectionsContext } from "@/components/studio/composer-preview-selections-context";
 import { ModelTemperatureControl } from "@/components/studio/model-temperature-control";
-import { UploadReferenceButtons } from "@/components/studio/upload-reference-button";
 import { useYouganStreamContext } from "@/components/studio/yougan-stream-provider";
 import { scene } from "@/lib/scene-styles";
-import type { HumanAttachmentAsset, HumanPreviewSelection } from "@yougan/domain";
+import type { HumanPreviewSelection } from "@yougan/domain";
 import { CHAT_COPY } from "@/lib/site-copy";
 
 type StudioChatComposerProps = {
@@ -24,7 +21,6 @@ type StudioChatComposerProps = {
   onInputChange: (value: string) => void;
   onSend: (payload: {
     text: string;
-    attachments: HumanAttachmentAsset[];
     previewSelections: HumanPreviewSelection[];
   }) => void | Promise<void>;
   onStop?: () => void | Promise<void>;
@@ -47,12 +43,6 @@ export function StudioChatComposer({
     setModelTemperatureLevel,
   } = useYouganStreamContext();
   const {
-    clear,
-    readyAttachments,
-    hasReady,
-    hasUploading,
-  } = useComposerAttachmentsContext();
-  const {
     clear: clearPreviewSelections,
     toPayload: previewSelectionsPayload,
     hasSelections,
@@ -62,32 +52,26 @@ export function StudioChatComposer({
 
   const handleSubmit = useCallback(
     async (message: { text: string }) => {
-      const attachments = readyAttachments();
       const previewSelections = previewSelectionsPayload();
       const trimmed = message.text.trim();
       if (
-        (!trimmed && attachments.length === 0 && previewSelections.length === 0) ||
+        (!trimmed && previewSelections.length === 0) ||
         (hasSelections && !trimmed) ||
-        !canSend ||
-        hasUploading
+        !canSend
       ) {
         return;
       }
       onInputChange("");
-      clear();
       clearPreviewSelections();
-      await onSend({ text: trimmed, attachments, previewSelections });
+      await onSend({ text: trimmed, previewSelections });
     },
     [
       canSend,
-      clear,
       clearPreviewSelections,
       hasSelections,
-      hasUploading,
       onInputChange,
       onSend,
       previewSelectionsPayload,
-      readyAttachments,
     ],
   );
 
@@ -110,17 +94,15 @@ export function StudioChatComposer({
     );
 
   const canSubmit =
-    ((Boolean(input.trim()) || hasReady) &&
-      (!hasSelections || Boolean(input.trim()))) &&
-    canSend &&
-    !hasUploading;
+    Boolean(input.trim()) &&
+    (!hasSelections || Boolean(input.trim())) &&
+    canSend;
 
   return (
     <PromptInput
       className={scene.composerFloatingInput}
       onSubmit={(message) => void handleSubmit(message)}
     >
-      <ComposerAttachmentDrawer />
       <PromptInputBody>
         <div
           className="flex w-full flex-1 flex-wrap items-start gap-1 px-3 py-3.5 min-h-[4.5rem]"
@@ -153,7 +135,6 @@ export function StudioChatComposer({
       </PromptInputBody>
       <PromptInputFooter>
         <PromptInputTools className="flex-wrap gap-2">
-          <UploadReferenceButtons />
           <ModelTemperatureControl
             level={modelTemperatureLevel}
             onChange={setModelTemperatureLevel}
@@ -162,7 +143,9 @@ export function StudioChatComposer({
         <PromptInputSubmit
           disabled={!canSubmit && chatStatus !== "streaming"}
           status={chatStatus}
-          onStop={() => void onStop?.()}
+          onStop={onStop ? () => void onStop() : undefined}
+          sendTooltip={CHAT_COPY.composerSubmit.sendTooltip}
+          stopTooltip={CHAT_COPY.composerSubmit.cancelTooltip}
         />
       </PromptInputFooter>
     </PromptInput>

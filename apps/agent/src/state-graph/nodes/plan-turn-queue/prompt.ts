@@ -3,6 +3,7 @@ import {
   buildProfileSetupProgressOptions,
   getActiveProfileStep,
   getProfileStepCopy,
+  isProfileSetupReady,
   previewHasContent,
   previewSelectionsSummary,
 } from "@yougan/domain";
@@ -15,7 +16,7 @@ import {
   getProfile,
   getReferences,
 } from "#agent/state-io/index.js";
-import { getLatestHumanMessageAttachments, getLatestHumanMessagePreviewSelections, getLatestHumanMessageText } from "#agent/messages/human.js";
+import { getLatestHumanMessagePreviewSelections, getLatestHumanMessageText } from "#agent/messages/human.js";
 
 function buildProfileWizardContext(state: AgentStateType): string {
   const profile = getProfile(state);
@@ -30,12 +31,17 @@ function buildProfileWizardContext(state: AgentStateType): string {
     { lockAtReady: profileSetupOptions.lockAtReady },
   );
   const activeStepTitle = getProfileStepCopy(profile, activeStep).title;
+  const setupReady = isProfileSetupReady(profile);
 
-  if (activeStep === "ready") {
-    return `- 方案向导：已到「${activeStepTitle}」，仅当用户**明确要求**开写/整稿重做时可 output production`;
+  if (!setupReady) {
+    return `- 方案向导：当前在「${activeStepTitle}」步；创作定位或体裁未齐 → 只 output profile，**禁止** production`;
   }
 
-  return `- 方案向导：当前在「${activeStepTitle}」步（尚未就绪）；用户在完善方案（含写背景/风格/需求/边界等）→ 只 output profile，**禁止** production`;
+  if (activeStep === "ready") {
+    return `- 方案向导：已到「${activeStepTitle}」（必填已齐）；仅当用户**明确要求**开写/整稿重做时可 output production`;
+  }
+
+  return `- 方案向导：当前在「${activeStepTitle}」步（必填已齐，可选步可跳过）；用户在完善风格/背景/需求/边界 → 默认 profile；但若明确说开写/出稿/开始制作/开始创作/可以写了 → **必须** output production，**禁止**因可选步未填而拒绝`;
 }
 
 export function buildTurnQueuePrompt(
@@ -45,8 +51,6 @@ export function buildTurnQueuePrompt(
   const profile = getProfile(state);
   const references = getReferences(state);
   const hasPreview = previewHasContent(getPreview(state));
-  const hasAttachments =
-    getLatestHumanMessageAttachments(state.messages).length > 0;
   const previewSelections = getLatestHumanMessagePreviewSelections(
     state.messages,
   );
@@ -63,7 +67,6 @@ export function buildTurnQueuePrompt(
   return `你是回合 workflow 助手。根据${YOUGAN_USER_LABEL}**最新一条消息**，输出本轮**有序队列 kinds**（仅子图路由，不对用户回复）。
 
 ## 可选 kind
-- **reference**：删/改参考素材本身（有附件时由系统前置，勿输出）
 - **profile**：改作品方案（定位/选题/体裁/受众/节拍/边界/记入方案）
 - **production**：开写或**整稿重做**（无 preview 时明确开写；有 preview 时「重写/另写一版/按方案重新生成/重新制作」——走制作流水线，**不是**在现有成稿上改）
 - **collectRevision**：有成稿时，**局部**修改意见（改标题/某段/语气等，写入改稿清单，**不立刻改稿**）
@@ -75,7 +78,7 @@ export function buildTurnQueuePrompt(
 ## 改稿 vs 整稿重做（有成稿时**最易混淆**，须严格区分）
 - **改稿**（collectRevision / revise）：保留现有成稿，只改其中一部分；用户会点名标题、段落、语气、长度等**局部**问题，或要求「按清单改」
 - **整稿重做**（production）：放弃/覆盖当前成稿，按**作品方案**重新走制作流水线；用户会说「重写/另写/重新生成作品/按方案重新制作/不要这篇了重新写」等**整篇级**动作
-- 「重新生成」若指向**整篇作品/成稿**或**按方案**→ **production**；若仅指某段/标题/配图等局部 → **collectRevision**
+- 「重新生成」若指向**整篇作品/成稿**或**按方案**→ **production**；若仅指某段/标题等局部 → **collectRevision**
 - production 与 collectRevision / revise **互斥**：整稿重做时**禁止**输出 collectRevision 或 revise
 
 ## kind 分工速查
@@ -96,32 +99,28 @@ export function buildTurnQueuePrompt(
 
 ## 无 preview
 - 聊方案/补方向/记要求/确认细节 → profile
-- **仅**当用户明确说开写/出稿/开始制作/开始创作/可以写了 → production
+- **仅**当用户明确说开写/出稿/开始制作/开始创作/可以写了 → production（必填定位+体裁已齐时，**不论**可选步是否填完，**必须** output production）
 - 纯咨询 → ask
 
 ## 禁止误触 production（重要）
 - 「好的 / 继续 / 可以 / 没问题 / 就这样 / 方案可以了 / 再补充…」→ **仅 profile**，禁止 production
-- 方案向导未到「方案就绪」、或用户正在完善方向/风格/背景/需求/边界 → **仅 profile**；「写一下背景」「帮我写人设」等是记方案，不是开写成稿
+- 「写一下背景」「帮我写人设」「补一下风格」等是记方案 → **仅 profile**，不是开写成稿
+- 创作定位或体裁未齐 → **禁止** production（先补必填）
+- 风格/背景/需求/边界等**可选**未填 → **不构成**拒绝开写的理由；用户一旦明确说开始制作/开写/出稿/可以写了 → **必须** production
 - 方案内容已较完整 → **不等于**用户要求开写；未听到明确开写口令时 **禁止** output production
 - 系统另有「开始创作」确认环节；planner 不得替用户决定开写
 
-## 附件与 reference
-- has_attachments=true：**勿输出 reference**（系统自动前置 preprocess）
-- 无附件时，仅当用户删/改参考素材 → reference
-- 仅上传附件、无文字：勿输出 reference；默认 **profile**（引导说明借鉴意图），明显纯问文件内容 → ask
-
 ## 复合意图
-一条消息可同时触发多个 kind（如既改方案又提问）。按 reference → profile → production → collectRevision → revise → ask 排序。
+一条消息可同时触发多个 kind（如既改方案又提问）。按 profile → production → collectRevision → revise → ask 排序。
 
 队列至少 1 项。
 
 当前上下文：
 - has_preview: ${hasPreview}
-- has_attachments: ${hasAttachments}
 - has_preview_selection: ${hasPreviewSelection}
 ${buildProfileWizardContext(state)}
 - 作品方案：${profileSummary(profile, references)}
 
 ${YOUGAN_USER_LABEL}最新一条消息：
-${messageBody || (hasAttachments ? "（仅上传参考素材，无文字说明）" : "（空）")}`;
+${messageBody || "（空）"}`;
 }

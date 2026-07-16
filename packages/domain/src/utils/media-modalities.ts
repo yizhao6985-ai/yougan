@@ -102,24 +102,14 @@ export function inferMediaModalities(input: {
   return ["text"];
 }
 
-export type ProductionPipelineId =
-  | "text"
-  | "image"
-  | "design"
-  | "audio"
-  | "video";
+export type ProductionPipelineId = "text" | "video";
 
-/** 按媒介原子组合路由制作 pipeline */
+/** 按媒介原子组合路由制作 pipeline（当前仅文本/脚本文案） */
 export function routeProductionPipeline(
   modalities: MediaModalityId[] | null | undefined,
-  contentFormat?: string | null,
+  _contentFormat?: string | null,
 ): ProductionPipelineId {
   const set = new Set(sortMediaModalities(modalities ?? []));
   if (set.has("video")) return "video";
-  if (set.has("audio")) return "audio";
-  if (contentFormat === "illustration" || (set.has("image") && !set.has("text"))) {
-    return "design";
-  }
-  if (set.has("image")) return "image";
   return "text";
 }

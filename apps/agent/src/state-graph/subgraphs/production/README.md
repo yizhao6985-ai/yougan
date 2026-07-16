@@ -2,70 +2,26 @@
 
 每次进入子图会**重置** `staging.production`，再排计划、按任务管线产出与验收，最终写入 `preview` 或保留失败状态。
 
-回合末成稿节选 / 失败说明由主图 **`reflectTurn`** 统一输出（`turn_reflection`），本子图不再写 AIMessage。
-
 ## 拓扑
 
 ```text
 START → planProduction → dispatchTask
-                              ├─ executeWriting → acceptTask → routeProduction
-                              ├─ executeDesign → renderDesignImage → acceptTask → routeProduction
-                              ├─ ingestProductionAudio → acceptTask → routeProduction
-                              └─ __end__（计划为空 / 无法执行）
+                              └─ executeWriting → acceptTask → routeProduction
 routeProduction
   ├─ dispatchTask（尚有未完成任务）
   ├─ assemblePreview（全部 ready）→ END
   └─ __end__（失败 / 卡住；跳过整合）
 ```
 
-## 设计任务流水线
-
-`department=design` 的任务固定走三步，不可跳过 executeDesign：
-
-1. **executeDesign**（LLM）：编写文生图 prompt + 短说明（notes）
-2. **renderDesignImage**（MiniMax image-01）：按 prompt 出图，写入临时 URL
-3. **acceptTask**（LLM）：验收 prompt 方向与质量（与文案验 body 同理）；成图 URL 仅作结构凭证；prompt 方向问题回到 executeDesign 重写，仅出图失败可保留 prompt 重试 render
-
-dispatch 在「已有 prompt、待出图」时仍路由到 executeDesign（no-op 后进入 renderDesignImage）。
+当前仅支持文本产出（`writing` / `video` 脚本类文案）。无出图、无音频入库。
 
 ## 节点职责
 
-| 节点                               | 类型     | 职责                                                  |
-| ---------------------------------- | -------- | ----------------------------------------------------- |
-| `planProduction`                   | llm-work | 写入用户要求（summary），生成可执行 `pending_tasks` |
-| `dispatchTask`                     | plain    | 标记当前 `in_progress` 任务                           |
-| `executeWriting` / `executeDesign` | llm-work | 单任务产出 → `deliverable`（design 产出 prompt + 短说明） |
-| `ingestProductionAudio` | plain | 用户上传音频：多模态转写 → deliverable（body=URL，notes=转写稿） |
-| `renderDesignImage` | plain | design 任务：MiniMax image-01 出图，写入临时 URL（`transient`）；stream 结束后由 API sync 物化 |
+| 节点 | 类型 | 职责 |
+| ---- | ---- | ---- |
+| `planProduction` | llm-work | 写入用户要求（summary），生成可执行 `pending_tasks` |
+| `dispatchTask` | plain | 标记当前 `in_progress` 任务 |
+| `executeWriting` | llm-work | 单任务文本产出 → `deliverable` |
 | `acceptTask` | llm-work | 方向性验收；失败重试或标 `failed` |
-| `routeProduction`                  | plain    | 流转锚点（无状态变更）                                |
-| `assemblePreview`                  | llm-work | 写入 `preview` 后清空 `pending_tasks`（preview 未就绪则保留任务队列） |
-
-## LLM 调用约定
-
-内部 work 节点统一 **SystemMessage（稳定规则层）+ HumanMessage（总监工单层）**，不传对话 `messages`。
-
-| 节点 | prompt 位置 |
-| ---- | ----------- |
-| `planProduction` | `nodes/plan-production/prompt.ts` |
-| `executeWriting` | `nodes/execute-writing/prompt.ts` |
-| `executeDesign` | `nodes/execute-design/prompt.ts` |
-| `acceptTask` | `nodes/accept-task/prompt.ts` |
-| `assemblePreview` | `nodes/assemble-preview/prompt.ts` |
-
-## helpers（跨节点复用）
-
-| 文件                                            | 用途                                          |
-| ----------------------------------------------- | --------------------------------------------- |
-| `task-plan.ts`                                  | 任务状态判断、dispatch 路由、`withActiveTask` |
-| `pipeline.ts`                                   | `MAX_ACCEPT_ATTEMPTS`（验收上限）             |
-| `format-guidance.ts` / `word-count-guidance.ts` | 体裁与篇幅提示                                |
-| `resolve-production-max-tokens.ts`              | 制作 LLM 输出 token 上限                      |
-
-## 任务状态
-
-`pending` → `in_progress` → `ready`；验收连续失败达上限 → `failed`（带 `failure_message`）。
-
-`accept_retry_count` 与 LangSmith 中 `production_accept_task` 调用一一对应：仅 LLM 方向性验收未通过时递增；缺交付物、仅重试出图不计数；通过验收时清零。
-
-`taskAwaitingAccept` 与 `isValidTaskDeliverable` 对齐（结构层非空即可）；内容质量由 accept 节点 LLM 验收。
+| `routeProduction` | plain | 流转锚点（无状态变更） |
+| `assemblePreview` | llm-work | 写入 `preview` 后清空 `pending_tasks` |

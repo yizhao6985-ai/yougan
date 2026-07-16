@@ -3,6 +3,7 @@
  */
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import type { RunnableConfig } from "@langchain/core/runnables";
+import type { NodeError } from "@langchain/langgraph";
 
 import { invokeStructured } from "#agent/llm/invoke/index.js";
 import { patchAiUsageMetering } from "#agent/llm/invoke/metering.js";
@@ -17,8 +18,10 @@ import {
   getReferences,
   patchPendingProduction,
 } from "#agent/state-io/index.js";
+import { patchRunProgress } from "#agent/state-io/run-progress.js";
 import type { AgentStatePatch, AgentStateType } from "#agent/state.js";
 
+import { rethrowUnlessRecoverable } from "../../../../helpers/recoverable-node-error.js";
 import { captureUserRequirements } from "./helpers/capture-user-requirements.js";
 import { newPlanTask } from "./helpers/new-plan-task.js";
 import {
@@ -43,6 +46,31 @@ function applyPlanTasks(
         acceptance_criteria: t.acceptance_criteria,
       }),
     ),
+  };
+}
+
+function fallbackProductionPlan(
+  state: AgentStateType,
+  config?: RunnableConfig,
+): AgentStatePatch {
+  const userRequirements = captureUserRequirements(state);
+  const fresh: WorkProduction = {
+    ...EMPTY_WORK_PRODUCTION,
+    summary: userRequirements,
+  };
+  const pending_tasks = sanitizePlanTasks([]).map((t) =>
+    newPlanTask(t.description, t.department as ProductionDepartment, {
+      direction: t.direction,
+      acceptance_criteria: t.acceptance_criteria,
+    }),
+  );
+  return {
+    ...patchRunProgress("production"),
+    ...patchPendingProduction(state, {
+      ...fresh,
+      pending_tasks,
+    }),
+    ...patchAiUsageMetering(state.aiUsage, config),
   };
 }
 
@@ -75,7 +103,7 @@ async function planTasksWithLlm(
   return sanitizePlanTasks(parsed.tasks);
 }
 
-async function createProductionPlan(
+export async function planProductionNode(
   state: AgentStateType,
   config?: RunnableConfig,
 ): Promise<AgentStatePatch> {
@@ -84,34 +112,19 @@ async function createProductionPlan(
     ...EMPTY_WORK_PRODUCTION,
     summary: userRequirements,
   };
+  const tasks = await planTasksWithLlm(state, userRequirements, config);
 
-  try {
-    const tasks = await planTasksWithLlm(state, userRequirements, config);
-
-    return {
-      ...patchPendingProduction(state, applyPlanTasks(fresh, tasks)),
-      ...patchAiUsageMetering(state.aiUsage, config),
-    };
-  } catch {
-    const pending_tasks = sanitizePlanTasks([]).map((t) =>
-      newPlanTask(t.description, t.department as ProductionDepartment, {
-        direction: t.direction,
-        acceptance_criteria: t.acceptance_criteria,
-      }),
-    );
-    return {
-      ...patchPendingProduction(state, {
-        ...fresh,
-        pending_tasks,
-      }),
-      ...patchAiUsageMetering(state.aiUsage, config),
-    };
-  }
+  return {
+    ...patchRunProgress("production"),
+    ...patchPendingProduction(state, applyPlanTasks(fresh, tasks)),
+    ...patchAiUsageMetering(state.aiUsage, config),
+  };
 }
 
-export async function planProductionNode(
+export function planProductionErrorHandler(
   state: AgentStateType,
-  config?: RunnableConfig,
-): Promise<AgentStatePatch> {
-  return createProductionPlan(state, config);
+  error: NodeError,
+): AgentStatePatch {
+  rethrowUnlessRecoverable(error);
+  return fallbackProductionPlan(state);
 }

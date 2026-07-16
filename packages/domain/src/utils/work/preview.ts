@@ -312,7 +312,8 @@ function collectFromTasks(tasks: ProductionTask[]): AssembledParts {
     if (!deliverable) continue;
     const department = task.department ?? "writing";
 
-    if (department === "design") {
+    // 兼容历史 design deliverable：仍可读出图草稿
+    if ((department as string) === "design") {
       const caption =
         deliverable.notes?.trim() || deliverable.title?.trim() || "";
       if (caption) textParts.push(caption);
@@ -323,7 +324,7 @@ function collectFromTasks(tasks: ProductionTask[]): AssembledParts {
       continue;
     }
 
-    if (department === "audio" || department === "video") {
+    if (department === "video" || (department as string) === "audio") {
       const notes = deliverable.notes?.trim();
       if (notes) textParts.push(notes);
       continue;

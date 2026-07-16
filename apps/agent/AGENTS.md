@@ -11,20 +11,14 @@ src/
     ├── nodes/
     ├── conditional-edges/
     └── subgraphs/
-        ├── reference/
-        │   ├── graph.ts
-        │   ├── nodes/
-        │   └── conditional-edges/
         ├── profile/
-        │   ├── graph.ts
-        │   ├── nodes/
-        │   └── conditional-edges/
-        ├── production/          # 见 subgraphs/production/README.md；根下 helpers/ 为跨节点复用
+        ├── production/          # 见 subgraphs/production/README.md（仅文本产出）
         ├── ask/
-        └── suggestions/
+        ├── revise/
+        └── collect-revision/
 ```
 
-系统收尾节点（`reflect-turn/`：回合末影响评价；`summarize-messages/`：对话过长滚动摘要）在队列执行完后、`commitTurn` 前/后接线；`nextStepSuggestions` 在 `commitTurn` 后由 `suggestionsGraph` 生成。
+系统收尾：`generateTurnDirections`（延伸建议）→ `commitTurn` → `summarizeMessages`（历史压缩）→ `finalizeRunMetering`。
 
 主图接线在 `src/graph.ts`；各子图接线在 `state-graph/subgraphs/<name>/graph.ts`。
 
@@ -44,7 +38,7 @@ src/
 | **run-tools** | `node.ts` + `tools/`（tool 专属逻辑放 `tools/helpers/`） |
 | **subgraph** | `subgraphs/<name>/graph.ts` compile → 主图 addNode |
 
-节点内辅助逻辑放在该节点目录下的 `helpers/`（与 `prompt.ts` 同级），由 `node.ts` 或同目录 `prompt.ts` import。`run-*-tools/` 下仅 tool 使用的逻辑放 `tools/helpers/`（与 `tools/*.ts` 同级）。跨节点复用时从**归属节点**的 `helpers/` 相对路径引用（如 `run-preprocess-tools/tools/helpers/prepare/prepare-asset.js`），**不在**子图根下建 `helpers/`。
+节点内辅助逻辑放在该节点目录下的 `helpers/`（与 `prompt.ts` 同级），由 `node.ts` 或同目录 `prompt.ts` import。`run-*-tools/` 下仅 tool 使用的逻辑放 `tools/helpers/`（与 `tools/*.ts` 同级）。跨节点复用时从**归属节点**的 `helpers/` 相对路径引用，**不在**子图根下建 `helpers/`。
 
 **与 `@yougan/domain` 的边界**：仅 agent 使用、web/api 用不上的工具函数不放 domain `utils/`；归到对应 node 的 `helpers/`。跨多节点共用的 LLM prompt 格式化放 `src/prompts/`（`#agent/prompts/*`）。domain 保留类型/常量及 web、api、agent 共享的解析与 merge。
 
@@ -86,25 +80,21 @@ return new Command({
 
 | 子目录 | 职责 |
 |--------|------|
-| `llm/providers/` | **创建**客户端：`createChatModel`、`createMultimodalChatModel`（百炼）、`generateDesignImage`（百炼文生图） |
-| `llm/invoke/` | **调用**：`streamChat`（对话）、`invokeStructured`（文本结构化 work）、`invokeMultimodalStructured`（多模态结构化，保留 image_url） |
+| `llm/providers/` | **创建**客户端：`chat.ts`（读 env 建 ChatOpenAI）、`index.ts` 导出 `createChatModel` / `createProductionChatModel` |
+| `llm/invoke/` | **调用**：`streamChat`（对话）、`invokeStructured`（结构化 work） |
 
 ```typescript
-import { createChatModel, createMultimodalChatModel } from "#agent/llm/providers/index.js";
-import { streamChat, invokeStructured, invokeMultimodalStructured } from "#agent/llm/invoke/index.js";
+import { createChatModel } from "#agent/llm/providers/index.js";
+import { streamChat, invokeStructured } from "#agent/llm/invoke/index.js";
 
 const llm = createChatModel({ temperature: 0.7 });
 const message = await streamChat(llm.bindTools(tools), input, config);
 const decision = await invokeStructured(llm, schema, input, { name: "..." }, config);
-const analysis = await invokeMultimodalStructured(
-  createMultimodalChatModel(),
-  schema,
-  multimodalInput,
-  { name: "..." },
-);
 ```
 
 节点内禁止直接 `llm.invoke()`，统一走 `llm/invoke/`。结构化调用会合并 `nostream` tag，避免内部输出泄漏到前端；有 `RunnableConfig` 的节点应传入。
+
+**超时 / 重试 / 降级**：在各 `graph.ts` 的 `addNode` 上配置 LangGraph `timeout` / `retryPolicy` / `errorHandler`（见 `llm/invoke/timeout.ts` 的 `llmNodePolicy`、`llmTimeoutOnly`）。勿在 invoke 层自建墙钟与重试；流式 chat 只用 `timeout`（避免 `pushMessage` 重试重复）。节点内不要宽泛 `catch` LLM 失败再 fallback——让错误冒泡，由 `errorHandler` 用 `rethrowUnlessRecoverable` 统一降级（见 `state-graph/helpers/recoverable-node-error.ts`）。Tool 内 catch 返回错误 ToolMessage 除外。
 
 ## 路径别名
 

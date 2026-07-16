@@ -1,20 +1,17 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 
 import { chatStreamBlock } from "@/components/studio/chat-stream-block";
 import { DEFAULT_TURN_DIRECTIONS_HINT } from "@yougan/domain";
 import {
   type TurnDirection,
   type TurnDirections,
-  type WorkProfile,
 } from "@/lib/types";
-import { groupProfileSetupDirections } from "@/lib/profile-setup-direction-display";
 import { resolveTurnDirectionChipText } from "@/lib/direction-display";
 import { cn } from "@/lib/utils";
 
 type TurnDirectionOptionsProps = {
   directions: TurnDirections["directions"];
   hint?: string;
-  profile?: WorkProfile;
   loading?: boolean;
   disabled?: boolean;
   onSelect: (prompt: string) => void | Promise<void>;
@@ -68,7 +65,6 @@ function DirectionButton({
 export function TurnDirectionOptions({
   directions,
   hint = DEFAULT_TURN_DIRECTIONS_HINT,
-  profile,
   loading = false,
   disabled = false,
   onSelect,
@@ -87,23 +83,9 @@ export function TurnDirectionOptions({
     [disabled, loading, onSelect, pendingPrompt],
   );
 
-  const groups = useMemo(
-    () => groupProfileSetupDirections(directions, profile),
-    [profile, directions],
-  );
-
   if (directions.length < 1) return null;
 
   const isLocked = disabled || loading || Boolean(pendingPrompt);
-  const hasGroupedSteps = groups.some(
-    (group) =>
-      group.step !== "_ungrouped" &&
-      (group.step === "_consolidate" ||
-        group.step === "_advance" ||
-        group.title.length > 0),
-  );
-
-  let buttonIndex = 0;
 
   return (
     <div className={cn("mt-3 w-full", className)}>
@@ -111,69 +93,18 @@ export function TurnDirectionOptions({
         <p className={cn(chatStreamBlock.caption, "mb-2 px-0.5")}>{hint}</p>
       ) : null}
 
-      {hasGroupedSteps ? (
-        <div className="flex flex-col gap-3">
-          {groups.map((group) => {
-            if (group.step === "_ungrouped") {
-              return (
-                <div key="ungrouped" className="flex flex-col gap-2">
-                  {group.directions.map((item) => {
-                    const index = buttonIndex;
-                    buttonIndex += 1;
-                    return (
-                      <DirectionButton
-                        key={item.id}
-                        item={item}
-                        index={index}
-                        isLocked={isLocked}
-                        pendingPrompt={pendingPrompt}
-                        onSelect={handleSelect}
-                      />
-                    );
-                  })}
-                </div>
-              );
-            }
-
-            return (
-              <div key={group.step} className="flex flex-col gap-1.5">
-                <p className={cn(chatStreamBlock.caption, "px-0.5")}>
-                  {group.title}
-                </p>
-                <div className="flex flex-col gap-2">
-                  {group.directions.map((item) => {
-                    const index = buttonIndex;
-                    buttonIndex += 1;
-                    return (
-                      <DirectionButton
-                        key={item.id}
-                        item={item}
-                        index={index}
-                        isLocked={isLocked}
-                        pendingPrompt={pendingPrompt}
-                        onSelect={handleSelect}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="flex flex-col gap-2">
-          {directions.map((item, index) => (
-            <DirectionButton
-              key={item.id}
-              item={item}
-              index={index}
-              isLocked={isLocked}
-              pendingPrompt={pendingPrompt}
-              onSelect={handleSelect}
-            />
-          ))}
-        </div>
-      )}
+      <div className="flex flex-col gap-2">
+        {directions.map((item, index) => (
+          <DirectionButton
+            key={item.id}
+            item={item}
+            index={index}
+            isLocked={isLocked}
+            pendingPrompt={pendingPrompt}
+            onSelect={handleSelect}
+          />
+        ))}
+      </div>
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { ChevronDownIcon, ImageOffIcon, SparklesIcon } from "lucide-react";
 import { useState } from "react";
 
 import type { PreviewImageItem } from "@/components/preview-image-list";
-import { PREVIEW_PANEL, REFERENCE_PANEL } from "@/lib/site-copy";
+import { PREVIEW_PANEL } from "@/lib/site-copy";
 import { cn } from "@/lib/utils";
 
 function PreviewImagePrompt({ prompt }: { prompt: string }) {
@@ -56,7 +56,7 @@ export function PreviewImageFigure({
       <figure className="flex min-h-32 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border/80 bg-muted/30 px-4 py-8 text-muted-foreground">
         <ImageOffIcon className="size-5" aria-hidden />
         <figcaption className="text-center text-xs">
-          {REFERENCE_PANEL.imageUnavailable}
+          {PREVIEW_PANEL.imageUnavailable}
         </figcaption>
       </figure>
     );

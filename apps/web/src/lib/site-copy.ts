@@ -3,11 +3,10 @@
  *
  * 语气：清楚、有步骤感，帮用户知道「现在在哪一环节、下一步是什么」。
  *
- * 制作流程：定方案 → 备参考 → 执行制作 → 产出作品 → 留存版本
+ * 制作流程：定方案 → 执行制作 → 产出作品 → 留存版本
  *
- * 作品面板四 Tab（简称 / 面板全称）：
+ * 作品面板三 Tab（简称 / 面板全称）：
  * - 方案 / 制作方案
- * - 参考 / 参考素材
  * - 作品 / 作品内容
  * - 版本 / 版本记录
  */
@@ -18,7 +17,7 @@ export const BRAND = {
   taglineLanding: "AI 让你有感而发",
   taglineApp: "方案 · 制作 · 提问",
   metaDescription:
-    "有感 Yougan — AI 多媒体创作助手。支持文字、图片、音频、视频与混排作品；维护制作方案、解析参考素材、AI 团队按计划出稿，可版本回溯与一键发布。",
+    "有感 Yougan — AI 多媒体创作助手。支持文字、图片、音频、视频与混排作品；维护制作方案、AI 团队按计划出稿，可版本回溯与一键发布。",
   documentTitle: "有感 · Yougan — AI 多媒体创作助手",
 } as const;
 
@@ -124,7 +123,7 @@ export const HOME = {
   tagline: BRAND.taglineLanding,
   mediaSpectrum: "文章 · 插画 · 脚本 · 音视频",
   subtitle:
-    "维护制作方案、解析参考素材、AI 团队按计划出稿，支持版本回溯与一键发布。",
+    "维护制作方案、AI 团队按计划出稿，支持版本回溯与一键发布。",
   ctaStudio: "开始创作",
   ctaGuide: "使用指南",
   modalitiesLabel: "支持媒介",
@@ -193,7 +192,7 @@ export const GUIDE_PAGE = {
   workflowEyebrow: "创作流程",
   workflowTitle: "标准创作流程",
   workflowSubtitle:
-    "定方案 → 备参考 → 制作 → 提问与修改；每条消息系统自动路由到对应环节。",
+    "定方案 → 制作 → 提问与修改；每条消息系统自动路由到对应环节。",
   capabilitiesDetailTitle: "各环节怎么用",
   capabilitiesDetailSubtitle:
     "下面按操作顺序说明：你在对话里做什么、系统会产出什么、这一步不会做什么。",
@@ -202,7 +201,7 @@ export const GUIDE_PAGE = {
     "成稿后想对比历史、或换方向平行探索，可以这样操作。",
   studioTitle: "创作台布局",
   studioSubtitle:
-    "左侧作品列表、中间对话、右侧作品面板（方案 / 参考 / 作品 / 版本）",
+    "左侧作品列表、中间对话、右侧作品面板（方案 / 作品 / 版本）",
   extrasTitle: "辅助能力",
   publishEyebrow: "发布",
   publishTitle: "发布与分享",
@@ -428,7 +427,6 @@ export const STUDIO = {
   emptyTourCta: "先看 30 秒快速引导",
   emptyWorksList: "还没有作品，创建一件并从定方案开始。",
   emptyWorksFiltered: "创建一件作品，从定方案开始。",
-  referencesCount: (n: number) => `已添加 ${n} 条参考素材`,
   publishViewInDiscover: (sectionTitle: string) => `在${sectionTitle}查看`,
   modelTemperatureLabel: "创意度",
   modelTemperatureHint:
@@ -458,7 +456,6 @@ export const CHAT_COPY = {
   quotaExceededPlaceholder: "本月 AI 额度已用完，请升级套餐或等待下月重置",
   emptyTitle: "选择下一步，或直接输入",
   status: {
-    referenceProcessing: "正在分析参考素材",
     profileExploring: "正在整理制作方案",
     profileEditing: (requirements: number, bounds: number) =>
       `制作方案 ${requirements} 条需求 · ${bounds} 条边界，可在右侧修改`,
@@ -507,32 +504,17 @@ export const CHAT_COPY = {
     cancelTooltip: "取消当前回复",
   },
   stopRun: "停止",
-  attachmentDrawer: {
-    title: (count: number) => `附件 ${count}`,
-    hint: "发送消息时一并提交",
-    expand: "展开附件",
-    collapse: "收起附件",
-    remove: (name: string) => `移除 ${name}`,
-    uploadTooltips: {
-      image: "添加参考图片",
-      audio: "添加参考音频",
-      video: "添加参考视频",
-    },
-    uploading: "上传中…",
-    maxReached: "最多 6 份参考素材",
-  },
 } as const;
 
 /** 创作台右侧栏 */
 export const CREATIVE_CONTEXT_PANEL = {
   title: "作品面板",
-  hint: "制作方案、参考素材、作品内容、版本记录",
+  hint: "制作方案、作品内容、版本记录",
   expand: "展开作品面板",
   collapse: "收起作品面板",
   tabs: {
     profile: "方案",
     preview: "作品",
-    references: "参考",
     history: "版本",
   },
 } as const;
@@ -548,12 +530,12 @@ export const WORK_HISTORY_PANEL = {
   duplicateAction: "另存为新作品",
   duplicating: "正在创建…",
   forkFromVersion: "从此分叉为新作品",
-  forkHint: "从该版出稿时的方案、参考和成稿分叉，不影响原作品。",
+  forkHint: "从该版出稿时的方案和成稿分叉，不影响原作品。",
   timelineTitle: "版本历史",
   timelineHint:
-    "每次产出作品内容时记录一版。时间轴只记成稿时刻的快照；此后对方案、参考的修改不会单独记版。",
+    "每次产出作品内容时记录一版。时间轴只记成稿时刻的快照；此后对方案的修改不会单独记版。",
   restoreNotice:
-    "恢复某一版时，方案、参考和成稿会一起切回该版记录时的状态。若你在上次出稿后又改了方案或参考、但还没重新出稿，这些新修改会被覆盖。",
+    "恢复某一版时，方案和成稿会一起切回该版记录时的状态。若你在上次出稿后又改了方案、但还没重新出稿，这些新修改会被覆盖。",
   empty: "还没有版本记录。制作产出作品后会出现。",
   headBadge: "当前",
   restore: "恢复到此版",
@@ -562,9 +544,8 @@ export const WORK_HISTORY_PANEL = {
   restoreWarningTitle: "以下内容会被覆盖",
   restoreWarningItems: [
     "制作方案 → 恢复为该版出稿时的方案",
-    "参考素材 → 恢复为该版出稿时的参考",
     "作品内容 → 恢复为该版成稿",
-    "上次出稿后、尚未重新出稿的方案与参考修改 → 会丢失",
+    "上次出稿后、尚未重新出稿的方案修改 → 会丢失",
   ] as const,
   restoreAlternative:
     "若想保留当前最新方案再继续改，请改用上方「另存为新作品」，或对该版本使用「从此分叉为新作品」。",
@@ -620,30 +601,7 @@ export const PREVIEW_PANEL = {
   promptLabel: "生成提示词",
   promptShow: "查看提示词",
   promptHide: "收起提示词",
-} as const;
-
-export const REFERENCE_PANEL = {
-  title: "参考素材",
-  hint: "上传的参考经分析后，汇总在这里",
-  empty: "添加参考素材后，会显示在这里。",
-  analysisLabel: "分析：",
-  intentLabel: "借鉴意图：",
-  typeLabels: {
-    text: "文本",
-    image: "图片",
-    audio: "音频",
-    video: "视频",
-    file: "文件",
-  },
-  fallbackTitle: (n: number) => `参考素材 ${n}`,
-  expand: "展开",
-  collapse: "收起",
-  openLink: "打开链接",
-  openImage: "查看原图",
-  openAudio: "播放音频",
-  openVideo: "播放视频",
   imageUnavailable: "图片不可用",
-  mediaUnavailable: "媒体不可用",
 } as const;
 
 export const PUBLISH = {

@@ -92,9 +92,8 @@ export function shouldAutoStartStudioOnboarding(userId: string) {
 const creativePanelTabIntros = (
   [
     ["profile", 1],
-    ["references", 2],
-    ["preview", 3],
-    ["history", 4],
+    ["preview", 2],
+    ["history", 3],
   ] as const
 ).map(([tabKey, panelIndex]) => {
   const tab = CREATIVE_CONTEXT_PANEL.tabs[tabKey];
@@ -132,7 +131,7 @@ export const STUDIO_ONBOARDING_STEPS: StudioOnboardingStep[] = [
     kind: "spotlight",
     target: STUDIO_ONBOARDING_TARGETS.creativePanel,
     title: CREATIVE_CONTEXT_PANEL.title,
-    body: "对话确认的内容会同步到这里，也可直接编辑。四个 Tab 分工如下：",
+    body: "对话确认的内容会同步到这里，也可直接编辑。三个 Tab 分工如下：",
     bullets: creativePanelTabIntros,
     ensureDrawerOpen: true,
     placementPreference: "left",

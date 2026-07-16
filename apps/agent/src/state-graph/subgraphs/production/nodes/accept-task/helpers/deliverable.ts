@@ -6,26 +6,7 @@ import type {
 
 export function isValidTaskDeliverable(
   deliverable: ProductionTaskDeliverable | null | undefined,
-  task?: ProductionTask,
-): boolean {
-  if (task?.department === "design") {
-    const body = deliverable?.body?.trim() ?? "";
-    if (!body) return false;
-    return Boolean(deliverable?.images?.[0]?.url?.trim());
-  }
-
-  if (task?.department === "audio") {
-    const url = deliverable?.body?.trim() ?? "";
-    if (!url) return false;
-    return Boolean(deliverable?.notes?.trim());
-  }
-
-  return Boolean(deliverable?.body?.trim());
-}
-
-/** 设计任务：文生图 prompt 已写入（尚未或无需成图） */
-export function isValidDesignPromptDeliverable(
-  deliverable: ProductionTaskDeliverable | null | undefined,
+  _task?: ProductionTask,
 ): boolean {
   return Boolean(deliverable?.body?.trim());
 }

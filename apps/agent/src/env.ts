@@ -1,6 +1,6 @@
 /**
  * Agent 环境变量解析与归一化。
- * 百炼凭证：仅 DASHSCOPE_API_KEY + DASHSCOPE_BASE_URL；模型见 llm/providers/catalog.ts。
+ * OpenAI 兼容端点凭证与模型 ID 均可通过环境变量配置。
  */
 import { config as loadEnv } from "dotenv";
 import { dirname, resolve } from "node:path";
@@ -20,7 +20,7 @@ function emptyToUndefined(value: unknown) {
 const optionalString = z.preprocess(emptyToUndefined, z.string().optional());
 
 const requiredString = z.preprocess(
-  (value) => (typeof value === "string" ? value.trim() : value),
+  (value) => (typeof value !== "string" ? value : value.trim()),
   z.string().min(1),
 );
 
@@ -39,15 +39,16 @@ function parseEnv<S extends z.ZodTypeAny>(
   return result.data;
 }
 
-function resolveDashScopeApiBaseUrl(compatibleBaseUrl: string): string {
-  return `${new URL(compatibleBaseUrl).origin}/api/v1`;
-}
+/** 未设置环境变量时的默认模型 ID */
+const DEFAULT_OPENAI_CHAT_MODEL = "deepseek-v4-pro";
 
 const AgentEnvSchema = z
   .object({
     POSTGRES_URI: requiredString,
-    DASHSCOPE_API_KEY: optionalString,
-    DASHSCOPE_BASE_URL: optionalString,
+    OPENAI_API_KEY: optionalString,
+    OPENAI_BASE_URL: optionalString,
+    /** 主对话、结构化 work、tool calling */
+    OPENAI_CHAT_MODEL: optionalString,
     LLM_MAX_TOKENS: z.coerce.number().int().positive().default(8192),
     /** 制作产出 / 整合成稿：输出上限高于通用结构化调用 */
     LLM_PRODUCTION_MAX_TOKENS: z.coerce
@@ -59,15 +60,17 @@ const AgentEnvSchema = z
     TAVILY_API_KEY: optionalString,
   })
   .transform((env) => {
-    const dashscopeBaseUrl =
-      env.DASHSCOPE_BASE_URL ??
+    const openaiBaseUrl =
+      env.OPENAI_BASE_URL ??
       "https://dashscope.aliyuncs.com/compatible-mode/v1";
 
     return {
       postgresUri: env.POSTGRES_URI,
-      dashscopeApiKey: env.DASHSCOPE_API_KEY ?? "",
-      dashscopeBaseUrl,
-      dashscopeApiBaseUrl: resolveDashScopeApiBaseUrl(dashscopeBaseUrl),
+      openaiApiKey: env.OPENAI_API_KEY ?? "",
+      openaiBaseUrl,
+      openaiModels: {
+        chat: env.OPENAI_CHAT_MODEL ?? DEFAULT_OPENAI_CHAT_MODEL,
+      },
       llmMaxTokens: env.LLM_MAX_TOKENS,
       llmProductionMaxTokens: env.LLM_PRODUCTION_MAX_TOKENS,
       llmTemperature: env.LLM_TEMPERATURE,

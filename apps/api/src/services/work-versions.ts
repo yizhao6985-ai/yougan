@@ -20,7 +20,6 @@ import {
   snapshotFromAgentValues,
 } from "./versions.js";
 import { syncMaterializedStateToAgentThreads } from "./agent-thread-sync.js";
-import { materializeAgentRunValues } from "./materialize-production-draft-images.js";
 
 function snapshotFromWorkColumns(work: {
   profile: unknown;
@@ -108,7 +107,7 @@ export async function applyAgentRunToWork(input: {
   values: Record<string, unknown>;
 }) {
   const previous = (await getWorkCurrentSnapshot(input.workId)) ?? emptySnapshot();
-  const values = await materializeAgentRunValues(input.values);
+  const values = input.values;
   const next = snapshotFromAgentValues(values);
   const revision = parseRevisionJson(values.revision);
 

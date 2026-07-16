@@ -1,46 +1,8 @@
 /** 制作计划任务路由与 patch 辅助 */
 import type { ProductionTask, WorkProduction } from "@yougan/domain";
 
-import type { AgentStateType } from "#agent/state.js";
-import { resolveProductionAudioAsset } from "./resolve-production-audio-asset.js";
-
 import { acceptAttemptsExhausted } from "./pipeline.js";
-import {
-  isValidDesignPromptDeliverable,
-  isValidTaskDeliverable,
-} from "../nodes/accept-task/helpers/deliverable.js";
-
-export function isAudioTask(task: ProductionTask): boolean {
-  return task.department === "audio";
-}
-
-export function audioTaskNeedsIngest(
-  state: AgentStateType,
-  task: ProductionTask,
-): boolean {
-  if (!isAudioTask(task)) return false;
-  return resolveProductionAudioAsset(state) != null;
-}
-
-export function isDesignTask(task: ProductionTask): boolean {
-  return task.department === "design";
-}
-
-export function designTaskHasRenderedImage(task: ProductionTask): boolean {
-  return Boolean(task.deliverable?.images?.[0]?.url?.trim());
-}
-
-export function taskNeedsRender(task: ProductionTask): boolean {
-  if (
-    !isDesignTask(task) ||
-    taskHasTerminalFailure(task) ||
-    isTaskReady(task)
-  ) {
-    return false;
-  }
-  if (!isValidDesignPromptDeliverable(task.deliverable)) return false;
-  return !designTaskHasRenderedImage(task);
-}
+import { isValidTaskDeliverable } from "../nodes/accept-task/helpers/deliverable.js";
 
 export function isTaskReady(task: ProductionTask): boolean {
   return task.status === "ready";
@@ -51,20 +13,10 @@ export function taskAwaitingAccept(task: ProductionTask): boolean {
   return isValidTaskDeliverable(task.deliverable, task);
 }
 
-/** 设计任务：prompt 已就绪但出图未完成/失败，accept 节点仅触发 render 重试 */
-export function taskNeedsRenderRetryAccept(task: ProductionTask): boolean {
-  if (task.status !== "in_progress" || !isDesignTask(task)) return false;
-  if (!isValidDesignPromptDeliverable(task.deliverable)) return false;
-  return !designTaskHasRenderedImage(task);
-}
-
 /** acceptTask 应处理的 taskId；与 execute → accept 固定边对齐，避免空跑 in_progress 任务 */
 export function resolveAcceptTaskId(production: WorkProduction): string | null {
   const awaiting = production.pending_tasks.find(taskAwaitingAccept);
-  if (awaiting) return awaiting.id;
-
-  const renderRetry = production.pending_tasks.find(taskNeedsRenderRetryAccept);
-  return renderRetry?.id ?? null;
+  return awaiting?.id ?? null;
 }
 
 export function taskHasTerminalFailure(task: ProductionTask): boolean {
@@ -117,7 +69,7 @@ export function resolveDispatchTaskId(
     return null;
   }
   const active = currentActiveTask(production);
-  if (active && (taskNeedsProduce(active) || taskNeedsRender(active))) {
+  if (active && taskNeedsProduce(active)) {
     return active.id;
   }
   const next = nextPendingTask(production);
@@ -125,8 +77,8 @@ export function resolveDispatchTaskId(
 }
 
 /**
- * dispatchTask 无任务可派且计划未收尾时，管线已卡住（典型：dispatch ↔ route 空转）。
- * 由 afterRouteProduction 转入 __end__ 结束子图；回合末评价由主图 reflectTurn 输出。
+ * dispatchTask 无任务可派且计划未收尾时，管线已卡住。
+ * 由 afterRouteProduction 转入 __end__ 结束子图。
  */
 export function productionPipelineStuck(production: WorkProduction): boolean {
   if (
@@ -139,9 +91,6 @@ export function productionPipelineStuck(production: WorkProduction): boolean {
   if (production.pending_tasks.some(taskAwaitingAccept)) {
     return false;
   }
-  if (production.pending_tasks.some(taskNeedsRender)) {
-    return false;
-  }
   return resolveDispatchTaskId(production) == null;
 }
 
@@ -149,21 +98,8 @@ export function taskNeedsProduce(task: ProductionTask): boolean {
   if (taskHasTerminalFailure(task)) return false;
   if (isTaskReady(task)) return false;
   if (taskAwaitingAccept(task)) return false;
-  if (taskNeedsRender(task)) return false;
   if (acceptAttemptsExhausted(task)) return false;
   return true;
-}
-
-/** dispatch 路由：音频素材入库任务走 ingestProductionAudio */
-export function audioTaskNeedsIngestProduce(
-  state: AgentStateType,
-  task: ProductionTask,
-): boolean {
-  return (
-    isAudioTask(task) &&
-    audioTaskNeedsIngest(state, task) &&
-    taskNeedsProduce(task)
-  );
 }
 
 /** 将指定任务标为 in_progress，其余未 ready 的 in_progress 退回 pending */

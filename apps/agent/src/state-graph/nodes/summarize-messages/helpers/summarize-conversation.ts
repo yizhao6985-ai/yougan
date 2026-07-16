@@ -77,21 +77,29 @@ export async function resolveConversationSummary(
     messages: semanticBatch,
   });
 
-  try {
-    const parsed = await invokeStructured(
-      llm,
-      ConversationSummarySchema,
-      [new HumanMessage(prompt)],
-      { name: "summarize_conversation" },
-      config,
-    );
+  const parsed = await invokeStructured(
+    llm,
+    ConversationSummarySchema,
+    [new HumanMessage(prompt)],
+    { name: "summarize_conversation" },
+    config,
+  );
 
-    return {
-      conversationSummary: parsed.summary.trim(),
-      messages: removeMessageUpdates(batch),
-    };
-  } catch {
-    const toolRemoves = removeMessageUpdates(toolInBatch);
-    return toolRemoves.length > 0 ? { messages: toolRemoves } : null;
-  }
+  return {
+    conversationSummary: parsed.summary.trim(),
+    messages: removeMessageUpdates(batch),
+  };
+}
+
+/** LLM 失败回退：仅清理 batch 内 tool 消息 */
+export function summarizeConversationTimeoutFallback(
+  state: AgentStateType,
+): Partial<AgentStateType> | null {
+  if (!needsMessageSummary(state)) return null;
+  const messages = state.messages ?? [];
+  const batch = messagesToSummarize(messages);
+  if (batch.length === 0) return null;
+  const toolInBatch = batch.filter(isToolInternalMessage);
+  const toolRemoves = removeMessageUpdates(toolInBatch);
+  return toolRemoves.length > 0 ? { messages: toolRemoves } : null;
 }

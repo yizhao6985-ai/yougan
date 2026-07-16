@@ -39,21 +39,20 @@ export function WorkSidebarItem({
     createConversation,
     deleteConversation,
     cancelActiveTurn,
-    stream,
   } = useYouganStreamContext();
 
   const cancelStreamIfNeeded = useCallback(
     async (options?: { conversationId?: string }) => {
-      if (!stream.isLoading) return;
       if (
         options?.conversationId &&
         activeConversation?.id !== options.conversationId
       ) {
         return;
       }
+      /** cancelActiveTurn 在无进行中回合时自行 no-op */
       await cancelActiveTurn();
     },
-    [activeConversation?.id, cancelActiveTurn, stream.isLoading],
+    [activeConversation?.id, cancelActiveTurn],
   );
 
   const handleCreateConversation = useCallback(async () => {
